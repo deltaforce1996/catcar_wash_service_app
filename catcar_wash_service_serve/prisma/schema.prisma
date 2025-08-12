@@ -1,0 +1,180 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+generator client {
+  provider = "prisma-client-js"
+  output   = "../generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum UserStatus {
+  ACTIVE
+  INACTIVE
+}
+
+enum EmpStatus {
+  ACTIVE
+  INACTIVE
+}
+
+enum PermissionType {
+  ADMIN
+  TECHNICIAN
+  USER
+}
+
+enum DeviceType {
+  WARP
+  WAP
+}
+
+enum DeviceStatus {
+  DEPLOYED
+  DISABLED
+}
+
+enum EventType {
+  COIN
+  PROMPTPAY
+  VORBOSE
+}
+
+enum TokenState {
+  ACTIVATED
+  DISABLED
+}
+
+model tbl_permissions {
+  id         String         @id @default(cuid())
+  name       PermissionType @unique
+  created_at DateTime       @default(now())
+  updated_at DateTime       @updatedAt
+
+  // Relations
+  users      tbl_users[]
+  employees  tbl_emps[]
+
+  @@map("tbl_permissions")
+}
+
+model tbl_users {
+  id           String     @id @default(cuid())
+  fullname     String
+  email        String     @unique
+  status       UserStatus @default(ACTIVE)
+  phone        String?
+  address      String?
+  password     String
+  custom_name  String?
+  permission_id String?
+  created_at   DateTime   @default(now())
+  updated_at   DateTime   @updatedAt
+
+  // Relations
+  permission   tbl_permissions? @relation(fields: [permission_id], references: [id])
+  devices      tbl_devices[]
+  reset_tokens tbl_reset_password_token[]
+
+  @@map("tbl_users")
+}
+
+model tbl_emps {
+  id           String    @id @default(cuid())
+  name         String
+  email        String    @unique
+  phone        String?
+  line         String?
+  password     String
+  address      String?
+  permission_id String?
+  status       EmpStatus @default(ACTIVE)
+  created_at   DateTime  @default(now())
+  updated_at   DateTime  @updatedAt
+
+  // Relations
+  permission   tbl_permissions? @relation(fields: [permission_id], references: [id])
+  registered_devices tbl_devices[]
+  reset_tokens tbl_reset_password_token[]
+
+  @@map("tbl_emps")
+}
+
+model tbl_devices {
+  id           String       @id @default(cuid())
+  name         String
+  type         DeviceType
+  status       DeviceStatus @default(DISABLED)
+  information  Json?
+  configs      Json?
+  owner_id     String
+  register_by  String
+  register_at  DateTime     @default(now())
+  created_at   DateTime     @default(now())
+  updated_at   DateTime     @updatedAt
+
+  // Relations
+  owner        tbl_users    @relation(fields: [owner_id], references: [id])
+  registered_by tbl_emps    @relation(fields: [register_by], references: [id])
+  device_states tbl_devices_state[]
+  device_events tbl_devices_events[]
+
+  @@map("tbl_devices")
+}
+
+// Note: This table should be partitioned by 60 days in PostgreSQL
+// Partitioning needs to be set up manually in the database after migration
+model tbl_devices_state {
+  id         String   @id @default(cuid())
+  device_id  String
+  state_data Json?
+  hash_state String?
+  created_at DateTime @default(now())
+
+  // Relations
+  device     tbl_devices @relation(fields: [device_id], references: [id])
+
+  @@map("tbl_devices_state")
+  @@index([device_id, created_at])
+}
+
+// Note: This table should be partitioned by 30 days in PostgreSQL
+// Partitioning needs to be set up manually in the database after migration
+model tbl_devices_events {
+  id        String    @id @default(cuid())
+  device_id String
+  payload   Json?
+  type      EventType
+  created_at DateTime @default(now())
+
+  // Relations
+  device    tbl_devices @relation(fields: [device_id], references: [id])
+
+  @@map("tbl_devices_events")
+  @@index([device_id, type, created_at])
+}
+
+model tbl_reset_password_token {
+  id          String     @id @default(cuid())
+  email       String
+  owner_id    String
+  token       String     @unique
+  state       TokenState @default(ACTIVATED)
+  expire_date DateTime
+  created_at  DateTime   @default(now())
+  updated_at  DateTime   @updatedAt
+
+  // Relations - owner_id can reference either users or employees
+  user        tbl_users? @relation(fields: [owner_id], references: [id])
+  employee    tbl_emps?  @relation(fields: [owner_id], references: [id])
+
+  @@map("tbl_reset_password_token")
+  @@index([email, state])
+  @@index([token, state])
+}
