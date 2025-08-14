@@ -36,9 +36,9 @@ const main = async () => {
   // Create SuperAdmin employee
   console.log('Creating SuperAdmin employee...');
 
-  const hashedPassword = (await bcrypt.hash('SuperAdmin123!', 12)) as string;
+  const hashedPassword = await bcrypt.hash('SuperAdmin123!', 12);
 
-  const hashedPasswordTechnician = (await bcrypt.hash('Technician123!', 12)) as string;
+  const hashedPasswordTechnician = await bcrypt.hash('Technician123!', 12);
 
   const superAdmin = await prisma.tbl_emps.upsert({
     where: { email: 'superadmin@catcarwash.com' },
