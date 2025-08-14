@@ -6,7 +6,7 @@
 
 generator client {
   provider = "prisma-client-js"
-  output   = "../generated/prisma"
+//  output   = "../generated/prisma"
 }
 
 datasource db {
@@ -171,8 +171,8 @@ model tbl_reset_password_token {
   updated_at  DateTime   @updatedAt
 
   // Relations - owner_id can reference either users or employees
-  user        tbl_users? @relation(fields: [owner_id], references: [id])
-  employee    tbl_emps?  @relation(fields: [owner_id], references: [id])
+  user        tbl_users? @relation(fields: [owner_id], references: [id], map: "tbl_reset_password_token_user_owner_id_fkey")
+  employee    tbl_emps?  @relation(fields: [owner_id], references: [id], map: "tbl_reset_password_token_employee_owner_id_fkey")
 
   @@map("tbl_reset_password_token")
   @@index([email, state])
