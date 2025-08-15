@@ -1,12 +1,9 @@
 // This is your Prisma schema file,
 // learn more about it in the docs: https://pris.ly/d/prisma-schema
 
-// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
-// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
-
 generator client {
   provider = "prisma-client-js"
-//  output   = "../generated/prisma"
+  // output   = "../generated/prisma"
 }
 
 datasource db {
@@ -43,7 +40,7 @@ enum DeviceStatus {
 enum EventType {
   COIN
   PROMPTPAY
-  VORBOSE
+  VORBOSE // NOTE: ถ้าต้องการสะกด VERBOSE ต้องวางแผน migration enum แยกต่างหาก
 }
 
 enum TokenState {
@@ -65,43 +62,43 @@ model tbl_permissions {
 }
 
 model tbl_users {
-  id           String     @id @default(cuid())
-  fullname     String
-  email        String     @unique
-  status       UserStatus @default(ACTIVE)
-  phone        String?
-  address      String?
-  password     String
-  custom_name  String?
+  id            String     @id @default(cuid())
+  fullname      String
+  email         String     @unique
+  status        UserStatus @default(ACTIVE)
+  phone         String?
+  address       String?
+  password      String
+  custom_name   String?
   permission_id String?
-  created_at   DateTime   @default(now())
-  updated_at   DateTime   @updatedAt
+  created_at    DateTime   @default(now())
+  updated_at    DateTime   @updatedAt
 
   // Relations
-  permission   tbl_permissions? @relation(fields: [permission_id], references: [id])
+  permission   tbl_permissions?            @relation(fields: [permission_id], references: [id], onDelete: SetNull)
   devices      tbl_devices[]
-  reset_tokens tbl_reset_password_token[]
+  reset_tokens tbl_reset_password_token[]  @relation("UserResetTokens")
 
   @@map("tbl_users")
 }
 
 model tbl_emps {
-  id           String    @id @default(cuid())
-  name         String
-  email        String    @unique
-  phone        String?
-  line         String?
-  password     String
-  address      String?
+  id            String    @id @default(cuid())
+  name          String
+  email         String    @unique
+  phone         String?
+  line          String?
+  password      String
+  address       String?
   permission_id String?
-  status       EmpStatus @default(ACTIVE)
-  created_at   DateTime  @default(now())
-  updated_at   DateTime  @updatedAt
+  status        EmpStatus @default(ACTIVE)
+  created_at    DateTime  @default(now())
+  updated_at    DateTime  @updatedAt
 
   // Relations
-  permission   tbl_permissions? @relation(fields: [permission_id], references: [id])
-  registered_devices tbl_devices[]
-  reset_tokens tbl_reset_password_token[]
+  permission          tbl_permissions?           @relation(fields: [permission_id], references: [id], onDelete: SetNull)
+  registered_devices  tbl_devices[]
+  reset_tokens        tbl_reset_password_token[] @relation("EmpResetTokens")
 
   @@map("tbl_emps")
 }
@@ -120,12 +117,16 @@ model tbl_devices {
   updated_at   DateTime     @updatedAt
 
   // Relations
-  owner        tbl_users    @relation(fields: [owner_id], references: [id])
-  registered_by tbl_emps    @relation(fields: [register_by], references: [id])
+  owner         tbl_users @relation(fields: [owner_id], references: [id], onDelete: Cascade)
+  registered_by tbl_emps  @relation(fields: [register_by], references: [id], onDelete: Cascade)
   device_states tbl_devices_state[]
   device_events tbl_devices_events[]
 
   @@map("tbl_devices")
+  @@index([owner_id])
+  @@index([register_by])
+  @@index([status])
+  @@index([type])
 }
 
 // Note: This table should be partitioned by 60 days in PostgreSQL
@@ -138,7 +139,7 @@ model tbl_devices_state {
   created_at DateTime @default(now())
 
   // Relations
-  device     tbl_devices @relation(fields: [device_id], references: [id])
+  device     tbl_devices @relation(fields: [device_id], references: [id], onDelete: Cascade)
 
   @@map("tbl_devices_state")
   @@index([device_id, created_at])
@@ -147,34 +148,40 @@ model tbl_devices_state {
 // Note: This table should be partitioned by 30 days in PostgreSQL
 // Partitioning needs to be set up manually in the database after migration
 model tbl_devices_events {
-  id        String    @id @default(cuid())
-  device_id String
-  payload   Json?
-  type      EventType
-  created_at DateTime @default(now())
+  id         String    @id @default(cuid())
+  device_id  String
+  payload    Json?
+  type       EventType
+  created_at DateTime  @default(now())
 
   // Relations
-  device    tbl_devices @relation(fields: [device_id], references: [id])
+  device     tbl_devices @relation(fields: [device_id], references: [id], onDelete: Cascade)
 
   @@map("tbl_devices_events")
   @@index([device_id, type, created_at])
 }
 
+// แก้ polymorphic owner_id → แยกเป็น 2 คอลัมน์ และตั้งชื่อ relation ชัดเจน
 model tbl_reset_password_token {
-  id          String     @id @default(cuid())
-  email       String
-  owner_id    String
-  token       String     @unique
-  state       TokenState @default(ACTIVATED)
-  expire_date DateTime
-  created_at  DateTime   @default(now())
-  updated_at  DateTime   @updatedAt
+  id           String     @id @default(cuid())
+  email        String
+  token        String     @unique
+  state        TokenState @default(ACTIVATED)
+  expire_date  DateTime
+  created_at   DateTime   @default(now())
+  updated_at   DateTime   @updatedAt
 
-  // Relations - owner_id can reference either users or employees
-  user        tbl_users? @relation(fields: [owner_id], references: [id], map: "tbl_reset_password_token_user_owner_id_fkey")
-  employee    tbl_emps?  @relation(fields: [owner_id], references: [id], map: "tbl_reset_password_token_employee_owner_id_fkey")
+  // เลือกอย่างใดอย่างหนึ่งเท่านั้น (บังคับด้วย CHECK ใน migration SQL)
+  owner_user_id String?
+  owner_emp_id  String?
+
+  // Relations
+  user     tbl_users? @relation("UserResetTokens", fields: [owner_user_id], references: [id], onDelete: Cascade)
+  employee tbl_emps?  @relation("EmpResetTokens",  fields: [owner_emp_id],  references: [id], onDelete: Cascade)
 
   @@map("tbl_reset_password_token")
   @@index([email, state])
   @@index([token, state])
+  @@index([owner_user_id])
+  @@index([owner_emp_id])
 }
