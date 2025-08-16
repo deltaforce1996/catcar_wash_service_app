@@ -1,15 +1,13 @@
 import { Body, Controller, Get, Param, Put, Query, UseFilters, UseGuards } from '@nestjs/common';
-import { EmpsService } from './emps.service';
+import { EmpRow, EmpsService } from './emps.service';
 import { AllExceptionFilter } from 'src/common';
 import { SearchEmpDto } from './dtos/search-emp.dto';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { PaginatedResult } from 'src/types/internal.type';
-import { tbl_emps } from '@prisma/client';
 import { UpdateEmpDto } from './dtos/update-emp.dto';
 import { SuccessResponse } from 'src/types';
 
-type EmpPublic = Partial<tbl_emps & { permission: { id: string; name: string } }>;
-type EmpPublicResponse = PaginatedResult<EmpPublic>;
+type EmpPublicResponse = PaginatedResult<EmpRow>;
 
 @UseFilters(AllExceptionFilter)
 @UseGuards(JwtAuthGuard)
@@ -28,7 +26,7 @@ export class EmpsController {
   }
 
   @Get('find-by-id/:id')
-  async getEmpById(@Param('id') id: string): Promise<SuccessResponse<EmpPublic>> {
+  async getEmpById(@Param('id') id: string): Promise<SuccessResponse<EmpRow>> {
     const result = await this.empsService.findById(id);
     return {
       success: true,
@@ -38,7 +36,7 @@ export class EmpsController {
   }
 
   @Put('update-by-id/:id')
-  async updateEmpById(@Param('id') id: string, @Body() data: UpdateEmpDto): Promise<SuccessResponse<EmpPublic>> {
+  async updateEmpById(@Param('id') id: string, @Body() data: UpdateEmpDto): Promise<SuccessResponse<EmpRow>> {
     const result = await this.empsService.updateById(id, data);
     return {
       success: true,

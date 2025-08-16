@@ -7,6 +7,7 @@ import { appConfig, jwtConfig } from './configs';
 import { AuthModule } from './apis/auth';
 import { JwtGlobalModule } from './apis/auth/jwt-global.module';
 import { EmpsModule } from './apis/emps/emps.module';
+import { UsersModule } from './apis/users/users.module';
 
 @Module({
   imports: [
@@ -18,6 +19,7 @@ import { EmpsModule } from './apis/emps/emps.module';
     JwtGlobalModule,
     AuthModule,
     EmpsModule,
+    UsersModule,
   ],
   controllers: [AppController],
   providers: [AppService],

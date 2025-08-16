@@ -1,5 +1,5 @@
 import { Injectable, Logger } from '@nestjs/common';
-import { EmpStatus, PermissionType, Prisma, tbl_emps } from '@prisma/client';
+import { EmpStatus, PermissionType, Prisma } from '@prisma/client';
 import { PrismaService } from 'src/database/prisma/prisma.service';
 import { ItemNotFoundException } from 'src/errors';
 import { UpdateEmpDto } from './dtos/update-emp.dto';
@@ -25,6 +25,8 @@ export const empPublicSelect = Prisma.validator<Prisma.tbl_empsSelect>()({
   },
 });
 
+export type EmpRow = Prisma.tbl_empsGetPayload<{ select: typeof empPublicSelect }>;
+
 const ALLOWED = ['id', 'email', 'name', 'phone', 'line', 'address', 'status', 'permission'] as const;
 
 @Injectable()
@@ -34,7 +36,7 @@ export class EmpsService {
     this.logger.log('EmpsService initialized');
   }
 
-  async searchEmps(q: SearchEmpDto): Promise<PaginatedResult<Partial<tbl_emps>>> {
+  async searchEmps(q: SearchEmpDto): Promise<PaginatedResult<EmpRow>> {
     const pairs = parseKeyValueOnly(q.query ?? '', ALLOWED);
 
     const ands: Prisma.tbl_empsWhereInput['AND'] = [];
@@ -89,8 +91,8 @@ export class EmpsService {
     };
   }
 
-  async findById(id: string): Promise<Partial<tbl_emps>> {
-    const emp: Partial<tbl_emps> | null = await this.prisma.tbl_emps.findUnique({
+  async findById(id: string): Promise<EmpRow> {
+    const emp: EmpRow | null = await this.prisma.tbl_emps.findUnique({
       where: { id },
       select: empPublicSelect,
     });
@@ -100,8 +102,8 @@ export class EmpsService {
     return emp;
   }
 
-  async updateById(id: string, data: UpdateEmpDto): Promise<Partial<tbl_emps>> {
-    const emp: Partial<tbl_emps> = await this.prisma.tbl_emps.update({
+  async updateById(id: string, data: UpdateEmpDto): Promise<EmpRow> {
+    const emp: EmpRow = await this.prisma.tbl_emps.update({
       where: { id },
       data,
       select: empPublicSelect,

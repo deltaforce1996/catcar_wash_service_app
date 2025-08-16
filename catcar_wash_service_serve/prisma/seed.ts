@@ -111,9 +111,84 @@ const main = async () => {
     },
   });
 
+  const user2 = await prisma.tbl_users.upsert({
+    where: { email: 'user2@catcarwash.com' },
+    update: {
+      fullname: 'User 2',
+      email: 'user2@catcarwash.com',
+      phone: '+1234567890',
+      password: hashedPassword,
+      permission_id: userPermission.id,
+      status: 'ACTIVE',
+    },
+    create: {
+      fullname: 'User 2',
+      email: 'user2@catcarwash.com',
+      phone: '+1234567890',
+      password: hashedPassword,
+      permission_id: userPermission.id,
+      status: 'ACTIVE',
+    },
+  });
+
+  const devicesUser = await prisma.tbl_devices.createMany({
+    data: [
+      {
+        name: 'Device 1',
+        type: 'WARP',
+        status: 'DEPLOYED',
+        owner_id: user.id,
+        register_by: technician.id,
+      },
+      {
+        name: 'Device 2',
+        type: 'WAP',
+        status: 'DISABLED',
+        owner_id: user.id,
+        register_by: technician.id,
+      },
+      {
+        name: 'Device 3',
+        type: 'WARP',
+        status: 'DEPLOYED',
+        owner_id: user.id,
+        register_by: technician.id,
+      },
+    ],
+  });
+
+  const devicesUser2 = await prisma.tbl_devices.createMany({
+    data: [
+      {
+        name: 'Device 4',
+        type: 'WARP',
+        status: 'DISABLED',
+        owner_id: user2.id,
+        register_by: technician.id,
+      },
+      {
+        name: 'Device 5',
+        type: 'WAP',
+        status: 'DEPLOYED',
+        owner_id: user2.id,
+        register_by: technician.id,
+      },
+      {
+        name: 'Device 6',
+        type: 'WARP',
+        status: 'DEPLOYED',
+        owner_id: user2.id,
+        register_by: technician.id,
+      },
+    ],
+  });
+
   console.log(`SuperAdmin employee created with ID: ${superAdmin.id}`);
   console.log(`Technician employee created with ID: ${technician.id}`);
   console.log(`User created with ID: ${user.id}`);
+  console.log(`User 2 created with ID: ${user2.id}`);
+  console.log(`Devices created: ${devicesUser.count}`);
+  console.log(`Devices created: ${devicesUser2.count}`);
   console.log('Database seeding completed successfully!');
 };
 
