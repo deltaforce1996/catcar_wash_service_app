@@ -36,9 +36,7 @@ const main = async () => {
   // Create SuperAdmin employee
   console.log('Creating SuperAdmin employee...');
 
-  const hashedPassword = await bcrypt.hash('SuperAdmin123!', 12);
-
-  const hashedPasswordTechnician = await bcrypt.hash('Technician123!', 12);
+  const hashedPassword = await bcrypt.hash('password!', 12);
 
   const superAdmin = await prisma.tbl_emps.upsert({
     where: { email: 'superadmin@catcarwash.com' },
@@ -69,7 +67,7 @@ const main = async () => {
       name: 'Technician',
       phone: '+1234567890',
       line: '@technician',
-      password: hashedPasswordTechnician,
+      password: hashedPassword,
       address: 'CATCAR WASH SERVICE',
       permission_id: adminPermission.id,
       status: 'ACTIVE',
@@ -79,15 +77,43 @@ const main = async () => {
       email: 'technician@catcarwash.com',
       phone: '+1234567890',
       line: '@technician',
-      password: hashedPasswordTechnician,
+      password: hashedPassword,
       address: 'CATCAR WASH SERVICE',
       permission_id: adminPermission.id,
       status: 'ACTIVE',
     },
   });
 
+  const userPermission = await prisma.tbl_permissions.findUnique({
+    where: { name: PermissionType.USER },
+  });
+
+  if (!userPermission) {
+    throw new Error('User permission not found');
+  }
+
+  const user = await prisma.tbl_users.upsert({
+    where: { email: 'user@catcarwash.com' },
+    update: {
+      fullname: 'User',
+      phone: '+1234567890',
+      password: hashedPassword,
+      permission_id: userPermission.id,
+      status: 'ACTIVE',
+    },
+    create: {
+      fullname: 'User',
+      email: 'user@catcarwash.com',
+      phone: '+1234567890',
+      password: hashedPassword,
+      permission_id: userPermission.id,
+      status: 'ACTIVE',
+    },
+  });
+
   console.log(`SuperAdmin employee created with ID: ${superAdmin.id}`);
   console.log(`Technician employee created with ID: ${technician.id}`);
+  console.log(`User created with ID: ${user.id}`);
   console.log('Database seeding completed successfully!');
 };
 
