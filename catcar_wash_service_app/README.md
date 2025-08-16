@@ -1,14 +1,75 @@
+# Nuxt Minimal Starter
 
-## About Vue
+Look at the [Nuxt documentation](https://nuxt.com/docs/getting-started/introduction) to learn more.
 
-Vue.js is a progressive JavaScript framework used for building user interfaces and single-page applications. It is designed to be incrementally adoptable, meaning you can use as much or as little of it as you need. Vue features an approachable core library focused on the view layer only, and it is easy to integrate with other libraries or existing projects.
+## Setup
 
-Key features of Vue include:
+Make sure to install dependencies:
 
-- **Reactive Data Binding:** Vue uses a reactive data binding system that keeps the DOM in sync with your data.
-- **Component-Based Architecture:** Build encapsulated components that manage their own state, then compose them to make complex UIs.
-- **Simplicity and Flexibility:** Vue is easy to learn and use, with a gentle learning curve and clear documentation.
-- **Single File Components:** Vue allows you to write HTML, JavaScript, and CSS in a single `.vue` file for better organization.
-- **Ecosystem:** Vue has a rich ecosystem, including Vue Router for routing and Vuex for state management.
+```bash
+# npm
+npm install
 
-Vue is a great choice for both small and large-scale applications, offering a balance between simplicity and powerful features.
+# pnpm
+pnpm install
+
+# yarn
+yarn install
+
+# bun
+bun install
+```
+
+## Development Server
+
+Start the development server on `http://localhost:3000`:
+
+```bash
+# npm
+npm run dev
+
+# pnpm
+pnpm dev
+
+# yarn
+yarn dev
+
+# bun
+bun run dev
+```
+
+## Production
+
+Build the application for production:
+
+```bash
+# npm
+npm run build
+
+# pnpm
+pnpm build
+
+# yarn
+yarn build
+
+# bun
+bun run build
+```
+
+Locally preview production build:
+
+```bash
+# npm
+npm run preview
+
+# pnpm
+pnpm preview
+
+# yarn
+yarn preview
+
+# bun
+bun run preview
+```
+
+Check out the [deployment documentation](https://nuxt.com/docs/getting-started/deployment) for more information.
