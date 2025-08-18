@@ -27,6 +27,9 @@ importers:
         specifier: ^4.5.1
         version: 4.5.1(vue@3.5.18(typescript@5.9.2))
     devDependencies:
+      typescript:
+        specifier: ^5.9.2
+        version: 5.9.2
       vite-plugin-vuetify:
         specifier: ^2.1.2
         version: 2.1.2(vite@7.1.2(@types/node@24.3.0)(jiti@2.5.1)(terser@5.43.1)(yaml@2.8.1))(vue@3.5.18(typescript@5.9.2))(vuetify@3.9.5)
