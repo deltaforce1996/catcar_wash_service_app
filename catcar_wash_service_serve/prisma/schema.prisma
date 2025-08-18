@@ -28,8 +28,8 @@ enum PermissionType {
 }
 
 enum DeviceType {
-  WARP
-  WAP
+  WASH
+  DRYING
 }
 
 enum DeviceStatus {
@@ -38,9 +38,8 @@ enum DeviceStatus {
 }
 
 enum EventType {
-  COIN
-  PROMPTPAY
-  VORBOSE // NOTE: ถ้าต้องการสะกด VERBOSE ต้องวางแผน migration enum แยกต่างหาก
+ PAYMENT
+ INFO
 }
 
 enum TokenState {
@@ -111,20 +110,19 @@ model tbl_devices {
   information  Json?
   configs      Json?
   owner_id     String
-  register_by  String
-  register_at  DateTime     @default(now())
+  register_by_id  String
   created_at   DateTime     @default(now())
   updated_at   DateTime     @updatedAt
 
   // Relations
   owner         tbl_users @relation(fields: [owner_id], references: [id], onDelete: Cascade)
-  registered_by tbl_emps  @relation(fields: [register_by], references: [id], onDelete: Cascade)
+  registered_by tbl_emps  @relation(fields: [register_by_id], references: [id], onDelete: Cascade)
   device_states tbl_devices_state[]
   device_events tbl_devices_events[]
 
   @@map("tbl_devices")
   @@index([owner_id])
-  @@index([register_by])
+  @@index([register_by_id])
   @@index([status])
   @@index([type])
 }

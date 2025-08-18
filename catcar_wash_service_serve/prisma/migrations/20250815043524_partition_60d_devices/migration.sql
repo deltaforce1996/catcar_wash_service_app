@@ -8,13 +8,13 @@ CREATE TYPE "public"."EmpStatus" AS ENUM ('ACTIVE', 'INACTIVE');
 CREATE TYPE "public"."PermissionType" AS ENUM ('ADMIN', 'TECHNICIAN', 'USER');
 
 -- CreateEnum
-CREATE TYPE "public"."DeviceType" AS ENUM ('WARP', 'WAP');
+CREATE TYPE "public"."DeviceType" AS ENUM ('WASH', 'DRYING');
 
 -- CreateEnum
 CREATE TYPE "public"."DeviceStatus" AS ENUM ('DEPLOYED', 'DISABLED');
 
 -- CreateEnum
-CREATE TYPE "public"."EventType" AS ENUM ('COIN', 'PROMPTPAY', 'VORBOSE');
+CREATE TYPE "public"."EventType" AS ENUM ('PAYMENT', 'INFO');
 
 -- CreateEnum
 CREATE TYPE "public"."TokenState" AS ENUM ('ACTIVATED', 'DISABLED');
@@ -72,8 +72,7 @@ CREATE TABLE "public"."tbl_devices" (
     "information" JSONB,
     "configs" JSONB,
     "owner_id" TEXT NOT NULL,
-    "register_by" TEXT NOT NULL,
-    "register_at" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "register_by_id" TEXT NOT NULL,
     "created_at" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "updated_at" TIMESTAMP(3) NOT NULL,
 
@@ -109,7 +108,7 @@ CREATE UNIQUE INDEX "tbl_emps_email_key" ON "public"."tbl_emps"("email");
 CREATE INDEX "tbl_devices_owner_id_idx" ON "public"."tbl_devices"("owner_id");
 
 -- CreateIndex
-CREATE INDEX "tbl_devices_register_by_idx" ON "public"."tbl_devices"("register_by");
+CREATE INDEX "tbl_devices_register_by_idx" ON "public"."tbl_devices"("register_by_id");
 
 -- CreateIndex
 CREATE INDEX "tbl_devices_status_idx" ON "public"."tbl_devices"("status");
@@ -142,7 +141,7 @@ ALTER TABLE "public"."tbl_emps" ADD CONSTRAINT "tbl_emps_permission_id_fkey" FOR
 ALTER TABLE "public"."tbl_devices" ADD CONSTRAINT "tbl_devices_owner_id_fkey" FOREIGN KEY ("owner_id") REFERENCES "public"."tbl_users"("id") ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE "public"."tbl_devices" ADD CONSTRAINT "tbl_devices_register_by_fkey" FOREIGN KEY ("register_by") REFERENCES "public"."tbl_emps"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+ALTER TABLE "public"."tbl_devices" ADD CONSTRAINT "tbl_devices_register_by_id_fkey" FOREIGN KEY ("register_by_id") REFERENCES "public"."tbl_emps"("id") ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
 ALTER TABLE "public"."tbl_reset_password_token" ADD CONSTRAINT "tbl_reset_password_token_owner_user_id_fkey" FOREIGN KEY ("owner_user_id") REFERENCES "public"."tbl_users"("id") ON DELETE CASCADE ON UPDATE CASCADE;

@@ -8,6 +8,7 @@ import { AuthModule } from './apis/auth';
 import { JwtGlobalModule } from './apis/auth/jwt-global.module';
 import { EmpsModule } from './apis/emps/emps.module';
 import { UsersModule } from './apis/users/users.module';
+import { DevicesModule } from './apis/devices/devices.module';
 
 @Module({
   imports: [
@@ -20,6 +21,7 @@ import { UsersModule } from './apis/users/users.module';
     AuthModule,
     EmpsModule,
     UsersModule,
+    DevicesModule,
   ],
   controllers: [AppController],
   providers: [AppService],
