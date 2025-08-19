@@ -1,0 +1,106 @@
+## AI Code-Generation Rules (Nuxt 3 + Vue 3 + Vuetify 3 + TypeScript)
+
+These are the authoritative rules for any AI that generates or edits code in this frontend.
+
+### Tech Stack and Scope
+
+- **Framework**: Vue 3 with the **Composition API** and Nuxt 3
+- **UI Library**: Vuetify 3
+- **Language**: TypeScript-only (`<script setup lang="ts">` everywhere)
+- **Package manager**: pnpm
+- **Linting**: Nuxt ESLint Module (flat config) — see docs: [Nuxt ESLint Module](https://eslint.nuxt.com/packages/module)
+- **Formatting**: Prettier
+- **State Management**: Pinia (Nuxt integration) — see docs: [Pinia Introduction](https://pinia.vuejs.org/introduction.html)
+- **SEO**: Not required (internal website)
+- **Data fetching**: Out of scope for now (do not introduce `useFetch`/`$fetch` or API calls)
+- **Language policy**: Communicate in English (comments, PRs). All UI strings rendered to users must be Thai.
+
+### Vuetify-first Styling and Modern Design
+
+- **Strict order of preference** for styling:
+  1. Vuetify component props (`color`, `variant`, `rounded`, `elevation`, `density`, `size`, etc.)
+  2. Vuetify utility classes (`pa-*`, `ma-*`, `d-flex`, `align-*`, `justify-*`, typography classes like `text-h6`, sizing like `w-100`, grid via `VContainer`/`VRow`/`VCol`)
+  3. Conditional class bindings for state (e.g., `:class="{ 'opacity-50': disabled }"`)
+  4. Minimal scoped CSS in the same SFC only if absolutely necessary
+  5. Avoid inline `style` attributes; prefer props or utility classes
+- Use Vuetify layout and structure primitives first: `VContainer`, `VRow`, `VCol`, `VSpacer`, `VDivider`, `VSheet`, `VCard`.
+- Maintain a clean, modern aesthetic: generous whitespace, clear hierarchy, consistent spacing (`pa-*` / `ma-*`), modest rounded corners, controlled elevation, and accessible color contrast.
+- Reference: [Vuetify Components & Utilities](https://vuetifyjs.com/en/components/all/#containment)
+
+### Theming with Vuetify JavaScript Color Pack
+
+- Define the application color theme centrally in `plugins/vuetify.ts` using Vuetify’s JavaScript color pack.
+- Establish semantic tokens: `primary`, `secondary`, `success`, `warning`, `info`, `error`, and surface/background colors.
+- Do not hardcode hex colors in components; consume theme tokens through component `color` props or CSS variables exposed by Vuetify.
+- Keep both light and dark variants prepared even if one is the default; toggle via Vuetify theme when needed.
+
+### Composition API and Component Conventions
+
+- Use `<script setup lang="ts">` in all SFCs.
+- Strongly type `props`, `emits`, `refs`, and computed/return types where not obvious.
+- Prefer small, focused components; name files in `PascalCase.vue`.
+- UI strings must be Thai; comments and identifiers remain English.
+
+### State Management with Pinia
+
+- Integrate Pinia via Nuxt’s module (`@pinia/nuxt`); place stores in `stores/`.
+- Define stores with `defineStore` (either option or setup syntax). Provide explicit state types, getters, and actions.
+- Avoid global singletons created via raw `reactive` for cross-component state; use stores instead.
+- Keep stores UI-agnostic; expose primitives and domain logic, not view details.
+
+### ESLint (Nuxt Module) and Prettier
+
+- Use the Nuxt ESLint module with flat config; do not add legacy `.eslintrc*` files. Configure overrides via `withNuxt()` only when necessary. Docs: [Nuxt ESLint Module](https://eslint.nuxt.com/packages/module)
+- Use **Prettier** for formatting. Do not enable ESLint Stylistic unless explicitly requested. Prefer the editor to run Prettier on save.
+- Recommended scripts:
+  - `pnpm lint` → `eslint .`
+  - `pnpm lint:fix` → `eslint . --fix`
+
+### Project Structure (Best Practice)
+
+- `pages/` — Nuxt routes
+- `layouts/` — shared page layouts
+- `components/` — reusable presentational and small logic components
+- `stores/` — Pinia stores
+- `composables/` — reusable Composition API utilities (UI-independent)
+- `plugins/` — Nuxt/Vuetify/Pinia and other plugin initializations
+- `assets/` — unprocessed assets (e.g., icons, images)
+- `styles/` — global styles or tokens if absolutely necessary (keep minimal with Vuetify)
+- `utils/` — pure helpers (no Vue imports)
+- `types/` — shared TypeScript types/interfaces
+
+### TypeScript Guidelines
+
+- No `any`. Prefer precise types and generics when suitable.
+- Type `props` and `emits`:
+  - `const props = defineProps<{ ... }>()`
+  - `const emit = defineEmits<{ (e: 'submit', payload: Foo): void }>()`
+- Type refs and computed values where inference is unclear.
+- Export shared interfaces from `types/` to avoid duplication.
+
+### Routing, Accessibility, and Internationalization
+
+- Use Nuxt conventions for routing (file-based in `pages/`).
+- Ensure accessible components: proper labels, roles, keyboard behavior for dialogs/menus.
+- All visible UI strings must be Thai. Avoid mixing languages in the UI.
+
+### Dependency Policy
+
+- Prefer built-in Nuxt/Vue/Vuetify solutions before adding new dependencies.
+- Use pnpm for all commands and dependency management.
+
+### Non-Goals (for now)
+
+- No SEO work (internal site).
+- No data fetching logic (`useFetch`/`$fetch`) or external API integration until requested.
+
+### Quick Commands (pnpm)
+
+- Install linting/formatting if needed: `pnpm add -D @nuxt/eslint eslint typescript prettier`
+- Install Pinia in Nuxt: `pnpm add @pinia/nuxt pinia`
+
+### References
+
+- **Nuxt ESLint Module**: https://eslint.nuxt.com/packages/module
+- **Vuetify Components & Utilities**: https://vuetifyjs.com/en/components/all/#containment
+- **Pinia (Vue Store)**: https://pinia.vuejs.org/introduction.html
