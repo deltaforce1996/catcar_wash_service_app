@@ -47,12 +47,16 @@ export class DevicesService {
 
   async searchDevices(q: SearchDeviceDto): Promise<PaginatedResult<DeviceRow>> {
     const pairs = parseKeyValueOnly(q.query ?? '', ALLOWED);
-
+    console.log(pairs);
     const ands: Prisma.tbl_devicesWhereInput['AND'] = [];
     for (const { key, value } of pairs) {
       switch (key) {
         case 'id':
+          ands.push({ id: { contains: value, mode: 'insensitive' } });
+          break;
         case 'name':
+          ands.push({ name: { contains: value, mode: 'insensitive' } });
+          break;
         case 'owner':
           ands.push({ owner: { fullname: { contains: value, mode: 'insensitive' } } });
           break;
@@ -61,14 +65,15 @@ export class DevicesService {
           break;
         case 'type': {
           const v = value.toUpperCase();
-          if (v === 'WARP' || v === 'WAP') {
+          if (v === DeviceType.WASH || v === DeviceType.DRYING) {
             ands.push({ type: v as DeviceType });
           }
           break;
         }
         case 'status': {
           const v = value.toUpperCase();
-          if (v === 'DEPLOYED' || v === 'DISABLED') {
+          console.log(v);
+          if (v === DeviceStatus.DEPLOYED || v === DeviceStatus.DISABLED) {
             ands.push({ status: v as DeviceStatus });
           }
           break;
@@ -87,7 +92,9 @@ export class DevicesService {
         where,
         skip,
         take: safeLimit,
-        orderBy: { created_at: 'desc' },
+        orderBy: {
+          [q.sort_by ?? 'created_at']: q.sort_order ?? 'desc',
+        },
         select: devicePublicSelect,
       }),
       this.prisma.tbl_devices.count({ where }),

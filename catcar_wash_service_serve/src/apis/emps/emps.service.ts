@@ -59,7 +59,8 @@ export class EmpsService {
         }
         case 'permission': {
           const v = value.toUpperCase() as PermissionType;
-          ands.push({ permission: { name: v } });
+          const key_name: string = `permission.name`;
+          ands.push({ [key_name]: { contains: v, mode: 'insensitive' } });
           break;
         }
       }

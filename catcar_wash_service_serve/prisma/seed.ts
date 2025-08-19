@@ -1,5 +1,7 @@
 import { PrismaClient, PermissionType } from '@prisma/client';
 import * as bcrypt from 'bcrypt';
+import { DeviceDryingConfig } from '../src/shared/device-drying-config';
+import { DeviceWashConfig } from '../src/shared/device-wash-config';
 
 const prisma = new PrismaClient();
 
@@ -131,28 +133,65 @@ const main = async () => {
     },
   });
 
+  const washConfig = new DeviceWashConfig({
+    hp_water: 10,
+    foam: 10,
+    air: 10,
+    water: 10,
+    vacuum: 10,
+    black_tire: 10,
+    wax: 10,
+    air_conditioner: 10,
+    parking_fee: 10,
+    promotion: 10,
+    on_time: '00:00',
+    off_time: '23:59',
+    coin: true,
+    promptpay: true,
+    bank_note: true,
+  });
+
+  const dryingConfig = new DeviceDryingConfig({
+    blow_dust: 10,
+    sterilize: 10,
+    uv: 10,
+    ozone: 10,
+    drying: 10,
+    perfume: 10,
+    start_service_fee: 10,
+    promotion: 10,
+    on_time: '00:00',
+    off_time: '23:59',
+    coin: true,
+    promptpay: true,
+    bank_note: true,
+  });
+
   const devicesUser = await prisma.tbl_devices.createMany({
     data: [
       {
         name: 'Device 1',
-        type: 'WARP',
+        type: 'WASH',
         status: 'DEPLOYED',
         owner_id: user.id,
         register_by_id: technician.id,
+        configs: washConfig.configs || {},
       },
       {
         name: 'Device 2',
-        type: 'WAP',
+        type: 'DRYING',
         status: 'DISABLED',
         owner_id: user.id,
         register_by_id: technician.id,
+        configs: dryingConfig.configs || {},
       },
       {
         name: 'Device 3',
-        type: 'WARP',
+        type: 'DRYING',
         status: 'DEPLOYED',
         owner_id: user.id,
         register_by_id: technician.id,
+        configs: dryingConfig.configs || {},
       },
     ],
   });
@@ -161,32 +200,35 @@ const main = async () => {
     data: [
       {
         name: 'Device 4',
-        type: 'WARP',
+        type: 'WASH',
         status: 'DISABLED',
         owner_id: user2.id,
         register_by_id: technician.id,
+        configs: washConfig.configs || {},
       },
       {
         name: 'Device 5',
-        type: 'WAP',
+        type: 'DRYING',
         status: 'DEPLOYED',
         owner_id: user2.id,
         register_by_id: technician.id,
+        configs: dryingConfig.configs || {},
       },
       {
         name: 'Device 6',
-        type: 'WARP',
+        type: 'WASH',
         status: 'DEPLOYED',
         owner_id: user2.id,
         register_by_id: technician.id,
+        configs: washConfig.configs || {},
       },
       {
-        id: '1234567890',
         name: 'Device 7',
-        type: 'WAP',
+        type: 'WASH',
         status: 'DEPLOYED',
         owner_id: user2.id,
         register_by_id: technician.id,
+        configs: dryingConfig.configs || {},
       },
     ],
   });
@@ -200,7 +242,7 @@ const main = async () => {
   console.log('Database seeding completed successfully!');
 };
 
-main()
+void main()
   .catch((e) => {
     console.error('Error during seeding:', e);
     process.exit(1);

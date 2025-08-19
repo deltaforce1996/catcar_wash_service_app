@@ -1,4 +1,4 @@
-import { Body, Controller, Delete, Get, Param, Post, Put, Query, UseFilters, UseGuards } from '@nestjs/common';
+import { Body, Controller, Get, Param, Post, Put, Query, UseFilters, UseGuards } from '@nestjs/common';
 import { DeviceRow, DevicesService } from './devices.service';
 import { AllExceptionFilter } from 'src/common';
 import { SearchDeviceDto } from './dtos/search-device.dto';
@@ -66,16 +66,6 @@ export class DevicesController {
       success: true,
       data: result,
       message: 'Device updated successfully',
-    };
-  }
-
-  @Delete('delete-by-id/:id')
-  async deleteDeviceById(@Param('id') id: string): Promise<SuccessResponse<DeviceRow>> {
-    const result = await this.devicesService.deleteById(id);
-    return {
-      success: true,
-      data: result,
-      message: 'Device deleted successfully',
     };
   }
 }

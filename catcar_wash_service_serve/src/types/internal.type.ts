@@ -22,9 +22,9 @@ export interface PaginatedResult<T> {
   totalPages: number;
 }
 
-type Parameter = { value: number; unit: string };
+export type Parameter = { value: number; unit: string; description: string };
 
-export type MicrowaveSetup = {
+export type WashSetup = {
   hp_water: Parameter;
   foam: Parameter;
   air: Parameter;
@@ -37,7 +37,7 @@ export type MicrowaveSetup = {
   promotion: Parameter;
 };
 
-export type WrapCarSetup = {
+export type DryingSetup = {
   blow_dust: Parameter;
   sterilize: Parameter;
   uv: Parameter;
