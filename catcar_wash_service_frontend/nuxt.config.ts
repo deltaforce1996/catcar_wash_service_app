@@ -15,6 +15,7 @@ export default defineNuxtConfig({
       });
     },
     "@nuxt/eslint",
+    "@pinia/nuxt",
   ],
   vite: {
     vue: {
