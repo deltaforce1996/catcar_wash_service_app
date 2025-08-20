@@ -16,7 +16,7 @@ These are the authoritative rules for any AI that generates or edits code in thi
 - **UI Library**: Vuetify 3
 - **Language**: TypeScript-only (`<script setup lang="ts">` everywhere)
 - **Package manager**: pnpm
-- **Linting**: Nuxt ESLint Module (flat config) — see docs: [Nuxt ESLint Module](https://eslint.nuxt.com/packages/module)
+- **Linting**: Nuxt ESLint Module (flat config) — extend `plugin:vue/recommended` and `plugin:@typescript-eslint/recommended`. Docs: [Nuxt ESLint Module](https://eslint.nuxt.com/packages/module)
 - **Formatting**: Prettier
 - **State Management**: Pinia (Nuxt integration) — see docs: [Pinia Introduction](https://pinia.vuejs.org/introduction.html)
 - **SEO**: Not required (internal website)
@@ -71,6 +71,21 @@ These are the authoritative rules for any AI that generates or edits code in thi
   - `pnpm lint` → `eslint .`
   - `pnpm lint:fix` → `eslint . --fix`
 
+- Strictly enforce `vue/attributes-order` (no exceptions). Follow the official order exactly:
+  1. DEFINITION (e.g., `is`)
+  2. LIST_RENDERING (`v-for`)
+  3. CONDITIONALS (`v-if`, `v-else-if`, `v-else`, `v-show`, `v-cloak`)
+  4. RENDER_MODIFIERS (`v-once`, `v-pre`)
+  5. GLOBAL ATTRIBUTES (`id`)
+  6. UNIQUE ATTRIBUTES (`ref`, `key`, `v-slot`, `slot`)
+  7. TWO_WAY_BINDING (`v-model` and `v-model:*`)
+  8. OTHER_DIRECTIVES (any other `v-*` directives)
+  9. OTHER_ATTR (plain attributes and bound props like `class`, `type`, `:prop`)
+  10. EVENTS (`@click`, `v-on:*`)
+  11. CONTENT (`v-text`, `v-html`)
+
+- Code generation must respect this order in all Vue templates (including Vuetify components). PRs that violate the order should be corrected to comply with the rule.
+
 ### Project Structure (Best Practice)
 
 - `pages/` — Nuxt routes
@@ -112,5 +127,7 @@ These are the authoritative rules for any AI that generates or edits code in thi
 ### References
 
 - **Nuxt ESLint Module**: https://eslint.nuxt.com/packages/module
+- **eslint-plugin-vue**: https://eslint.vuejs.org/
+- **vue/attributes-order rule**: https://eslint.vuejs.org/rules/attributes-order.html
 - **Vuetify Components & Utilities**: https://vuetifyjs.com/en/components/all/#containment
 - **Pinia (Vue Store)**: https://pinia.vuejs.org/introduction.html
