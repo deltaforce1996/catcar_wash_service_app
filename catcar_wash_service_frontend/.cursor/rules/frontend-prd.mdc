@@ -1,9 +1,14 @@
 ---
-alwaysApply: true
+globs: catcar_wash_service_frontend/*
+alwaysApply: false
 ---
 ## AI Code-Generation Rules (Nuxt 3 + Vue 3 + Vuetify 3 + TypeScript)
 
 These are the authoritative rules for any AI that generates or edits code in this frontend.
+
+### Summary
+- **Bussiness name**: CatCarWash
+- **One-liner**: car washcoin operated/ ล้างรถหยอดเหรียญ
 
 ### Tech Stack and Scope
 
@@ -32,7 +37,14 @@ These are the authoritative rules for any AI that generates or edits code in thi
 
 ### Theming with Vuetify JavaScript Color Pack
 
-- Define the application color theme centrally in `plugins/vuetify.ts` using Vuetify’s JavaScript color pack.
+- Define the application color theme centrally in `plugins/vuetify.ts` using Vuetify's JavaScript color pack.
+- **Required Color Scheme**:
+  - **Light Theme**: Primary colors should be orange and yellow, with white backgrounds and appropriate contrast colors
+  - **Dark Theme**: Primary colors should be orange and yellow, with gray backgrounds and surfaces
+- **Theme Switching**: Must support dynamic switching between light and dark themes
+  - Implement a theme toggle component/control accessible to users
+  - Persist theme preference (localStorage or similar)
+  - Default to light theme on first visit
 - Establish semantic tokens: `primary`, `secondary`, `success`, `warning`, `info`, `error`, and surface/background colors.
 - Do not hardcode hex colors in components; consume theme tokens through component `color` props or CSS variables exposed by Vuetify.
 - Keep both light and dark variants prepared even if one is the default; toggle via Vuetify theme when needed.
