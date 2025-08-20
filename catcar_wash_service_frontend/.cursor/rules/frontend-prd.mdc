@@ -1,3 +1,6 @@
+---
+alwaysApply: true
+---
 ## AI Code-Generation Rules (Nuxt 3 + Vue 3 + Vuetify 3 + TypeScript)
 
 These are the authoritative rules for any AI that generates or edits code in this frontend.
@@ -93,11 +96,6 @@ These are the authoritative rules for any AI that generates or edits code in thi
 
 - No SEO work (internal site).
 - No data fetching logic (`useFetch`/`$fetch`) or external API integration until requested.
-
-### Quick Commands (pnpm)
-
-- Install linting/formatting if needed: `pnpm add -D @nuxt/eslint eslint typescript prettier`
-- Install Pinia in Nuxt: `pnpm add @pinia/nuxt pinia`
 
 ### References
 
