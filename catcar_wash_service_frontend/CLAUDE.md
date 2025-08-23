@@ -34,6 +34,7 @@ pnpm lint:fix
 
 - **Framework**: Nuxt 3 with Vue 3 Composition API
 - **UI Library**: Vuetify 3 (with Material Design Icons)
+- **Charts**: Chart.js with vue-chartjs
 - **Language**: TypeScript only (`<script setup lang="ts">`)
 - **State Management**: Pinia (via @pinia/nuxt)
 - **Linting**: Nuxt ESLint Module (flat config)
