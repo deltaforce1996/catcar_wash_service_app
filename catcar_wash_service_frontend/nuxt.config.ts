@@ -10,7 +10,7 @@ export default defineNuxtConfig({
   modules: [
     (_options, nuxt) => {
       nuxt.hooks.hook("vite:extendConfig", (config) => {
-        // @ts-expect-error
+        // @ts-expect-error - Vite plugin types are not fully compatible with Vuetify
         config.plugins.push(vuetify({ autoImport: true }));
       });
     },

@@ -37,21 +37,29 @@ pnpm lint:fix
 - **Language**: TypeScript only (`<script setup lang="ts">`)
 - **State Management**: Pinia (via @pinia/nuxt)
 - **Linting**: Nuxt ESLint Module (flat config)
+- **Formatting**: Prettier
 
 ### Project Structure
 
 - `pages/` — File-based routing
 - `layouts/` — Shared page layouts
+- `components/` — reusable presentational and small logic components
+- `stores/` — Pinia stores
+- `composables/` — reusable Composition API utilities (UI-independent)
 - `plugins/vuetify.ts` — Vuetify configuration and theming
 - `public/` — Static assets (logos, character images)
   - `Logo/` — Brand logos
   - `Character/` — Cat character illustrations
+- `styles/` — global styles or tokens if absolutely necessary (keep minimal with Vuetify)
+- `utils/` — pure helpers (no Vue imports)
+- `types/` — shared TypeScript types/interfaces
 
 ## Critical Requirements
 
 ### Thai Language Policy
 
 **ALL user-facing text MUST be in Thai** - this is non-negotiable:
+
 - All headings, buttons, labels, placeholders
 - All form validation messages and error messages
 - All navigation, notifications, and modal content
@@ -62,8 +70,9 @@ pnpm lint:fix
 ### Vue Component Conventions
 
 **Strict attribute order** must be followed (enforced by ESLint):
+
 1. DEFINITION (`is`)
-2. LIST_RENDERING (`v-for`) 
+2. LIST_RENDERING (`v-for`)
 3. CONDITIONALS (`v-if`, `v-else-if`, `v-else`, `v-show`, `v-cloak`)
 4. RENDER_MODIFIERS (`v-once`, `v-pre`)
 5. GLOBAL ATTRIBUTES (`id`)
@@ -77,18 +86,23 @@ pnpm lint:fix
 ### Styling Approach (Vuetify-first)
 
 **Order of preference**:
-1. Vuetify component props (`color`, `variant`, `elevation`, etc.)
-2. Vuetify utility classes (`pa-*`, `ma-*`, `d-flex`, `text-h6`, etc.)
+
+1. Vuetify component props (`color`, `variant`, `rounded`, `elevation`, `density`, `size`, etc.)
+2. Vuetify utility classes (`pa-*`, `ma-*`, `d-flex`, `align-*`, `justify-*`, typography classes like `text-h6`, sizing like `w-100`, grid via `VContainer`/`VRow`/`VCol`)
 3. Conditional class bindings for state
-4. Minimal scoped CSS only if absolutely necessary
-5. Avoid inline styles
+4. Minimal scoped CSS or inline styles only if absolutely necessary
+
+- Use Vuetify layout and structure primitives first: `VContainer`, `VRow`, `VCol`, `VSpacer`, `VDivider`, `VSheet`, `VCard`.
+- Maintain a clean, modern aesthetic: generous whitespace, clear hierarchy, consistent spacing (`pa-*` / `ma-*`), modest rounded corners, controlled elevation, and accessible color contrast.
+- Reference: [Vuetify Components & Utilities](https://vuetifyjs.com/en/components/all/#containment)
 
 ### Theming
 
 - Define colors centrally in `plugins/vuetify.ts`
 - **Required colors**: Orange and yellow primary colors
-- Support both light (default) and dark themes
+- Support both dark (default) and light themes
 - Use theme tokens, not hardcoded colors
+- Establish semantic tokens: `primary`, `secondary`, `success`, `warning`, `info`, `error`, and surface/background colors.
 
 ## Limitations
 
@@ -99,6 +113,9 @@ pnpm lint:fix
 ## After Making Changes
 
 Always run linting after modifications:
+
 ```bash
 pnpm lint:fix
 ```
+
+If lint error after running command attempt to fix it.

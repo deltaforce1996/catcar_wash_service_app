@@ -2,11 +2,13 @@
 globs: catcar_wash_service_frontend/*
 alwaysApply: false
 ---
+
 ## AI Code-Generation Rules (Nuxt 3 + Vue 3 + Vuetify 3 + TypeScript)
 
 These are the authoritative rules for any AI that generates or edits code in this frontend.
 
 ### Summary
+
 - **Bussiness name**: CatCarWash
 - **One-liner**: car washcoin operated/ ล้างรถหยอดเหรียญ
 
@@ -68,10 +70,12 @@ These are the authoritative rules for any AI that generates or edits code in thi
 - Use the Nuxt ESLint module with flat config; do not add legacy `.eslintrc*` files. Configure overrides via `withNuxt()` only when necessary. Docs: [Nuxt ESLint Module](https://eslint.nuxt.com/packages/module)
 - Use **Prettier** for formatting. Do not enable ESLint Stylistic unless explicitly requested. Prefer the editor to run Prettier on save.
 - Recommended scripts:
+
   - `pnpm lint` → `eslint .`
   - `pnpm lint:fix` → `eslint . --fix`
 
 - Strictly enforce `vue/attributes-order` (no exceptions). Follow the official order exactly:
+
   1. DEFINITION (e.g., `is`)
   2. LIST_RENDERING (`v-for`)
   3. CONDITIONALS (`v-if`, `v-else-if`, `v-else`, `v-show`, `v-cloak`)
