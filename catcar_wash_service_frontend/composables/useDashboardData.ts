@@ -50,6 +50,6 @@ export const useDashboardData = () => {
   }
 
   return {
-    dashboardData: readonly(dashboardData)
+    dashboardData: dashboardData
   }
 }
