@@ -26,7 +26,7 @@ import { Line } from "vue-chartjs";
 import { useTheme } from "vuetify";
 import { computed, ref } from "vue";
 
-const theme  = useTheme();
+const theme = useTheme();
 
 ChartJS.register(
   CategoryScale,
@@ -79,14 +79,6 @@ const chartOptions = computed(
   (): ChartOptions<"line"> => ({
     responsive: true,
     maintainAspectRatio: false,
-    layout: {
-      padding: {
-        top: 20,
-        right: 20,
-        bottom: 20,
-        left: 10,
-      },
-    },
     plugins: {
       legend: {
         display: false,
