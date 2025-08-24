@@ -1,6 +1,13 @@
 {
   "permissions": {
-    "allow": ["Edit", "Write", "MultiEdit", "mcp__playwright", "mcp__context7"],
+    "allow": [
+      "Edit",
+      "Write",
+      "MultiEdit",
+      "mcp__playwright",
+      "mcp__context7",
+      "Read(./catcar_wash_service_frontend/.playwright-mcp/*)"
+    ],
     "deny": [],
     "ask": []
   }

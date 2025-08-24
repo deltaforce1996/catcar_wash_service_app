@@ -99,11 +99,12 @@ pnpm lint:fix
 
 ### Theming
 
-- Define colors centrally in `plugins/vuetify.ts`
-- **Required colors**: Orange and yellow primary colors
+- **All colors are defined in `plugins/vuetify.ts`** - reference this file for available theme colors
+- Current available colors: `primary` (#f57f2a), `primary-darken-1` (#e56b1a), `secondary` (#ff9800), `secondary-darken-1` (#f57c00), `accent` (#ffc107), `error`, `warning`, `info`, `success`, and surface variants
 - Support both dark (default) and light themes
-- Use theme tokens, not hardcoded colors
-- Establish semantic tokens: `primary`, `secondary`, `success`, `warning`, `info`, `error`, and surface/background colors.
+- **NEVER hallucinate theme color names** - only use colors defined in the Vuetify config
+- If additional colors are needed, add them to the `plugins/vuetify.ts` theme configuration first
+- Use theme tokens (e.g., `color="primary"`) not hardcoded hex values
 
 ## Limitations
 

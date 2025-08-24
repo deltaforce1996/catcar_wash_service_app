@@ -8,7 +8,12 @@
       "mcp__playwright__browser_take_screenshot",
       "mcp__playwright__browser_click",
       "mcp__playwright__browser_close",
-      "mcp__playwright__browser_snapshot"
+      "mcp__playwright__browser_snapshot",
+      "Bash(pnpm dev:*)",
+      "WebFetch(domain:vuetifyjs.com)",
+      "mcp__ide__getDiagnostics",
+      "Bash(npm run lint)",
+      "Bash(npm run build:*)"
     ],
     "deny": [],
     "ask": []
