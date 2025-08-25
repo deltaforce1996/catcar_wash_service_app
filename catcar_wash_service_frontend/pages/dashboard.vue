@@ -87,12 +87,12 @@
       </v-card-title>
 
       <!-- Filter Section -->
-      <v-card-text class="pb-0">
-        <v-row class="mb-4">
+      <v-card-text class="pb-2">
+        <v-row>
           <!-- Search Bar -->
           <v-col cols="12" md="4">
             <v-text-field
-              v-model="searchQuery"
+              v-model="tempSearchQuery"
               prepend-inner-icon="mdi-magnify"
               variant="outlined"
               density="compact"
@@ -110,7 +110,7 @@
                 <template #activator="{ props }">
                   <v-text-field
                     v-bind="props"
-                    :model-value="formatTimeToString(startTimeObj)"
+                    :model-value="formatTimeToString(tempStartTimeObj)"
                     readonly
                     prepend-inner-icon="mdi-clock-outline"
                     variant="outlined"
@@ -124,10 +124,12 @@
                   <div class="d-flex flex-column ga-3">
                     <div class="text-subtitle-2">เวลาเริ่มต้น</div>
                     <v-time-picker
-                      v-model="startTimeObj"
+                      v-model="tempStartTimeObj"
                       scrollable
                       :max="
-                        endTimeObj ? formatTimeToString(endTimeObj) : undefined
+                        tempEndTimeObj
+                          ? formatTimeToString(tempEndTimeObj)
+                          : undefined
                       "
                       class="time-picker-compact"
                     />
@@ -135,7 +137,7 @@
                       <v-btn
                         variant="text"
                         size="small"
-                        @click="startTimeObj = null"
+                        @click="tempStartTimeObj = null"
                       >
                         ล้าง
                       </v-btn>
@@ -156,7 +158,7 @@
                 <template #activator="{ props }">
                   <v-text-field
                     v-bind="props"
-                    :model-value="formatTimeToString(endTimeObj)"
+                    :model-value="formatTimeToString(tempEndTimeObj)"
                     readonly
                     prepend-inner-icon="mdi-clock-outline"
                     variant="outlined"
@@ -170,11 +172,11 @@
                   <div class="d-flex flex-column ga-3">
                     <div class="text-subtitle-2">เวลาสิ้นสุด</div>
                     <v-time-picker
-                      v-model="endTimeObj"
+                      v-model="tempEndTimeObj"
                       scrollable
                       :min="
-                        startTimeObj
-                          ? formatTimeToString(startTimeObj)
+                        tempStartTimeObj
+                          ? formatTimeToString(tempStartTimeObj)
                           : undefined
                       "
                       class="time-picker-compact"
@@ -183,7 +185,7 @@
                       <v-btn
                         variant="text"
                         size="small"
-                        @click="endTimeObj = null"
+                        @click="tempEndTimeObj = null"
                       >
                         ล้าง
                       </v-btn>
@@ -203,18 +205,52 @@
 
           <!-- Service Type Filter -->
           <v-col cols="12" md="4">
-            <v-select
-              v-model="selectedServiceTypes"
+            <v-combobox
+              v-model="tempSelectedServiceTypes"
               :items="serviceTypeOptions"
+              label="เลือกประเภทบริการ"
+              prepend-inner-icon="mdi-filter-variant"
               variant="outlined"
               density="compact"
-              placeholder="เลือกประเภทบริการ"
-              prepend-inner-icon="mdi-filter-variant"
-              multiple
               chips
+              clearable
               closable-chips
+              multiple
               hide-details
-            />
+            >
+              <template #chip="{ props, item }">
+                <v-chip
+                  v-bind="props"
+                  :color="getServiceTypeColor(item.raw)"
+                  size="small"
+                  variant="tonal"
+                >
+                  {{ item.raw }}
+                </v-chip>
+              </template>
+            </v-combobox>
+          </v-col>
+        </v-row>
+
+        <!-- Filter Actions -->
+        <v-row class="mb-2">
+          <v-col cols="12" class="d-flex justify-end ga-2">
+            <v-btn
+              variant="outlined"
+              size="small"
+              prepend-icon="mdi-refresh"
+              @click="clearAllFilters"
+            >
+              ล้างตัวกรอง
+            </v-btn>
+            <v-btn
+              color="primary"
+              size="small"
+              prepend-icon="mdi-check"
+              @click="applyFilters"
+            >
+              ยืนยันตัวกรอง
+            </v-btn>
           </v-col>
         </v-row>
       </v-card-text>
@@ -283,6 +319,12 @@ const startTimeObj = ref<TimeObject | Date | string | null>(null);
 const endTimeObj = ref<TimeObject | Date | string | null>(null);
 const selectedServiceTypes = ref<string[]>([]);
 
+// Temporary filter variables (for pending changes)
+const tempSearchQuery = ref("");
+const tempStartTimeObj = ref<TimeObject | Date | string | null>(null);
+const tempEndTimeObj = ref<TimeObject | Date | string | null>(null);
+const tempSelectedServiceTypes = ref<string[]>([]);
+
 // Service type options
 const serviceTypeOptions = ["เบสิก", "ดีลักซ์", "พรีเมียม", "จักรยานยนต์"];
 
@@ -312,6 +354,35 @@ const formatTimeToString = (
 
   return "";
 };
+
+// Main filter actions
+const applyFilters = () => {
+  searchQuery.value = tempSearchQuery.value;
+  startTimeObj.value = tempStartTimeObj.value;
+  endTimeObj.value = tempEndTimeObj.value;
+  selectedServiceTypes.value = [...tempSelectedServiceTypes.value];
+};
+
+const clearAllFilters = () => {
+  // Clear both temp and actual values
+  tempSearchQuery.value = "";
+  tempStartTimeObj.value = null;
+  tempEndTimeObj.value = null;
+  tempSelectedServiceTypes.value = [];
+
+  searchQuery.value = "";
+  startTimeObj.value = null;
+  endTimeObj.value = null;
+  selectedServiceTypes.value = [];
+};
+
+// Initialize temp values on component mount
+onMounted(() => {
+  tempSearchQuery.value = searchQuery.value;
+  tempStartTimeObj.value = startTimeObj.value;
+  tempEndTimeObj.value = endTimeObj.value;
+  tempSelectedServiceTypes.value = [...selectedServiceTypes.value];
+});
 
 const kpiData = computed(() => [
   // {
@@ -488,19 +559,6 @@ const getServiceTypeColor = (serviceType: string) => {
   padding: 20px 24px 8px 24px !important;
 }
 
-/* Time picker styling */
-.time-picker-compact :deep(.v-time-picker) {
-  max-width: 280px;
-}
-
-.time-picker-compact :deep(.v-time-picker__controls) {
-  padding: 8px !important;
-}
-
-.time-picker-compact :deep(.v-time-picker__clock) {
-  margin: 8px !important;
-}
-
 /* Mobile responsiveness */
 @media (max-width: 960px) {
   .dashboard-container {
@@ -519,10 +577,6 @@ const getServiceTypeColor = (serviceType: string) => {
   :deep(.v-card-title) {
     font-size: 1rem !important;
     padding: 16px 20px 8px 20px !important;
-  }
-
-  .time-picker-compact :deep(.v-time-picker) {
-    max-width: 240px;
   }
 }
 
