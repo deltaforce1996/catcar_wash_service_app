@@ -112,6 +112,97 @@ pnpm lint:fix
 - **No SEO work**: Internal website only
 - **TypeScript strict**: No `any` types, properly type props and emits
 
+## Dashboard Design System & Patterns
+
+### Layout Structure
+
+**Dashboard Container**
+
+- Max-width: 1400px with auto centering
+- Responsive padding: 24px (desktop) → 16px (tablet) → 12px (mobile)
+
+**Section Hierarchy**
+
+1. **Header Section** (`mb-8`): Page title + action buttons (date picker, filter, export)
+2. **KPI Cards Section** (`mb-8`): Three-column grid for metrics with charts
+3. **Data Table Section**: Card container with filters and table
+
+### Component Patterns
+
+**Filter System Architecture**
+
+- **Temporary State Pattern**: All filters use temp variables until "ยืนยันตัวกรอง" (Confirm) is clicked
+- **Filter Row Layout**: 3-column grid (search | time range | service type)
+- **Filter Actions**: Right-aligned with 6-unit top margin (`mt-6`) for proper spacing
+- **Consistent Field Props**: `variant="outlined"`, `density="compact"`, `hide-details`
+
+**Data Table Enhancements**
+
+- Custom slot templates for all columns
+- Money formatting: `text-success` class with Thai locale
+- Chips in table use `variant="tonal"` vs `variant="flat"` in filters
+- Consistent typography: `text-body-2` with `font-weight-medium` for emphasis
+
+### Spacing & Typography Scale
+
+**Consistent Margin Classes**
+
+- Section separation: `mb-8` (32px)
+- Filter actions: `mt-6` (24px)
+- Card content: `pa-6` (24px for card titles)
+- Form field gaps: `ga-2` or `ga-3`
+
+**Typography Hierarchy**
+
+- Page titles: `text-h4 font-weight-bold`
+- Card titles: `text-h5 font-weight-bold`
+- Subtitles: `text-subtitle-2`
+- Table content: `text-body-2`
+
+### Responsive Behavior
+
+**Breakpoint Strategy**
+
+- Desktop: Full 3-column layout
+- Tablet (≤960px): Maintained layout with reduced padding
+- Mobile (≤600px): Stacked filters, minimal spacing
+
+### State Management Patterns
+
+**Filter Workflow**
+
+1. All user inputs modify temporary variables (`temp*`)
+2. Only "ยืนยันตัวกรอง" applies temp values to actual filter state
+3. "ล้างตัวกรอง" clears both temp and actual values
+4. `onMounted()` initializes temp values from actual state
+
+**Color Semantic System**
+
+```javascript
+const getServiceTypeColor = (serviceType: string) => {
+  switch (serviceType) {
+    case "เบสิก":
+      return "primary";
+    case "ดีลักซ์":
+      return "secondary";
+    case "พรีเมียม":
+      return "success";
+    case "จักรยานยนต์":
+      return "info";
+    default:
+      return "primary";
+  }
+};
+```
+
+### Critical Design Rules
+
+1. **Always use temporary state for filters** - never directly modify filter state
+2. **Maintain chip color consistency** - same colors across filter and table
+3. **Follow spacing scale** - use Vuetify's spacing units (`pa-*`, `ma-*`, `ga-*`)
+4. **Preserve Thai text formatting** - proper locale for numbers and dates
+5. **Keep responsive scaling** - test all breakpoints for filter usability
+
 ## After Making Changes
 
 Always run linting after modifications:
