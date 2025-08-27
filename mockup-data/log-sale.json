@@ -1,0 +1,64 @@
+{
+  "success": true,
+  "message": "Device event logs fetched successfully",
+  "data": {
+    "items": [
+      {
+        "id": "cmetzomem01o7zscsi5agd4q6",
+        "device_id": "cmetzolxi000czscs586lkbsb",
+        "payload": {
+          "qr": {
+            "net_amount": 59
+          },
+          "bank": 79,
+          "coin": 21,
+          "type": "PAYMENT",
+          "type_log": "PAYMENT",
+          "timestemp": 1763656556738
+        },
+        "type": "PAYMENT",
+        "created_at": "2025-11-20T16:35:56.738Z",
+        "device": {
+          "id": "cmetzolxi000czscs586lkbsb",
+          "name": "Device 2",
+          "type": "DRYING",
+          "owner": {
+            "id": "cmetzolx90008zscsxf0cawsn",
+            "fullname": "User",
+            "email": "user@catcarwash.com"
+          }
+        }
+      },
+      {
+        "id": "cmetzomis09gjzscsu6tivdz2",
+        "device_id": "cmetzolxq000hzscs4ylyks0w",
+        "payload": {
+          "qr": {
+            "net_amount": 76
+          },
+          "bank": 62,
+          "coin": 66,
+          "type": "PAYMENT",
+          "type_log": "PAYMENT",
+          "timestemp": 1763656515851
+        },
+        "type": "PAYMENT",
+        "created_at": "2025-11-20T16:35:15.851Z",
+        "device": {
+          "id": "cmetzolxq000hzscs4ylyks0w",
+          "name": "Device 7",
+          "type": "WASH",
+          "owner": {
+            "id": "cmetzolxd000azscs41zpflun",
+            "fullname": "User 2",
+            "email": "user2@catcarwash.com"
+          }
+        }
+      }
+    ],
+    "total": 75,
+    "page": 1,
+    "limit": 2,
+    "totalPages": 38
+  }
+}
