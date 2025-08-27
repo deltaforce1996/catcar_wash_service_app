@@ -1,75 +1,140 @@
 <template>
-  <div>
+  <div class="d-flex flex-column align-center justify-center pa-4">
+    <!-- Welcome Section -->
     <div class="text-center mb-6">
-      <h2 class="text-h4 font-weight-bold mb-2">ยินดีต้อนรับกลับมา!</h2>
-      <p class="text-body-1 text-grey-darken-1">
-        กรุณาลงชื่อเข้าใช้เพื่อดำเนินการต่อ
+      <v-avatar 
+        size="60" 
+        class="mb-4 gradient-avatar"
+        color="transparent"
+      >
+        <v-icon icon="mdi-paw" size="32" color="primary" />
+      </v-avatar>
+      
+      <h1 class="text-h4 font-weight-bold gradient-text mb-2">
+        ยินดีต้อนรับกลับมา!
+      </h1>
+      
+      <p class="text-body-2 text-medium-emphasis">
+        กรุณาลงชื่อเข้าใช้เพื่อเข้าสู่ระบบจัดการ Cat Car Wash
       </p>
     </div>
 
-    <v-form class="login-form" @submit.prevent="handleLogin">
-      <v-text-field
-        v-model="email"
-        label="อีเมล"
-        type="email"
-        variant="outlined"
-        prepend-inner-icon="mdi-email-outline"
-        class="mb-5"
-        :rules="emailRules"
-        required
-      />
+    <!-- Vuetify Form Card -->
+    <v-card
+      class="w-100 glass-card"
+      max-width="450"
+      elevation="8"
+      rounded="xl"
+    >
+      <v-card-text class="pa-6">
+        <v-form @submit.prevent="handleLogin">
+          <!-- Email Field -->
+          <div class="mb-4">
+            <v-label class="text-caption font-weight-medium text-uppercase mb-1">
+              อีเมล
+            </v-label>
+            <v-text-field
+              v-model="email"
+              type="email"
+              variant="outlined"
+              density="comfortable"
+              rounded="lg"
+              prepend-inner-icon="mdi-email-outline"
+              placeholder="กรุณาใส่อีเมลของคุณ"
+              :rules="emailRules"
+              hide-details="auto"
+              class="mb-1"
+            />
+          </div>
 
-      <v-text-field
-        v-model="password"
-        label="รหัสผ่าน"
-        :type="showPassword ? 'text' : 'password'"
-        variant="outlined"
-        prepend-inner-icon="mdi-lock-outline"
-        class="mb-2"
-        :rules="passwordRules"
-        required
-        :append-inner-icon="showPassword ? 'mdi-eye' : 'mdi-eye-off'"
-        @click:append-inner="showPassword = !showPassword"
-      />
+          <!-- Password Field -->
+          <div class="mb-4">
+            <v-label class="text-caption font-weight-medium text-uppercase mb-1">
+              รหัสผ่าน
+            </v-label>
+            <v-text-field
+              v-model="password"
+              :type="showPassword ? 'text' : 'password'"
+              variant="outlined"
+              density="comfortable"
+              rounded="lg"
+              prepend-inner-icon="mdi-lock-outline"
+              placeholder="กรุณาใส่รหัสผ่านของคุณ"
+              :rules="passwordRules"
+              hide-details="auto"
+              :append-inner-icon="showPassword ? 'mdi-eye-off' : 'mdi-eye'"
+              class="mb-1"
+              @click:append-inner="showPassword = !showPassword"
+            />
+          </div>
 
-      <div class="d-flex justify-end align-center mb-5">
-        <!-- <v-checkbox
-        v-model="rememberMe"
-        label="Remember me"
-        color="orange"
-        density="compact"
-        hide-details
-      /> -->
-        <v-btn
-          variant="text"
-          color="orange"
-          size="small"
-          @click="forgotPassword"
-        >
-          ลืมรหัสผ่าน?
-        </v-btn>
-      </div>
+          <!-- Forgot Password -->
+          <div class="d-flex justify-end mb-4">
+            <v-btn
+              variant="text"
+              color="primary" 
+              size="small"
+              class="text-caption"
+              @click="forgotPassword"
+            >
+              ลืมรหัสผ่าน?
+            </v-btn>
+          </div>
 
-      <v-btn
-        type="submit"
-        block
-        size="large"
-        class="mb-6 login-btn"
-        :loading="loading"
-        color="orange"
-      >
-        เข้าสู่ระบบ
-      </v-btn>
+          <!-- Login Button -->
+          <v-btn
+            type="submit"
+            block
+            size="large"
+            rounded="lg"
+            class="gradient-btn text-none font-weight-bold mb-3"
+            :loading="loading"
+            :disabled="loading"
+            elevation="4"
+          >
+            <template #prepend>
+              <v-icon icon="mdi-login" />
+            </template>
+            เข้าสู่ระบบ
+          </v-btn>
 
-      <!-- <div class="text-center">
-      <p class="text-body-2 text-grey-darken-1">
-        ยังไม่มีบัญชีใช่ไหม?
-        <v-btn variant="text" color="orange" size="small" @click="goToSignUp">
-          สมัครสมาชิก
-        </v-btn>
-      </p>
-    </div> -->
-    </v-form>
+          <!-- Loading Overlay -->
+          <v-overlay
+            v-model="loading"
+            contained
+            class="align-center justify-center rounded-xl"
+          >
+            <div class="d-flex flex-column align-center">
+              <v-progress-circular
+                indeterminate
+                size="32"
+                width="3"
+                color="primary"
+                class="mb-2"
+              />
+              <span class="text-caption">กำลังเข้าสู่ระบบ...</span>
+            </div>
+          </v-overlay>
+        </v-form>
+      </v-card-text>
+    </v-card>
+
+    <!-- Security Notice -->
+    <v-alert
+      type="success"
+      variant="tonal"
+      density="compact"
+      rounded="lg"
+      class="mt-4"
+      max-width="450"
+    >
+      <template #prepend>
+        <v-icon icon="mdi-shield-check" size="16" />
+      </template>
+      <span class="text-caption">
+        การเชื่อมต่อของคุณได้รับการป้องกันด้วยระบบความปลอดภัยขั้นสูง
+      </span>
+    </v-alert>
   </div>
 </template>
 
@@ -130,16 +195,68 @@ const forgotPassword = () => {
 </script>
 
 <style scoped>
-.login-form {
+/* Gradient Avatar Background */
+.gradient-avatar {
+  background: linear-gradient(135deg, rgba(245, 127, 42, 0.1), rgba(255, 152, 0, 0.1)) !important;
+  border: 1px solid rgba(245, 127, 42, 0.2);
+}
+
+/* Gradient Text */
+.gradient-text {
+  background: linear-gradient(135deg, #f57f2a, #ff9800);
+  background-clip: text;
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+/* Glass Card Effect */
+.glass-card {
+  background: rgba(var(--v-theme-surface), 0.95) !important;
+  backdrop-filter: blur(20px);
+  border: 1px solid rgba(var(--v-theme-outline), 0.1) !important;
+}
+
+.glass-card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 20%;
+  right: 20%;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, rgba(245, 127, 42, 0.3), transparent);
+}
+
+/* Gradient Button */
+.gradient-btn {
+  background: linear-gradient(135deg, #f57f2a, #ff9800) !important;
+  color: white !important;
+  position: relative;
+  overflow: hidden;
+}
+
+.gradient-btn::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
   width: 100%;
+  height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+  transition: left 0.4s ease;
 }
 
-.login-btn {
-  background: linear-gradient(45deg, #ff9800 30%, #ff5722 90%);
-  box-shadow: 0 3px 5px 2px rgba(255, 152, 0, 0.3);
+.gradient-btn:hover::before {
+  left: 100%;
 }
 
-.login-btn:hover {
-  background: linear-gradient(45deg, #f57c00 30%, #e64a19 90%);
+.gradient-btn:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 8px 16px -4px rgba(245, 127, 42, 0.4) !important;
+}
+
+/* Dark Theme Adjustments */
+.v-theme--dark .glass-card {
+  background: rgba(var(--v-theme-surface), 0.8) !important;
+  border-color: rgba(var(--v-theme-outline), 0.2) !important;
 }
 </style>

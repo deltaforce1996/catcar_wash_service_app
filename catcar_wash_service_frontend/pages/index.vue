@@ -12,5 +12,6 @@
 
 <script setup lang="ts">
 // Redirect to dashboard immediately
+// await navigateTo('/login-page', { replace: true })
 await navigateTo('/dashboard', { replace: true })
 </script>
