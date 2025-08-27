@@ -250,3 +250,94 @@ BEGIN
     cur_start := cur_end;
   END LOOP;
 END $$;
+
+
+-- ===========================================
+-- DAILY
+-- ===========================================
+CREATE MATERIALIZED VIEW IF NOT EXISTS mv_device_payments_day AS
+SELECT
+  e.device_id,
+  (to_timestamp((e.payload->>'timestemp')::bigint / 1000) AT TIME ZONE 'Asia/Bangkok')::date AS day,
+  SUM(COALESCE((e.payload->>'coin')::numeric, 0))             AS coin_sum,
+  SUM(COALESCE((e.payload->>'bank')::numeric, 0))             AS bank_sum,
+  SUM(COALESCE((e.payload->'qr'->>'net_amount')::numeric, 0)) AS qr_net_sum,
+  SUM(
+    COALESCE((e.payload->>'coin')::numeric,0)
+  + COALESCE((e.payload->>'bank')::numeric,0)
+  + COALESCE((e.payload->'qr'->>'net_amount')::numeric,0)
+  )                                                           AS total_amount,
+  COUNT(*)                                                     AS payments_count
+FROM tbl_devices_events e
+WHERE e.payload->>'type_log' = 'PAYMENT'
+GROUP BY e.device_id, (to_timestamp((e.payload->>'timestemp')::bigint / 1000) AT TIME ZONE 'Asia/Bangkok')::date;
+
+CREATE UNIQUE INDEX IF NOT EXISTS ux_mv_device_payments_day
+  ON mv_device_payments_day (device_id, day);
+
+
+-- ===========================================
+-- MONTHLY
+-- ===========================================
+CREATE MATERIALIZED VIEW IF NOT EXISTS mv_device_payments_month AS
+SELECT
+  e.device_id,
+  date_trunc('month', (to_timestamp((e.payload->>'timestemp')::bigint / 1000) AT TIME ZONE 'Asia/Bangkok'))::date AS month_start,
+  SUM(COALESCE((e.payload->>'coin')::numeric, 0))             AS coin_sum,
+  SUM(COALESCE((e.payload->>'bank')::numeric, 0))             AS bank_sum,
+  SUM(COALESCE((e.payload->'qr'->>'net_amount')::numeric, 0)) AS qr_net_sum,
+  SUM(
+    COALESCE((e.payload->>'coin')::numeric,0)
+  + COALESCE((e.payload->>'bank')::numeric,0)
+  + COALESCE((e.payload->'qr'->>'net_amount')::numeric,0)
+  )                                                           AS total_amount,
+  COUNT(*)                                                     AS payments_count
+FROM tbl_devices_events e
+WHERE e.payload->>'type_log' = 'PAYMENT'
+GROUP BY e.device_id, date_trunc('month', (to_timestamp((e.payload->>'timestemp')::bigint / 1000) AT TIME ZONE 'Asia/Bangkok'));
+
+CREATE UNIQUE INDEX IF NOT EXISTS ux_mv_device_payments_month
+  ON mv_device_payments_month (device_id, month_start);
+
+
+-- ===========================================
+-- YEARLY
+-- ===========================================
+CREATE MATERIALIZED VIEW IF NOT EXISTS mv_device_payments_year AS
+SELECT
+  e.device_id,
+  date_trunc('year', (to_timestamp((e.payload->>'timestemp')::bigint / 1000) AT TIME ZONE 'Asia/Bangkok'))::date AS year_start,
+  SUM(COALESCE((e.payload->>'coin')::numeric, 0))             AS coin_sum,
+  SUM(COALESCE((e.payload->>'bank')::numeric, 0))             AS bank_sum,
+  SUM(COALESCE((e.payload->'qr'->>'net_amount')::numeric, 0)) AS qr_net_sum,
+  SUM(
+    COALESCE((e.payload->>'coin')::numeric,0)
+  + COALESCE((e.payload->>'bank')::numeric,0)
+  + COALESCE((e.payload->'qr'->>'net_amount')::numeric,0)
+  )                                                           AS total_amount,
+  COUNT(*)                                                     AS payments_count
+FROM tbl_devices_events e
+WHERE e.payload->>'type_log' = 'PAYMENT'
+GROUP BY e.device_id, date_trunc('year', (to_timestamp((e.payload->>'timestemp')::bigint / 1000) AT TIME ZONE 'Asia/Bangkok'));
+
+CREATE UNIQUE INDEX IF NOT EXISTS ux_mv_device_payments_year
+  ON mv_device_payments_year (device_id, year_start);
+
+
+-- ===========================================
+-- How to refresh materialized view
+-- ===========================================
+-- REFRESH MATERIALIZED VIEW CONCURRENTLY mv_device_payments_day;
+-- REFRESH MATERIALIZED VIEW CONCURRENTLY mv_device_payments_month;
+-- REFRESH MATERIALIZED VIEW CONCURRENTLY mv_device_payments_year;
+
+
+-- ===========================================
+-- How to query materialized view
+-- ===========================================
+-- const rows = await prisma.$queryRawUnsafe(`
+--   SELECT * 
+--   FROM mv_device_payments_day
+--   WHERE device_id = $1 AND day BETWEEN $2 AND $3
+--   ORDER BY day
+-- `);

@@ -183,3 +183,56 @@ model tbl_reset_password_token {
   @@index([owner_user_id])
   @@index([owner_emp_id])
 }
+
+//-- ===========================================
+//-- Materialized View: รายวัน
+//-- ===========================================
+model mv_device_payments_day {
+  device_id      String
+  day            DateTime   // local date (Asia/Bangkok)
+  coin_sum       Decimal     @db.Decimal(18, 2)
+  bank_sum       Decimal     @db.Decimal(18, 2)
+  qr_net_sum     Decimal     @db.Decimal(18, 2)
+  total_amount   Decimal     @db.Decimal(18, 2)
+  payments_count Int
+
+  @@id([device_id, day])
+  @@map("mv_device_payments_day")
+  @@ignore 
+}
+
+
+//-- ===========================================
+//-- Materialized View: รายเดือน
+//-- ===========================================
+model mv_device_payments_month {
+  device_id      String
+  month_start    DateTime
+  coin_sum       Decimal     @db.Decimal(18, 2)
+  bank_sum       Decimal     @db.Decimal(18, 2)
+  qr_net_sum     Decimal     @db.Decimal(18, 2)
+  total_amount   Decimal     @db.Decimal(18, 2)
+  payments_count Int
+
+  @@id([device_id, month_start])
+  @@map("mv_device_payments_month")
+  @@ignore 
+}
+
+
+//-- ===========================================
+//-- Materialized View: รายปี
+//-- ===========================================
+model mv_device_payments_year {
+  device_id      String
+  year_start     DateTime
+  coin_sum       Decimal     @db.Decimal(18, 2)
+  bank_sum       Decimal     @db.Decimal(18, 2)
+  qr_net_sum     Decimal     @db.Decimal(18, 2)
+  total_amount   Decimal     @db.Decimal(18, 2)
+  payments_count Int
+
+  @@id([device_id, year_start])
+  @@map("mv_device_payments_year")
+  @@ignore 
+}
