@@ -1,0 +1,104 @@
+---
+globs: *.vue
+alwaysApply: false
+---
+
+# 🇹🇭 THAI TEXT RENDERING RULE - ABSOLUTE PRIORITY
+
+## CRITICAL REQUIREMENT: ALL USER-FACING TEXT MUST BE IN THAI
+
+This rule is **DEFINITIVE** and **NON-NEGOTIABLE** unless explicitly requested otherwise by the user.
+
+### SCOPE: This rule applies to ALL of the following:
+
+#### 1. **Static Text Content**
+- All headings (h1, h2, h3, etc.)
+- All paragraph text and body content
+- All button labels and text
+- All navigation menu items
+- All static labels and descriptions
+
+#### 2. **Form Elements**
+- All form field labels
+- All placeholder text
+- All input validation messages
+- All error messages
+- All success messages
+- All helper text and tooltips
+
+#### 3. **Interactive Elements**
+- All alert/notification messages
+- All modal dialog content
+- All confirmation messages
+- All loading states text
+- All empty state messages
+
+#### 4. **Meta Content**
+- Page titles (where user-visible)
+- Form validation feedback
+- Status messages
+- Progress indicators text
+
+### IMPLEMENTATION REQUIREMENTS:
+
+#### ✅ CORRECT EXAMPLES:
+```vue
+<!-- ✅ GOOD: Thai text -->
+<h1>ยินดีต้อนรับกลับมา!</h1>
+<v-btn>เข้าสู่ระบบ</v-btn>
+<v-text-field label="อีเมล" placeholder="กรุณาใส่อีเมลของคุณ" />
+<p>กรุณาลงชื่อเข้าใช้เพื่อดำเนินการต่อ</p>
+
+<!-- ✅ GOOD: Thai validation messages -->
+const emailRules = [
+  (v: string) => !!v || 'กรุณาใส่อีเมล',
+  (v: string) => /.+@.+\..+/.test(v) || 'รูปแบบอีเมลไม่ถูกต้อง'
+]
+```
+
+#### ❌ FORBIDDEN EXAMPLES:
+```vue
+<!-- ❌ BAD: English text -->
+<h1>Welcome Back!</h1>
+<v-btn>Sign In</v-btn>
+<v-text-field label="Email" placeholder="Enter your email" />
+<p>Sign in to your account to continue</p>
+
+<!-- ❌ BAD: English validation messages -->
+const emailRules = [
+  (v: string) => !!v || 'Email is required',
+  (v: string) => /.+@.+\..+/.test(v) || 'Email must be valid'
+]
+```
+
+### ENFORCEMENT RULES:
+
+1. **ALWAYS check every user-facing text element**
+2. **NEVER use English for any user-visible content**
+3. **ALWAYS use proper Thai grammar and spelling**
+4. **ALWAYS use appropriate Thai formal/informal tone based on context**
+5. **ALWAYS translate technical terms appropriately for Thai users**
+
+### EXCEPTIONS
+- Developer comments and console.log messages (can remain in English)
+- Variable names and function names (can remain in English for code clarity)
+- API endpoints and technical URLs
+- Third-party library configurations
+- Code documentation intended for developers
+
+### QUALITY STANDARDS:
+- Use proper Thai typography and spacing
+- Use appropriate Thai font rendering
+- Ensure culturally appropriate translations
+- Use business-appropriate formal Thai for professional contexts
+- Use clear, concise Thai that matches the intended user experience
+
+### BREACH PROTOCOL:
+If any English text is found in user-facing elements:
+1. **IMMEDIATELY flag as a violation**
+2. **MUST be corrected to Thai before proceeding**
+3. **No exceptions without explicit user override**
+
+---
+
+**REMEMBER: This rule exists to ensure a consistent, professional Thai user experience. It should NEVER be compromised unless the user explicitly requests English content for a specific reason.**
