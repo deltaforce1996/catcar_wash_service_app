@@ -1,15 +1,26 @@
-import { Injectable, Logger } from '@nestjs/common';
-import { EventType, Prisma } from '@prisma/client';
+import { BadRequestException, Injectable, Logger } from '@nestjs/common';
+import { EventType, PaymentStatus, Prisma } from '@prisma/client';
 import { PrismaService } from 'src/database/prisma/prisma.service';
 import { parseKeyValueOnly } from 'src/shared/kv-parser';
 import { PaginatedResult } from 'src/types/internal.type';
 import { SearchDeviceEventLogsDto } from './dtos/search-devcie-event.dto';
 
+// Helper function to format date to YYYY-MM-DD hh:mm:ss
+const formatDateTime = (date: Date): string => {
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, '0');
+  const day = String(date.getDate()).padStart(2, '0');
+  const hours = String(date.getHours()).padStart(2, '0');
+  const minutes = String(date.getMinutes()).padStart(2, '0');
+  const seconds = String(date.getSeconds()).padStart(2, '0');
+
+  return `${year}-${month}-${day} ${hours}:${minutes}:${seconds}`;
+};
+
 export const deviceEventLogsPublicSelect = Prisma.validator<Prisma.tbl_devices_eventsSelect>()({
   id: true,
   device_id: true,
   payload: true,
-  type: true,
   created_at: true,
   device: {
     select: {
@@ -27,7 +38,13 @@ export const deviceEventLogsPublicSelect = Prisma.validator<Prisma.tbl_devices_e
   },
 });
 
-export type DeviceEventLogRow = Prisma.tbl_devices_eventsGetPayload<{ select: typeof deviceEventLogsPublicSelect }>;
+// Base type from Prisma
+type DeviceEventLogRowBase = Prisma.tbl_devices_eventsGetPayload<{ select: typeof deviceEventLogsPublicSelect }>;
+
+// Extended type with formatted created_at
+export type DeviceEventLogRow = Omit<DeviceEventLogRowBase, 'created_at'> & {
+  created_at: string;
+};
 
 @Injectable()
 export class DeviceEventLogsService {
@@ -35,15 +52,11 @@ export class DeviceEventLogsService {
   private readonly allowed = [
     'id',
     'device_id',
+    'device_name',
     'type',
     'payload_timestemp',
-    'time_range',
-    'payment_type',
     'user_id',
-    'has_qr',
-    'has_bank',
-    'has_coin',
-    'type_log',
+    'payment_status',
   ] as const;
 
   constructor(private readonly prisma: PrismaService) {
@@ -61,201 +74,78 @@ export class DeviceEventLogsService {
         case 'device_id':
           ands.push({ [key]: { contains: value, mode: 'insensitive' } });
           break;
+        case 'device_name':
+          ands.push({
+            device: {
+              name: { contains: value, mode: 'insensitive' },
+            },
+          });
+          break;
+        case 'payment_status':
+          ands.push({ payload: { path: ['status'], equals: value as PaymentStatus } });
+          break;
         case 'type': {
           const v = value.toUpperCase();
           if (v === EventType.PAYMENT || v === EventType.INFO) {
-            ands.push({ type: v as EventType });
-          }
-          break;
-        }
-        case 'time_range': {
-          // Handle time range filtering like "12:00-15:00"
-          const timeRangeMatch = value.match(/^(\d{1,2}):(\d{2})-(\d{1,2}):(\d{2})$/);
-          if (timeRangeMatch) {
-            // For now, just filter for events that have timestamp in payload
-            // Future enhancement: implement exact time range filtering with raw SQL
-            ands.push({
-              payload: {
-                path: ['timestemp'],
-                not: Prisma.DbNull,
-              },
-            });
-
-            // Log for future enhancement with raw SQL
-            this.logger.warn(
-              `Time range filtering (${value}) implemented with basic payload check. Consider raw SQL for exact time matching.`,
+            ands.push({ payload: { path: ['type'], equals: v as EventType } });
+          } else {
+            this.logger.warn(`Invalid type: ${v}`);
+            throw new BadRequestException(
+              `Invalid type: ${v} is not a valid type ${EventType.PAYMENT} or ${EventType.INFO}`,
             );
           }
           break;
         }
         case 'payload_timestemp': {
-          // Handle timestamp filtering within JSON payload (Unix timestamp in milliseconds)
-          const timestamp = new Date(value);
-          if (!isNaN(timestamp.getTime())) {
-            // Search within a range by checking if the timestamp exists in that range
-            // Note: This is a basic approach - for exact timestamp matching, consider using raw queries
-            ands.push({
-              payload: {
-                path: ['timestemp'],
-                not: Prisma.DbNull,
-              },
-            });
+          // Parse timestamp value (expecting format: start-end or single timestamp)
+          const timestampParts = value.split('-');
 
-            // Add a more specific date-based filter using the table's created_at as a fallback
-            ands.push({
-              created_at: {
-                gte: new Date(timestamp.getTime() - 7 * 24 * 60 * 60 * 1000), // 7 days before
-                lte: new Date(timestamp.getTime() + 7 * 24 * 60 * 60 * 1000), // 7 days after
-              },
-            });
+          if (timestampParts.length === 2) {
+            // Range format: start-end
+            const startTimestamp = parseInt(timestampParts[0], 10);
+            const endTimestamp = parseInt(timestampParts[1], 10);
+
+            if (!isNaN(startTimestamp) && !isNaN(endTimestamp)) {
+              ands.push({
+                payload: {
+                  path: ['timestemp'],
+                  not: Prisma.DbNull,
+                },
+              });
+
+              ands.push({
+                payload: {
+                  path: ['timestemp'],
+                  gte: startTimestamp,
+                  lte: endTimestamp,
+                },
+              });
+            }
+          } else {
+            // Single timestamp
+            const timestamp = parseInt(value, 10);
+            if (!isNaN(timestamp)) {
+              ands.push({
+                payload: {
+                  path: ['timestemp'],
+                  not: Prisma.DbNull,
+                },
+              });
+
+              ands.push({
+                payload: {
+                  path: ['timestemp'],
+                  equals: timestamp,
+                },
+              });
+            }
           }
-          break;
-        }
-        case 'payment_type': {
-          // Search for payment_type within JSON payload
-          ands.push({
-            payload: {
-              path: ['payment_type'],
-              string_contains: value,
-            },
-          });
           break;
         }
         case 'user_id': {
-          // Search for user_id within JSON payload
           ands.push({
             payload: {
               path: ['user_id'],
-              string_contains: value,
-            },
-          });
-          break;
-        }
-        case 'has_qr': {
-          // Check if payment has QR payment method (net_amount != 0)
-          const hasQr = value.toLowerCase() === 'true' || value === '1';
-          if (hasQr) {
-            ands.push({
-              AND: [
-                {
-                  payload: {
-                    path: ['qr', 'net_amount'],
-                    not: Prisma.DbNull,
-                  },
-                },
-                {
-                  payload: {
-                    path: ['qr', 'net_amount'],
-                    gt: 0,
-                  },
-                },
-              ],
-            });
-          } else {
-            ands.push({
-              OR: [
-                {
-                  payload: {
-                    path: ['qr', 'net_amount'],
-                    equals: Prisma.DbNull,
-                  },
-                },
-                {
-                  payload: {
-                    path: ['qr', 'net_amount'],
-                    equals: 0,
-                  },
-                },
-              ],
-            });
-          }
-          break;
-        }
-        case 'has_bank': {
-          // Check if payment has bank payment method (amount != 0)
-          const hasBank = value.toLowerCase() === 'true' || value === '1';
-          if (hasBank) {
-            ands.push({
-              AND: [
-                {
-                  payload: {
-                    path: ['bank'],
-                    not: Prisma.DbNull,
-                  },
-                },
-                {
-                  payload: {
-                    path: ['bank'],
-                    gt: 0,
-                  },
-                },
-              ],
-            });
-          } else {
-            ands.push({
-              OR: [
-                {
-                  payload: {
-                    path: ['bank'],
-                    equals: Prisma.DbNull,
-                  },
-                },
-                {
-                  payload: {
-                    path: ['bank'],
-                    equals: 0,
-                  },
-                },
-              ],
-            });
-          }
-          break;
-        }
-        case 'has_coin': {
-          // Check if payment has coin payment method (amount != 0)
-          const hasCoin = value.toLowerCase() === 'true' || value === '1';
-          if (hasCoin) {
-            ands.push({
-              AND: [
-                {
-                  payload: {
-                    path: ['coin'],
-                    not: Prisma.DbNull,
-                  },
-                },
-                {
-                  payload: {
-                    path: ['coin'],
-                    gt: 0,
-                  },
-                },
-              ],
-            });
-          } else {
-            ands.push({
-              OR: [
-                {
-                  payload: {
-                    path: ['coin'],
-                    equals: Prisma.DbNull,
-                  },
-                },
-                {
-                  payload: {
-                    path: ['coin'],
-                    equals: 0,
-                  },
-                },
-              ],
-            });
-          }
-          break;
-        }
-        case 'type_log': {
-          // Search for type_log within JSON payload
-          ands.push({
-            payload: {
-              path: ['type_log'],
               string_contains: value,
             },
           });
@@ -283,8 +173,14 @@ export class DeviceEventLogsService {
       this.prisma.tbl_devices_events.count({ where }),
     ]);
 
+    // Transform the data to format created_at as YYYY-MM-DD hh:mm:ss
+    const transformedData = data.map((item) => ({
+      ...item,
+      created_at: formatDateTime(item.created_at),
+    }));
+
     return {
-      items: data,
+      items: transformedData,
       total,
       page: safePage,
       limit: safeLimit,

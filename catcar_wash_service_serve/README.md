@@ -23,7 +23,43 @@
 
 ## Description
 
-[Nest](https://github.com/nestjs/nest) framework TypeScript starter repository.
+[Nest](https://github.com/nestjs/nest) framework TypeScript starter repository for the Cat Car Wash Service application.
+
+## API Modules
+
+This application includes the following API modules:
+
+### Authentication (`/api/v1/auth`)
+- User and employee authentication
+- JWT token management
+- Password reset functionality
+
+### Users (`/api/v1/users`)
+- User management
+- User profile operations
+
+### Employees (`/api/v1/emps`)
+- Employee management
+- Technician operations
+
+### Devices (`/api/v1/devices`)
+- Device registration and management
+- Device configuration
+
+### Device Event Logs (`/api/v1/device-event-logs`)
+- Device event tracking
+- Event history
+
+### Dashboard (`/api/v1/dashboard`)
+- **NEW**: Comprehensive dashboard analytics
+- Overview statistics
+- Device status monitoring
+- Payment analytics
+- Revenue tracking
+- Recent activities
+- Device performance metrics
+
+For detailed documentation on the Dashboard API, see [Dashboard API Documentation](./src/apis/dashboard/README.md).
 
 ## Project setup
 

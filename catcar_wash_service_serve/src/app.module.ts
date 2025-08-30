@@ -10,6 +10,7 @@ import { EmpsModule } from './apis/emps/emps.module';
 import { UsersModule } from './apis/users/users.module';
 import { DevicesModule } from './apis/devices/devices.module';
 import { DeviceEventLogsModule } from './apis/device-event-logs/device-event-logs.module';
+import { DashboardModule } from './apis/dashboard/dashboard.module';
 
 @Module({
   imports: [
@@ -24,6 +25,7 @@ import { DeviceEventLogsModule } from './apis/device-event-logs/device-event-log
     UsersModule,
     DevicesModule,
     DeviceEventLogsModule,
+    DashboardModule,
   ],
   controllers: [AppController],
   providers: [AppService],
