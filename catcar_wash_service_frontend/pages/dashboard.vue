@@ -1,5 +1,5 @@
 <template>
-  <div class="dashboard-container">
+  <div>
     <!-- Header Section -->
     <v-row class="mb-8">
       <v-col cols="12">
@@ -524,12 +524,6 @@ const getServiceTypeColor = (serviceType: string) => {
 </script>
 
 <style scoped>
-.dashboard-container {
-  max-width: 1400px;
-  margin: 0 auto;
-  padding: 0 24px;
-}
-
 .date-picker {
   min-width: 200px;
 }
@@ -561,10 +555,6 @@ const getServiceTypeColor = (serviceType: string) => {
 
 /* Mobile responsiveness */
 @media (max-width: 960px) {
-  .dashboard-container {
-    padding: 0 16px;
-  }
-
   .date-picker {
     min-width: 160px;
   }
@@ -581,10 +571,6 @@ const getServiceTypeColor = (serviceType: string) => {
 }
 
 @media (max-width: 600px) {
-  .dashboard-container {
-    padding: 0 12px;
-  }
-
   .chart-wrapper {
     height: 200px;
     padding: 2px;
