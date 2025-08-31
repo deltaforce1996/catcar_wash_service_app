@@ -12,7 +12,7 @@ export class PrismaService extends PrismaClient implements OnModuleInit, OnModul
           url: config.get<string>(
             'DATABASE_URL',
             'postgresql://postgres:password@localhost:5432/catcar_wash_db_dev?schema=public',
-          ) as string,
+          ),
         },
       },
     });
