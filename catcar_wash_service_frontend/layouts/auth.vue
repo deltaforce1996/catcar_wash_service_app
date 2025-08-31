@@ -290,6 +290,7 @@
   align-items: flex-start;
   max-width: 400px;
   margin: 0 auto;
+  opacity: 1;
 }
 
 .feature-point {
@@ -299,6 +300,7 @@
   font-size: 1rem;
   font-weight: 500;
   opacity: 1;
+  color: white;
 }
 
 /* Cat Character */
