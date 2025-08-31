@@ -133,9 +133,9 @@ export default defineNuxtPlugin((app) => {
             "on-info": "#ffffff",
             
             // Additional Dark Mode Colors
-            outline: "#475569", // Medium slate outline
-            "outline-variant": "#334155", // Dark slate outline
-            background: "#0f172a", // Very dark background
+            // outline: "#475569", // Medium slate outline
+            // "outline-variant": "#334155", // Dark slate outline
+            // background: "#0f172a", // Very dark background
           },
         },
       },
@@ -156,64 +156,64 @@ export default defineNuxtPlugin((app) => {
         xxl: 2560,
       },
     },
-    defaults: {
-      // Modern Button Defaults
-      VBtn: {
-        style: "text-transform: none; font-weight: 500; letter-spacing: 0.025em;",
-        rounded: "lg",
-        elevation: 2,
-      },
+    // defaults: {
+    //   // Modern Button Defaults
+    //   VBtn: {
+    //     style: "text-transform: none; font-weight: 500; letter-spacing: 0.025em;",
+    //     rounded: "lg",
+    //     elevation: 2,
+    //   },
       
-      // Modern Card Defaults
-      VCard: {
-        rounded: "xl",
-        elevation: 2,
-        style: "backdrop-filter: blur(10px);",
-      },
+    //   // Modern Card Defaults
+    //   VCard: {
+    //     rounded: "xl",
+    //     elevation: 2,
+    //     style: "backdrop-filter: blur(10px);",
+    //   },
       
-      // Modern Text Field Defaults
-      VTextField: {
-        rounded: "lg",
-        variant: "outlined",
-        density: "comfortable",
-      },
+    //   // Modern Text Field Defaults
+    //   VTextField: {
+    //     rounded: "lg",
+    //     variant: "outlined",
+    //     density: "comfortable",
+    //   },
       
-      // Modern Navigation Drawer
-      VNavigationDrawer: {
-        rounded: "0",
-        elevation: 0,
-      },
+    //   // Modern Navigation Drawer
+    //   VNavigationDrawer: {
+    //     rounded: "0",
+    //     elevation: 0,
+    //   },
       
-      // Modern App Bar
-      VAppBar: {
-        elevation: 0,
-        rounded: 0,
-      },
+    //   // Modern App Bar
+    //   VAppBar: {
+    //     elevation: 0,
+    //     rounded: 0,
+    //   },
       
-      // Modern List Items
-      VListItem: {
-        rounded: "lg",
-        minHeight: 48,
-      },
+    //   // Modern List Items
+    //   VListItem: {
+    //     rounded: "lg",
+    //     minHeight: 48,
+    //   },
       
-      // Modern Chips
-      VChip: {
-        rounded: "lg",
-        elevation: 1,
-      },
+    //   // Modern Chips
+    //   VChip: {
+    //     rounded: "lg",
+    //     elevation: 1,
+    //   },
       
-      // Modern Dialogs
-      VDialog: {
-        rounded: "xl",
-        elevation: 8,
-      },
+    //   // Modern Dialogs
+    //   VDialog: {
+    //     rounded: "xl",
+    //     elevation: 8,
+    //   },
       
-      // Modern Menu
-      VMenu: {
-        rounded: "lg",
-        elevation: 6,
-      },
-    },
+    //   // Modern Menu
+    //   VMenu: {
+    //     rounded: "lg",
+    //     elevation: 6,
+    //   },
+    // },
   });
   app.vueApp.use(vuetify);
 });
