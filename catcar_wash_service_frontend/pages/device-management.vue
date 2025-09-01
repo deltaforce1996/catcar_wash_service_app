@@ -1,30 +1,13 @@
 <template>
   <div>
     <!-- Header Section -->
-    <v-row class="mb-8">
-      <v-col cols="12">
-        <div class="d-flex justify-space-between align-center flex-wrap">
-          <div>
-            <h1 class="text-h4 font-weight-bold mb-1">จัดการอุปกรณ์</h1>
-          </div>
-          <div class="d-flex align-center ga-3 flex-wrap">
-            <v-chip variant="tonal" color="primary">
-              {{ selectedDevicesCount }} อุปกรณ์ที่เลือก
-            </v-chip>
-          </div>
-        </div>
-      </v-col>
-    </v-row>
+    <h1 class="text-h4 font-weight-bold mb-1">จัดการอุปกรณ์</h1>
 
     <!-- Device Type Tabs -->
-    <v-row>
-      <v-col cols="12">
-        <v-tabs v-model="activeDeviceType" color="primary" class="mb-6">
-          <v-tab value="car">เครื่องล้างรถ</v-tab>
-          <v-tab value="helmet">เครื่องล้างหมวก</v-tab>
-        </v-tabs>
-      </v-col>
-    </v-row>
+    <v-tabs v-model="activeDeviceType" color="primary" class="mb-6">
+      <v-tab value="WASH">เครื่องล้าง</v-tab>
+      <v-tab value="DRYING">เครื่องอบแห้ง</v-tab>
+    </v-tabs>
 
     <!-- Main Content Row -->
     <!-- System Configuration Panel -->
@@ -56,27 +39,15 @@
             <span class="text-grey-darken-1">พื้นที่การตั้งค่าระบบ</span>
           </v-sheet>
         </div>
-
-        <!-- Apply System Config Button -->
-        <div class="d-flex justify-end mt-4">
-          <v-btn
-            color="primary"
-            :disabled="selectedDevicesCount === 0"
-            @click="showApplySystemConfigDialog = true"
-          >
-            นำไปใช้
-          </v-btn>
-        </div>
       </v-card-text>
 
       <!-- Device Data Table -->
-      <v-card-title>
-        <div class="d-flex justify-space-between align-center">
-          <h2 class="text-h5 font-weight-bold">รายการอุปกรณ์</h2>
-          <v-chip variant="tonal" color="primary">
-            {{ filteredDevices.length }} อุปกรณ์
-          </v-chip>
-        </div>
+      <v-card-title class="d-flex justify-space-between align-center">
+        <h2 class="text-h5 font-weight-bold">รายการอุปกรณ์</h2>
+        <v-chip variant="tonal" color="primary">
+          {{ selectedDevicesCount }} /
+          {{ filteredDevices.length }} อุปกรณ์ที่เลือก
+        </v-chip>
       </v-card-title>
 
       <!-- Device Filter Section -->
@@ -134,21 +105,22 @@
         class="elevation-0"
         hover
         show-select
+        show-expand
         return-object
         item-value="id"
       >
         <!-- Device Name Column -->
-        <template #[`item.deviceName`]="{ item }">
+        <template #[`item.name`]="{ item }">
           <div class="text-body-2 font-weight-medium">
-            {{ item.deviceName }}
+            {{ item.name }}
           </div>
         </template>
 
-        <!-- Model Column -->
-        <template #[`item.model`]="{ item }">
-          <div class="text-body-2">
-            {{ item.model }}
-          </div>
+        <!-- Type Column -->
+        <template #[`item.type`]="{ item }">
+          <v-chip :color="getTypeColor(item.type)" size="small" variant="tonal">
+            {{ getTypeLabel(item.type) }}
+          </v-chip>
         </template>
 
         <!-- Status Column -->
@@ -158,73 +130,117 @@
             size="small"
             variant="tonal"
           >
-            {{ item.status }}
+            {{ getStatusLabel(item.status) }}
           </v-chip>
         </template>
 
-        <!-- Location Column -->
-        <template #[`item.location`]="{ item }">
+        <!-- Owner Column -->
+        <template #[`item.owner.fullname`]="{ item }">
           <div class="text-body-2">
-            {{ item.location }}
+            {{ item.owner.fullname }}
           </div>
         </template>
 
-        <!-- Owner Column -->
-        <template #[`item.owner`]="{ item }">
+        <!-- Registered By Column -->
+        <template #[`item.registered_by.name`]="{ item }">
           <div class="text-body-2">
-            {{ item.owner }}
+            {{ item.registered_by.name }}
           </div>
         </template>
 
         <!-- Expandable Row Content -->
         <template #expanded-row="{ item }">
           <tr>
-            <td :colspan="deviceHeaders.length + 1" class="pa-4">
+            <td :colspan="deviceHeaders.length + 2" class="pa-4">
               <v-card flat color="grey-lighten-5">
-                <v-card-text>
-                  <v-row>
-                    <v-col cols="12" md="6">
-                      <h4 class="text-h6 mb-3">รายละเอียดอุปกรณ์</h4>
-                      <div class="mb-2">
-                        <strong>รหัสอุปกรณ์:</strong> {{ item.id }}
-                      </div>
-                      <div class="mb-2">
-                        <strong>รุ่น:</strong> {{ item.model }}
-                      </div>
-                      <div class="mb-2">
-                        <strong>เวอร์ชันเฟิร์มแวร์:</strong>
-                        {{ item.firmwareVersion }}
-                      </div>
-                      <div class="mb-2">
-                        <strong>ติดตั้งเมื่อ:</strong>
-                        {{ formatDate(item.installDate) }}
-                      </div>
-                    </v-col>
-                    <v-col cols="12" md="6">
-                      <h4 class="text-h6 mb-3">สถิติการใช้งาน</h4>
-                      <div class="mb-2">
-                        <strong>ใช้งานครั้งสุดท้าย:</strong>
-                        {{ formatDateTime(item.lastUsed) }}
-                      </div>
-                      <div class="mb-2">
-                        <strong>จำนวนการใช้งานวันนี้:</strong>
-                        {{ item.dailyUsage }} ครั้ง
-                      </div>
-                      <div class="mb-2">
-                        <strong>รายได้วันนี้:</strong> ฿{{
-                          item.dailyRevenue.toLocaleString("th-TH")
-                        }}
-                      </div>
-                    </v-col>
-                  </v-row>
-                  <div class="d-flex justify-end mt-4">
+                <v-card-text class="pa-3">
+                  <!-- Compact Device Info Header -->
+                  <div class="d-flex justify-space-between align-center mb-4">
+                    <div class="d-flex align-center" style="gap: 24px">
+                      <v-chip
+                        color="info"
+                        size="small"
+                        variant="tonal"
+                        class="px-3"
+                      >
+                        ID: {{ item.id.slice(-8) }}
+                      </v-chip>
+                      <span class="text-body-2 text-grey-darken-1">
+                        สร้าง: {{ formatDate(item.created_at) }}
+                      </span>
+                      <span class="text-body-2 text-grey-darken-1">
+                        {{ item.owner.email }}
+                      </span>
+                    </div>
                     <v-btn
                       color="primary"
                       variant="outlined"
+                      size="small"
                       @click="openDeviceDetailDialog(item)"
                     >
-                      รายละเอียดเพิ่มเติม / แก้ไข
+                      แก้ไขการตั้งค่า
                     </v-btn>
+                  </div>
+
+                  <!-- Sale Config Grid -->
+                  <div class="mb-2">
+                    <h4 class="text-subtitle-1 font-weight-bold mb-2">
+                      การตั้งค่าการขาย
+                    </h4>
+                    <v-row dense>
+                      <v-col
+                        v-for="(config, key) in item.configs.sale"
+                        :key="key"
+                        cols="12"
+                        sm="6"
+                        md="4"
+                        lg="3"
+                      >
+                        <v-card
+                          flat
+                          color="white"
+                          class="pa-2 border"
+                          height="80"
+                        >
+                          <div class="d-flex flex-column h-100">
+                            <div
+                              class="d-flex justify-space-between align-start mb-1"
+                            >
+                              <span
+                                class="text-body-2 font-weight-medium text-truncate"
+                                style="max-width: 120px"
+                              >
+                                {{ config.description }}
+                              </span>
+                              <v-chip
+                                size="x-small"
+                                color="grey-darken-2"
+                                variant="flat"
+                                class="ml-1"
+                              >
+                                {{ key }}
+                              </v-chip>
+                            </div>
+                            <v-spacer />
+                            <div
+                              class="d-flex align-center justify-space-between"
+                            >
+                              <v-chip
+                                color="success"
+                                size="small"
+                                variant="elevated"
+                                class="font-weight-bold"
+                              >
+                                {{ config.value }}
+                              </v-chip>
+                              <span class="text-caption text-grey-darken-2">
+                                {{ config.unit }}
+                              </span>
+                            </div>
+                          </div>
+                        </v-card>
+                      </v-col>
+                    </v-row>
                   </div>
                 </v-card-text>
               </v-card>
@@ -232,6 +248,22 @@
           </tr>
         </template>
       </v-data-table>
+
+      <!-- Apply System Config Button -->
+      <v-card-actions class="pa-4">
+        <v-spacer />
+        <v-btn
+          color="primary"
+          :disabled="selectedDevicesCount === 0"
+          variant="elevated"
+          size="large"
+          prepend-icon="mdi-check-circle"
+          class="px-6"
+          @click="showApplySystemConfigDialog = true"
+        >
+          นำการตั้งค่าไปใช้
+        </v-btn>
+      </v-card-actions>
     </v-card>
 
     <!-- Apply System Config Confirmation Dialog -->
@@ -262,43 +294,13 @@
       </v-card>
     </v-dialog>
 
-    <!-- Device Detail Full Page Dialog -->
-    <v-dialog
+    <!-- Device Detail Dialog Component -->
+    <DeviceDetailDialog
       v-model="showDeviceDetailDialog"
-      fullscreen
-      transition="dialog-bottom-transition"
-    >
-      <v-card>
-        <v-toolbar color="primary" dark>
-          <v-btn icon="mdi-close" @click="showDeviceDetailDialog = false" />
-          <v-toolbar-title
-            >การตั้งค่าอุปกรณ์ -
-            {{ selectedDevice?.deviceName }}</v-toolbar-title
-          >
-          <v-spacer />
-          <v-btn variant="text" @click="showApplyDeviceConfigDialog = true">
-            บันทึก
-          </v-btn>
-        </v-toolbar>
-
-        <v-container class="pa-8">
-          <v-row>
-            <v-col cols="12">
-              <v-sheet
-                color="grey-lighten-4"
-                rounded="lg"
-                height="400"
-                class="d-flex align-center justify-center"
-              >
-                <span class="text-grey-darken-1"
-                  >พื้นที่การตั้งค่าอุปกรณ์โดยละเอียด</span
-                >
-              </v-sheet>
-            </v-col>
-          </v-row>
-        </v-container>
-      </v-card>
-    </v-dialog>
+      :device="selectedDevice"
+      @save="showApplyDeviceConfigDialog = true"
+      @toggle-status="toggleDeviceStatus"
+    />
 
     <!-- Apply Device Config Confirmation Dialog -->
     <v-dialog v-model="showApplyDeviceConfigDialog" max-width="500">
@@ -311,9 +313,6 @@
             คุณต้องการบันทึกการตั้งค่าของอุปกรณ์
             {{ selectedDevice?.deviceName }} หรือไม่?
           </p>
-          <v-alert color="info" variant="tonal" class="mt-4">
-            การเปลี่ยนแปลงจะมีผลหลังจากอุปกรณ์รีสตาร์ท
-          </v-alert>
         </v-card-text>
         <v-card-actions class="pa-6 pt-0">
           <v-spacer />
@@ -331,23 +330,10 @@
 </template>
 
 <script setup lang="ts">
-interface Device {
-  id: string;
-  deviceName: string;
-  model: string;
-  status: string;
-  location: string;
-  owner: string;
-  firmwareVersion: string;
-  installDate: Date;
-  lastUsed: Date;
-  dailyUsage: number;
-  dailyRevenue: number;
-  type: "car" | "helmet";
-}
+import { devicesData, type Device, type DeviceConfig } from "~/data/devices";
 
 // Reactive state
-const activeDeviceType = ref<"car" | "helmet">("car");
+const activeDeviceType = ref<"WASH" | "DRYING">("WASH");
 const systemConfigSearch = ref("");
 const deviceSearch = ref("");
 const selectedFilters = ref<string[]>([]);
@@ -356,90 +342,20 @@ const showApplySystemConfigDialog = ref(false);
 const showDeviceDetailDialog = ref(false);
 const showApplyDeviceConfigDialog = ref(false);
 const selectedDevice = ref<Device | null>(null);
+const isEditMode = ref(false);
+const editableConfigs = ref<Record<string, DeviceConfig>>({});
+const originalConfigs = ref<Record<string, DeviceConfig>>({});
 
-// Mock device data
-const allDevices = ref<Device[]>([
-  // Car wash devices
-  {
-    id: "CW001",
-    deviceName: "เครื่องล้างรถที่ 1",
-    model: "CarWash Pro X1",
-    status: "ใช้งานได้",
-    location: "จุดที่ A1",
-    owner: "สาขา A",
-    firmwareVersion: "2.1.5",
-    installDate: new Date("2023-01-15"),
-    lastUsed: new Date("2024-01-20 14:30"),
-    dailyUsage: 25,
-    dailyRevenue: 2500,
-    type: "car",
-  },
-  {
-    id: "CW002",
-    deviceName: "เครื่องล้างรถที่ 2",
-    model: "CarWash Pro X1",
-    status: "กำลังใช้งาน",
-    location: "จุดที่ A2",
-    owner: "สาขา A",
-    firmwareVersion: "2.1.5",
-    installDate: new Date("2023-02-01"),
-    lastUsed: new Date("2024-01-20 15:45"),
-    dailyUsage: 18,
-    dailyRevenue: 1800,
-    type: "car",
-  },
-  {
-    id: "CW003",
-    deviceName: "เครื่องล้างรถที่ 3",
-    model: "CarWash Basic",
-    status: "บำรุงรักษา",
-    location: "จุดที่ B1",
-    owner: "สาขา B",
-    firmwareVersion: "2.0.8",
-    installDate: new Date("2022-12-10"),
-    lastUsed: new Date("2024-01-19 09:15"),
-    dailyUsage: 0,
-    dailyRevenue: 0,
-    type: "car",
-  },
-  // Helmet wash devices
-  {
-    id: "HW001",
-    deviceName: "เครื่องล้างหมวกที่ 1",
-    model: "HelmetWash Mini",
-    status: "ใช้งานได้",
-    location: "จุดที่ A1-H",
-    owner: "สาขา A",
-    firmwareVersion: "1.5.2",
-    installDate: new Date("2023-03-20"),
-    lastUsed: new Date("2024-01-20 16:20"),
-    dailyUsage: 12,
-    dailyRevenue: 360,
-    type: "helmet",
-  },
-  {
-    id: "HW002",
-    deviceName: "เครื่องล้างหมวกที่ 2",
-    model: "HelmetWash Mini",
-    status: "ขัดข้อง",
-    location: "จุดที่ B1-H",
-    owner: "สาขา B",
-    firmwareVersion: "1.4.9",
-    installDate: new Date("2023-04-05"),
-    lastUsed: new Date("2024-01-18 11:30"),
-    dailyUsage: 3,
-    dailyRevenue: 90,
-    type: "helmet",
-  },
-]);
+// Device data imported from separate file
+const allDevices = ref<Device[]>(devicesData);
 
 // Table headers
 const deviceHeaders = [
-  { title: "ชื่ออุปกรณ์", key: "deviceName", sortable: true },
-  { title: "รุ่น", key: "model", sortable: true },
+  { title: "ชื่ออุปกรณ์", key: "name", sortable: true },
+  { title: "ประเภท", key: "type", sortable: true },
   { title: "สถานะ", key: "status", sortable: true },
-  { title: "ตำแหน่ง", key: "location", sortable: true },
-  { title: "เจ้าของ", key: "owner", sortable: true },
+  { title: "เจ้าของ", key: "owner.fullname", sortable: true },
+  { title: "ลงทะเบียนโดย", key: "registered_by.name", sortable: true },
 ];
 
 // Computed properties
@@ -453,7 +369,7 @@ const filteredDevices = computed(() => {
     const query = deviceSearch.value.toLowerCase();
     filtered = filtered.filter(
       (device) =>
-        device.deviceName.toLowerCase().includes(query) ||
+        device.name.toLowerCase().includes(query) ||
         device.id.toLowerCase().includes(query)
     );
   }
@@ -470,6 +386,7 @@ const filteredDevices = computed(() => {
 
 const selectedDevicesCount = computed(() => selectedDevices.value.length);
 
+
 // Methods
 const getFilterOptions = () => {
   const statuses = [
@@ -484,41 +401,76 @@ const getFilterOptions = () => {
 
 const getStatusColor = (status: string) => {
   switch (status) {
-    case "ใช้งานได้":
+    case "DEPLOYED":
       return "success";
-    case "กำลังใช้งาน":
-      return "info";
-    case "บำรุงรักษา":
+    case "MAINTENANCE":
       return "warning";
-    case "ขัดข้อง":
+    case "ERROR":
       return "error";
     default:
       return "grey";
   }
 };
 
-const formatDate = (date: Date) => {
-  return date.toLocaleDateString("th-TH", {
-    day: "2-digit",
-    month: "2-digit",
-    year: "numeric",
-  });
+const getStatusLabel = (status: string) => {
+  switch (status) {
+    case "DEPLOYED":
+      return "ใช้งานได้";
+    case "MAINTENANCE":
+      return "บำรุงรักษา";
+    case "ERROR":
+      return "ขัดข้อง";
+    default:
+      return status;
+  }
 };
 
-const formatDateTime = (date: Date) => {
-  return date.toLocaleString("th-TH", {
+const getTypeColor = (type: string) => {
+  switch (type) {
+    case "WASH":
+      return "primary";
+    case "DRYING":
+      return "secondary";
+    default:
+      return "grey";
+  }
+};
+
+const getTypeLabel = (type: string) => {
+  switch (type) {
+    case "WASH":
+      return "เครื่องล้าง";
+    case "DRYING":
+      return "เครื่องอบแห้ง";
+    default:
+      return type;
+  }
+};
+
+const formatDate = (dateString: string) => {
+  return new Date(dateString).toLocaleDateString("th-TH", {
     day: "2-digit",
     month: "2-digit",
     year: "numeric",
-    hour: "2-digit",
-    minute: "2-digit",
   });
 };
 
 const openDeviceDetailDialog = (device: Device) => {
   selectedDevice.value = device;
+  originalConfigs.value = JSON.parse(JSON.stringify(device.configs.sale));
+  editableConfigs.value = JSON.parse(JSON.stringify(device.configs.sale));
+  isEditMode.value = false;
   showDeviceDetailDialog.value = true;
 };
+
+
+const toggleDeviceStatus = () => {
+  if (selectedDevice.value) {
+    selectedDevice.value.status = selectedDevice.value.status === 'DEPLOYED' ? 'MAINTENANCE' : 'DEPLOYED';
+    // TODO: Implement API call to update device status
+  }
+};
+
 
 const applySystemConfig = () => {
   // TODO: Implement system config application logic
@@ -528,8 +480,11 @@ const applySystemConfig = () => {
 
 const applyDeviceConfig = () => {
   // TODO: Implement device config save logic
+  if (selectedDevice.value) {
+    selectedDevice.value.configs.sale = { ...editableConfigs.value };
+  }
   showApplyDeviceConfigDialog.value = false;
-  showDeviceDetailDialog.value = false;
+  isEditMode.value = false;
   // Show success notification or handle errors
 };
 
