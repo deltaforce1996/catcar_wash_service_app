@@ -47,6 +47,12 @@ enum TokenState {
   DISABLED
 }
 
+enum PaymentStatus {
+  SUCCESS
+  FAILED
+  CANCELLED
+}
+
 model tbl_permissions {
   id         String         @id @default(cuid())
   name       PermissionType @unique
@@ -146,17 +152,17 @@ model tbl_devices_state {
 // Note: This table should be partitioned by 30 days in PostgreSQL
 // Partitioning needs to be set up manually in the database after migration
 model tbl_devices_events {
-  id         String    @id @default(cuid())
+  id         String    @default(cuid())
   device_id  String
   payload    Json?
-  type       EventType
   created_at DateTime  @default(now())
 
   // Relations
   device     tbl_devices @relation(fields: [device_id], references: [id], onDelete: Cascade)
 
+  @@id([id, created_at])
   @@map("tbl_devices_events")
-  @@index([device_id, type, created_at])
+  @@index([device_id, created_at])
 }
 
 // แก้ polymorphic owner_id → แยกเป็น 2 คอลัมน์ และตั้งชื่อ relation ชัดเจน
@@ -184,55 +190,60 @@ model tbl_reset_password_token {
   @@index([owner_emp_id])
 }
 
-//-- ===========================================
-//-- Materialized View: รายวัน
-//-- ===========================================
+model mv_device_payments_hour {
+  device_id    String
+  hour_start   DateTime
+  status       String?
+  total_amount Decimal
+  coin_sum     Decimal?
+  bank_sum     Decimal?
+  qr_net_sum   Decimal?
+
+  @@id([device_id, hour_start, status])
+  @@map("mv_device_payments_hour")
+  @@ignore // กัน Prisma Migrate ไปสร้าง table; ยังใช้ $queryRaw อ่านได้
+}
+
 model mv_device_payments_day {
-  device_id      String
-  day            DateTime   // local date (Asia/Bangkok)
-  coin_sum       Decimal     @db.Decimal(18, 2)
-  bank_sum       Decimal     @db.Decimal(18, 2)
-  qr_net_sum     Decimal     @db.Decimal(18, 2)
-  total_amount   Decimal     @db.Decimal(18, 2)
-  payments_count Int
+  device_id    String
+  day          DateTime
+  status       String?
+  total_amount Decimal
+  coin_sum     Decimal?
+  bank_sum     Decimal?
+  qr_net_sum   Decimal?
 
-  @@id([device_id, day])
+  @@id([device_id, day, status]) // Prisma ต้องการ PK → ใช้ composite id ตาม unique index
   @@map("mv_device_payments_day")
-  @@ignore 
+  @@ignore // บอก Prisma ว่าไม่ต้องสร้าง/แก้ไขใน migration แต่ยัง query ได้
 }
 
-
-//-- ===========================================
-//-- Materialized View: รายเดือน
-//-- ===========================================
 model mv_device_payments_month {
-  device_id      String
-  month_start    DateTime
-  coin_sum       Decimal     @db.Decimal(18, 2)
-  bank_sum       Decimal     @db.Decimal(18, 2)
-  qr_net_sum     Decimal     @db.Decimal(18, 2)
-  total_amount   Decimal     @db.Decimal(18, 2)
-  payments_count Int
+  device_id    String
+  month_start  DateTime
+  status       String?
+  total_amount Decimal
+  coin_sum     Decimal?
+  bank_sum     Decimal?
+  qr_net_sum   Decimal?
 
-  @@id([device_id, month_start])
+  @@id([device_id, month_start, status])
   @@map("mv_device_payments_month")
-  @@ignore 
+  @@ignore // บอก Prisma ว่าไม่ต้องสร้าง/แก้ไขใน migration แต่ยัง query ได้
 }
 
-
-//-- ===========================================
-//-- Materialized View: รายปี
-//-- ===========================================
 model mv_device_payments_year {
-  device_id      String
-  year_start     DateTime
-  coin_sum       Decimal     @db.Decimal(18, 2)
-  bank_sum       Decimal     @db.Decimal(18, 2)
-  qr_net_sum     Decimal     @db.Decimal(18, 2)
-  total_amount   Decimal     @db.Decimal(18, 2)
-  payments_count Int
+  device_id    String
+  year_start   DateTime
+  status       String?
+  total_amount Decimal
+  coin_sum     Decimal?
+  bank_sum     Decimal?
+  qr_net_sum   Decimal?
 
-  @@id([device_id, year_start])
+  @@id([device_id, year_start, status])
   @@map("mv_device_payments_year")
-  @@ignore 
+  @@ignore // บอก Prisma ว่าไม่ต้องสร้าง/แก้ไขใน migration แต่ยัง query ได้
 }
+
+

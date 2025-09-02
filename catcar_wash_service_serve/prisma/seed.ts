@@ -8,6 +8,13 @@ import { randomInt } from 'crypto';
 const prisma = new PrismaClient();
 
 const main = async () => {
+  // console.log('starting...');
+  // const payloads = generateDeviceEvents(['device-0001'], EventType.PAYMENT, 2);
+  // console.log(JSON.stringify(payloads, null, 2));
+  await generate();
+};
+
+const generate = async () => {
   console.log('Starting database seeding...');
 
   // Seed permissions
@@ -229,7 +236,7 @@ const main = async () => {
         status: 'DEPLOYED',
         owner_id: user2.id,
         register_by_id: technician.id,
-        configs: dryingConfig.configs || {},
+        configs: washConfig.configs || {},
       },
     ],
   });
@@ -262,7 +269,7 @@ const main = async () => {
   });
 
   const deviceIds = devices.map((device) => device.id);
-  const logs_events = generateDeviceEvents(deviceIds, EventType.PAYMENT, 2000);
+  const logs_events = generateDeviceEvents(deviceIds, EventType.PAYMENT, 5);
 
   const newLogsEvents = await prisma.tbl_devices_events.createMany({
     data: logs_events,
@@ -283,6 +290,7 @@ const main = async () => {
       await prisma.$executeRaw`REFRESH MATERIALIZED VIEW CONCURRENTLY mv_device_payments_day`;
       await prisma.$executeRaw`REFRESH MATERIALIZED VIEW CONCURRENTLY mv_device_payments_month`;
       await prisma.$executeRaw`REFRESH MATERIALIZED VIEW CONCURRENTLY mv_device_payments_year`;
+      await prisma.$executeRaw`REFRESH MATERIALIZED VIEW CONCURRENTLY mv_device_payments_hour`;
       console.log('Materialized views refreshed successfully!');
     })();
   }, 5000);
@@ -305,33 +313,48 @@ const generateDeviceEvents = (deviceIds: string[], type: EventType, count: numbe
       // Generate random timestamp within safe partition range
       const randomOffset = randomInt(-maxPastMs, maxFutureMs);
       const timestemp = now + randomOffset;
-      const createdAt = new Date(timestemp);
 
       const payload = {
         type: type,
         timestemp: timestemp,
-        coin: randomInt(1, 100),
-        bank: randomInt(1, 100),
-        qr: { net_amount: randomInt(1, 100) },
-        type_log: type,
+        coin: {
+          1: randomInt(0, 10),
+          2: 0,
+          5: 0,
+          10: 0,
+        },
+        bank: {
+          20: 0,
+          50: 0,
+          300: 0,
+          500: 0,
+          1000: 0,
+        },
+        qr: { net_amount: 0, ref1: null, ref2: null, transaction_id: '1234567890' },
       };
+
+      const totalAmount =
+        Object.entries(payload.coin as Record<string, number>).reduce((acc, [k, v]) => acc + Number(k) * v, 0) +
+        Object.entries(payload.bank as Record<string, number>).reduce((acc, [k, v]) => acc + Number(k) * v, 0) +
+        (payload.qr as { net_amount: number }).net_amount;
+
+      payload['total_amount'] = totalAmount;
+      payload['status'] = 'SUCCESS'; // SUCCESS, FAILED, CANCELLED
 
       payloads.push({
         device_id: deviceId,
         payload: payload,
-        type: type,
-        created_at: createdAt,
       });
     }
   });
   return payloads;
 };
 
-void main()
-  .catch((e) => {
-    console.error('Error during seeding:', e);
-    process.exit(1);
-  })
-  .finally(() => {
-    void prisma.$disconnect();
-  });
+try {
+  main();
+} catch (e) {
+  console.error('Error during seeding:', e);
+  process.exit(1);
+} finally {
+  void prisma.$disconnect();
+}

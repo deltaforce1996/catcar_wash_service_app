@@ -177,7 +177,7 @@
   background-size: 100%;
   background-position: bottom left;
   background-repeat: no-repeat;
-  opacity: 0.15;
+  opacity: 0.20;
   z-index: 1;
 }
 
@@ -255,7 +255,7 @@
 }
 
 .brand-logo {
-  width: 80%;
+  width: 40%;
   max-width: 400px;
   height: auto;
   filter: drop-shadow(0 8px 20px rgba(0, 0, 0, 0.4)) 
@@ -290,6 +290,7 @@
   align-items: flex-start;
   max-width: 400px;
   margin: 0 auto;
+  opacity: 1;
 }
 
 .feature-point {
@@ -298,7 +299,8 @@
   gap: 0.75rem;
   font-size: 1rem;
   font-weight: 500;
-  opacity: 0.9;
+  opacity: 1;
+  color: white;
 }
 
 /* Cat Character */
@@ -307,6 +309,7 @@
   bottom: -2rem;
   right: 2rem;
   animation: bounce 3s ease-in-out infinite;
+  opacity: 1;
 }
 
 .cat-image {

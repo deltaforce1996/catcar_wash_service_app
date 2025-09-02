@@ -5,17 +5,13 @@ export class SearchDeviceEventLogsDto {
    * Search query string. Supported fields:
    * - id: Event ID
    * - device_id: Device ID
+   * - device_name: Device name (case-insensitive search)
    * - type: Event type (PAYMENT, INFO)
-   * - payload_timestemp: Unix timestamp within payload JSON (format: YYYY-MM-DD)
+   * - payload_timestemp: Unix timestamp within payload JSON (format: timestamp or start-end range)
    * - time_range: Time range filtering (format: HH:MM-HH:MM, e.g., "12:00-15:00")
-   * - payment_type: Payment type within payload JSON
    * - user_id: User ID within payload JSON
-   * - has_qr: Check if QR payment amount > 0 (true/false)
-   * - has_bank: Check if bank payment amount > 0 (true/false)
-   * - has_coin: Check if coin payment amount > 0 (true/false)
-   * - type_log: Type log within payload JSON
-   *
-   * Example: "device_id:abc123 type:PAYMENT has_qr:true time_range:12:00-15:00"
+
+   * Example: "device_id:abc123 device_name:WASH-001 type:PAYMENT payload_timestemp:1640995200000-1641081600000"
    */
   @IsString()
   @IsOptional()

@@ -55,7 +55,7 @@
             rounded="lg"
             class="gradient-btn text-none font-weight-bold mb-4"
             :loading="loading"
-            :disabled="loading"
+            :disabled="loading || !isFormValid"
             elevation="4"
           >
             <template #prepend>
@@ -79,24 +79,6 @@
               </v-btn>
             </p>
           </div>
-
-          <!-- Loading Overlay -->
-          <v-overlay
-            v-model="loading"
-            contained
-            class="align-center justify-center rounded-xl"
-          >
-            <div class="d-flex flex-column align-center">
-              <v-progress-circular
-                indeterminate
-                size="32"
-                width="3"
-                color="primary"
-                class="mb-2"
-              />
-              <span class="text-caption">กำลังส่งอีเมล...</span>
-            </div>
-          </v-overlay>
         </v-form>
       </v-card-text>
     </v-card>
@@ -121,7 +103,8 @@
 </template>
 
 <script setup lang="ts">
-import { ref } from 'vue'
+import { ref, computed } from 'vue'
+import { emailRules } from '@/utils/validation-rules'
 
 // Use auth layout
 definePageMeta({
@@ -132,11 +115,14 @@ definePageMeta({
 const email = ref('')
 const loading = ref(false)
 
-// Validation rules
-const emailRules = [
-  (v: string) => !!v || 'กรุณาใส่อีเมล',
-  (v: string) => /.+@.+\..+/.test(v) || 'รูปแบบอีเมลไม่ถูกต้อง'
-]
+// Validation rules imported from common
+
+// Form validation
+const isFormValid = computed(() => {
+  return email.value.trim() !== "" && 
+         email.value.includes("@") && 
+         email.value.includes(".");
+});
 
 // Methods
 const handleForgotPassword = () => {
@@ -160,68 +146,5 @@ const goToLogin = () => {
 </script>
 
 <style scoped>
-/* Gradient Avatar Background */
-.gradient-avatar {
-  background: linear-gradient(135deg, rgba(245, 127, 42, 0.1), rgba(255, 152, 0, 0.1)) !important;
-  border: 1px solid rgba(245, 127, 42, 0.2);
-}
-
-/* Gradient Text */
-.gradient-text {
-  background: linear-gradient(135deg, #f57f2a, #ff9800);
-  background-clip: text;
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-}
-
-/* Glass Card Effect */
-.glass-card {
-  background: rgba(var(--v-theme-surface), 0.95) !important;
-  backdrop-filter: blur(20px);
-  border: 1px solid rgba(var(--v-theme-outline), 0.1) !important;
-}
-
-.glass-card::before {
-  content: '';
-  position: absolute;
-  top: 0;
-  left: 20%;
-  right: 20%;
-  height: 1px;
-  background: linear-gradient(90deg, transparent, rgba(245, 127, 42, 0.3), transparent);
-}
-
-/* Gradient Button */
-.gradient-btn {
-  background: linear-gradient(135deg, #f57f2a, #ff9800) !important;
-  color: white !important;
-  position: relative;
-  overflow: hidden;
-}
-
-.gradient-btn::before {
-  content: '';
-  position: absolute;
-  top: 0;
-  left: -100%;
-  width: 100%;
-  height: 100%;
-  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
-  transition: left 0.4s ease;
-}
-
-.gradient-btn:hover::before {
-  left: 100%;
-}
-
-.gradient-btn:hover {
-  transform: translateY(-1px);
-  box-shadow: 0 8px 16px -4px rgba(245, 127, 42, 0.4) !important;
-}
-
-/* Dark Theme Adjustments */
-.v-theme--dark .glass-card {
-  background: rgba(var(--v-theme-surface), 0.8) !important;
-  border-color: rgba(var(--v-theme-outline), 0.2) !important;
-}
+@import '@/assets/css/auth-common.css';
 </style>
