@@ -67,11 +67,6 @@ export default defineNuxtPlugin((app) => {
             "on-warning": "#ffffff",
             "on-success": "#ffffff",
             "on-info": "#ffffff",
-            
-            // Additional Modern Colors
-            outline: "#cbd5e1", // Light outline
-            "outline-variant": "#e2e8f0", // Very light outline
-            background: "#f8fafc", // Subtle background
           },
         },
         dark: {
@@ -131,11 +126,6 @@ export default defineNuxtPlugin((app) => {
             "on-warning": "#1e293b",
             "on-success": "#1e293b",
             "on-info": "#ffffff",
-            
-            // Additional Dark Mode Colors
-            // outline: "#475569", // Medium slate outline
-            // "outline-variant": "#334155", // Dark slate outline
-            // background: "#0f172a", // Very dark background
           },
         },
       },

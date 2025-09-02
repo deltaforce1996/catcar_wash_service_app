@@ -93,7 +93,7 @@
             rounded="lg"
             class="gradient-btn text-none font-weight-bold mb-4"
             :loading="loading"
-            :disabled="loading || passwordStrength < 60"
+            :disabled="loading || passwordStrength < 60 || !isFormValid"
             elevation="4"
           >
             <template #prepend>
@@ -117,24 +117,6 @@
               </v-btn>
             </p>
           </div>
-
-          <!-- Loading Overlay -->
-          <v-overlay
-            v-model="loading"
-            contained
-            class="align-center justify-center rounded-xl"
-          >
-            <div class="d-flex flex-column align-center">
-              <v-progress-circular
-                indeterminate
-                size="32"
-                width="3"
-                color="primary"
-                class="mb-2"
-              />
-              <span class="text-caption">กำลังรีเซ็ตรหัสผ่าน...</span>
-            </div>
-          </v-overlay>
         </v-form>
       </v-card-text>
     </v-card>
@@ -165,6 +147,13 @@
 
 <script setup lang="ts">
 import { ref, computed } from "vue";
+import { 
+  passwordRulesStrong, 
+  createConfirmPasswordRules,
+  calculatePasswordStrength,
+  getPasswordStrengthColor,
+  getPasswordStrengthText
+} from "@/utils/validation-rules";
 
 // Use auth layout
 definePageMeta({
@@ -178,48 +167,22 @@ const showPassword = ref(false);
 const showConfirmPassword = ref(false);
 const loading = ref(false);
 
-// Password strength calculation
-const passwordStrength = computed(() => {
-  const pwd = password.value;
-  let strength = 0;
-  
-  if (pwd.length >= 8) strength += 20;
-  if (pwd.length >= 12) strength += 10;
-  if (/(?=.*[a-z])/.test(pwd)) strength += 20;
-  if (/(?=.*[A-Z])/.test(pwd)) strength += 20;
-  if (/(?=.*[0-9])/.test(pwd)) strength += 20;
-  if (/(?=.*[!@#$%^&*])/.test(pwd)) strength += 10;
-  
-  return Math.min(strength, 100);
+// Password strength calculation using common functions
+const passwordStrength = computed(() => calculatePasswordStrength(password.value));
+const passwordStrengthColor = computed(() => getPasswordStrengthColor(passwordStrength.value));
+const passwordStrengthText = computed(() => getPasswordStrengthText(passwordStrength.value));
+
+// Validation rules using common functions
+const passwordRules = passwordRulesStrong;
+const confirmPasswordRules = computed(() => createConfirmPasswordRules(password.value));
+
+// Form validation
+const isFormValid = computed(() => {
+  return password.value.trim() !== "" && 
+         confirmPassword.value.trim() !== "" && 
+         password.value === confirmPassword.value &&
+         passwordStrength.value >= 60;
 });
-
-const passwordStrengthColor = computed(() => {
-  if (passwordStrength.value < 40) return 'error';
-  if (passwordStrength.value < 70) return 'warning';
-  return 'success';
-});
-
-const passwordStrengthText = computed(() => {
-  if (passwordStrength.value < 40) return 'อ่อนแอ';
-  if (passwordStrength.value < 70) return 'ปานกลาง';
-  return 'แข็งแกร่ง';
-});
-
-// Validation rules
-const passwordRules = [
-  (v: string) => !!v || "กรุณาใส่รหัสผ่าน",
-  (v: string) => v.length >= 8 || "รหัสผ่านต้องมีอย่างน้อย 8 ตัวอักษร",
-  (v: string) =>
-    /(?=.*[a-z])/.test(v) || "รหัสผ่านต้องมีตัวอักษรเล็กอย่างน้อย 1 ตัว",
-  (v: string) =>
-    /(?=.*[A-Z])/.test(v) || "รหัสผ่านต้องมีตัวอักษรใหญ่อย่างน้อย 1 ตัว",
-  (v: string) => /(?=.*[0-9])/.test(v) || "รหัสผ่านต้องมีตัวเลขอย่างน้อย 1 ตัว",
-];
-
-const confirmPasswordRules = computed(() => [
-  (v: string) => !!v || "กรุณายืนยันรหัสผ่าน",
-  (v: string) => v === password.value || "รหัสผ่านไม่ตรงกัน",
-]);
 
 // Methods
 const handleResetPassword = () => {
@@ -244,74 +207,5 @@ const goToLogin = () => {
 </script>
 
 <style scoped>
-/* Gradient Avatar Background */
-.gradient-avatar {
-  background: linear-gradient(135deg, rgba(245, 127, 42, 0.1), rgba(255, 152, 0, 0.1)) !important;
-  border: 1px solid rgba(245, 127, 42, 0.2);
-}
-
-/* Gradient Text */
-.gradient-text {
-  background: linear-gradient(135deg, #f57f2a, #ff9800);
-  background-clip: text;
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-}
-
-/* Glass Card Effect */
-.glass-card {
-  background: rgba(var(--v-theme-surface), 0.95) !important;
-  backdrop-filter: blur(20px);
-  border: 1px solid rgba(var(--v-theme-outline), 0.1) !important;
-}
-
-.glass-card::before {
-  content: '';
-  position: absolute;
-  top: 0;
-  left: 20%;
-  right: 20%;
-  height: 1px;
-  background: linear-gradient(90deg, transparent, rgba(245, 127, 42, 0.3), transparent);
-}
-
-/* Gradient Button */
-.gradient-btn {
-  background: linear-gradient(135deg, #f57f2a, #ff9800) !important;
-  color: white !important;
-  position: relative;
-  overflow: hidden;
-}
-
-.gradient-btn::before {
-  content: '';
-  position: absolute;
-  top: 0;
-  left: -100%;
-  width: 100%;
-  height: 100%;
-  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
-  transition: left 0.4s ease;
-}
-
-.gradient-btn:hover::before {
-  left: 100%;
-}
-
-.gradient-btn:hover {
-  transform: translateY(-1px);
-  box-shadow: 0 8px 16px -4px rgba(245, 127, 42, 0.4) !important;
-}
-
-.gradient-btn:disabled {
-  opacity: 0.6;
-  transform: none !important;
-  box-shadow: 0 4px 12px -2px rgba(245, 127, 42, 0.2) !important;
-}
-
-/* Dark Theme Adjustments */
-.v-theme--dark .glass-card {
-  background: rgba(var(--v-theme-surface), 0.8) !important;
-  border-color: rgba(var(--v-theme-outline), 0.2) !important;
-}
+@import '@/assets/css/auth-common.css';
 </style>

@@ -236,7 +236,7 @@ const generate = async () => {
         status: 'DEPLOYED',
         owner_id: user2.id,
         register_by_id: technician.id,
-        configs: dryingConfig.configs || {},
+        configs: washConfig.configs || {},
       },
     ],
   });
