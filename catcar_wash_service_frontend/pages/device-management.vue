@@ -407,6 +407,8 @@ const getStatusColor = (status: string) => {
       return "warning";
     case "ERROR":
       return "error";
+    case "DISABLED":
+      return "grey";
     default:
       return "grey";
   }
@@ -420,6 +422,8 @@ const getStatusLabel = (status: string) => {
       return "บำรุงรักษา";
     case "ERROR":
       return "ขัดข้อง";
+    case "DISABLED":
+      return "ปิดใช้งาน";
     default:
       return status;
   }
