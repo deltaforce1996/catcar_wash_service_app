@@ -185,54 +185,56 @@
                 </div>
               </v-card-title>
               
-              <v-card-text class="pa-4">
-                <v-row dense>
-                  <v-col
-                    v-for="(config, key) in (isEditMode ? editableConfigs : device?.configs.sale)"
+              <v-card-text class="pa-0">
+                <v-list class="py-0">
+                  <template
+                    v-for="(config, key, index) in (isEditMode ? editableConfigs : device?.configs.sale)"
                     :key="key"
-                    cols="12" sm="6" md="4" lg="3"
                   >
-                    <v-card
-                      flat
-                      :color="getConfigCardColor(key)"
-                      class="pa-3 border"
-                      :class="getConfigCardClass(key)"
-                      height="120"
+                    <v-list-item
+                      class="px-6 py-4"
+                      :class="isEditMode && isConfigChanged(key) ? 'bg-warning-lighten-5' : ''"
                     >
-                      <div class="d-flex flex-column h-100">
-                        <div class="d-flex justify-space-between align-start mb-2">
-                          <span class="text-body-2 font-weight-bold text-truncate" style="max-width: 100px;">
-                            {{ config.description }}
-                          </span>
-                          <v-chip
-                            size="x-small"
-                            color="grey-darken-2"
-                            variant="flat"
-                          >
-                            {{ key }}
-                          </v-chip>
-                        </div>
-                        
-                        <v-spacer />
-                        
-                        <!-- View Mode -->
-                        <div v-if="!isEditMode" class="d-flex align-center justify-space-between">
-                          <v-chip
-                            color="success"
-                            size="small"
-                            variant="elevated"
-                            class="font-weight-bold"
-                          >
-                            {{ config.value }}
-                          </v-chip>
-                          <span class="text-caption text-grey-darken-2">
-                            {{ config.unit }}
-                          </span>
-                        </div>
-                        
-                        <!-- Edit Mode -->
-                        <div v-else class="d-flex flex-column" style="min-height: 60px;">
-                          <div class="d-flex align-center justify-space-between mb-1">
+                      <template #prepend>
+                        <v-avatar
+                          size="40"
+                          :color="isEditMode && isConfigChanged(key) ? 'warning' : 'primary'"
+                          variant="tonal"
+                          class="mr-4"
+                        >
+                          <v-icon size="20">
+                            {{ getConfigIcon(key) }}
+                          </v-icon>
+                        </v-avatar>
+                      </template>
+
+                      <v-list-item-title class="text-subtitle-1 font-weight-medium mb-1">
+                        {{ config.description }}
+                        <v-chip
+                          size="x-small"
+                          color="grey-darken-1"
+                          variant="outlined"
+                          class="ml-2"
+                        >
+                          {{ key }}
+                        </v-chip>
+                      </v-list-item-title>
+
+                      <v-list-item-subtitle v-if="!isEditMode" class="text-body-2 text-grey-darken-1">
+                        {{ getConfigDescription(key) }}
+                      </v-list-item-subtitle>
+
+                      <template #append>
+                        <div class="d-flex align-center" style="min-width: 200px;">
+                          <!-- View Mode -->
+                          <div v-if="!isEditMode" class="text-right">
+                            <div class="text-h6 font-weight-bold text-primary mb-1">
+                              {{ config.value }} <span class="text-body-2 text-grey-darken-1">{{ config.unit }}</span>
+                            </div>
+                          </div>
+
+                          <!-- Edit Mode -->
+                          <div v-else class="d-flex align-center" style="width: 100%;">
                             <v-text-field
                               v-model.number="editableConfigs[key].value"
                               type="number"
@@ -241,42 +243,53 @@
                               hide-details
                               :suffix="config.unit"
                               :color="isConfigChanged(key) ? 'warning' : 'primary'"
-                              class="flex-grow-1"
-                              style="max-width: calc(100% - 60px);"
+                              class="mr-2"
+                              style="max-width: 120px;"
                             />
-                            <div class="d-flex align-center ml-1">
-                              <v-icon
-                                v-if="isConfigChanged(key)"
-                                color="warning"
-                                size="16"
-                                class="mr-1"
-                              >
-                                mdi-pencil-circle
-                              </v-icon>
+                            <div class="d-flex align-center">
                               <v-btn
                                 v-if="isConfigChanged(key)"
-                                icon
-                                size="x-small"
+                                icon="mdi-restore"
+                                size="small"
                                 color="warning"
                                 variant="outlined"
                                 @click="resetSingleConfig(key)"
+                              />
+                              <v-icon
+                                v-if="isConfigChanged(key)"
+                                color="warning"
+                                size="20"
+                                class="ml-2"
                               >
-                                <v-icon size="12">mdi-restore</v-icon>
-                              </v-btn>
-                            </div>
-                          </div>
-                          <!-- Reserve space for hint text to prevent layout shift -->
-                          <div class="text-caption" style="min-height: 16px;">
-                            <div v-if="isConfigChanged(key)" class="text-warning d-flex justify-space-between">
-                              <span>เดิม: {{ originalConfigs[key]?.value }}</span>
-                              <span>ใหม่: {{ editableConfigs[key].value }}</span>
+                                mdi-pencil-circle
+                              </v-icon>
                             </div>
                           </div>
                         </div>
-                      </div>
-                    </v-card>
-                  </v-col>
-                </v-row>
+                      </template>
+                    </v-list-item>
+
+                    <!-- Change indicator for edit mode -->
+                    <div v-if="isEditMode && isConfigChanged(key)" class="px-6 pb-2">
+                      <v-alert
+                        color="warning"
+                        variant="tonal"
+                        density="compact"
+                        class="text-caption"
+                      >
+                        <v-icon class="mr-1">mdi-information</v-icon>
+                        เปลี่ยนจาก {{ originalConfigs[key]?.value }} {{ originalConfigs[key]?.unit }} 
+                        เป็น {{ editableConfigs[key].value }} {{ editableConfigs[key].unit }}
+                      </v-alert>
+                    </div>
+
+                    <!-- Divider between items (except last item) -->
+                    <v-divider
+                      v-if="index < Object.keys(device?.configs.sale || {}).length - 1"
+                      class="mx-6"
+                    />
+                  </template>
+                </v-list>
               </v-card-text>
             </v-card>
           </v-col>
@@ -346,16 +359,6 @@ const isConfigChanged = (key: string) => {
   return originalConfigs.value[key]?.value !== editableConfigs.value[key]?.value
 }
 
-const getConfigCardColor = (key: string) => {
-  if (!isEditMode.value) return 'white'
-  return isConfigChanged(key) ? 'warning-lighten-4' : 'warning-lighten-5'
-}
-
-const getConfigCardClass = (key: string) => {
-  const baseClass = isEditMode.value ? 'border-warning' : ''
-  const changedClass = isEditMode.value && isConfigChanged(key) ? 'border-warning-darken-2' : ''
-  return `${baseClass} ${changedClass}`.trim()
-}
 
 const getStatusColor = (status: string) => {
   switch (status) {
@@ -413,6 +416,56 @@ const getDeviceDescription = (type: string) => {
       return 'เครื่องอบแห้งและฆ่าเชื้อโรคด้วยแสง UV และโอโซน เหมาะสำหรับการทำความสะอาดและฆ่าเชื้อโรคบนหมวกกันน็อค อุปกรณ์ป้องกัน และสิ่งของต่างๆ'
     default:
       return 'อุปกรณ์สำหรับบริการล้างและทำความสะอาด'
+  }
+}
+
+const getConfigIcon = (configKey: string) => {
+  switch (configKey.toLowerCase()) {
+    case 'price':
+    case 'cost':
+      return 'mdi-cash'
+    case 'time':
+    case 'duration':
+      return 'mdi-clock-outline'
+    case 'water':
+    case 'pressure':
+      return 'mdi-water'
+    case 'temperature':
+    case 'temp':
+      return 'mdi-thermometer'
+    case 'speed':
+    case 'rpm':
+      return 'mdi-speedometer'
+    case 'power':
+    case 'watt':
+      return 'mdi-flash'
+    default:
+      return 'mdi-cog'
+  }
+}
+
+const getConfigDescription = (configKey: string) => {
+  switch (configKey.toLowerCase()) {
+    case 'price':
+      return 'ค่าบริการต่อการใช้งานหนึ่งครั้ง'
+    case 'cost':
+      return 'ราคาบริการที่เรียกเก็บจากลูกค้า'
+    case 'time':
+      return 'ระยะเวลาที่ใช้ในการให้บริการ'
+    case 'duration':
+      return 'ความยาวของรอบการทำงาน'
+    case 'water':
+      return 'ปริมาณน้ำที่ใช้ในกระบวนการล้าง'
+    case 'pressure':
+      return 'แรงดันของน้ำที่ใช้ในการล้าง'
+    case 'temperature':
+      return 'อุณหภูมิของน้ำที่ใช้ในกระบวนการ'
+    case 'speed':
+      return 'ความเร็วในการหมุนของแปรงหรือเครื่องจักร'
+    case 'power':
+      return 'กำลังไฟฟ้าที่ใช้ในการทำงาน'
+    default:
+      return 'การตั้งค่าสำหรับการทำงานของอุปกรณ์'
   }
 }
 
