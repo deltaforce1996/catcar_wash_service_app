@@ -386,7 +386,6 @@ const filteredDevices = computed(() => {
 
 const selectedDevicesCount = computed(() => selectedDevices.value.length);
 
-
 // Methods
 const getFilterOptions = () => {
   const statuses = [
@@ -467,14 +466,13 @@ const openDeviceDetailDialog = (device: Device) => {
   showDeviceDetailDialog.value = true;
 };
 
-
 const toggleDeviceStatus = () => {
   if (selectedDevice.value) {
-    selectedDevice.value.status = selectedDevice.value.status === 'DEPLOYED' ? 'MAINTENANCE' : 'DEPLOYED';
+    selectedDevice.value.status =
+      selectedDevice.value.status === "DEPLOYED" ? "MAINTENANCE" : "DEPLOYED";
     // TODO: Implement API call to update device status
   }
 };
-
 
 const applySystemConfig = () => {
   // TODO: Implement system config application logic
