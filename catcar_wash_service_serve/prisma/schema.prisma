@@ -125,6 +125,7 @@ model tbl_devices {
   registered_by tbl_emps  @relation(fields: [register_by_id], references: [id], onDelete: Cascade)
   device_states tbl_devices_state[]
   device_events tbl_devices_events[]
+  last_state    tbl_devices_last_state?
 
   @@map("tbl_devices")
   @@index([owner_id])
@@ -147,6 +148,20 @@ model tbl_devices_state {
 
   @@map("tbl_devices_state")
   @@index([device_id, created_at])
+}
+
+model tbl_devices_last_state {
+  id         String   @id @default(cuid())
+  device_id  String   @unique
+  state_data Json?
+  hash_state String?
+  updated_at DateTime @default(now()) @updatedAt
+
+  // Relations
+  device     tbl_devices @relation(fields: [device_id], references: [id], onDelete: Cascade)
+
+  @@map("tbl_devices_last_state")
+  @@index([device_id])
 }
 
 // Note: This table should be partitioned by 30 days in PostgreSQL

@@ -1,4 +1,4 @@
-import { PrismaClient, PermissionType, EventType } from '@prisma/client';
+import { PrismaClient, PermissionType, EventType, DeviceType } from '@prisma/client';
 import * as bcrypt from 'bcrypt';
 import { DeviceDryingConfig } from '../src/shared/device-drying-config';
 import { DeviceWashConfig } from '../src/shared/device-wash-config';
@@ -6,6 +6,77 @@ import { DeviceRow } from '../src/apis/devices/devices.service';
 import { randomInt } from 'crypto';
 
 const prisma = new PrismaClient();
+
+/**
+ * Generates realistic device state data based on device type
+ */
+const generateDeviceState = (deviceType: DeviceType): any => {
+  const now = Date.now();
+  const timestamp = now + randomInt(-300000, 300000); // ±5 minutes from now
+  console.log(`Device type: ${deviceType}`);
+  // Return only base state data
+  return {
+    timestamp,
+    rssi: randomInt(-80, -30), // WiFi signal strength
+    uptime: randomInt(3600, 86400), // 1-24 hours uptime
+    status: Math.random() > 0.1 ? 'normal' : 'error', // 90% normal, 10% error
+  };
+};
+
+/**
+ * Generates device state history for tbl_devices_state
+ */
+const generateDeviceStates = (deviceIds: string[], deviceTypes: DeviceType[], count: number): any[] => {
+  console.log(`Generating ${count} state records for ${deviceIds.length} devices`);
+  const states: any[] = [];
+
+  deviceIds.forEach((deviceId, index) => {
+    const deviceType = deviceTypes[index];
+
+    for (let i = 0; i < count; i++) {
+      const stateData = generateDeviceState(deviceType);
+      const hashState = Buffer.from(JSON.stringify(stateData)).toString('base64');
+
+      // Generate timestamp within the last 30 days
+      const now = Date.now();
+      const maxPastDays = 30;
+      const maxPastMs = maxPastDays * 24 * 60 * 60 * 1000;
+      const randomOffset = randomInt(-maxPastMs, 0);
+      const createdAt = new Date(now + randomOffset);
+
+      states.push({
+        device_id: deviceId,
+        state_data: stateData,
+        hash_state: hashState,
+        created_at: createdAt,
+      });
+    }
+  });
+
+  return states;
+};
+
+/**
+ * Generates current device state for tbl_devices_last_state
+ */
+const generateDeviceLastStates = (deviceIds: string[], deviceTypes: DeviceType[]): any[] => {
+  console.log(`Generating last state records for ${deviceIds.length} devices`);
+  const lastStates: any[] = [];
+
+  deviceIds.forEach((deviceId, index) => {
+    const deviceType = deviceTypes[index];
+    const stateData = generateDeviceState(deviceType);
+    const hashState = Buffer.from(JSON.stringify(stateData)).toString('base64');
+
+    lastStates.push({
+      device_id: deviceId,
+      state_data: stateData,
+      hash_state: hashState,
+    });
+  });
+
+  return lastStates;
+};
 
 const main = async () => {
   // console.log('starting...');
@@ -269,11 +340,34 @@ const generate = async () => {
   });
 
   const deviceIds = devices.map((device) => device.id);
-  const logs_events = generateDeviceEvents(deviceIds, EventType.PAYMENT, 5);
+  const deviceTypes = devices.map((device) => device.type);
 
+  // Generate device events
+  const logs_events = generateDeviceEvents(deviceIds, EventType.PAYMENT, 5);
   const newLogsEvents = await prisma.tbl_devices_events.createMany({
     data: logs_events,
   });
+
+  // Generate device states (historical data)
+  const device_states = generateDeviceStates(deviceIds, deviceTypes, 10); // 10 state records per device
+  const newDeviceStates = await prisma.tbl_devices_state.createMany({
+    data: device_states,
+  });
+
+  // Generate device last states (current state)
+  const device_last_states = generateDeviceLastStates(deviceIds, deviceTypes);
+
+  // Insert last states using raw SQL since Prisma client might not be updated yet
+  for (const lastState of device_last_states) {
+    await prisma.$executeRaw`
+      INSERT INTO tbl_devices_last_state (id, device_id, state_data, hash_state, updated_at)
+      VALUES (gen_random_uuid(), ${lastState.device_id}, ${JSON.stringify(lastState.state_data)}::jsonb, ${lastState.hash_state}, NOW())
+      ON CONFLICT (device_id) DO UPDATE SET
+        state_data = EXCLUDED.state_data,
+        hash_state = EXCLUDED.hash_state,
+        updated_at = NOW()
+    `;
+  }
 
   console.log(`SuperAdmin employee created with ID: ${superAdmin.id}`);
   console.log(`Technician employee created with ID: ${technician.id}`);
@@ -282,9 +376,11 @@ const generate = async () => {
   console.log(`Devices created: ${devicesUser.count}`);
   console.log(`Devices created: ${devicesUser2.count}`);
   console.log(`Logs events created: ${newLogsEvents.count}`);
+  console.log(`Device states created: ${newDeviceStates.count}`);
+  console.log(`Device last states created: ${device_last_states.length}`);
   console.log('Database seeding completed successfully!');
 
-  setTimeout(() => {
+  void setTimeout(() => {
     void (async () => {
       console.log('Refreshing materialized views...');
       await prisma.$executeRaw`REFRESH MATERIALIZED VIEW CONCURRENTLY mv_device_payments_day`;
@@ -351,7 +447,7 @@ const generateDeviceEvents = (deviceIds: string[], type: EventType, count: numbe
 };
 
 try {
-  main();
+  void main();
 } catch (e) {
   console.error('Error during seeding:', e);
   process.exit(1);
