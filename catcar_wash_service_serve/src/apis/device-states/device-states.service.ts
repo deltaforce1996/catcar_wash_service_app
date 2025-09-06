@@ -1,8 +1,8 @@
 import { BadRequestException, Injectable, Logger } from '@nestjs/common';
-import { Prisma } from '@prisma/client';
+import { PermissionType, Prisma } from '@prisma/client';
 import { PrismaService } from 'src/database/prisma/prisma.service';
 import { parseKeyValueOnly } from 'src/shared/kv-parser';
-import { PaginatedResult, DeviceState } from 'src/types/internal.type';
+import { PaginatedResult, DeviceState, AuthenticatedUser } from 'src/types/internal.type';
 import { SearchDeviceStatesDto } from './dtos/search-device-states.dto';
 
 // Helper function to format date to YYYY-MM-DD hh:mm:ss
@@ -58,10 +58,18 @@ export class DeviceStatesService {
     this.logger.log('DeviceStatesService initialized');
   }
 
-  async searchDeviceStates(q: SearchDeviceStatesDto): Promise<PaginatedResult<DeviceStateRow>> {
+  async searchDeviceStates(
+    q: SearchDeviceStatesDto,
+    user?: AuthenticatedUser,
+  ): Promise<PaginatedResult<DeviceStateRow>> {
     const pairs = parseKeyValueOnly(q.query ?? '', this.allowed);
 
     const ands: Prisma.tbl_devices_stateWhereInput['AND'] = [];
+
+    // Add permission-based filtering for USER role
+    if (user?.permission?.name === PermissionType.USER) {
+      ands.push({ device: { owner_id: user.id } });
+    }
 
     for (const { key, value } of pairs) {
       switch (key) {

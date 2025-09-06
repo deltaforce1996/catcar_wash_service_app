@@ -2,7 +2,7 @@ import { Injectable, CanActivate, ExecutionContext, Logger } from '@nestjs/commo
 import { Reflector } from '@nestjs/core';
 import { AuthenticatedUser } from '../../../types/internal.type';
 import { PermissionDeniedException } from 'src/errors/permission-denied.exception';
-import { ROLES_KEY } from '../decorators/roles.decorator';
+import { ROLES_KEY, ROLE_ERROR_MESSAGE_KEY } from '../decorators/roles.decorator';
 
 @Injectable()
 export class RoleAuthGuard implements CanActivate {
@@ -32,13 +32,21 @@ export class RoleAuthGuard implements CanActivate {
       context.getClass(),
     ]);
 
+    // Check for custom error message
+    const customErrorMessage = this.reflector.getAllAndOverride<string>(ROLE_ERROR_MESSAGE_KEY, [
+      context.getHandler(),
+      context.getClass(),
+    ]);
+
     if (decoratorRoles && decoratorRoles.length > 0) {
       this.logger.debug('Decorator roles', decoratorRoles.join(', '));
       const hasDecoratorRole = decoratorRoles.includes(userRole);
       if (!hasDecoratorRole) {
-        throw new PermissionDeniedException(
-          `Access denied. Required roles: ${decoratorRoles.join(', ')}. User role: ${userRole}`,
-        );
+        // Use custom error message if available, otherwise use default
+        const errorMessage =
+          customErrorMessage || `Access denied. Required roles: ${decoratorRoles.join(', ')}. User role: ${userRole}`;
+
+        throw new PermissionDeniedException(errorMessage);
       }
       return true;
     }

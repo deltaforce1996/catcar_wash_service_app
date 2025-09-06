@@ -1,12 +1,12 @@
 import { Injectable, Logger } from '@nestjs/common';
-import { DeviceStatus, DeviceType, Prisma } from '@prisma/client';
+import { DeviceStatus, DeviceType, PermissionType, Prisma } from '@prisma/client';
 import { PrismaService } from 'src/database/prisma/prisma.service';
 import { ItemNotFoundException } from 'src/errors';
 import { CreateDeviceDto } from './dtos/create-device.dto';
 import { UpdateDeviceDto } from './dtos/update-device.dto';
 import { SearchDeviceDto } from './dtos/search-device.dto';
 import { parseKeyValueOnly } from 'src/shared/kv-parser';
-import { PaginatedResult } from 'src/types/internal.type';
+import { AuthenticatedUser, PaginatedResult } from 'src/types/internal.type';
 
 export const devicePublicSelect = Prisma.validator<Prisma.tbl_devicesSelect>()({
   id: true,
@@ -45,10 +45,14 @@ export class DevicesService {
     this.logger.log('DevicesService initialized');
   }
 
-  async searchDevices(q: SearchDeviceDto): Promise<PaginatedResult<DeviceRow>> {
+  async searchDevices(q: SearchDeviceDto, user?: AuthenticatedUser): Promise<PaginatedResult<DeviceRow>> {
     const pairs = parseKeyValueOnly(q.query ?? '', ALLOWED);
-    console.log(pairs);
     const ands: Prisma.tbl_devicesWhereInput['AND'] = [];
+
+    // Add permission-based filtering for USER role
+    if (user?.permission?.name === PermissionType.USER) {
+      ands.push({ owner_id: user.id });
+    }
     for (const { key, value } of pairs) {
       switch (key) {
         case 'id':
@@ -109,9 +113,15 @@ export class DevicesService {
     };
   }
 
-  async findById(id: string): Promise<DeviceRow> {
+  async findById(id: string, user?: AuthenticatedUser): Promise<DeviceRow> {
+    const where: Prisma.tbl_devicesWhereUniqueInput = { id };
+
+    // Add permission-based filtering for USER role
+    if (user?.permission?.name === PermissionType.USER) {
+      where.owner_id = user.id;
+    }
     const device: DeviceRow | null = await this.prisma.tbl_devices.findUnique({
-      where: { id },
+      where,
       select: devicePublicSelect,
     });
     if (!device) {

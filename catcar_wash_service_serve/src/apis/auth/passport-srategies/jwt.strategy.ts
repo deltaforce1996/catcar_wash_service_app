@@ -43,7 +43,7 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
         return user;
       }
 
-      if (payload.permission.name === PermissionType.TECHNICIAN) {
+      if (payload.permission.name === PermissionType.TECHNICIAN || payload.permission.name === PermissionType.ADMIN) {
         const employee: AuthenticatedUser | undefined = await this.authService.validateEmployeeById(payload.id);
         if (!employee) throw new InvalidTokenException('Token references non-existent employee');
         return employee;

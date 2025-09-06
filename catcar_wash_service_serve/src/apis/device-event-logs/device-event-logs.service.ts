@@ -1,8 +1,8 @@
 import { BadRequestException, Injectable, Logger } from '@nestjs/common';
-import { EventType, PaymentStatus, Prisma } from '@prisma/client';
+import { EventType, PaymentStatus, PermissionType, Prisma } from '@prisma/client';
 import { PrismaService } from 'src/database/prisma/prisma.service';
 import { parseKeyValueOnly } from 'src/shared/kv-parser';
-import { PaginatedResult } from 'src/types/internal.type';
+import { AuthenticatedUser, PaginatedResult } from 'src/types/internal.type';
 import { SearchDeviceEventLogsDto } from './dtos/search-devcie-event.dto';
 
 // Helper function to format date to YYYY-MM-DD hh:mm:ss
@@ -63,10 +63,17 @@ export class DeviceEventLogsService {
     this.logger.log('DeviceEventLogsService initialized');
   }
 
-  async searchDeviceEventLogs(q: SearchDeviceEventLogsDto): Promise<PaginatedResult<DeviceEventLogRow>> {
+  async searchDeviceEventLogs(
+    q: SearchDeviceEventLogsDto,
+    user?: AuthenticatedUser,
+  ): Promise<PaginatedResult<DeviceEventLogRow>> {
     const pairs = parseKeyValueOnly(q.query ?? '', this.allowed);
 
     const ands: Prisma.tbl_devices_eventsWhereInput['AND'] = [];
+
+    if (user?.permission?.name === PermissionType.USER) {
+      ands.push({ device: { owner_id: user.id } });
+    }
 
     for (const { key, value } of pairs) {
       switch (key) {

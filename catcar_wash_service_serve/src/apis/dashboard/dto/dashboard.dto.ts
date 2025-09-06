@@ -19,7 +19,6 @@ export class DashboardFilterDto {
   @IsEnum(PaymentStatus)
   payment_status?: PaymentStatus;
 
-  @IsOptional()
   @IsDateString()
   date?: string;
 

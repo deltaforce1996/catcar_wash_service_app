@@ -1,5 +1,5 @@
-import { Controller, Get, Query, UseFilters, UseGuards } from '@nestjs/common';
-import { PaginatedResult } from 'src/types/internal.type';
+import { Controller, Get, Query, UseFilters, UseGuards, Request } from '@nestjs/common';
+import { AuthenticatedUser, PaginatedResult } from 'src/types/internal.type';
 import { DeviceStatesService, DeviceStateRow } from './device-states.service';
 import { SearchDeviceStatesDto } from './dtos/search-device-states.dto';
 import { SuccessResponse } from 'src/types/success-response.type';
@@ -15,8 +15,12 @@ export class DeviceStatesController {
   constructor(private readonly deviceStatesService: DeviceStatesService) {}
 
   @Get('search')
-  async searchDeviceStates(@Query() q: SearchDeviceStatesDto): Promise<SuccessResponse<DeviceStatesPublicResponse>> {
-    const result = await this.deviceStatesService.searchDeviceStates(q);
+  async searchDeviceStates(
+    @Query() q: SearchDeviceStatesDto,
+    @Request() req: Request & { user: AuthenticatedUser },
+  ): Promise<SuccessResponse<DeviceStatesPublicResponse>> {
+    const user = req.user;
+    const result = await this.deviceStatesService.searchDeviceStates(q, user);
     return {
       success: true,
       message: 'Device states fetched successfully',

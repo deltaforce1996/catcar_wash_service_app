@@ -6,12 +6,15 @@ import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { PaginatedResult } from 'src/types/internal.type';
 import { UpdateUserDto } from './dtos/update-user.dto';
 import { SuccessResponse } from 'src/types';
+import { RoleAdminAndTechnician } from '../auth/decorators/roles.decorator';
+import { RoleAuthGuard } from '../auth/guards/role-auth.guard';
 
 type UserPublicResponse = PaginatedResult<UserWithDeviceCountsRow>;
 
 @UseFilters(AllExceptionFilter)
-@UseGuards(JwtAuthGuard)
+@UseGuards(JwtAuthGuard, RoleAuthGuard)
 @Controller('api/v1/users')
+@RoleAdminAndTechnician()
 export class UsersController {
   constructor(private readonly usersService: UsersService) {}
 
