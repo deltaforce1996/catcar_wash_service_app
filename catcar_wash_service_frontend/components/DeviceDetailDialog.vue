@@ -13,33 +13,6 @@
           การตั้งค่าอุปกรณ์ - {{ device?.name }}
         </v-toolbar-title>
         <v-spacer />
-
-        <!-- Edit Mode Toggle -->
-        <v-btn
-          :color="isEditMode ? 'warning' : 'info'"
-          variant="elevated"
-          class="mr-3"
-          @click="toggleEditMode"
-        >
-          <v-icon class="mr-1">
-            {{ isEditMode ? "mdi-eye" : "mdi-pencil" }}
-          </v-icon>
-          {{ isEditMode ? "ดูอย่างเดียว" : "แก้ไข" }}
-        </v-btn>
-
-        <!-- Save Button (only show in edit mode with changes) -->
-        <v-btn
-          v-if="isEditMode"
-          :color="hasConfigChanges ? 'success' : 'grey'"
-          :disabled="!hasConfigChanges"
-          variant="elevated"
-          @click="$emit('save')"
-        >
-          <v-icon class="mr-1">mdi-content-save</v-icon>
-          {{
-            hasConfigChanges ? "บันทึกการเปลี่ยนแปลง" : "ไม่มีการเปลี่ยนแปลง"
-          }}
-        </v-btn>
       </v-toolbar>
 
       <v-container class="pa-6">
@@ -128,72 +101,32 @@
             </v-card>
           </v-col>
 
-          <!-- Sale Configuration Section -->
+          <!-- Configuration Section with Tabs -->
           <v-col cols="12" lg="8">
             <!-- Device Status Control Card (only in edit mode) -->
-            <v-card
-              v-if="isEditMode"
-              color="surface-container-low"
-              elevation="3"
-              rounded="lg"
-              class="mb-4"
-            >
-              <v-card-title class="d-flex align-center pa-4">
-                <v-icon class="mr-2" color="primary">mdi-power</v-icon>
-                <span>การควบคุมสถานะอุปกรณ์</span>
-              </v-card-title>
 
-              <v-card-text class="pa-4">
-                <div class="d-flex align-center justify-space-between">
-                  <div>
-                    <h3 class="text-h6 font-weight-bold mb-1">สถานะการทำงาน</h3>
-                    <p class="text-body-2 text-grey-darken-1 mb-0">
-                      {{
-                        device?.status === "DEPLOYED"
-                          ? "อุปกรณ์กำลังทำงานอยู่และพร้อมให้บริการ"
-                          : "อุปกรณ์หยุดทำงานชั่วคราว"
-                      }}
-                    </p>
-                  </div>
-
-                  <div class="d-flex align-center">
-                    <span class="text-body-2 mr-3">
-                      {{
-                        device?.status === "DEPLOYED"
-                          ? "เปิดใช้งาน"
-                          : "ปิดใช้งาน"
-                      }}
-                    </span>
-                    <v-switch
-                      :model-value="device?.status === 'DEPLOYED'"
-                      :color="
-                        device?.status === 'DEPLOYED' ? 'success' : 'error'
-                      "
-                      hide-details
-                      @update:model-value="$emit('toggleStatus')"
-                    />
-                  </div>
-                </div>
-
-                <v-alert
-                  v-if="device?.status !== 'DEPLOYED'"
-                  color="warning"
-                  variant="tonal"
-                  class="mt-4"
-                  density="compact"
-                >
-                  <v-icon class="mr-1">mdi-alert</v-icon>
-                  เมื่อปิดใช้งาน ลูกค้าจะไม่สามารถใช้บริการอุปกรณ์นี้ได้
-                </v-alert>
-              </v-card-text>
-            </v-card>
-
+            <!-- Tabs Section -->
             <v-card color="surface-container-low" elevation="3" rounded="lg">
-              <v-card-title class="d-flex align-center pa-4">
-                <v-icon class="mr-2" color="primary">mdi-cog-outline</v-icon>
-                <span>การตั้งค่าการขาย</span>
-                <v-spacer />
-                <div class="d-flex align-center ga-2">
+              <v-tabs v-model="currentTab" color="primary">
+                <v-tab value="logging">
+                  <v-icon class="mr-2">mdi-file-document-outline</v-icon>
+                  บันทึกการใช้งาน
+                </v-tab>
+                <v-tab value="state">
+                  <v-icon class="mr-2">mdi-chart-line</v-icon>
+                  สถานะระบบ
+                </v-tab>
+                <v-tab value="setup">
+                  <v-icon class="mr-2">mdi-cog-outline</v-icon>
+                  การตั้งค่า
+                </v-tab>
+                <!-- <v-spacer /> -->
+
+                <!-- Status indicators for setup tab -->
+                <!-- <div
+                  v-if="currentTab === 'setup'"
+                  class="d-flex align-center ga-2 mr-4"
+                >
                   <v-chip
                     v-if="isEditMode && hasConfigChanges"
                     color="error"
@@ -210,152 +143,295 @@
                   >
                     {{ isEditMode ? "โหมดแก้ไข" : "โหมดดู" }}
                   </v-chip>
-                </div>
-              </v-card-title>
+                </div> -->
+              </v-tabs>
 
-              <v-card-text class="pa-0">
-                <v-list class="py-0">
-                  <template
-                    v-for="(config, key, index) in isEditMode
-                      ? editableConfigs
-                      : device?.configs.sale"
-                    :key="key"
-                  >
-                    <v-list-item
-                      class="px-6 py-4"
-                      :class="
-                        isEditMode && isConfigChanged(key)
-                          ? 'bg-surface-container-high'
-                          : 'bg-surface-container-low'
-                      "
-                    >
-                      <template #prepend>
-                        <v-avatar
-                          size="40"
-                          :color="
-                            isEditMode && isConfigChanged(key)
-                              ? 'warning'
-                              : 'primary'
-                          "
-                          variant="tonal"
-                          class="mr-4"
-                        >
-                          <v-icon size="20">
-                            {{ getConfigIcon(key) }}
-                          </v-icon>
-                        </v-avatar>
-                      </template>
+              <v-card-text>
+                <!-- <v-divider /> -->
 
-                      <v-list-item-title
-                        class="text-subtitle-1 font-weight-medium mb-1"
-                      >
-                        {{ config.description }}
-                        <v-chip
-                          size="x-small"
-                          color="on-surface-variant"
-                          variant="tonal"
-                          class="ml-2"
-                        >
-                          {{ key }}
-                        </v-chip>
-                      </v-list-item-title>
+                <v-tabs-window v-model="currentTab">
+                  <!-- Setup Tab -->
+                  <v-tabs-window-item value="setup">
+                    <!-- Edit Mode Toggle -->
+                    <v-card variant="text">
+                      <v-card-title>
+                        <v-icon class="mr-2" color="primary">mdi-power</v-icon>
+                        <span>การควบคุมสถานะอุปกรณ์</span>
+                      </v-card-title>
 
-                      <v-list-item-subtitle
-                        v-if="!isEditMode"
-                        class="text-body-2 text-on-surface-variant"
-                      >
-                        {{ getConfigDescription(key) }}
-                      </v-list-item-subtitle>
+                      <v-divider />
 
-                      <template #append>
-                        <div
-                          class="d-flex align-center"
-                          style="min-width: 200px"
-                        >
-                          <!-- View Mode -->
-                          <div v-if="!isEditMode" class="text-right">
-                            <div
-                              class="text-h6 font-weight-bold text-primary mb-1"
-                            >
-                              {{ config.value }}
-                              <span
-                                class="text-body-2 text-on-surface-variant"
-                                >{{ config.unit }}</span
-                              >
-                            </div>
+                      <v-card-text>
+                        <div class="d-flex align-center justify-space-between">
+                          <div>
+                            <h3 class="text-h6 font-weight-bold mb-1">
+                              สถานะการทำงาน
+                            </h3>
+                            <p class="text-body-2 text-grey-darken-1 mb-0">
+                              {{
+                                device?.status === "DEPLOYED"
+                                  ? "อุปกรณ์กำลังทำงานอยู่และพร้อมให้บริการ"
+                                  : "อุปกรณ์หยุดทำงานชั่วคราว"
+                              }}
+                            </p>
                           </div>
 
-                          <!-- Edit Mode -->
-                          <div
-                            v-else
-                            class="d-flex align-center"
-                            style="width: 100%"
-                          >
-                            <v-text-field
-                              v-model.number="editableConfigs[key].value"
-                              type="number"
-                              variant="outlined"
-                              density="compact"
-                              hide-details
-                              :suffix="config.unit"
+                          <div class="d-flex align-center">
+                            <span class="text-body-2 mr-3">
+                              {{
+                                device?.status === "DEPLOYED"
+                                  ? "เปิดใช้งาน"
+                                  : "ปิดใช้งาน"
+                              }}
+                            </span>
+                            <v-switch
+                              :model-value="device?.status === 'DEPLOYED'"
                               :color="
-                                isConfigChanged(key) ? 'warning' : 'primary'
+                                device?.status === 'DEPLOYED'
+                                  ? 'success'
+                                  : 'error'
                               "
-                              class="mr-2"
-                              style="max-width: 120px"
+                              hide-details
+                              @update:model-value="$emit('toggleStatus')"
                             />
-                            <div class="d-flex align-center">
-                              <v-btn
-                                v-if="isConfigChanged(key)"
-                                icon="mdi-restore"
-                                size="small"
-                                color="warning"
-                                variant="outlined"
-                                @click="resetSingleConfig(key)"
-                              />
-                              <v-icon
-                                v-if="isConfigChanged(key)"
-                                color="warning"
-                                size="20"
-                                class="ml-2"
-                              >
-                                mdi-pencil-circle
-                              </v-icon>
-                            </div>
                           </div>
                         </div>
-                      </template>
-                    </v-list-item>
 
-                    <!-- Change indicator for edit mode -->
-                    <div
-                      v-if="isEditMode && isConfigChanged(key)"
-                      class="px-6 pb-2"
-                    >
-                      <v-alert
-                        color="warning"
-                        variant="tonal"
-                        density="compact"
-                        class="text-caption"
+                        <v-alert
+                          v-if="device?.status !== 'DEPLOYED'"
+                          color="warning"
+                          variant="tonal"
+                          class="mt-4"
+                          density="compact"
+                        >
+                          <v-icon class="mr-1">mdi-alert</v-icon>
+                          เมื่อปิดใช้งาน ลูกค้าจะไม่สามารถใช้บริการอุปกรณ์นี้ได้
+                        </v-alert>
+                      </v-card-text>
+                    </v-card>
+
+                    <v-card variant="text" class="mt-4">
+                      <v-card-title
+                        class="d-flex justify-space-between align-center"
                       >
-                        <v-icon class="mr-1">mdi-information</v-icon>
-                        เปลี่ยนจาก {{ originalConfigs[key]?.value }}
-                        {{ originalConfigs[key]?.unit }} เป็น
-                        {{ editableConfigs[key].value }}
-                        {{ editableConfigs[key].unit }}
-                      </v-alert>
-                    </div>
+                        <div class="d-flex align-center">
+                          <v-icon class="mr-2" color="primary">mdi-cog</v-icon>
+                          <span>การตั้งค่าการขาย</span>
+                        </div>
 
-                    <!-- Divider between items (except last item) -->
-                    <v-divider
-                      v-if="
-                        index <
-                        Object.keys(device?.configs.sale || {}).length - 1
-                      "
-                      class="mx-6"
-                    />
-                  </template>
-                </v-list>
+                        <div class="d-flex align-center ga-3">
+                          <v-btn
+                            :color="isEditMode ? 'warning' : 'info'"
+                            variant="elevated"
+                            @click="toggleEditMode"
+                          >
+                            <v-icon class="mr-1">
+                              {{ isEditMode ? "mdi-eye" : "mdi-pencil" }}
+                            </v-icon>
+                            {{ isEditMode ? "ดูอย่างเดียว" : "แก้ไข" }}
+                          </v-btn>
+
+                          <!-- Save Button (only show in edit mode with changes) -->
+                          <v-btn
+                            v-if="isEditMode"
+                            :color="hasConfigChanges ? 'success' : 'grey'"
+                            :disabled="!hasConfigChanges"
+                            variant="elevated"
+                            @click="$emit('save')"
+                          >
+                            <v-icon class="mr-1">mdi-content-save</v-icon>
+                            {{
+                              hasConfigChanges
+                                ? "บันทึก"
+                                : "ไม่มีการเปลี่ยนแปลง"
+                            }}
+                          </v-btn>
+                        </div>
+                      </v-card-title>
+
+                      <v-divider />
+
+                      <v-card-text>
+                        <v-list class="py-0">
+                          <template
+                            v-for="(config, key, index) in isEditMode
+                              ? editableConfigs
+                              : device?.configs.sale"
+                            :key="key"
+                          >
+                            <v-list-item class="py-4 bg-surface-container-low">
+                              <template #prepend>
+                                <v-avatar
+                                  size="40"
+                                  :color="
+                                    isEditMode && isConfigChanged(key)
+                                      ? 'warning'
+                                      : 'primary'
+                                  "
+                                  variant="tonal"
+                                  class="mr-4"
+                                >
+                                  <v-icon size="20">
+                                    {{ getConfigIcon(key) }}
+                                  </v-icon>
+                                </v-avatar>
+                              </template>
+
+                              <v-list-item-title
+                                class="text-subtitle-1 font-weight-medium mb-1"
+                              >
+                                {{ config.description }}
+                                <v-chip
+                                  size="x-small"
+                                  color="on-surface-variant"
+                                  variant="tonal"
+                                  class="ml-2"
+                                >
+                                  {{ key }}
+                                </v-chip>
+                              </v-list-item-title>
+
+                              <v-list-item-subtitle
+                                class="text-body-2 text-on-surface-variant"
+                              >
+                                {{ getConfigDescription(key) }}
+                              </v-list-item-subtitle>
+
+                              <template #append>
+                                <div
+                                  class="d-flex align-center"
+                                  style="min-width: 200px"
+                                >
+                                  <!-- View Mode -->
+                                  <div v-if="!isEditMode" class="text-right">
+                                    <div
+                                      class="text-h6 font-weight-bold text-primary mb-1"
+                                    >
+                                      {{ config.value }}
+                                      <span
+                                        class="text-body-2 text-on-surface-variant"
+                                        >{{ config.unit }}</span
+                                      >
+                                    </div>
+                                  </div>
+
+                                  <!-- Edit Mode -->
+                                  <div
+                                    v-else
+                                    class="d-flex align-center"
+                                    style="width: 100%"
+                                  >
+                                    <v-text-field
+                                      v-model.number="
+                                        editableConfigs[key].value
+                                      "
+                                      type="number"
+                                      variant="outlined"
+                                      density="compact"
+                                      hide-details
+                                      :suffix="config.unit"
+                                      :color="
+                                        isConfigChanged(key)
+                                          ? 'warning'
+                                          : 'primary'
+                                      "
+                                      class="mr-2"
+                                      style="max-width: 120px"
+                                    />
+                                    <div class="d-flex align-center">
+                                      <v-btn
+                                        v-if="isConfigChanged(key)"
+                                        icon="mdi-restore"
+                                        size="small"
+                                        color="warning"
+                                        variant="outlined"
+                                        @click="resetSingleConfig(key)"
+                                      />
+                                      <v-icon
+                                        v-if="isConfigChanged(key)"
+                                        color="warning"
+                                        size="20"
+                                        class="ml-2"
+                                      >
+                                        mdi-pencil-circle
+                                      </v-icon>
+                                    </div>
+                                  </div>
+                                </div>
+                              </template>
+                            </v-list-item>
+
+                            <!-- Change indicator for edit mode -->
+                            <div
+                              v-if="isEditMode && isConfigChanged(key)"
+                              class="px-6 pb-2 bg-surface-container-low"
+                            >
+                              <v-alert
+                                color="warning"
+                                variant="tonal"
+                                density="compact"
+                                class="text-caption"
+                              >
+                                <v-icon class="mr-1">mdi-information</v-icon>
+                                โปรดกดบันทึก การเปลี่ยนแปลงจาก
+                                {{ originalConfigs[key]?.value }}
+                                {{ originalConfigs[key]?.unit }} เป็น
+                                {{ editableConfigs[key].value }}
+                                {{ editableConfigs[key].unit }}
+                              </v-alert>
+                            </div>
+
+                            <!-- Divider between items (except last item) -->
+                            <v-divider
+                              v-if="
+                                index <
+                                Object.keys(device?.configs.sale || {}).length -
+                                  1
+                              "
+                              class="mx-6"
+                            />
+                          </template>
+                        </v-list>
+                      </v-card-text>
+                    </v-card>
+                  </v-tabs-window-item>
+
+                  <!-- Logging Tab -->
+                  <v-tabs-window-item value="logging">
+                    <v-card-text class="pa-6">
+                      <div class="text-center py-12">
+                        <v-icon size="80" color="grey-lighten-1" class="mb-4">
+                          mdi-file-document-outline
+                        </v-icon>
+                        <h3 class="text-h6 text-grey-darken-1 mb-2">
+                          บันทึกการใช้งาน
+                        </h3>
+                        <p class="text-body-2 text-grey-darken-1">
+                          ส่วนนี้จะแสดงประวัติการใช้งานอุปกรณ์<br />
+                          (อยู่ในระหว่างการพัฒนา)
+                        </p>
+                      </div>
+                    </v-card-text>
+                  </v-tabs-window-item>
+
+                  <!-- State Tab -->
+                  <v-tabs-window-item value="state">
+                    <v-card-text class="pa-6">
+                      <div class="text-center py-12">
+                        <v-icon size="80" color="grey-lighten-1" class="mb-4">
+                          mdi-chart-line
+                        </v-icon>
+                        <h3 class="text-h6 text-grey-darken-1 mb-2">
+                          สถานะระบบ
+                        </h3>
+                        <p class="text-body-2 text-grey-darken-1">
+                          ส่วนนี้จะแสดงสถานะการทำงานของอุปกรณ์แบบเรียลไทม์<br />
+                          (อยู่ในระหว่างการพัฒนา)
+                        </p>
+                      </div>
+                    </v-card-text>
+                  </v-tabs-window-item>
+                </v-tabs-window>
               </v-card-text>
             </v-card>
           </v-col>
@@ -383,6 +459,7 @@ const emit = defineEmits<Emits>();
 
 // Local state
 const isEditMode = ref(false);
+const currentTab = ref("setup");
 const editableConfigs = ref<Record<string, DeviceConfig>>({});
 const originalConfigs = ref<Record<string, DeviceConfig>>({});
 
@@ -406,6 +483,7 @@ const configChangeCount = computed(() => {
 const closeDialog = () => {
   showDialog.value = false;
   isEditMode.value = false;
+  currentTab.value = "setup";
   editableConfigs.value = {};
   originalConfigs.value = {};
 };
