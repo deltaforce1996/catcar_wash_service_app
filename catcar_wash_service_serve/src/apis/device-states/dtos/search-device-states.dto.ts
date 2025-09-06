@@ -1,16 +1,15 @@
 import { IsIn, IsNumber, IsOptional, IsString } from 'class-validator';
 
-export class SearchDeviceEventLogsDto {
+export class SearchDeviceStatesDto {
   /**
    * Search query string. Supported fields:
-   * - id: Event ID
+   * - id: State ID
    * - device_id: Device ID
    * - device_name: Device name (case-insensitive search)
-   * - type: Event type (PAYMENT, INFO)
+   * - status: Device state status (normal, error)
    * - payload_timestemp: Unix timestamp within payload JSON (format: timestamp or start-end range)
-   * - user_id: User ID within payload JSON
-
-   * Example: "device_id:abc123 device_name:WASH-001 type:PAYMENT payload_timestemp:1640995200000-1641081600000"
+   *
+   * Example: "device_id:abc123 device_name:WASH-001 status:normal payload_timestemp:1640995200000-1641081600000"
    */
   @IsString()
   @IsOptional()
@@ -26,8 +25,8 @@ export class SearchDeviceEventLogsDto {
 
   @IsString()
   @IsOptional()
-  @IsIn(['created_at', 'type', 'device_id'], { message: 'sort_by must be one of: created_at, type, device_id' })
-  sort_by?: 'created_at' | 'type' | 'device_id';
+  @IsIn(['created_at', 'device_id'], { message: 'sort_by must be either "created_at" or "device_id"' })
+  sort_by?: 'created_at' | 'device_id';
 
   @IsString()
   @IsOptional()

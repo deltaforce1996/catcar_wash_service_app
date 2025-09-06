@@ -68,4 +68,5 @@ export type DeviceState = {
   rssi: number;
   uptime: number;
   status: 'normal' | 'error';
+  date_state?: string;
 };
