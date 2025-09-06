@@ -2,7 +2,13 @@ import { Injectable, Logger } from '@nestjs/common';
 import { DeviceStatus, DeviceType, PermissionType, Prisma } from '@prisma/client';
 import { PrismaService } from 'src/database/prisma/prisma.service';
 import { ItemNotFoundException } from 'src/errors';
-import { UpdateDeviceBasicDto, CreateDeviceDto, SearchDeviceDto, UpdateDeviceConfigsDto } from './dtos/index';
+import {
+  UpdateDeviceBasicDto,
+  CreateDeviceDto,
+  SearchDeviceDto,
+  UpdateDeviceConfigsDto,
+  SetDeviceStateDto,
+} from './dtos/index';
 import { parseKeyValueOnly } from 'src/shared/kv-parser';
 import { AuthenticatedUser, PaginatedResult } from 'src/types/internal.type';
 
@@ -250,5 +256,28 @@ export class DevicesService {
     });
 
     return device;
+  }
+
+  async setDeviceState(id: string, data: SetDeviceStateDto, user?: AuthenticatedUser): Promise<void> {
+    // First, check if device exists and verify permissions
+    const where: Prisma.tbl_devicesWhereUniqueInput = { id };
+    // Add permission-based filtering for USER role - they can only update their own devices
+    if (user?.permission?.name === PermissionType.USER) {
+      where.owner_id = user.id;
+    }
+    const existingDevice = await this.prisma.tbl_devices.findUnique({
+      where,
+      select: { id: true, owner_id: true },
+    });
+    if (!existingDevice) {
+      throw new ItemNotFoundException('Device not found or access denied');
+    }
+    // Update the device status
+    await this.prisma.tbl_devices.update({
+      where: { id },
+      data: {
+        status: data.status,
+      },
+    });
   }
 }

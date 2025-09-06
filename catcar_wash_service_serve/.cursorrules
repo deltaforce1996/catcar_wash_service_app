@@ -1,0 +1,236 @@
+# CatCar Wash Service - Cursor Rules
+
+## Project Overview
+This is a NestJS-based car wash service management system with the following key features:
+- User and Employee management with role-based permissions
+- Device management for wash and drying machines
+- Real-time device state tracking and event logging
+- Payment processing and analytics
+- JWT-based authentication and authorization
+- PostgreSQL database with Prisma ORM
+
+## Technology Stack
+- **Framework**: NestJS 11.x
+- **Database**: PostgreSQL with Prisma ORM
+- **Authentication**: JWT with Passport strategies
+- **Validation**: class-validator and class-transformer
+- **Testing**: Jest
+- **Linting**: ESLint with TypeScript support
+- **Formatting**: Prettier
+- **Package Manager**: pnpm
+
+## Code Style & Standards
+
+### TypeScript Configuration
+- Use strict TypeScript settings with experimental decorators enabled
+- Target ES2023 with Node.js module resolution
+- Enable declaration files and source maps
+- Use incremental compilation
+
+### Naming Conventions
+- **Files**: Use kebab-case for file names (e.g., `device-event-logs.controller.ts`)
+- **Classes**: Use PascalCase (e.g., `DeviceEventLogsController`)
+- **Methods/Variables**: Use camelCase (e.g., `getDeviceStates`)
+- **Constants**: Use UPPER_SNAKE_CASE (e.g., `DEFAULT_PAGE_SIZE`)
+- **Database Tables**: Use `tbl_` prefix with snake_case (e.g., `tbl_devices`)
+- **Enums**: Use PascalCase (e.g., `DeviceType`, `UserStatus`)
+
+### Project Structure
+```
+src/
+├── apis/                    # API modules organized by feature
+│   ├── auth/               # Authentication & authorization
+│   ├── dashboard/          # Dashboard analytics
+│   ├── device-event-logs/  # Device event logging
+│   ├── devices/            # Device management
+│   ├── emps/               # Employee management
+│   └── users/              # User management
+├── common/                 # Shared utilities and filters
+├── configs/                # Configuration modules
+├── database/               # Database setup (Prisma)
+├── errors/                 # Custom exception classes
+├── services/               # Shared services
+├── shared/                 # Shared types and utilities
+└── types/                  # TypeScript type definitions
+```
+
+## Development Guidelines
+
+### NestJS Best Practices
+- Use decorators for controllers, services, and modules
+- Implement proper dependency injection
+- Use guards for authentication and authorization
+- Apply validation pipes globally
+- Use interceptors for cross-cutting concerns
+- Follow the single responsibility principle
+
+### Database & Prisma
+- Use Prisma Client for all database operations
+- Follow the established schema patterns with proper relations
+- Use transactions for multi-table operations
+- Implement proper indexing for performance
+- Use materialized views for analytics (marked with `@@ignore`)
+- Handle partitioned tables properly (devices_state, devices_events)
+
+### Authentication & Authorization
+- Use JWT tokens for authentication
+- Implement role-based access control (ADMIN, TECHNICIAN, USER)
+- Use guards to protect routes
+- Validate permissions at the controller level
+- Handle token expiration and refresh properly
+
+### API Design
+- Use RESTful conventions
+- Implement proper HTTP status codes
+- Use DTOs for request/response validation
+- Apply consistent error handling
+- Use pagination for list endpoints
+- Implement proper search and filtering
+
+### Error Handling
+- Use custom exception classes from `src/errors/`
+- Implement global exception filters
+- Log errors appropriately
+- Return consistent error response format
+- Handle validation errors gracefully
+
+### Testing
+- Write unit tests for services and utilities
+- Write integration tests for controllers
+- Use Jest for testing framework
+- Mock external dependencies
+- Test error scenarios and edge cases
+
+### Code Quality
+- Follow ESLint rules defined in `eslint.config.mjs`
+- Use Prettier for code formatting
+- Write meaningful comments for complex logic
+- Use TypeScript strict mode features
+- Avoid `any` type when possible
+- Use proper type definitions
+
+## Specific Patterns
+
+### Controller Pattern
+```typescript
+@Controller('api/endpoint')
+@UseGuards(JwtAuthGuard, RoleAuthGuard)
+@Roles(PermissionType.ADMIN)
+export class ExampleController {
+  constructor(private readonly service: ExampleService) {}
+
+  @Get()
+  async findAll(@Query() dto: SearchDto): Promise<SuccessResponse<Example[]>> {
+    // Implementation
+  }
+}
+```
+
+### Service Pattern
+```typescript
+@Injectable()
+export class ExampleService {
+  constructor(private readonly prisma: PrismaService) {}
+
+  async findAll(dto: SearchDto): Promise<Example[]> {
+    // Implementation with proper error handling
+  }
+}
+```
+
+### DTO Pattern
+```typescript
+export class CreateExampleDto {
+  @IsString()
+  @IsNotEmpty()
+  name: string;
+
+  @IsOptional()
+  @IsString()
+  description?: string;
+}
+```
+
+### Database Query Pattern
+```typescript
+// Use proper error handling and type safety
+const result = await this.prisma.tbl_example.findMany({
+  where: { status: 'ACTIVE' },
+  include: { relation: true },
+  orderBy: { created_at: 'desc' },
+});
+```
+
+## Environment & Configuration
+- Use ConfigService for environment variables
+- Separate configuration by feature (app, jwt, database)
+- Use proper validation for configuration values
+- Handle different environments (development, production)
+
+## Security Considerations
+- Validate all inputs using DTOs
+- Use bcrypt for password hashing
+- Implement proper CORS configuration
+- Use HTTPS in production
+- Sanitize user inputs
+- Implement rate limiting where appropriate
+
+## Performance Guidelines
+- Use database indexes effectively
+- Implement pagination for large datasets
+- Use materialized views for complex analytics
+- Optimize database queries
+- Use proper caching strategies
+- Monitor and log performance metrics
+
+## Documentation
+- Write clear README files for complex modules
+- Document API endpoints with examples
+- Use JSDoc comments for complex functions
+- Maintain changelog for significant changes
+- Document database schema changes
+
+## Git & Version Control
+- Use conventional commit messages
+- Create feature branches for new development
+- Write meaningful pull request descriptions
+- Keep commits atomic and focused
+- Use proper branch naming conventions
+
+## Deployment & DevOps
+- Use proper environment configuration
+- Implement health checks
+- Use proper logging levels
+- Monitor application performance
+- Implement proper backup strategies
+- Use containerization where appropriate
+
+## Common Commands
+```bash
+# Development
+pnpm run start:dev
+
+# Build
+pnpm run build
+
+# Test
+pnpm run test
+pnpm run test:cov
+
+# Lint & Format
+pnpm run lint
+pnpm run format
+
+# Database
+pnpm run db:seed
+npx prisma migrate dev
+npx prisma generate
+```
+
+## Notes
+- This project uses PostgreSQL with partitioning for large tables
+- Materialized views are used for analytics and reporting
+- The system handles both wash and drying device types
+- Payment processing includes multiple methods (coin, bank, QR)
+- Real-time device state tracking is implemented
+- Role-based permissions control access to different features

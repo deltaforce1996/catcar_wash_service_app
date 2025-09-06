@@ -120,37 +120,99 @@ Create a new device.
 }
 ```
 
-### PUT /api/v1/devices/update-by-id/:id
+### PUT /api/v1/devices/update-by-id-basic/:id
 
-Update device by ID.
+Update basic device information by ID.
 
 #### Request Body
 
 ```json
 {
-  "name": "WASH-001 Updated",
-  "type": "WASH",
-  "status": "DEPLOYED",
-  "information": {
-    "mac_address": "00:11:22:33:44:55",
-    "firmware_version": "1.2.0"
-  },
-  "configs": {
-    "wash_setup": {
-      "hp_water": { "value": 85, "unit": "psi", "description": "High pressure water" }
-    }
-  },
-  "owner_id": "new_owner_id"
+  "name": "WASH-001 Updated"
 }
 ```
 
-#### Authentication
+### PUT /api/v1/devices/update-configs/:id
 
-This endpoint requires JWT authentication. Include the JWT token in the Authorization header:
+Update device configurations by ID.
+
+#### Request Body
+
+```json
+{
+  "configs": {
+    "system": {
+      "on_time": "08:00",
+      "off_time": "20:00"
+    },
+    "sale": {
+      "hp_water": 80,
+      "foam": 60,
+      "air": 40
+    }
+  }
+}
+```
+
+### PUT /api/v1/devices/set-status/:id
+
+Set device status by ID. This endpoint allows updating the device status with permission-based access control.
+
+#### Request Body
+
+```json
+{
+  "status": "DEPLOYED"
+}
+```
+
+#### Permission Rules
+
+- **USER permission**: Can only set status for devices they own
+- **Other permissions** (ADMIN, etc.): Can set status for any device
+
+#### Response Format
+
+```json
+{
+  "success": true,
+  "data": null,
+  "message": "Device status updated successfully"
+}
+```
+
+## Authentication
+
+All endpoints require JWT authentication. Include the JWT token in the Authorization header:
 
 ```
 Authorization: Bearer <your_jwt_token>
 ```
+
+## Usage Examples
+
+### Setting Device Status
+
+```bash
+# Set device status to DEPLOYED (requires appropriate permissions)
+curl -X PUT "https://api.example.com/api/v1/devices/set-status/device-id-123" \
+  -H "Authorization: Bearer <your_jwt_token>" \
+  -H "Content-Type: application/json" \
+  -d '{"status": "DEPLOYED"}'
+
+# Set device status to DISABLED
+curl -X PUT "https://api.example.com/api/v1/devices/set-status/device-id-123" \
+  -H "Authorization: Bearer <your_jwt_token>" \
+  -H "Content-Type: application/json" \
+  -d '{"status": "DISABLED"}'
+```
+
+### Permission-Based Access
+
+- **USER role**: Can only set status for devices they own
+- **ADMIN/SUPER_ADMIN roles**: Can set status for any device
+
+If a USER tries to set status for a device they don't own, they will receive a "Device not found or access denied" error.
 
 ## Data Types
 
