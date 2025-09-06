@@ -152,7 +152,7 @@
         <template #expanded-row="{ item }">
           <tr>
             <td :colspan="deviceHeaders.length + 2" class="pa-4">
-              <v-card flat color="grey-lighten-5">
+              <v-card flat color="surface-container-low">
                 <v-card-text class="pa-3">
                   <!-- Compact Device Info Header -->
                   <div class="d-flex justify-space-between align-center mb-4">
@@ -165,10 +165,10 @@
                       >
                         ID: {{ item.id.slice(-8) }}
                       </v-chip>
-                      <span class="text-body-2 text-grey-darken-1">
+                      <span class="text-body-2 text-on-surface-variant">
                         สร้าง: {{ formatDate(item.created_at) }}
                       </span>
-                      <span class="text-body-2 text-grey-darken-1">
+                      <span class="text-body-2 text-on-surface-variant">
                         {{ item.owner.email }}
                       </span>
                     </div>
@@ -197,10 +197,11 @@
                         lg="3"
                       >
                         <v-card
-                          flat
-                          color="white"
-                          class="pa-2 border"
+                          elevation="1"
+                          color="surface-container"
+                          class="pa-2"
                           height="80"
+                          rounded="lg"
                         >
                           <div class="d-flex flex-column h-100">
                             <div
@@ -214,7 +215,7 @@
                               </span>
                               <v-chip
                                 size="x-small"
-                                color="grey-darken-2"
+                                color="on-surface-variant"
                                 variant="flat"
                                 class="ml-1"
                               >
@@ -233,7 +234,7 @@
                               >
                                 {{ config.value }}
                               </v-chip>
-                              <span class="text-caption text-grey-darken-2">
+                              <span class="text-caption text-on-surface-variant">
                                 {{ config.unit }}
                               </span>
                             </div>
