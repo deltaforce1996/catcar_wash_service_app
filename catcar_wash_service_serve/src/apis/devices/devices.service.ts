@@ -2,9 +2,7 @@ import { Injectable, Logger } from '@nestjs/common';
 import { DeviceStatus, DeviceType, PermissionType, Prisma } from '@prisma/client';
 import { PrismaService } from 'src/database/prisma/prisma.service';
 import { ItemNotFoundException } from 'src/errors';
-import { CreateDeviceDto } from './dtos/create-device.dto';
-import { UpdateDeviceDto } from './dtos/update-device.dto';
-import { SearchDeviceDto } from './dtos/search-device.dto';
+import { UpdateDeviceBasicDto, CreateDeviceDto, SearchDeviceDto, UpdateDeviceConfigsDto } from './dtos/index';
 import { parseKeyValueOnly } from 'src/shared/kv-parser';
 import { AuthenticatedUser, PaginatedResult } from 'src/types/internal.type';
 
@@ -154,7 +152,7 @@ export class DevicesService {
         name: data.name,
         type: data.type,
         information: data.information,
-        configs: data.configs,
+        configs: data.configs as any,
         owner_id: data.owner_id,
         register_by_id: data.register_by,
       },
@@ -164,60 +162,93 @@ export class DevicesService {
     return device;
   }
 
-  async updateById(id: string, data: UpdateDeviceDto): Promise<DeviceRow> {
+  async updateBasicById(id: string, data: UpdateDeviceBasicDto): Promise<DeviceRow> {
+    // Use updateMany to check if any record was updated
+    const updateResult = await this.prisma.tbl_devices.updateMany({
+      where: { id },
+      data: {
+        ...data,
+      },
+    });
+
+    if (updateResult.count === 0) {
+      throw new ItemNotFoundException('Device not found');
+    }
+
+    // Get the updated device
+    const device: DeviceRow | null = await this.prisma.tbl_devices.findUnique({
+      where: { id },
+      select: devicePublicSelect,
+    });
+
+    if (!device) {
+      throw new ItemNotFoundException('Device not found');
+    }
+
+    return device;
+  }
+
+  async updateConfigsById(id: string, data: UpdateDeviceConfigsDto): Promise<DeviceRow> {
+    // Check if device exists and get current configs
+    const existingDevice = await this.prisma.tbl_devices.findUnique({
+      where: { id },
+      select: { id: true, type: true, configs: true },
+    });
+    if (!existingDevice) {
+      throw new ItemNotFoundException('Device not found');
+    }
+
+    // Merge new values with existing configs
+    let updatedConfigs = existingDevice.configs as any;
+    if (data.configs) {
+      // Update system configs
+      if (data.configs.system) {
+        updatedConfigs = {
+          ...updatedConfigs,
+          system: {
+            ...updatedConfigs?.system,
+            ...data.configs.system,
+          },
+        };
+      }
+
+      // Update sale configs - only update values, preserve unit and description
+      if (data.configs.sale) {
+        updatedConfigs = {
+          ...updatedConfigs,
+          sale: {
+            ...updatedConfigs?.sale,
+          },
+        };
+
+        // Update only the value for each parameter
+        Object.keys(data.configs.sale).forEach((key) => {
+          if (data.configs?.sale?.[key] !== undefined) {
+            // Check if the parameter exists in the current config
+            if (updatedConfigs.sale[key]) {
+              updatedConfigs.sale[key] = {
+                ...updatedConfigs.sale[key],
+                value: data.configs.sale[key],
+              };
+            } else {
+              // If parameter doesn't exist, log a warning but don't add it
+              throw new ItemNotFoundException(
+                `Parameter '${key}' not found in device type '${existingDevice.type}' configuration`,
+              );
+            }
+          }
+        });
+      }
+    }
+
     const device: DeviceRow = await this.prisma.tbl_devices.update({
       where: { id },
-      data,
+      data: {
+        configs: updatedConfigs,
+      },
       select: devicePublicSelect,
     });
-    if (!device) {
-      throw new ItemNotFoundException('Device not found');
-    }
+
     return device;
-  }
-
-  async deleteById(id: string): Promise<DeviceRow> {
-    const device: DeviceRow = await this.prisma.tbl_devices.delete({
-      where: { id },
-      select: devicePublicSelect,
-    });
-    if (!device) {
-      throw new ItemNotFoundException('Device not found');
-    }
-    return device;
-  }
-
-  async getDevicesByOwner(ownerId: string, q: SearchDeviceDto): Promise<PaginatedResult<DeviceRow>> {
-    // Verify that the owner exists
-    const owner = await this.prisma.tbl_users.findUnique({
-      where: { id: ownerId },
-      select: { id: true },
-    });
-    if (!owner) {
-      throw new ItemNotFoundException('Owner not found');
-    }
-
-    const safePage = Math.max(1, Number(q.page) || 1);
-    const safeLimit = Math.min(100, Math.max(1, Number(q.limit) || 20));
-    const skip = (safePage - 1) * safeLimit;
-
-    const [data, total] = await Promise.all([
-      this.prisma.tbl_devices.findMany({
-        where: { owner_id: ownerId },
-        skip,
-        take: safeLimit,
-        orderBy: { created_at: 'desc' },
-        select: devicePublicSelect,
-      }),
-      this.prisma.tbl_devices.count({ where: { owner_id: ownerId } }),
-    ]);
-
-    return {
-      items: data,
-      total,
-      page: safePage,
-      limit: safeLimit,
-      totalPages: Math.max(1, Math.ceil(total / safeLimit)),
-    };
   }
 }

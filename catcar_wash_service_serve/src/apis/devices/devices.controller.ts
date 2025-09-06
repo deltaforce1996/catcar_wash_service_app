@@ -1,13 +1,10 @@
 import { Body, Controller, Get, Param, Post, Put, Query, UseFilters, UseGuards, Request } from '@nestjs/common';
 import { DeviceRow, DevicesService } from './devices.service';
 import { AllExceptionFilter } from 'src/common';
-import { SearchDeviceDto } from './dtos/search-device.dto';
-import { CreateDeviceDto } from './dtos/create-device.dto';
-import { UpdateDeviceDto } from './dtos/update-device.dto';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { AuthenticatedUser, PaginatedResult } from 'src/types/internal.type';
 import { SuccessResponse } from 'src/types';
-import { PermissionDeniedException } from 'src/errors';
+import { UpdateDeviceBasicDto, CreateDeviceDto, SearchDeviceDto, UpdateDeviceConfigsDto } from './dtos/index';
 
 type DevicePublicResponse = PaginatedResult<DeviceRow>;
 
@@ -46,26 +43,6 @@ export class DevicesController {
     };
   }
 
-  @Get('by-owner/:ownerId')
-  async getDevicesByOwner(
-    @Param('ownerId') ownerId: string,
-    @Query() q: SearchDeviceDto,
-    @Request() req: Request & { user: AuthenticatedUser },
-  ): Promise<SuccessResponse<DevicePublicResponse>> {
-    const user = req.user;
-
-    // For USER permission, only allow access to their own devices
-    if (user.permission?.name === 'USER' && user.id !== ownerId) {
-      throw new PermissionDeniedException('Access denied: You can only view your own devices');
-    }
-    const result = await this.devicesService.getDevicesByOwner(ownerId, q);
-    return {
-      success: true,
-      data: result,
-      message: 'Devices found successfully',
-    };
-  }
-
   @Post('create')
   async createDevice(@Body() data: CreateDeviceDto): Promise<SuccessResponse<DeviceRow>> {
     const result = await this.devicesService.createDevice(data);
@@ -76,13 +53,29 @@ export class DevicesController {
     };
   }
 
-  @Put('update-by-id/:id')
-  async updateDeviceById(@Param('id') id: string, @Body() data: UpdateDeviceDto): Promise<SuccessResponse<DeviceRow>> {
-    const result = await this.devicesService.updateById(id, data);
+  @Put('update-by-id-basic/:id')
+  async updateDeviceBasicById(
+    @Param('id') id: string,
+    @Body() data: UpdateDeviceBasicDto,
+  ): Promise<SuccessResponse<DeviceRow>> {
+    const result = await this.devicesService.updateBasicById(id, data);
     return {
       success: true,
       data: result,
       message: 'Device updated successfully',
+    };
+  }
+
+  @Put('update-configs/:id')
+  async updateDeviceConfigsById(
+    @Param('id') id: string,
+    @Body() data: UpdateDeviceConfigsDto,
+  ): Promise<SuccessResponse<DeviceRow>> {
+    const result = await this.devicesService.updateConfigsById(id, data);
+    return {
+      success: true,
+      data: result,
+      message: 'Device configurations updated successfully',
     };
   }
 }
