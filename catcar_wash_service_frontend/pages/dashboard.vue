@@ -319,9 +319,8 @@
           <td :colspan="columns.length" class="pa-0">
             <v-card
               class="ma-2 payment-details-card"
-              color="surface-container-low"
-              elevation="0"
-              border
+              color="surface-container"
+              elevation="1"
               rounded="lg"
             >
               <v-card-text class="pa-4">
@@ -359,24 +358,20 @@
                         </div>
 
                         <div v-if="hasQrPayment(item)">
-                          <v-card
-                            class="mb-2"
-                            color="primary-lighten-1"
-                            variant="tonal"
-                          >
+                          <v-card class="mb-2" color="primary" variant="tonal">
                             <v-card-text class="pa-3">
                               <div class="text-caption text-medium-emphasis">
-                                Net Amount
+                                จำนวนเงินผ่าน QR Code
                               </div>
                               <div class="text-h6 font-weight-bold">
                                 ฿{{ item.payload.qr.net_amount }}
                               </div>
                             </v-card-text>
                           </v-card>
-                          <v-card color="primary-lighten-2" variant="tonal">
+                          <v-card color="primary-lighten-1" variant="tonal">
                             <v-card-text class="pa-3">
                               <div class="text-caption text-medium-emphasis">
-                                Transaction ID
+                                รหัสธุรกรรม
                               </div>
                               <div class="text-body-2 font-family-monospace">
                                 {{ item.payload.qr.transaction_id }}
