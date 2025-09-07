@@ -298,10 +298,7 @@
                               </v-list-item-subtitle>
 
                               <template #append>
-                                <div
-                                  class="d-flex align-center"
-                                  style="min-width: 200px"
-                                >
+                                <div class="d-flex align-center">
                                   <!-- View Mode -->
                                   <div v-if="!isEditMode" class="text-right">
                                     <div
@@ -321,23 +318,27 @@
                                     class="d-flex align-center"
                                     style="width: 100%"
                                   >
-                                    <v-text-field
-                                      v-model.number="
-                                        editableConfigs[key].value
-                                      "
-                                      type="number"
-                                      variant="outlined"
-                                      density="compact"
-                                      hide-details
-                                      :suffix="config.unit"
-                                      :color="
-                                        isConfigChanged(key)
-                                          ? 'warning'
-                                          : 'primary'
-                                      "
-                                      class="mr-2"
-                                      style="max-width: 120px"
-                                    />
+                                    <div class="d-flex align-center">
+                                      <v-text-field
+                                        v-model.number="
+                                          editableConfigs[key].value
+                                        "
+                                        type="number"
+                                        variant="outlined"
+                                        density="compact"
+                                        hide-details
+                                        :color="
+                                          isConfigChanged(key)
+                                            ? 'warning'
+                                            : 'primary'
+                                        "
+                                        style="width: 70px; flex-shrink: 0"
+                                        :aria-label="`${config.label} ค่า หน่วย ${config.unit}`"
+                                      />
+                                      <span class="mx-2">
+                                        {{ config.unit }}
+                                      </span>
+                                    </div>
                                     <div class="d-flex align-center">
                                       <v-btn
                                         v-if="isConfigChanged(key)"

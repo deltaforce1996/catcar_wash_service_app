@@ -48,20 +48,20 @@ export default defineNuxtPlugin((app) => {
             "success-lighten-1": "#34d399",
             "success-darken-1": "#059669",
 
-            // Modern Surface System
-            surface: "#ffffff",
-            "surface-bright": "#ffffff",
-            "surface-variant": "#f8fafc", // Very light blue-gray
-            "surface-container": "#f1f5f9", // Light blue-gray
-            "surface-container-high": "#e2e8f0", // Medium blue-gray
-            "surface-container-highest": "#cbd5e1", // Darker blue-gray
-            "surface-container-low": "#f8fafc", // Same as variant for consistency
-            "surface-container-lowest": "#ffffff",
-            background: "#ffffff",
+            // Modern Surface System - Pure Gray (HSL)
+            surface: "hsl(0, 0%, 98%)",
+            "surface-bright": "hsl(0, 0%, 100%)",
+            "surface-variant": "hsl(0, 0%, 88%)",
+            "surface-container-high": "hsl(0, 0%, 93%)",
+            "surface-container-highest": "hsl(0, 0%, 91%)",
+            "surface-container": "hsl(0, 0%, 96%)",
+            "surface-container-low": "hsl(0, 0%, 97%)",
+            "surface-container-lowest": "hsl(0, 0%, 100%)",
+            background: "hsl(0, 0%, 98%)",
 
-            // Modern Text Colors
-            "on-surface": "#1e293b", // Dark slate gray
-            "on-surface-variant": "#475569", // Medium slate gray
+            // Modern Text Colors - Pure Gray Palette
+            "on-surface": "#2e2e2e", // Dark gray
+            "on-surface-variant": "#6e6e6e", // Medium gray
             "on-primary": "#ffffff",
             "on-secondary": "#ffffff",
             "on-error": "#ffffff",
@@ -109,19 +109,20 @@ export default defineNuxtPlugin((app) => {
             "success-lighten-1": "#6ee7b7",
             "success-darken-1": "#10b981",
 
-            // Modern Dark Surface System
-            surface: "#121212",
-            "surface-bright": "#2a2a2a",
-            "surface-light": "#1e1e1e",
-            "surface-variant": "#2c2c2c",
-            "surface-container": "#1a1a1a",
-            "surface-container-low": "#161616",
-            "surface-container-lowest": "#0f0f0f",
-            background: "#0f0f0f",
+            // Modern Dark Surface System - Pure Gray (HSL)
+            surface: "hsl(0, 0%, 7%)",
+            "surface-bright": "hsl(0, 0%, 26%)",
+            "surface-variant": "hsl(0, 0%, 28%)",
+            "surface-container-highest": "hsl(0, 0%, 21%)",
+            "surface-container-high": "hsl(0, 0%, 16%)",
+            "surface-container": "hsl(0, 0%, 12%)",
+            "surface-container-low": "hsl(0, 0%, 10%)",
+            "surface-container-lowest": "hsl(0, 0%, 6%)",
+            background: "hsl(0, 0%, 6%)",
 
-            // Modern Dark Text Colors
-            "on-surface": "#e6e1e5",
-            "on-surface-variant": "#cac4cf",
+            // Modern Dark Text Colors - Pure Gray
+            "on-surface": "#e0e0e0",
+            "on-surface-variant": "#c0c0c0",
             "on-primary": "#ffffff",
             "on-secondary": "#ffffff",
             "on-error": "#ffffff",

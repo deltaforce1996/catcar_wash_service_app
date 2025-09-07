@@ -12,7 +12,7 @@ This is a Nuxt 3 frontend application for a coin-operated car wash service with 
 
 **Package manager**: pnpm (required)
 
-```bash
+````bash
 # Install dependencies
 pnpm install
 
@@ -100,11 +100,66 @@ pnpm lint:fix
 ### Theming
 
 - **All colors are defined in `plugins/vuetify.ts`** - reference this file for available theme colors
-- Current available colors: `primary` (#f57f2a), `primary-darken-1` (#e56b1a), `secondary` (#ff9800), `secondary-darken-1` (#f57c00), `accent` (#ffc107), `error`, `warning`, `info`, `success`, and surface variants
+- **Theme System**: Based on Cat Car Wash original orange (#f57f2a) with modern Material Design 3 surface system
+- **Default Theme**: Dark mode is the default theme
+
+**Available Theme Colors** (from `plugins/vuetify.ts`):
+
+**Primary Colors**:
+
+- `primary` (#f57f2a - Cat Car Wash orange)
+- `primary-lighten-1` (#f7954a), `primary-lighten-2` (#faab6a)
+- `primary-darken-1` (#e56b1a), `primary-darken-2` (#d5580a)
+
+**Secondary Colors**:
+
+- `secondary` (#ff9800 - supporting orange)
+- `secondary-lighten-1` (#ffad33), `secondary-lighten-2` (#ffc266)
+- `secondary-darken-1` (#f57c00), `secondary-darken-2` (#ef6c00)
+
+**Tertiary Colors**:
+
+- `tertiary` (#ffc107 - golden yellow for highlights)
+- `tertiary-lighten-1` (#ffd54f), `tertiary-darken-1` (#ffb300)
+
+**System Colors**: `error`, `warning`, `info`, `success` (with lighten/darken variants)
+
+**Surface Colors (Dark Theme) - Hierarchy from lowest to highest**:
+
+1. `surface-container-lowest` (hsl(0, 0%, 6%)) - Deepest surface
+2. `surface-container-low` (hsl(0, 0%, 10%)) - Low elevation
+3. `background` (hsl(0, 0%, 5%)) - App background
+4. `surface-container` (hsl(0, 0%, 12%)) - Standard containers
+5. `surface` (hsl(0, 0%, 7%)) - Base surface
+6. `surface-container-high` (hsl(0, 0%, 16%)) - High elevation
+7. `surface-container-highest` (hsl(0, 0%, 21%)) - Highest elevation
+8. `surface-variant` (hsl(0, 0%, 28%)) - Surface variants
+9. `surface-bright` (hsl(0, 0%, 26%)) - Brightest surface
+
+**Surface Colors (Light Theme) - Hierarchy from lowest to highest**:
+
+1. `surface-container-lowest` (hsl(0, 0%, 100%)) - Pure white
+2. `surface-container-low` (hsl(0, 0%, 97%)) - Very light gray
+3. `background` (hsl(0, 0%, 98%)) - App background
+4. `surface` (hsl(0, 0%, 98%)) - Base surface
+5. `surface-variant` (hsl(0, 0%, 88%)) - Light gray variant
+6. `surface-container` (hsl(0, 0%, 96%)) - Standard containers
+7. `surface-container-high` (hsl(0, 0%, 93%)) - Higher elevation
+8. `surface-container-highest` (hsl(0, 0%, 91%)) - Highest elevation
+9. `surface-bright` (hsl(0, 0%, 100%)) - Brightest surface
+
+**Text Colors**:
+
+- Dark theme: `on-surface` (#e6e1e5), `on-surface-variant` (#cac4cf)
+- Light theme: `on-surface` (#1e293b), `on-surface-variant` (#475569)
+
+**Critical Rules**:
+
 - Support both dark (default) and light themes
 - **NEVER hallucinate theme color names** - only use colors defined in the Vuetify config
 - If additional colors are needed, add them to the `plugins/vuetify.ts` theme configuration first
 - Use theme tokens (e.g., `color="primary"`) not hardcoded hex values
+- Use surface hierarchy correctly for proper elevation and depth perception
 
 ## Limitations
 
@@ -193,7 +248,7 @@ const getServiceTypeColor = (serviceType: string) => {
       return "primary";
   }
 };
-```
+````
 
 ### Critical Design Rules
 
