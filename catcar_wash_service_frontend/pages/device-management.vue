@@ -152,7 +152,7 @@
         <template #expanded-row="{ item }">
           <tr>
             <td :colspan="deviceHeaders.length + 2" class="pa-4">
-              <v-card flat color="surface-container-low">
+              <v-card elevation="2" color="surface-container-low">
                 <v-card-text class="pa-3">
                   <!-- Compact Device Info Header -->
                   <div class="d-flex justify-space-between align-center mb-4">
@@ -234,7 +234,9 @@
                               >
                                 {{ config.value }}
                               </v-chip>
-                              <span class="text-caption text-on-surface-variant">
+                              <span
+                                class="text-caption text-on-surface-variant"
+                              >
                                 {{ config.unit }}
                               </span>
                             </div>
