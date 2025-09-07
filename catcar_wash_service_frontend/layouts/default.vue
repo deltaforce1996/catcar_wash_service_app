@@ -14,19 +14,19 @@
           src="/Logo/Asset 33@2x.png"
           alt="CAT CARWASH Logo"
           class="nav-logo"
-        />
+        >
         <img
           v-if="!theme.global.current.value.dark"
           src="/Logo/Asset gray text.png"
           alt="CAT CARWASH Logo gray text"
           class="nav-logo"
-        />
+        >
         <img
           v-else
           src="/Logo/Asset 1@3x.png"
           alt="CAT CARWASH Logo white text"
           class="nav-logo"
-        />
+        >
       </div>
 
       <!-- Navigation Menu -->
@@ -131,19 +131,19 @@
           src="/Logo/Asset 33@2x.png"
           alt="CAT CARWASH Logo"
           class="mobile-logo"
-        />
+        >
         <img
           v-if="!theme.global.current.value.dark"
           src="/Logo/Asset gray text.png"
           alt="CAT CARWASH Logo gray text"
           class="mobile-logo-text"
-        />
+        >
         <img
           v-else
           src="/Logo/Asset 1@3x.png"
           alt="CAT CARWASH Logo white text"
           class="mobile-logo-text"
-        />
+        >
       </div>
 
       <v-spacer />
@@ -188,14 +188,20 @@
 </template>
 
 <script setup lang="ts">
-import { ref } from "vue";
+import { ref, onMounted } from "vue";
 import { useTheme } from "vuetify";
 
 // Theme management
 const theme = useTheme();
 
-// Navigation drawer state
-const drawer = ref(true);
+// Navigation drawer state - handle hydration mismatch
+const drawer = ref(false);
+
+// Initialize drawer state after hydration
+onMounted(() => {
+  // Set drawer to true for large screens, false for smaller screens
+  drawer.value = window.innerWidth >= 1264; // lg breakpoint in Vuetify
+});
 
 // Profile data (TODO: Replace with real user data)
 const profileData = {

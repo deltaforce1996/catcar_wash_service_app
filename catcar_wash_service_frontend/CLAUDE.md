@@ -28,6 +28,11 @@ pnpm preview
 # Linting and fixing
 pnpm lint
 pnpm lint:fix
+
+# Code formatting with Prettier
+pnpm format          # Format all files
+pnpm format:check    # Check formatting without making changes
+pnpm format:fix      # Same as pnpm format
 ```
 
 ## Tech Stack & Architecture
@@ -100,11 +105,65 @@ pnpm lint:fix
 ### Theming
 
 - **All colors are defined in `plugins/vuetify.ts`** - reference this file for available theme colors
-- Current available colors: `primary` (#f57f2a), `primary-darken-1` (#e56b1a), `secondary` (#ff9800), `secondary-darken-1` (#f57c00), `accent` (#ffc107), `error`, `warning`, `info`, `success`, and surface variants
+- **Theme System**: Based on Cat Car Wash original orange (#f57f2a) with modern Material Design 3 surface system
+- **Default Theme**: Dark mode is the default theme
+
+**Available Theme Colors** (from `plugins/vuetify.ts`):
+
+**Primary Colors**:
+
+- `primary` (#f57f2a - Cat Car Wash orange)
+- `primary-lighten-1` (#f7954a), `primary-lighten-2` (#faab6a)
+- `primary-darken-1` (#e56b1a), `primary-darken-2` (#d5580a)
+
+**Secondary Colors**:
+
+- `secondary` (#ff9800 - supporting orange)
+- `secondary-lighten-1` (#ffad33), `secondary-lighten-2` (#ffc266)
+- `secondary-darken-1` (#f57c00), `secondary-darken-2` (#ef6c00)
+
+**Tertiary Colors**:
+
+- `tertiary` (#ffc107 - golden yellow for highlights)
+- `tertiary-lighten-1` (#ffd54f), `tertiary-darken-1` (#ffb300)
+
+**System Colors**: `error`, `warning`, `info`, `success` (with lighten/darken variants)
+
+**Surface Colors (Dark Theme) - Hierarchy from lowest to highest**:
+
+1. `surface-container-lowest` (#0f0f0f) - Deepest surface
+2. `surface-container-low` (#161616) - Low elevation
+3. `background` (#0f0f0f) - App background
+4. `surface-container` (#1a1a1a) - Standard containers
+5. `surface` (#121212) - Base surface
+6. `surface-light` (#1e1e1e) - Light surface variant
+7. `surface-variant` (#2c2c2c) - Surface variants
+8. `surface-bright` (#2a2a2a) - Brightest surface
+
+**Surface Colors (Light Theme) - Hierarchy from lowest to highest**:
+
+1. `surface-container-lowest` (#ffffff) - Pure white
+2. `surface-container-low` (#f8fafc) - Very light blue-gray
+3. `background` (#ffffff) - App background
+4. `surface` (#ffffff) - Base surface
+5. `surface-variant` (#f8fafc) - Light blue-gray variant
+6. `surface-container` (#f1f5f9) - Standard containers
+7. `surface-container-high` (#e2e8f0) - Higher elevation
+8. `surface-container-highest` (#cbd5e1) - Highest elevation
+9. `surface-bright` (#ffffff) - Brightest surface
+
+**Text Colors**:
+
+- Dark theme: `on-surface` (#e6e1e5), `on-surface-variant` (#cac4cf)
+- Light theme: `on-surface` (#1e293b), `on-surface-variant` (#475569)
+
+**Critical Rules**:
+
 - Support both dark (default) and light themes
 - **NEVER hallucinate theme color names** - only use colors defined in the Vuetify config
 - If additional colors are needed, add them to the `plugins/vuetify.ts` theme configuration first
 - Use theme tokens (e.g., `color="primary"`) not hardcoded hex values
+- Use surface hierarchy correctly for proper elevation and depth perception
 
 ## Limitations
 

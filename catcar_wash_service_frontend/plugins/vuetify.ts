@@ -48,20 +48,20 @@ export default defineNuxtPlugin((app) => {
             "success-lighten-1": "#34d399",
             "success-darken-1": "#059669",
 
-            // Modern Surface System
+            // Modern Surface System - Pure Gray Palette
             surface: "#ffffff",
             "surface-bright": "#ffffff",
-            "surface-variant": "#f8fafc", // Very light blue-gray
-            "surface-container": "#f1f5f9", // Light blue-gray
-            "surface-container-high": "#e2e8f0", // Medium blue-gray
-            "surface-container-highest": "#cbd5e1", // Darker blue-gray
-            "surface-container-low": "#f8fafc", // Same as variant for consistency
+            "surface-variant": "#f9f9f9", // Very light gray
+            "surface-container": "#f4f4f4", // Light gray
+            "surface-container-high": "#eeeeee", // Medium gray
+            "surface-container-highest": "#e0e0e0", // Darker gray
+            "surface-container-low": "#f9f9f9", // Same as variant for consistency
             "surface-container-lowest": "#ffffff",
             background: "#ffffff",
 
-            // Modern Text Colors
-            "on-surface": "#1e293b", // Dark slate gray
-            "on-surface-variant": "#475569", // Medium slate gray
+            // Modern Text Colors - Pure Gray Palette
+            "on-surface": "#2e2e2e", // Dark gray
+            "on-surface-variant": "#6e6e6e", // Medium gray
             "on-primary": "#ffffff",
             "on-secondary": "#ffffff",
             "on-error": "#ffffff",
