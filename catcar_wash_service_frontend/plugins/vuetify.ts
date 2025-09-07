@@ -7,7 +7,7 @@ import { createVuetify } from "vuetify";
 export default defineNuxtPlugin((app) => {
   const vuetify = createVuetify({
     theme: {
-      defaultTheme: "dark",
+      defaultTheme: "light",
       themes: {
         light: {
           dark: false,
@@ -52,16 +52,16 @@ export default defineNuxtPlugin((app) => {
             surface: "hsl(0, 0%, 98%)",
             "surface-bright": "hsl(0, 0%, 100%)",
             "surface-variant": "hsl(0, 0%, 88%)",
-            "surface-container-high": "hsl(0, 0%, 93%)",
-            "surface-container-highest": "hsl(0, 0%, 91%)",
-            "surface-container": "hsl(0, 0%, 96%)",
-            "surface-container-low": "hsl(0, 0%, 97%)",
-            "surface-container-lowest": "hsl(0, 0%, 100%)",
-            background: "hsl(0, 0%, 98%)",
+            "surface-container-highest": "hsl(0, 0%, 100%)",
+            "surface-container-high": "hsl(0, 0%, 100%)",
+            "surface-container": "hsl(0, 0%, 100%)",
+            "surface-container-low": "hsl(0, 0%, 98%)",
+            "surface-container-lowest": "hsl(0, 0%, 95%)",
+            background: "hsl(0, 0%, 93%)",
 
             // Modern Text Colors - Pure Gray Palette
-            "on-surface": "#2e2e2e", // Dark gray
-            "on-surface-variant": "#6e6e6e", // Medium gray
+            "on-surface": "hsl(0, 0%, 7%)", // Dark gray
+            "on-surface-variant": "hsl(0, 0%, 43%)", // Medium gray
             "on-primary": "#ffffff",
             "on-secondary": "#ffffff",
             "on-error": "#ffffff",
@@ -121,8 +121,8 @@ export default defineNuxtPlugin((app) => {
             background: "hsl(0, 0%, 6%)",
 
             // Modern Dark Text Colors - Pure Gray
-            "on-surface": "#e0e0e0",
-            "on-surface-variant": "#c0c0c0",
+            "on-surface": "hsl(0, 0%, 88%)",
+            "on-surface-variant": "hsl(0, 0%, 75%)",
             "on-primary": "#ffffff",
             "on-secondary": "#ffffff",
             "on-error": "#ffffff",

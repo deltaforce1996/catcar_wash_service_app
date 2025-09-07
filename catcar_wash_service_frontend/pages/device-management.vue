@@ -150,105 +150,101 @@
 
         <!-- Expandable Row Content -->
         <template #expanded-row="{ item }">
-          <tr>
-            <td :colspan="deviceHeaders.length + 2" class="pa-4">
-              <v-card elevation="2" color="surface-container-low">
-                <v-card-text class="pa-3">
-                  <!-- Compact Device Info Header -->
-                  <div class="d-flex justify-space-between align-center mb-4">
-                    <div class="d-flex align-center" style="gap: 24px">
-                      <v-chip
-                        color="info"
-                        size="small"
-                        variant="tonal"
-                        class="px-3"
-                      >
-                        ID: {{ item.id.slice(-8) }}
-                      </v-chip>
-                      <span class="text-body-2 text-on-surface-variant">
-                        สร้าง: {{ formatDate(item.created_at) }}
-                      </span>
-                      <span class="text-body-2 text-on-surface-variant">
-                        {{ item.owner.email }}
-                      </span>
-                    </div>
-                    <v-btn
-                      color="primary"
-                      variant="outlined"
+          <td :colspan="deviceHeaders.length + 2" class="pa-4">
+            <v-card flat>
+              <v-card-text class="pa-3">
+                <!-- Compact Device Info Header -->
+                <div class="d-flex justify-space-between align-center mb-4">
+                  <div class="d-flex align-center" style="gap: 24px">
+                    <v-chip
+                      color="info"
                       size="small"
-                      @click="openDeviceDetailDialog(item)"
+                      variant="tonal"
+                      class="px-3"
                     >
-                      แก้ไขการตั้งค่า
-                    </v-btn>
+                      ID: {{ item.id.slice(-8) }}
+                    </v-chip>
+                    <span class="text-body-2 text-on-surface-variant">
+                      สร้าง: {{ formatDate(item.created_at) }}
+                    </span>
+                    <span class="text-body-2 text-on-surface-variant">
+                      {{ item.owner.email }}
+                    </span>
                   </div>
+                  <v-btn
+                    color="primary"
+                    variant="outlined"
+                    size="small"
+                    @click="openDeviceDetailDialog(item)"
+                  >
+                    แก้ไขการตั้งค่า
+                  </v-btn>
+                </div>
 
-                  <!-- Sale Config Grid -->
-                  <div class="mb-2">
-                    <h4 class="text-subtitle-1 font-weight-bold mb-2">
-                      การตั้งค่าการขาย
-                    </h4>
-                    <v-row dense>
-                      <v-col
-                        v-for="(config, key) in item.configs.sale"
-                        :key="key"
-                        cols="12"
-                        sm="6"
-                        md="4"
-                        lg="3"
+                <!-- Sale Config Grid -->
+                <div class="mb-2">
+                  <h4 class="text-subtitle-1 font-weight-bold mb-2">
+                    การตั้งค่าการขาย
+                  </h4>
+                  <v-row dense>
+                    <v-col
+                      v-for="(config, key) in item.configs.sale"
+                      :key="key"
+                      cols="12"
+                      sm="6"
+                      md="4"
+                      lg="3"
+                    >
+                      <v-card
+                        elevation="1"
+                        color="surface-container"
+                        class="pa-2"
+                        height="80"
+                        rounded="lg"
                       >
-                        <v-card
-                          elevation="1"
-                          color="surface-container"
-                          class="pa-2"
-                          height="80"
-                          rounded="lg"
-                        >
-                          <div class="d-flex flex-column h-100">
-                            <div
-                              class="d-flex justify-space-between align-start mb-1"
+                        <div class="d-flex flex-column h-100">
+                          <div
+                            class="d-flex justify-space-between align-start mb-1"
+                          >
+                            <span
+                              class="text-body-2 font-weight-medium text-truncate"
+                              style="max-width: 120px"
                             >
-                              <span
-                                class="text-body-2 font-weight-medium text-truncate"
-                                style="max-width: 120px"
-                              >
-                                {{ config.description }}
-                              </span>
-                              <v-chip
-                                size="x-small"
-                                color="on-surface-variant"
-                                variant="flat"
-                                class="ml-1"
-                              >
-                                {{ key }}
-                              </v-chip>
-                            </div>
-                            <v-spacer />
-                            <div
-                              class="d-flex align-center justify-space-between"
+                              {{ config.description }}
+                            </span>
+                            <v-chip
+                              size="x-small"
+                              color="on-surface-variant"
+                              variant="flat"
+                              class="ml-1"
                             >
-                              <v-chip
-                                color="success"
-                                size="small"
-                                variant="elevated"
-                                class="font-weight-bold"
-                              >
-                                {{ config.value }}
-                              </v-chip>
-                              <span
-                                class="text-caption text-on-surface-variant"
-                              >
-                                {{ config.unit }}
-                              </span>
-                            </div>
+                              {{ key }}
+                            </v-chip>
                           </div>
-                        </v-card>
-                      </v-col>
-                    </v-row>
-                  </div>
-                </v-card-text>
-              </v-card>
-            </td>
-          </tr>
+                          <v-spacer />
+                          <div
+                            class="d-flex align-center justify-space-between"
+                          >
+                            <v-chip
+                              color="success"
+                              size="small"
+                              variant="elevated"
+                              class="font-weight-bold"
+                            >
+                              {{ config.value }}
+                            </v-chip>
+                            <span class="text-caption text-on-surface-variant">
+                              {{ config.unit }}
+                            </span>
+                          </div>
+                        </div>
+                      </v-card>
+                    </v-col>
+                  </v-row>
+                </div>
+              </v-card-text>
+            </v-card>
+          </td>
         </template>
       </v-data-table>
 
