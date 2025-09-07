@@ -212,3 +212,5 @@ pnpm lint:fix
 ```
 
 If lint error after running command attempt to fix it.
+
+When updating UI component and design use playwright mcp to screenshot and recheck the design. Also use the playwright mcp to test the website.

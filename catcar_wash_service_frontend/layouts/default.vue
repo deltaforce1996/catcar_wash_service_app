@@ -14,19 +14,19 @@
           src="/Logo/Asset 33@2x.png"
           alt="CAT CARWASH Logo"
           class="nav-logo"
-        >
+        />
         <img
           v-if="!theme.global.current.value.dark"
           src="/Logo/Asset gray text.png"
           alt="CAT CARWASH Logo gray text"
           class="nav-logo"
-        >
+        />
         <img
           v-else
           src="/Logo/Asset 1@3x.png"
           alt="CAT CARWASH Logo white text"
           class="nav-logo"
-        >
+        />
       </div>
 
       <!-- Navigation Menu -->
@@ -131,19 +131,19 @@
           src="/Logo/Asset 33@2x.png"
           alt="CAT CARWASH Logo"
           class="mobile-logo"
-        >
+        />
         <img
           v-if="!theme.global.current.value.dark"
           src="/Logo/Asset gray text.png"
           alt="CAT CARWASH Logo gray text"
           class="mobile-logo-text"
-        >
+        />
         <img
           v-else
           src="/Logo/Asset 1@3x.png"
           alt="CAT CARWASH Logo white text"
           class="mobile-logo-text"
-        >
+        />
       </div>
 
       <v-spacer />
@@ -179,8 +179,8 @@
     </v-app-bar>
 
     <!-- Main Content -->
-    <v-main class="main-content">
-      <v-container fluid class="pa-6">
+    <v-main>
+      <v-container class="mt-4">
         <slot />
       </v-container>
     </v-main>
@@ -315,11 +315,6 @@ const logout = () => {
 
 .profile-item {
   padding: 1rem;
-}
-
-.main-content {
-  background-color: rgb(var(--v-theme-surface-container-lowest));
-  min-height: 100vh;
 }
 
 .mobile-logo-container {

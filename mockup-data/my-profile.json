@@ -1,0 +1,14 @@
+{
+    "success": true,
+    "data": {
+        "id": "cmejzo4tg0008zsg8ld2unelz",
+        "email": "user@catcarwash.com",
+        "name": "User",
+        "permission": {
+            "id": "cmejzo4mt0002zsg8iy0slqqh",
+            "name": "USER"
+        },
+        "status": "ACTIVE"
+    },
+    "message": "User information retrieved successfully"
+}

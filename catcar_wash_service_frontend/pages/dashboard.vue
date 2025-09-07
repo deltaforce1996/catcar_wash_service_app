@@ -1,7 +1,7 @@
 <template>
-  <div class="dashboard-container">
+  <div>
     <!-- Header Section -->
-    <v-row class="mb-8">
+    <v-row>
       <v-col cols="12">
         <div class="d-flex justify-space-between align-center flex-wrap">
           <div>
@@ -99,6 +99,8 @@
               placeholder="ค้นหาด้วยชื่อบริการ หรือรหัสเครื่อง"
               hide-details
               clearable
+              aria-label="ค้นหาการขาย"
+              role="searchbox"
             />
           </v-col>
 
@@ -129,7 +131,7 @@
                       :max="
                         tempEndTimeObj
                           ? formatTimeToString(tempEndTimeObj)
-                          : undefined
+                          : '23:59'
                       "
                       class="time-picker-compact"
                     />
@@ -177,7 +179,7 @@
                       :min="
                         tempStartTimeObj
                           ? formatTimeToString(tempStartTimeObj)
-                          : undefined
+                          : '00:00'
                       "
                       class="time-picker-compact"
                     />
@@ -253,6 +255,21 @@
             </v-btn>
           </v-col>
         </v-row>
+
+        <!-- Filter Change Alert -->
+        <v-alert
+          v-if="hasFilterChanges"
+          type="info"
+          variant="tonal"
+          closable
+          class="mt-4"
+        >
+          <template #prepend>
+            <v-icon>mdi-information</v-icon>
+          </template>
+          <strong>เตือน:</strong> คุณได้เปลี่ยนแปลงตัวกรองแล้ว กรุณากดปุ่ม
+          "ยืนยันตัวกรอง" เพื่อใช้งานตัวกรองใหม่
+        </v-alert>
       </v-card-text>
       <v-data-table
         :headers="salesHeaders"
@@ -260,30 +277,317 @@
         :items-per-page="10"
         class="elevation-0"
         hover
+        show-expand
+        expand-on-click
       >
-        <template #[`item.timestamp`]="{ item }">
+        <template #[`item.created_at`]="{ item }">
           <div class="text-body-2">
-            {{ formatDateTime(item.timestamp) }}
+            {{ formatDateTime(item.created_at) }}
           </div>
         </template>
-        <template #[`item.deviceId`]="{ item }">
-          <div class="text-body-2 font-weight-medium">
-            {{ item.deviceId }}
+        <template #[`item.device.name`]="{ item }">
+          <div class="d-flex align-center">
+            <v-icon
+              :color="getDeviceTypeColor(item.device.type)"
+              size="small"
+              class="me-2"
+            >
+              {{ getDeviceTypeIcon(item.device.type) }}
+            </v-icon>
+            <span class="text-body-2 font-weight-medium">{{
+              item.device.name
+            }}</span>
           </div>
         </template>
-        <template #[`item.moneyReceived`]="{ item }">
-          <div class="text-body-2 font-weight-medium text-success">
-            ฿{{ item.moneyReceived.toLocaleString("th-TH") }}
-          </div>
-        </template>
-        <template #[`item.serviceType`]="{ item }">
+        <template #[`item.device.type`]="{ item }">
           <v-chip
-            :color="getServiceTypeColor(item.serviceType)"
+            :color="getDeviceTypeColor(item.device.type)"
             size="small"
             variant="tonal"
           >
-            {{ item.serviceType }}
+            {{ item.device.type }}
           </v-chip>
+        </template>
+        <template #[`item.payload.total_amount`]="{ item }">
+          <div class="text-body-2 font-weight-bold text-success">
+            ฿{{ item.payload.total_amount.toLocaleString("th-TH") }}
+          </div>
+        </template>
+
+        <!-- Expandable row content -->
+        <template #expanded-row="{ columns, item }">
+          <td :colspan="columns.length" class="pa-0">
+            <v-card
+              class="ma-2 payment-details-card"
+              color="surface-container-low"
+              elevation="0"
+              border
+              rounded="lg"
+            >
+              <v-card-text class="pa-4">
+                <div class="payment-breakdown">
+                  <!-- Header with transaction summary -->
+                  <div class="d-flex justify-space-between align-center mb-4">
+                    <h3 class="text-subtitle-1 font-weight-bold">
+                      รายละเอียดการชำระเงิน
+                    </h3>
+                    <v-chip
+                      :color="getPaymentStatusColor(item.payload.status)"
+                      size="small"
+                      variant="tonal"
+                    >
+                      {{ item.payload.status }}
+                    </v-chip>
+                  </div>
+
+                  <!-- Payment methods grid for desktop -->
+                  <v-row
+                    v-if="$vuetify.display.mdAndUp"
+                    no-gutters
+                    class="payment-methods-grid"
+                  >
+                    <!-- QR Payment Section -->
+                    <v-col cols="4" class="payment-section">
+                      <div class="payment-method-section pa-3">
+                        <div class="d-flex align-center mb-3">
+                          <v-icon color="primary" size="small" class="me-2"
+                            >mdi-qrcode</v-icon
+                          >
+                          <span class="text-subtitle-2 font-weight-medium"
+                            >QR Payment</span
+                          >
+                        </div>
+
+                        <div v-if="hasQrPayment(item)">
+                          <v-card
+                            class="mb-2"
+                            color="primary-lighten-1"
+                            variant="tonal"
+                          >
+                            <v-card-text class="pa-3">
+                              <div class="text-caption text-medium-emphasis">
+                                Net Amount
+                              </div>
+                              <div class="text-h6 font-weight-bold">
+                                ฿{{ item.payload.qr.net_amount }}
+                              </div>
+                            </v-card-text>
+                          </v-card>
+                          <v-card color="primary-lighten-2" variant="tonal">
+                            <v-card-text class="pa-3">
+                              <div class="text-caption text-medium-emphasis">
+                                Transaction ID
+                              </div>
+                              <div class="text-body-2 font-family-monospace">
+                                {{ item.payload.qr.transaction_id }}
+                              </div>
+                            </v-card-text>
+                          </v-card>
+                        </div>
+                        <div v-else class="text-caption text-medium-emphasis">
+                          ไม่มีการชำระผ่าน QR Code
+                        </div>
+                      </div>
+                    </v-col>
+
+                    <!-- Bank Notes Section -->
+                    <v-col cols="4" class="payment-section">
+                      <div class="payment-method-section pa-3">
+                        <div class="d-flex align-center mb-3">
+                          <v-icon color="success" size="small" class="me-2"
+                            >mdi-cash-100</v-icon
+                          >
+                          <span class="text-subtitle-2 font-weight-medium"
+                            >ธนบัตร</span
+                          >
+                        </div>
+
+                        <div v-if="hasBankNotes(item)">
+                          <v-row dense>
+                            <v-col
+                              v-for="(count, denomination) in item.payload.bank"
+                              :key="denomination"
+                              cols="6"
+                            >
+                              <v-card
+                                v-if="count > 0"
+                                class="denomination-card"
+                                color="success-lighten-1"
+                                variant="tonal"
+                              >
+                                <v-card-text class="pa-2 text-center">
+                                  <div class="text-body-2 font-weight-bold">
+                                    ฿{{ denomination }}
+                                  </div>
+                                  <div class="text-caption">{{ count }} ใบ</div>
+                                </v-card-text>
+                              </v-card>
+                            </v-col>
+                          </v-row>
+                        </div>
+                        <div v-else class="text-caption text-medium-emphasis">
+                          ไม่มีการชำระด้วยธนบัตร
+                        </div>
+                      </div>
+                    </v-col>
+
+                    <!-- Coins Section -->
+                    <v-col cols="4" class="payment-section">
+                      <div class="payment-method-section pa-3">
+                        <div class="d-flex align-center mb-3">
+                          <v-icon color="secondary" size="small" class="me-2"
+                            >mdi-circle-multiple</v-icon
+                          >
+                          <span class="text-subtitle-2 font-weight-medium"
+                            >เหรียญ</span
+                          >
+                        </div>
+
+                        <div v-if="hasCoins(item)">
+                          <v-row dense>
+                            <v-col
+                              v-for="(count, denomination) in item.payload.coin"
+                              :key="denomination"
+                              cols="6"
+                            >
+                              <v-card
+                                v-if="count > 0"
+                                class="denomination-card"
+                                color="secondary-lighten-1"
+                                variant="tonal"
+                              >
+                                <v-card-text class="pa-2 text-center">
+                                  <div class="text-body-2 font-weight-bold">
+                                    ฿{{ denomination }}
+                                  </div>
+                                  <div class="text-caption">
+                                    {{ count }} เหรียญ
+                                  </div>
+                                </v-card-text>
+                              </v-card>
+                            </v-col>
+                          </v-row>
+                        </div>
+                        <div v-else class="text-caption text-medium-emphasis">
+                          ไม่มีการชำระด้วยเหรียญ
+                        </div>
+                      </div>
+                    </v-col>
+                  </v-row>
+
+                  <!-- Mobile layout with expansion panels -->
+                  <div v-else class="mobile-payment-layout">
+                    <v-expansion-panels variant="accordion" multiple>
+                      <v-expansion-panel
+                        v-if="hasQrPayment(item)"
+                        title="QR Payment"
+                        expand-icon="mdi-qrcode"
+                      >
+                        <v-expansion-panel-text>
+                          <div class="pa-2">
+                            <v-card
+                              class="mb-2"
+                              color="primary-lighten-1"
+                              variant="tonal"
+                            >
+                              <v-card-text class="pa-3">
+                                <div class="text-caption text-medium-emphasis">
+                                  Net Amount
+                                </div>
+                                <div class="text-h6 font-weight-bold">
+                                  ฿{{ item.payload.qr.net_amount }}
+                                </div>
+                              </v-card-text>
+                            </v-card>
+                            <v-card color="primary-lighten-2" variant="tonal">
+                              <v-card-text class="pa-3">
+                                <div class="text-caption text-medium-emphasis">
+                                  Transaction ID
+                                </div>
+                                <div class="text-body-2 font-family-monospace">
+                                  {{ item.payload.qr.transaction_id }}
+                                </div>
+                              </v-card-text>
+                            </v-card>
+                          </div>
+                        </v-expansion-panel-text>
+                      </v-expansion-panel>
+
+                      <v-expansion-panel
+                        v-if="hasBankNotes(item)"
+                        title="ธนบัตร"
+                        expand-icon="mdi-cash-100"
+                      >
+                        <v-expansion-panel-text>
+                          <div class="pa-2">
+                            <v-row dense>
+                              <v-col
+                                v-for="(count, denomination) in item.payload
+                                  .bank"
+                                :key="denomination"
+                                cols="6"
+                              >
+                                <v-card
+                                  v-if="count > 0"
+                                  class="denomination-card"
+                                  color="success-lighten-1"
+                                  variant="tonal"
+                                >
+                                  <v-card-text class="pa-2 text-center">
+                                    <div class="text-body-2 font-weight-bold">
+                                      ฿{{ denomination }}
+                                    </div>
+                                    <div class="text-caption">
+                                      {{ count }} ใบ
+                                    </div>
+                                  </v-card-text>
+                                </v-card>
+                              </v-col>
+                            </v-row>
+                          </div>
+                        </v-expansion-panel-text>
+                      </v-expansion-panel>
+
+                      <v-expansion-panel
+                        v-if="hasCoins(item)"
+                        title="เหรียญ"
+                        expand-icon="mdi-circle-multiple"
+                      >
+                        <v-expansion-panel-text>
+                          <div class="pa-2">
+                            <v-row dense>
+                              <v-col
+                                v-for="(count, denomination) in item.payload
+                                  .coin"
+                                :key="denomination"
+                                cols="6"
+                              >
+                                <v-card
+                                  v-if="count > 0"
+                                  class="denomination-card"
+                                  color="secondary-lighten-1"
+                                  variant="tonal"
+                                >
+                                  <v-card-text class="pa-2 text-center">
+                                    <div class="text-body-2 font-weight-bold">
+                                      ฿{{ denomination }}
+                                    </div>
+                                    <div class="text-caption">
+                                      {{ count }} เหรียญ
+                                    </div>
+                                  </v-card-text>
+                                </v-card>
+                              </v-col>
+                            </v-row>
+                          </div>
+                        </v-expansion-panel-text>
+                      </v-expansion-panel>
+                    </v-expansion-panels>
+                  </div>
+                </div>
+              </v-card-text>
+            </v-card>
+          </td>
         </template>
       </v-data-table>
     </v-card>
@@ -291,7 +595,50 @@
 </template>
 
 <script setup lang="ts">
+// TypeScript interfaces
+interface PaymentQR {
+  ref1: string | null;
+  ref2: string | null;
+  net_amount: number;
+  transaction_id: string;
+}
+
+interface PaymentPayload {
+  qr: PaymentQR;
+  bank: Record<string, number>;
+  coin: Record<string, number>;
+  type: string;
+  status: string;
+  timestemp: number;
+  total_amount: number;
+}
+
+interface Device {
+  id: string;
+  name: string;
+  type: string;
+  owner: {
+    id: string;
+    fullname: string;
+    email: string;
+  };
+}
+
+interface SaleItem {
+  id: string;
+  device_id: string;
+  payload: PaymentPayload;
+  created_at: string;
+  device: Device;
+}
+
 const { dashboardData } = useDashboardData();
+const {
+  salesData: enhancedSalesData,
+  loading: _salesDataLoading,
+  error: _salesDataError,
+  refreshData: _refreshData,
+} = useEnhancedSalesData();
 
 const datePickerMenu = ref(false);
 const selectedDateObject = ref(new Date());
@@ -325,8 +672,8 @@ const tempStartTimeObj = ref<TimeObject | Date | string | null>(null);
 const tempEndTimeObj = ref<TimeObject | Date | string | null>(null);
 const tempSelectedServiceTypes = ref<string[]>([]);
 
-// Service type options
-const serviceTypeOptions = ["เบสิก", "ดีลักซ์", "พรีเมียม", "จักรยานยนต์"];
+// Device type options
+const serviceTypeOptions = ["WASH", "DRYING"];
 
 // Helper function to format time object to HH:mm string
 const formatTimeToString = (
@@ -414,6 +761,19 @@ const kpiData = computed(() => [
   // }
   {
     title: "รายได้รายปี",
+    value: dashboardData.yearRevenue?.value || dashboardData.monthRevenue.value,
+    trend: dashboardData.yearRevenue?.trend || dashboardData.monthRevenue.trend,
+    chartData:
+      dashboardData.yearRevenue?.chartData ||
+      dashboardData.monthRevenue.chartData,
+    chartLabels:
+      dashboardData.yearRevenue?.chartLabels ||
+      dashboardData.monthRevenue.chartLabels,
+    chartId: "year-kpi",
+    currency: true,
+  },
+  {
+    title: "รายได้รายเดือน",
     value: dashboardData.monthRevenue.value,
     trend: dashboardData.monthRevenue.trend,
     chartData: dashboardData.monthRevenue.chartData,
@@ -422,7 +782,7 @@ const kpiData = computed(() => [
     currency: true,
   },
   {
-    title: "รายได้รายเดือน",
+    title: "รายได้รายวัน",
     value: dashboardData.dateRevenue.value,
     trend: dashboardData.dateRevenue.trend,
     chartData: dashboardData.dateRevenue.chartData,
@@ -430,28 +790,34 @@ const kpiData = computed(() => [
     chartId: "date-kpi",
     currency: true,
   },
-  {
-    title: "รายได้รายวัน",
-    value: dashboardData.hourlyRevenue.value,
-    trend: dashboardData.hourlyRevenue.trend,
-    chartData: dashboardData.hourlyRevenue.chartData,
-    chartLabels: dashboardData.hourlyRevenue.chartLabels,
-    chartId: "hourly-kpi",
-    currency: true,
-  },
 ]);
 
 const salesHeaders = [
-  { title: "เวลา", key: "timestamp", sortable: true },
-  { title: "รหัสเครื่อง", key: "deviceId", sortable: true },
-  { title: "ชื่อบริการ", key: "serviceName", sortable: true },
-  { title: "ประเภทบริการ", key: "serviceType", sortable: true },
-  { title: "จำนวนเงิน", key: "moneyReceived", sortable: true },
+  { title: "เวลา", key: "created_at", sortable: true },
+  { title: "ชื่ออุปกรณ์", key: "device.name", sortable: true },
+  { title: "ประเภท", key: "device.type", sortable: true },
+  { title: "จำนวนเงิน", key: "payload.total_amount", sortable: true },
+  { title: "", key: "data-table-expand", sortable: false },
 ];
 
-const { salesData } = useSalesData();
+// Using enhanced sales data from the composable instead of hardcoded data
+
+// Use enhanced sales data from composable
+const salesData = enhancedSalesData;
 
 // Filtered sales data
+// Check if any filter has pending changes
+const hasFilterChanges = computed(() => {
+  return (
+    tempSearchQuery.value !== searchQuery.value ||
+    JSON.stringify(tempStartTimeObj.value) !==
+      JSON.stringify(startTimeObj.value) ||
+    JSON.stringify(tempEndTimeObj.value) !== JSON.stringify(endTimeObj.value) ||
+    JSON.stringify([...tempSelectedServiceTypes.value].sort()) !==
+      JSON.stringify([...selectedServiceTypes.value].sort())
+  );
+});
+
 const filteredSalesData = computed(() => {
   let filtered = salesData.value;
 
@@ -460,18 +826,20 @@ const filteredSalesData = computed(() => {
     const query = searchQuery.value.toLowerCase();
     filtered = filtered.filter(
       (item) =>
-        item.serviceName.toLowerCase().includes(query) ||
-        item.deviceId.toLowerCase().includes(query)
+        item.device.name.toLowerCase().includes(query) ||
+        item.device.type.toLowerCase().includes(query) ||
+        item.id.toLowerCase().includes(query)
     );
   }
 
   // Time range filter
   if (startTimeObj.value || endTimeObj.value) {
     filtered = filtered.filter((item) => {
+      const itemDate = new Date(item.created_at);
       const itemTime =
-        item.timestamp.getHours().toString().padStart(2, "0") +
+        itemDate.getHours().toString().padStart(2, "0") +
         ":" +
-        item.timestamp.getMinutes().toString().padStart(2, "0");
+        itemDate.getMinutes().toString().padStart(2, "0");
 
       const startStr = formatTimeToString(startTimeObj.value);
       const endStr = formatTimeToString(endTimeObj.value);
@@ -487,49 +855,98 @@ const filteredSalesData = computed(() => {
     });
   }
 
-  // Service type filter
+  // Service type filter (device type)
   if (selectedServiceTypes.value.length > 0) {
     filtered = filtered.filter((item) =>
-      selectedServiceTypes.value.includes(item.serviceType)
+      selectedServiceTypes.value.includes(item.device.type)
     );
   }
 
   return filtered;
 });
 
-const formatDateTime = (date: Date) => {
-  return date.toLocaleString("th-TH", {
+const formatDateTime = (dateString: string) => {
+  const date = new Date(dateString);
+  return new Intl.DateTimeFormat("th-TH", {
     day: "2-digit",
     month: "2-digit",
     year: "numeric",
     hour: "2-digit",
     minute: "2-digit",
-  });
+    timeZone: "Asia/Bangkok",
+  }).format(date);
+};
+
+const getDeviceTypeColor = (deviceType: string) => {
+  switch (deviceType) {
+    case "WASH":
+      return "primary";
+    case "DRYING":
+      return "secondary";
+    default:
+      return "primary";
+  }
+};
+
+const getDeviceTypeIcon = (deviceType: string) => {
+  switch (deviceType) {
+    case "WASH":
+      return "mdi-car-wash";
+    case "DRYING":
+      return "mdi-air-filter";
+    default:
+      return "mdi-cog";
+  }
+};
+
+const getPaymentStatusColor = (status: string) => {
+  switch (status) {
+    case "SUCCESS":
+      return "success";
+    case "FAILED":
+      return "error";
+    case "PENDING":
+      return "warning";
+    default:
+      return "primary";
+  }
+};
+
+const hasQrPayment = (item: SaleItem): boolean => {
+  return (
+    item.payload?.qr &&
+    typeof item.payload.qr.net_amount === "number" &&
+    item.payload.qr.net_amount > 0
+  );
+};
+
+const hasBankNotes = (item: SaleItem): boolean => {
+  return (
+    item.payload?.bank &&
+    Object.values(item.payload.bank).some((count: number) => count > 0)
+  );
+};
+
+const hasCoins = (item: SaleItem): boolean => {
+  return (
+    item.payload?.coin &&
+    Object.values(item.payload.coin).some((count: number) => count > 0)
+  );
 };
 
 const getServiceTypeColor = (serviceType: string) => {
   switch (serviceType) {
-    case "เบสิก":
+    case "WASH":
       return "primary";
-    case "ดีลักซ์":
+    case "DRYING":
       return "secondary";
-    case "พรีเมียม":
-      return "success";
-    case "จักรยานยนต์":
-      return "info";
     default:
-      return "primary";
+      return "grey";
   }
 };
 </script>
 
 <style scoped>
-.dashboard-container {
-  max-width: 1400px;
-  margin: 0 auto;
-  padding: 0 24px;
-}
-
 .date-picker {
   min-width: 200px;
 }
@@ -561,10 +978,6 @@ const getServiceTypeColor = (serviceType: string) => {
 
 /* Mobile responsiveness */
 @media (max-width: 960px) {
-  .dashboard-container {
-    padding: 0 16px;
-  }
-
   .date-picker {
     min-width: 160px;
   }
@@ -581,10 +994,6 @@ const getServiceTypeColor = (serviceType: string) => {
 }
 
 @media (max-width: 600px) {
-  .dashboard-container {
-    padding: 0 12px;
-  }
-
   .chart-wrapper {
     height: 200px;
     padding: 2px;
@@ -594,5 +1003,126 @@ const getServiceTypeColor = (serviceType: string) => {
     font-size: 0.875rem !important;
     padding: 12px 16px 6px 16px !important;
   }
+}
+
+/* Payment details expandable row styles */
+.payment-details-card {
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  background: rgba(var(--v-theme-surface-container-low), 1);
+}
+
+.payment-breakdown {
+  max-width: 100%;
+}
+
+.payment-methods-grid {
+  gap: 0;
+}
+
+.payment-section {
+  position: relative;
+  min-height: 200px;
+}
+
+.payment-section:not(:last-child)::after {
+  content: "";
+  position: absolute;
+  right: 0;
+  top: 10%;
+  bottom: 10%;
+  width: 1px;
+  background: rgba(var(--v-theme-outline), 0.2);
+}
+
+.payment-method-section {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+}
+
+.denomination-card {
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  cursor: default;
+  min-height: 50px;
+}
+
+.denomination-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+/* Expand/collapse animation */
+:deep(.v-data-table__expanded-row) {
+  animation: slideDown 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+@keyframes slideDown {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Mobile layout adjustments */
+.mobile-payment-layout {
+  width: 100%;
+}
+
+.mobile-payment-layout :deep(.v-expansion-panel-title) {
+  padding: 12px 16px;
+  font-size: 0.875rem;
+  font-weight: 500;
+}
+
+.mobile-payment-layout :deep(.v-expansion-panel-text__wrapper) {
+  padding: 8px 16px 16px;
+}
+
+/* Monospace font for transaction ID */
+.font-family-monospace {
+  font-family: "Roboto Mono", "Monaco", "Consolas", monospace;
+  font-size: 0.75rem;
+  word-break: break-all;
+}
+
+/* Better responsive behavior for denomination cards */
+@media (max-width: 960px) {
+  .payment-section:not(:last-child)::after {
+    display: none;
+  }
+
+  .payment-section {
+    margin-bottom: 16px;
+    min-height: auto;
+  }
+
+  .payment-section:not(:last-child) {
+    border-bottom: 1px solid rgba(var(--v-theme-outline), 0.2);
+    padding-bottom: 16px;
+  }
+}
+
+/* Enhanced visual hierarchy */
+.payment-details-card :deep(.v-card-text) {
+  padding: 24px !important;
+}
+
+.payment-method-section .text-subtitle-2 {
+  color: rgba(var(--v-theme-on-surface), 0.87);
+  font-weight: 600;
+}
+
+.denomination-card .text-body-2 {
+  color: rgba(var(--v-theme-on-surface), 0.87);
+  line-height: 1.2;
+}
+
+.denomination-card .text-caption {
+  color: rgba(var(--v-theme-on-surface), 0.6);
+  font-weight: 500;
 }
 </style>
