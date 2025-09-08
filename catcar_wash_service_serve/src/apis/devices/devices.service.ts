@@ -39,7 +39,7 @@ export const devicePublicSelect = Prisma.validator<Prisma.tbl_devicesSelect>()({
 
 export type DeviceRow = Prisma.tbl_devicesGetPayload<{ select: typeof devicePublicSelect }>;
 
-const ALLOWED = ['id', 'name', 'type', 'status', 'owner', 'register'] as const;
+const ALLOWED = ['id', 'name', 'type', 'status', 'owner', 'register', 'search'] as const;
 
 @Injectable()
 export class DevicesService {
@@ -59,12 +59,13 @@ export class DevicesService {
     }
 
     // Handle general search - search both id and name fields
-    if (q.search) {
+    const search = pairs.find((p) => p.key === 'search')?.value;
+    if (search) {
       ands.push({
         OR: [
-          { id: { contains: q.search, mode: 'insensitive' } },
-          { name: { contains: q.search, mode: 'insensitive' } },
-          { owner: { fullname: { contains: q.search, mode: 'insensitive' } } },
+          { id: { contains: search, mode: 'insensitive' } },
+          { name: { contains: search, mode: 'insensitive' } },
+          { owner: { fullname: { contains: search, mode: 'insensitive' } } },
         ],
       });
     }

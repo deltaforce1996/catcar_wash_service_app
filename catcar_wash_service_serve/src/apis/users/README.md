@@ -83,6 +83,8 @@ Update user information by ID.
 
 #### Response Format
 
+**Note:** The response includes device counts for each user showing total, active, and inactive devices.
+
 ```json
 {
   "success": true,
@@ -100,18 +102,25 @@ Update user information by ID.
     "permission": {
       "id": "permission_id",
       "name": "ADMIN"
+    },
+    "device_counts": {
+      "total": 5,
+      "active": 3,
+      "inactive": 2
     }
   }
 }
 ```
 
-#### Authentication
+#### Authentication & Authorization
 
 This endpoint requires JWT authentication. Include the JWT token in the Authorization header:
 
 ```
 Authorization: Bearer <your_jwt_token>
 ```
+
+**Note:** The users API does not implement permission-based filtering - all authenticated users can access all user data.
 
 ## Data Types
 
@@ -120,10 +129,20 @@ The API uses various Prisma enums and types:
 - `UserStatus`: 'ACTIVE' | 'INACTIVE'
 - `PermissionType`: 'ADMIN' | 'TECHNICIAN' | 'USER'
 
+## Features
+
+- **Device Counts**: Each user response includes device statistics:
+  - `total`: Total number of devices owned by the user
+  - `active`: Number of devices with DEPLOYED status
+  - `inactive`: Number of devices with DISABLED status
+- **Search Functionality**: Supports both general search and specific field filtering
+- **Pagination**: Built-in pagination with configurable page size
+
 ## Database Schema
 
-This API queries the `tbl_users` table. The table contains:
+This API queries the `tbl_users` table and aggregates data from `tbl_devices` for device counts. The tables contain:
 
+**tbl_users:**
 - `id`: Unique user ID
 - `fullname`: User's full name
 - `email`: User's email address (unique)
@@ -135,3 +154,7 @@ This API queries the `tbl_users` table. The table contains:
 - `permission_id`: Reference to permission
 - `created_at`: Timestamp when the user was created
 - `updated_at`: Timestamp when the user was last updated
+
+**tbl_devices (for device counts):**
+- `owner_id`: Reference to user who owns the device
+- `status`: Device status (DEPLOYED/DISABLED)

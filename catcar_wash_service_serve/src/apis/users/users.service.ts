@@ -32,7 +32,17 @@ export type UserWithDeviceCountsRow = UserRow & {
   device_counts: { total: number; active: number; inactive: number };
 };
 
-const ALLOWED = ['id', 'email', 'fullname', 'phone', 'address', 'custom_name', 'status', 'permission'] as const;
+const ALLOWED = [
+  'id',
+  'email',
+  'fullname',
+  'phone',
+  'address',
+  'custom_name',
+  'status',
+  'permission',
+  'search',
+] as const;
 
 @Injectable()
 export class UsersService {
@@ -47,14 +57,15 @@ export class UsersService {
     const ands: Prisma.tbl_usersWhereInput['AND'] = [];
 
     // Handle general search - search id, fullname, email, phone, and address fields
-    if (q.search) {
+    const search = pairs.find((p) => p.key === 'search')?.value;
+    if (search) {
       ands.push({
         OR: [
-          { id: { contains: q.search, mode: 'insensitive' } },
-          { fullname: { contains: q.search, mode: 'insensitive' } },
-          { email: { contains: q.search, mode: 'insensitive' } },
-          { phone: { contains: q.search, mode: 'insensitive' } },
-          { address: { contains: q.search, mode: 'insensitive' } },
+          { id: { contains: search, mode: 'insensitive' } },
+          { fullname: { contains: search, mode: 'insensitive' } },
+          { email: { contains: search, mode: 'insensitive' } },
+          { phone: { contains: search, mode: 'insensitive' } },
+          { address: { contains: search, mode: 'insensitive' } },
         ],
       });
     }

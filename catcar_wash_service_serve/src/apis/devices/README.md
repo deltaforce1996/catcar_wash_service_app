@@ -11,7 +11,7 @@ Search devices with various filtering options.
 #### Query Parameters
 
 - `query` (optional): Search query string with key-value pairs
-- `search` (optional): General search term that searches both device ID and name and fullname of user fields
+- `search` (optional): General search term that searches device ID, device name, and owner fullname fields
 - `page` (optional): Page number (default: 1)
 - `limit` (optional): Items per page (default: 20, max: 100)
 - `sort_by` (optional): Sort field - 'created_at', 'updated_at', 'name', 'type', 'status', or 'register_at' (default: 'created_at')
@@ -30,16 +30,16 @@ The `query` parameter supports the following searchable fields:
 
 #### Example Queries
 
-**General Search (searches both device ID and name):**
+**General Search (searches device ID, device name, and owner fullname):**
 ```
-# Search for "เครื่องที 1" in both ID and name fields
+# Search for "เครื่องที 1" in device ID, name, and owner fullname fields
 GET /api/v1/devices/search?search=เครื่องที 1
 
-# Search for "id01" in both ID and name fields
+# Search for "id01" in device ID, name, and owner fullname fields
 GET /api/v1/devices/search?search=id01
 
-# Search for "wash" in both ID and name fields
-GET /api/v1/devices/search?search=wash
+# Search for "John" in device ID, name, and owner fullname fields
+GET /api/v1/devices/search?search=John
 ```
 
 **Specific Field Search:**
@@ -198,13 +198,19 @@ Set device status by ID. This endpoint allows updating the device status with pe
 }
 ```
 
-## Authentication
+## Authentication & Authorization
 
 All endpoints require JWT authentication. Include the JWT token in the Authorization header:
 
 ```
 Authorization: Bearer <your_jwt_token>
 ```
+
+**Access Control:**
+- Users with `USER` permission can only access devices they own
+- Users with other permission types (e.g., `ADMIN`) can access all devices
+- The service automatically filters results based on the authenticated user's permissions
+- For device status updates, USER role can only set status for devices they own
 
 ## Usage Examples
 

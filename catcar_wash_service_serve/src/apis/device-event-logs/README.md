@@ -11,7 +11,7 @@ Search device event logs with various filtering options.
 #### Query Parameters
 
 - `query` (optional): Search query string with key-value pairs
-- `search` (optional): General search term that searches device_id and device_name fields
+- `search` (optional): General search term that searches device_id, device_name, and owner fullname fields
 - `page` (optional): Page number (default: 1)
 - `limit` (optional): Items per page (default: 20, max: 100)
 - `sort_by` (optional): Sort field - 'created_at', 'type', or 'device_id' (default: 'created_at')
@@ -25,22 +25,22 @@ The `query` parameter supports the following searchable fields:
 - `device_id`: Device ID (partial match, case-insensitive)
 - `device_name`: Device name (partial match, case-insensitive)
 - `type`: Event type - 'PAYMENT' or 'INFO'
-- `payload_timestemp`: Unix timestamp within payload JSON (format: timestamp or start-end range)
+- `payload_timestemp`: Unix timestamp within payload JSON (format: single timestamp or start-end range)
 - `user_id`: User ID within payload JSON
 - `payment_status`: Payment status - 'SUCCESS', 'FAILED', or 'CANCELLED'
 
 #### Example Queries
 
-**General Search (searches device_id and device_name fields):**
+**General Search (searches device_id, device_name, and owner fullname fields):**
 ```
-# Search for "abc123" in device_id and device_name fields
+# Search for "abc123" in device_id, device_name, and owner fullname fields
 GET /api/v1/device-event-logs/search?search=abc123
 
-# Search for "WASH" in device_id and device_name fields
+# Search for "WASH" in device_id, device_name, and owner fullname fields
 GET /api/v1/device-event-logs/search?search=WASH
 
-# Search for "DEV001" in device_id and device_name fields
-GET /api/v1/device-event-logs/search?search=DEV001
+# Search for "John" in device_id, device_name, and owner fullname fields
+GET /api/v1/device-event-logs/search?search=John
 ```
 
 **Specific Field Search:**
@@ -57,6 +57,9 @@ GET /api/v1/device-event-logs/search?query=type:PAYMENT
 # Query by payment status
 GET /api/v1/device-event-logs/search?query=payment_status:SUCCESS
 
+# Query by single timestamp
+GET /api/v1/device-event-logs/search?query=payload_timestemp:1640995200000
+
 # Query by timestamp range
 GET /api/v1/device-event-logs/search?query=payload_timestemp:1640995200000-1641081600000
 
@@ -71,6 +74,8 @@ GET /api/v1/device-event-logs/search?search=WASH&page=1&limit=10&sort_by=created
 ```
 
 #### Response Format
+
+**Note:** The `created_at` field is automatically formatted as `YYYY-MM-DD HH:mm:ss` string format.
 
 ```json
 {
@@ -109,13 +114,18 @@ GET /api/v1/device-event-logs/search?search=WASH&page=1&limit=10&sort_by=created
 }
 ```
 
-#### Authentication
+#### Authentication & Authorization
 
 This endpoint requires JWT authentication. Include the JWT token in the Authorization header:
 
 ```
 Authorization: Bearer <your_jwt_token>
 ```
+
+**Access Control:**
+- Users with `USER` permission can only access device event logs for devices they own
+- Users with other permission types (e.g., `ADMIN`) can access all device event logs
+- The service automatically filters results based on the authenticated user's permissions
 
 ## Data Types
 

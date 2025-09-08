@@ -27,7 +27,7 @@ export const empPublicSelect = Prisma.validator<Prisma.tbl_empsSelect>()({
 
 export type EmpRow = Prisma.tbl_empsGetPayload<{ select: typeof empPublicSelect }>;
 
-const ALLOWED = ['id', 'email', 'name', 'phone', 'line', 'address', 'status', 'permission'] as const;
+const ALLOWED = ['id', 'email', 'name', 'phone', 'line', 'address', 'status', 'permission', 'search'] as const;
 
 @Injectable()
 export class EmpsService {
@@ -42,14 +42,15 @@ export class EmpsService {
     const ands: Prisma.tbl_empsWhereInput['AND'] = [];
 
     // Handle general search - search id, name, email, line, and address fields
-    if (q.search) {
+    const search = pairs.find((p) => p.key === 'search')?.value;
+    if (search) {
       ands.push({
         OR: [
-          { id: { contains: q.search, mode: 'insensitive' } },
-          { name: { contains: q.search, mode: 'insensitive' } },
-          { email: { contains: q.search, mode: 'insensitive' } },
-          { line: { contains: q.search, mode: 'insensitive' } },
-          { address: { contains: q.search, mode: 'insensitive' } },
+          { id: { contains: search, mode: 'insensitive' } },
+          { name: { contains: search, mode: 'insensitive' } },
+          { email: { contains: search, mode: 'insensitive' } },
+          { line: { contains: search, mode: 'insensitive' } },
+          { address: { contains: search, mode: 'insensitive' } },
         ],
       });
     }

@@ -57,6 +57,7 @@ export class DeviceEventLogsService {
     'payload_timestemp',
     'user_id',
     'payment_status',
+    'search',
   ] as const;
 
   constructor(private readonly prisma: PrismaService) {
@@ -76,11 +77,13 @@ export class DeviceEventLogsService {
     }
 
     // Handle general search - search device_id and device_name fields
-    if (q.search) {
+    const search = pairs.find((p) => p.key === 'search')?.value;
+    if (search) {
       ands.push({
         OR: [
-          { device_id: { contains: q.search, mode: 'insensitive' } },
-          { device: { name: { contains: q.search, mode: 'insensitive' } } },
+          { device_id: { contains: search, mode: 'insensitive' } },
+          { device: { name: { contains: search, mode: 'insensitive' } } },
+          { device: { owner: { fullname: { contains: search, mode: 'insensitive' } } } },
         ],
       });
     }

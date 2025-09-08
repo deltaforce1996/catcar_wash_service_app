@@ -21,14 +21,14 @@ Search employees with various filtering options.
 
 The `query` parameter supports the following searchable fields:
 
-- `id`: Employee ID (exact match)
+- `id`: Employee ID (partial match, case-insensitive)
 - `name`: Employee name (partial match, case-insensitive)
 - `email`: Employee email (partial match, case-insensitive)
 - `phone`: Employee phone number (partial match, case-insensitive)
 - `line`: Employee LINE ID (partial match, case-insensitive)
 - `address`: Employee address (partial match, case-insensitive)
 - `status`: Employee status - 'ACTIVE' or 'INACTIVE'
-- `permission`: Permission type - 'ADMIN', 'TECHNICIAN', or 'USER'
+- `permission`: Permission type - 'ADMIN', 'TECHNICIAN', or 'USER' (partial match, case-insensitive)
 
 #### Example Queries
 
@@ -109,13 +109,15 @@ Update employee information by ID.
 }
 ```
 
-#### Authentication
+#### Authentication & Authorization
 
 This endpoint requires JWT authentication. Include the JWT token in the Authorization header:
 
 ```
 Authorization: Bearer <your_jwt_token>
 ```
+
+**Note:** The employees API does not implement permission-based filtering - all authenticated users can access all employee data.
 
 ## Data Types
 

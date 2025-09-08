@@ -1,12 +1,12 @@
 # Dashboard API
 
-This API provides dashboard data and analytics for the car wash service application.
+This API provides dashboard data and analytics for the car wash service application, focusing on revenue analytics across different time periods.
 
 ## Endpoints
 
 ### GET /api/v1/dashboard
 
-Get dashboard data with various filtering options.
+Get dashboard revenue summary with various filtering options and time-based analytics.
 
 #### Query Parameters
 
@@ -14,7 +14,7 @@ Get dashboard data with various filtering options.
 - `device_id` (optional): Filter by specific device ID
 - `device_status` (optional): Filter by device status - 'DEPLOYED' or 'DISABLED'
 - `device_type` (optional): Filter by device type - 'WASH' or 'DRYING'
-- `payment_status` (optional): Filter by payment status - 'SUCCESS', 'FAILED', or 'CANCELLED'
+- `payment_status` (optional): Filter by payment status - 'SUCCESS', 'FAILED', or 'CANCELLED' (defaults to 'SUCCESS')
 - `date` (optional): Filter by specific date (ISO 8601 format: YYYY-MM-DD)
 - `include_charts` (optional): Include chart data in response (boolean: true/false)
 
@@ -56,66 +56,50 @@ GET /api/v1/dashboard?device_status=DEPLOYED&device_type=WASH&payment_status=SUC
   "success": true,
   "message": "Dashboard data fetched successfully",
   "data": {
-    "summary": {
-      "total_devices": 50,
-      "active_devices": 45,
-      "total_users": 1200,
-      "total_revenue": 50000.00,
-      "today_transactions": 150,
-      "success_rate": 95.5
-    },
-    "devices": [
-      {
-        "id": "device_id",
-        "name": "WASH-001",
-        "type": "WASH",
-        "status": "DEPLOYED",
-        "today_revenue": 500.00,
-        "today_transactions": 25,
-        "success_rate": 96.0
-      }
-    ],
-    "recent_transactions": [
-      {
-        "id": "transaction_id",
-        "device_id": "device_id",
-        "amount": 50.00,
-        "status": "SUCCESS",
-        "timestamp": "2024-01-01T12:00:00.000Z",
-        "user_id": "user123"
-      }
-    ],
-    "charts": {
-      "revenue_by_hour": [
-        { "hour": 0, "revenue": 100.00 },
-        { "hour": 1, "revenue": 150.00 }
-      ],
-      "transactions_by_status": [
-        { "status": "SUCCESS", "count": 140 },
-        { "status": "FAILED", "count": 7 },
-        { "status": "CANCELLED", "count": 3 }
-      ],
-      "device_performance": [
-        {
-          "device_id": "device_id",
-          "name": "WASH-001",
-          "revenue": 500.00,
-          "transactions": 25,
-          "success_rate": 96.0
-        }
+    "monthly": {
+      "revenue": 50000.00,
+      "change": 15.5,
+      "data": [
+        { "month": "01", "amount": 4200.00 },
+        { "month": "02", "amount": 4800.00 },
+        { "month": "03", "amount": 5100.00 }
       ]
-    }
+    },
+    "daily": {
+      "revenue": 1500.00,
+      "change": -5.2,
+      "data": [
+        { "day": "01", "amount": 120.00 },
+        { "day": "02", "amount": 150.00 },
+        { "day": "03", "amount": 180.00 }
+      ]
+    },
+    "hourly": {
+      "revenue": 75.00,
+      "change": 12.3,
+      "data": [
+        { "hour": "00", "amount": 5.00 },
+        { "hour": "01", "amount": 8.00 },
+        { "hour": "02", "amount": 12.00 }
+      ]
+    },
+    "payment_status": "SUCCESS"
   }
 }
 ```
 
-#### Authentication
+#### Authentication & Authorization
 
 This endpoint requires JWT authentication. Include the JWT token in the Authorization header:
 
 ```
 Authorization: Bearer <your_jwt_token>
 ```
+
+**Access Control:**
+- Users with `USER` permission can only access dashboard data for devices they own
+- Users with other permission types (e.g., `ADMIN`) can access dashboard data for all devices
+- The service automatically filters results based on the authenticated user's permissions
 
 ## Data Types
 
@@ -138,9 +122,20 @@ This API queries multiple tables:
 - `mv_device_payments_month`: Materialized view for monthly payment data
 - `mv_device_payments_year`: Materialized view for yearly payment data
 
+## Analytics Features
+
+- **Monthly Revenue**: Shows revenue data for each month of the year with year-over-year percentage change
+- **Daily Revenue**: Shows revenue data for each day of the month with month-over-month percentage change  
+- **Hourly Revenue**: Shows revenue data for each hour of the day with day-over-day percentage change
+- **Percentage Changes**: Calculates percentage changes compared to previous periods:
+  - Monthly: Compared to same month previous year
+  - Daily: Compared to same day previous month
+  - Hourly: Compared to same hour previous day
+
 ## Performance Notes
 
-- Uses materialized views for aggregated payment data
-- Optimized queries for dashboard performance
-- Chart data is cached for better response times
+- Uses materialized views for aggregated payment data (`mv_device_payments_month`, `mv_device_payments_day`, `mv_device_payments_hour`)
+- Optimized queries for dashboard performance with proper indexing
+- Chart data is conditionally included based on `include_charts` parameter
 - Filters are applied at database level for efficiency
+- Uses raw SQL queries for complex aggregations and time-based calculations

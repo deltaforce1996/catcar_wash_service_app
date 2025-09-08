@@ -53,6 +53,8 @@ GET /api/v1/device-states/search?query=status:error&page=2&limit=10&sort_by=crea
 
 #### Response Format
 
+**Note:** The `created_at` field is automatically formatted as `YYYY-MM-DD HH:mm:ss` string format, and `state_data` includes a `date_state` field with the same formatted timestamp.
+
 ```json
 {
   "success": true,
@@ -92,13 +94,18 @@ GET /api/v1/device-states/search?query=status:error&page=2&limit=10&sort_by=crea
 }
 ```
 
-#### Authentication
+#### Authentication & Authorization
 
 This endpoint requires JWT authentication. Include the JWT token in the Authorization header:
 
 ```
 Authorization: Bearer <your_jwt_token>
 ```
+
+**Access Control:**
+- Users with `USER` permission can only access device states for devices they own
+- Users with other permission types (e.g., `ADMIN`) can access device states for all devices
+- The service automatically filters results based on the authenticated user's permissions
 
 ## Data Types
 
