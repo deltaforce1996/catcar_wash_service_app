@@ -11,6 +11,7 @@ Search devices with various filtering options.
 #### Query Parameters
 
 - `query` (optional): Search query string with key-value pairs
+- `search` (optional): General search term that searches both device ID and name and fullname of user fields
 - `page` (optional): Page number (default: 1)
 - `limit` (optional): Items per page (default: 20, max: 100)
 - `sort_by` (optional): Sort field - 'created_at', 'updated_at', 'name', 'type', 'status', or 'register_at' (default: 'created_at')
@@ -29,27 +30,43 @@ The `query` parameter supports the following searchable fields:
 
 #### Example Queries
 
+**General Search (searches both device ID and name):**
 ```
-# Search by device name
+# Search for "เครื่องที 1" in both ID and name fields
+GET /api/v1/devices/search?search=เครื่องที 1
+
+# Search for "id01" in both ID and name fields
+GET /api/v1/devices/search?search=id01
+
+# Search for "wash" in both ID and name fields
+GET /api/v1/devices/search?search=wash
+```
+
+**Specific Field Search:**
+```
+# Query by device name
 GET /api/v1/devices/search?query=name:WASH-001
 
-# Search by device type
+# Query by device ID
+GET /api/v1/devices/search?query=id:DEV001
+
+# Query by device type
 GET /api/v1/devices/search?query=type:WASH
 
-# Search by status
+# Query by status
 GET /api/v1/devices/search?query=status:DEPLOYED
 
-# Search by owner
+# Query by owner
 GET /api/v1/devices/search?query=owner:John
 
-# Search by registered by
+# Query by registered by
 GET /api/v1/devices/search?query=register:Tech
 
-# Complex search with multiple filters
+# Query search with multiple filters
 GET /api/v1/devices/search?query=type:WASH status:DEPLOYED
 
 # With pagination and sorting
-GET /api/v1/devices/search?query=type:WASH&page=2&limit=10&sort_by=name&sort_order=asc
+GET /api/v1/devices/search?search=เครื่องที 1&page=1&limit=10&sort_by=name&sort_order=asc
 ```
 
 ### GET /api/v1/devices/find-by-id/:id

@@ -11,6 +11,7 @@ Search users with various filtering options.
 #### Query Parameters
 
 - `query` (optional): Search query string with key-value pairs
+- `search` (optional): General search term that searches id, fullname, email, phone, and address fields
 - `page` (optional): Page number (default: 1)
 - `limit` (optional): Items per page (default: 20, max: 100)
 - `sort_by` (optional): Sort field - 'created_at', 'updated_at', 'fullname', 'email', 'phone', 'address', 'status', or 'permission' (default: 'created_at')
@@ -30,24 +31,37 @@ The `query` parameter supports the following searchable fields:
 
 #### Example Queries
 
+**General Search (searches id, fullname, email, phone, and address fields):**
 ```
-# Search by full name
+# Search for "john" in id, fullname, email, phone, and address fields
+GET /api/v1/users/search?search=john
+
+# Search for "user001" in id, fullname, email, phone, and address fields
+GET /api/v1/users/search?search=user001
+
+# Search for "admin" in id, fullname, email, phone, and address fields
+GET /api/v1/users/search?search=admin
+```
+
+**Specific Field Search:**
+```
+# Query by full name
 GET /api/v1/users/search?query=fullname:John
 
-# Search by email
+# Query by email
 GET /api/v1/users/search?query=email:john@example.com
 
-# Search by status
+# Query by status
 GET /api/v1/users/search?query=status:ACTIVE
 
-# Search by permission
+# Query by permission
 GET /api/v1/users/search?query=permission:ADMIN
 
-# Complex search with multiple filters
+# Complex query with multiple filters
 GET /api/v1/users/search?query=status:ACTIVE permission:ADMIN
 
 # With pagination and sorting
-GET /api/v1/users/search?query=status:ACTIVE&page=2&limit=10&sort_by=fullname&sort_order=asc
+GET /api/v1/users/search?search=john&page=1&limit=10&sort_by=fullname&sort_order=asc
 ```
 
 ### PUT /api/v1/users/update-by-id/:id

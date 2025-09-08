@@ -11,6 +11,7 @@ Search device event logs with various filtering options.
 #### Query Parameters
 
 - `query` (optional): Search query string with key-value pairs
+- `search` (optional): General search term that searches device_id and device_name fields
 - `page` (optional): Page number (default: 1)
 - `limit` (optional): Items per page (default: 20, max: 100)
 - `sort_by` (optional): Sort field - 'created_at', 'type', or 'device_id' (default: 'created_at')
@@ -30,30 +31,43 @@ The `query` parameter supports the following searchable fields:
 
 #### Example Queries
 
+**General Search (searches device_id and device_name fields):**
 ```
-# Search by device ID
+# Search for "abc123" in device_id and device_name fields
+GET /api/v1/device-event-logs/search?search=abc123
+
+# Search for "WASH" in device_id and device_name fields
+GET /api/v1/device-event-logs/search?search=WASH
+
+# Search for "DEV001" in device_id and device_name fields
+GET /api/v1/device-event-logs/search?search=DEV001
+```
+
+**Specific Field Search:**
+```
+# Query by device ID
 GET /api/v1/device-event-logs/search?query=device_id:abc123
 
-# Search by device name
+# Query by device name
 GET /api/v1/device-event-logs/search?query=device_name:WASH-001
 
-# Search by event type
+# Query by event type
 GET /api/v1/device-event-logs/search?query=type:PAYMENT
 
-# Search by payment status
+# Query by payment status
 GET /api/v1/device-event-logs/search?query=payment_status:SUCCESS
 
-# Search by timestamp range
+# Query by timestamp range
 GET /api/v1/device-event-logs/search?query=payload_timestemp:1640995200000-1641081600000
 
-# Search by user ID
+# Query by user ID
 GET /api/v1/device-event-logs/search?query=user_id:user123
 
-# Complex search with multiple filters
+# Complex query with multiple filters
 GET /api/v1/device-event-logs/search?query=device_id:abc123 type:PAYMENT payment_status:SUCCESS
 
 # With pagination and sorting
-GET /api/v1/device-event-logs/search?query=type:PAYMENT&page=2&limit=10&sort_by=created_at&sort_order=asc
+GET /api/v1/device-event-logs/search?search=WASH&page=1&limit=10&sort_by=created_at&sort_order=asc
 ```
 
 #### Response Format

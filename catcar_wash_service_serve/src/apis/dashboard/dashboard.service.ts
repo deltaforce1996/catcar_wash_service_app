@@ -66,6 +66,10 @@ export class DashboardService {
       conditions.push(`d.status = '${filter.device_status}'`);
     }
 
+    if (filter.device_type) {
+      conditions.push(`d.type = '${filter.device_type}'`);
+    }
+
     if (filter.payment_status) {
       conditions.push(`mv.status = '${filter.payment_status}'`);
     } else {

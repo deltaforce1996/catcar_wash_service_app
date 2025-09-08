@@ -57,6 +57,17 @@ export class DevicesService {
     if (user?.permission?.name === PermissionType.USER) {
       ands.push({ owner_id: user.id });
     }
+
+    // Handle general search - search both id and name fields
+    if (q.search) {
+      ands.push({
+        OR: [
+          { id: { contains: q.search, mode: 'insensitive' } },
+          { name: { contains: q.search, mode: 'insensitive' } },
+          { owner: { fullname: { contains: q.search, mode: 'insensitive' } } },
+        ],
+      });
+    }
     for (const { key, value } of pairs) {
       switch (key) {
         case 'id':

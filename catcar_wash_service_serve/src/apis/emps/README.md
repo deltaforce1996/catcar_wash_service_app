@@ -11,6 +11,7 @@ Search employees with various filtering options.
 #### Query Parameters
 
 - `query` (optional): Search query string with key-value pairs
+- `search` (optional): General search term that searches id, name, email, line, and address fields
 - `page` (optional): Page number (default: 1)
 - `limit` (optional): Items per page (default: 20, max: 100)
 - `sort_by` (optional): Sort field - 'created_at', 'updated_at', 'name', 'email', 'phone', 'line', 'address', 'status', or 'permission' (default: 'created_at')
@@ -20,7 +21,7 @@ Search employees with various filtering options.
 
 The `query` parameter supports the following searchable fields:
 
-- `id`: Employee ID (partial match, case-insensitive)
+- `id`: Employee ID (exact match)
 - `name`: Employee name (partial match, case-insensitive)
 - `email`: Employee email (partial match, case-insensitive)
 - `phone`: Employee phone number (partial match, case-insensitive)
@@ -31,27 +32,40 @@ The `query` parameter supports the following searchable fields:
 
 #### Example Queries
 
+**General Search (searches id, name, email, line, and address fields):**
 ```
-# Search by name
+# Search for "john" in id, name, email, line, and address fields
+GET /api/v1/emps/search?search=john
+
+# Search for "emp001" in id, name, email, line, and address fields
+GET /api/v1/emps/search?search=emp001
+
+# Search for "tech" in id, name, email, line, and address fields
+GET /api/v1/emps/search?search=tech
+```
+
+**Specific Field Search:**
+```
+# Query by name
 GET /api/v1/emps/search?query=name:John
 
-# Search by email
+# Query by email
 GET /api/v1/emps/search?query=email:john@company.com
 
-# Search by status
+# Query by status
 GET /api/v1/emps/search?query=status:ACTIVE
 
-# Search by permission
+# Query by permission
 GET /api/v1/emps/search?query=permission:TECHNICIAN
 
-# Search by LINE ID
+# Query by LINE ID
 GET /api/v1/emps/search?query=line:john_line
 
-# Complex search with multiple filters
+# Complex query with multiple filters
 GET /api/v1/emps/search?query=status:ACTIVE permission:TECHNICIAN
 
 # With pagination and sorting
-GET /api/v1/emps/search?query=status:ACTIVE&page=2&limit=10&sort_by=name&sort_order=asc
+GET /api/v1/emps/search?search=john&page=1&limit=10&sort_by=name&sort_order=asc
 ```
 
 ### PUT /api/v1/emps/update-by-id/:id

@@ -75,6 +75,16 @@ export class DeviceEventLogsService {
       ands.push({ device: { owner_id: user.id } });
     }
 
+    // Handle general search - search device_id and device_name fields
+    if (q.search) {
+      ands.push({
+        OR: [
+          { device_id: { contains: q.search, mode: 'insensitive' } },
+          { device: { name: { contains: q.search, mode: 'insensitive' } } },
+        ],
+      });
+    }
+
     for (const { key, value } of pairs) {
       switch (key) {
         case 'id':

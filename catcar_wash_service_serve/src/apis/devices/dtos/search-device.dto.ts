@@ -5,6 +5,10 @@ export class SearchDeviceDto {
   @IsOptional()
   query?: string;
 
+  @IsString()
+  @IsOptional()
+  search?: string;
+
   @IsNumber()
   @IsOptional()
   page?: number = 1;

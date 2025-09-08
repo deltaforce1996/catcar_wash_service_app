@@ -5,6 +5,10 @@ export class SearchUserDto {
   @IsOptional()
   query?: string;
 
+  @IsString()
+  @IsOptional()
+  search?: string;
+
   @IsNumber()
   @IsOptional()
   page?: number = 1;
@@ -15,8 +19,8 @@ export class SearchUserDto {
 
   @IsString()
   @IsOptional()
-  @IsIn(['created_at', 'updated_at', 'fullname', 'email', 'phone', 'address', 'status', 'permission'], { 
-    message: 'sort_by must be one of: created_at, updated_at, fullname, email, phone, address, status, permission' 
+  @IsIn(['created_at', 'updated_at', 'fullname', 'email', 'phone', 'address', 'status', 'permission'], {
+    message: 'sort_by must be one of: created_at, updated_at, fullname, email, phone, address, status, permission',
   })
   sort_by?: 'created_at' | 'updated_at' | 'fullname' | 'email' | 'phone' | 'address' | 'status' | 'permission';
 

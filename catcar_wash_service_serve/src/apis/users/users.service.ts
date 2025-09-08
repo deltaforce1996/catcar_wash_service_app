@@ -45,6 +45,20 @@ export class UsersService {
     const pairs = parseKeyValueOnly(q.query ?? '', ALLOWED);
 
     const ands: Prisma.tbl_usersWhereInput['AND'] = [];
+
+    // Handle general search - search id, fullname, email, phone, and address fields
+    if (q.search) {
+      ands.push({
+        OR: [
+          { id: { contains: q.search, mode: 'insensitive' } },
+          { fullname: { contains: q.search, mode: 'insensitive' } },
+          { email: { contains: q.search, mode: 'insensitive' } },
+          { phone: { contains: q.search, mode: 'insensitive' } },
+          { address: { contains: q.search, mode: 'insensitive' } },
+        ],
+      });
+    }
+
     for (const { key, value } of pairs) {
       switch (key) {
         case 'id':

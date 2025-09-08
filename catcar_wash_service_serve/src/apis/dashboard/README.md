@@ -13,6 +13,7 @@ Get dashboard data with various filtering options.
 - `user_id` (optional): Filter by specific user ID
 - `device_id` (optional): Filter by specific device ID
 - `device_status` (optional): Filter by device status - 'DEPLOYED' or 'DISABLED'
+- `device_type` (optional): Filter by device type - 'WASH' or 'DRYING'
 - `payment_status` (optional): Filter by payment status - 'SUCCESS', 'FAILED', or 'CANCELLED'
 - `date` (optional): Filter by specific date (ISO 8601 format: YYYY-MM-DD)
 - `include_charts` (optional): Include chart data in response (boolean: true/false)
@@ -32,6 +33,9 @@ GET /api/v1/dashboard?device_id=device123
 # Get dashboard data with device status filter
 GET /api/v1/dashboard?device_status=DEPLOYED
 
+# Get dashboard data with device type filter
+GET /api/v1/dashboard?device_type=WASH
+
 # Get dashboard data with payment status filter
 GET /api/v1/dashboard?payment_status=SUCCESS
 
@@ -42,7 +46,7 @@ GET /api/v1/dashboard?date=2024-01-01
 GET /api/v1/dashboard?include_charts=true
 
 # Complex filtering
-GET /api/v1/dashboard?device_status=DEPLOYED&payment_status=SUCCESS&date=2024-01-01&include_charts=true
+GET /api/v1/dashboard?device_status=DEPLOYED&device_type=WASH&payment_status=SUCCESS&date=2024-01-01&include_charts=true
 ```
 
 #### Response Format
