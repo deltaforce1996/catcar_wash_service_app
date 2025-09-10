@@ -11,6 +11,7 @@ import {
 } from './dtos/index';
 import { parseKeyValueOnly } from 'src/shared/kv-parser';
 import { AuthenticatedUser, PaginatedResult } from 'src/types/internal.type';
+import { formatDateTime } from 'src/shared/date-formatter';
 
 export const devicePublicSelect = Prisma.validator<Prisma.tbl_devicesSelect>()({
   id: true,
@@ -37,7 +38,12 @@ export const devicePublicSelect = Prisma.validator<Prisma.tbl_devicesSelect>()({
   },
 });
 
-export type DeviceRow = Prisma.tbl_devicesGetPayload<{ select: typeof devicePublicSelect }>;
+type DeviceRowBase = Prisma.tbl_devicesGetPayload<{ select: typeof devicePublicSelect }>;
+
+export type DeviceRow = Omit<DeviceRowBase, 'created_at' | 'updated_at'> & {
+  created_at?: string;
+  updated_at?: string;
+};
 
 const ALLOWED = ['id', 'name', 'type', 'status', 'owner', 'register', 'search'] as const;
 
@@ -120,8 +126,14 @@ export class DevicesService {
       this.prisma.tbl_devices.count({ where }),
     ]);
 
+    const formattedData: DeviceRow[] = data.map((device) => ({
+      ...device,
+      created_at: device.created_at ? formatDateTime(device.created_at) : undefined,
+      updated_at: device.updated_at ? formatDateTime(device.updated_at) : undefined,
+    }));
+
     return {
-      items: data,
+      items: formattedData,
       total,
       page: safePage,
       limit: safeLimit,
@@ -136,14 +148,19 @@ export class DevicesService {
     if (user?.permission?.name === PermissionType.USER) {
       where.owner_id = user.id;
     }
-    const device: DeviceRow | null = await this.prisma.tbl_devices.findUnique({
+    const device: DeviceRowBase | null = await this.prisma.tbl_devices.findUnique({
       where,
       select: devicePublicSelect,
     });
     if (!device) {
       throw new ItemNotFoundException('Device not found');
     }
-    return device;
+
+    return {
+      ...device,
+      created_at: device.created_at ? formatDateTime(device.created_at) : undefined,
+      updated_at: device.updated_at ? formatDateTime(device.updated_at) : undefined,
+    };
   }
 
   async createDevice(data: CreateDeviceDto): Promise<DeviceRow> {
@@ -177,7 +194,11 @@ export class DevicesService {
       select: devicePublicSelect,
     });
 
-    return device;
+    return {
+      ...device,
+      created_at: device.created_at ? formatDateTime(device.created_at) : undefined,
+      updated_at: device.updated_at ? formatDateTime(device.updated_at) : undefined,
+    };
   }
 
   async updateBasicById(id: string, data: UpdateDeviceBasicDto): Promise<DeviceRow> {
@@ -194,7 +215,7 @@ export class DevicesService {
     }
 
     // Get the updated device
-    const device: DeviceRow | null = await this.prisma.tbl_devices.findUnique({
+    const device: DeviceRowBase | null = await this.prisma.tbl_devices.findUnique({
       where: { id },
       select: devicePublicSelect,
     });
@@ -203,7 +224,11 @@ export class DevicesService {
       throw new ItemNotFoundException('Device not found');
     }
 
-    return device;
+    return {
+      ...device,
+      created_at: device.created_at ? formatDateTime(device.created_at) : undefined,
+      updated_at: device.updated_at ? formatDateTime(device.updated_at) : undefined,
+    };
   }
 
   async updateConfigsById(id: string, data: UpdateDeviceConfigsDto): Promise<DeviceRow> {
@@ -259,7 +284,7 @@ export class DevicesService {
       }
     }
 
-    const device: DeviceRow = await this.prisma.tbl_devices.update({
+    const device: DeviceRowBase = await this.prisma.tbl_devices.update({
       where: { id },
       data: {
         configs: updatedConfigs,
@@ -267,7 +292,11 @@ export class DevicesService {
       select: devicePublicSelect,
     });
 
-    return device;
+    return {
+      ...device,
+      created_at: device.created_at ? formatDateTime(device.created_at) : undefined,
+      updated_at: device.updated_at ? formatDateTime(device.updated_at) : undefined,
+    };
   }
 
   async setDeviceState(id: string, data: SetDeviceStateDto, user?: AuthenticatedUser): Promise<void> {

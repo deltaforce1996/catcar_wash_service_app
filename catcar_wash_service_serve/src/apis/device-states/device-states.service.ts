@@ -2,20 +2,9 @@ import { BadRequestException, Injectable, Logger } from '@nestjs/common';
 import { PermissionType, Prisma } from '@prisma/client';
 import { PrismaService } from 'src/database/prisma/prisma.service';
 import { parseKeyValueOnly } from 'src/shared/kv-parser';
+import { formatDateTime } from 'src/shared/date-formatter';
 import { PaginatedResult, DeviceState, AuthenticatedUser } from 'src/types/internal.type';
 import { SearchDeviceStatesDto } from './dtos/search-device-states.dto';
-
-// Helper function to format date to YYYY-MM-DD hh:mm:ss
-const formatDateTime = (date: Date): string => {
-  const year = date.getFullYear();
-  const month = String(date.getMonth() + 1).padStart(2, '0');
-  const day = String(date.getDate()).padStart(2, '0');
-  const hours = String(date.getHours()).padStart(2, '0');
-  const minutes = String(date.getMinutes()).padStart(2, '0');
-  const seconds = String(date.getSeconds()).padStart(2, '0');
-
-  return `${year}-${month}-${day} ${hours}:${minutes}:${seconds}`;
-};
 
 export const deviceStatesPublicSelect = Prisma.validator<Prisma.tbl_devices_stateSelect>()({
   id: true,
@@ -167,14 +156,14 @@ export class DeviceStatesService {
       this.prisma.tbl_devices_state.count({ where }),
     ]);
 
-    // Transform the data to format created_at and parse state_data with date_state
+    // Transform the data to format created_at and parse state_data with state_at
     const transformedData = data.map((item) => ({
       ...item,
       created_at: formatDateTime(item.created_at),
       state_data: item.state_data
         ? {
             ...(item.state_data as DeviceState),
-            date_state: formatDateTime(item.created_at),
+            state_at: formatDateTime(item.created_at),
           }
         : null,
     }));

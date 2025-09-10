@@ -2,20 +2,9 @@ import { BadRequestException, Injectable, Logger } from '@nestjs/common';
 import { EventType, PaymentStatus, PermissionType, Prisma } from '@prisma/client';
 import { PrismaService } from 'src/database/prisma/prisma.service';
 import { parseKeyValueOnly } from 'src/shared/kv-parser';
+import { formatDateTime } from 'src/shared/date-formatter';
 import { AuthenticatedUser, PaginatedResult } from 'src/types/internal.type';
 import { SearchDeviceEventLogsDto } from './dtos/search-devcie-event.dto';
-
-// Helper function to format date to YYYY-MM-DD hh:mm:ss
-const formatDateTime = (date: Date): string => {
-  const year = date.getFullYear();
-  const month = String(date.getMonth() + 1).padStart(2, '0');
-  const day = String(date.getDate()).padStart(2, '0');
-  const hours = String(date.getHours()).padStart(2, '0');
-  const minutes = String(date.getMinutes()).padStart(2, '0');
-  const seconds = String(date.getSeconds()).padStart(2, '0');
-
-  return `${year}-${month}-${day} ${hours}:${minutes}:${seconds}`;
-};
 
 export const deviceEventLogsPublicSelect = Prisma.validator<Prisma.tbl_devices_eventsSelect>()({
   id: true,
@@ -41,9 +30,10 @@ export const deviceEventLogsPublicSelect = Prisma.validator<Prisma.tbl_devices_e
 // Base type from Prisma
 type DeviceEventLogRowBase = Prisma.tbl_devices_eventsGetPayload<{ select: typeof deviceEventLogsPublicSelect }>;
 
-// Extended type with formatted created_at
-export type DeviceEventLogRow = Omit<DeviceEventLogRowBase, 'created_at'> & {
+// Extended type with formatted created_at and modified payload
+export type DeviceEventLogRow = Omit<DeviceEventLogRowBase, 'created_at' | 'payload'> & {
   created_at: string;
+  payload: (DeviceEventLogRowBase['payload'] & { event_at: string }) | null;
 };
 
 @Injectable()
@@ -193,11 +183,26 @@ export class DeviceEventLogsService {
       this.prisma.tbl_devices_events.count({ where }),
     ]);
 
-    // Transform the data to format created_at as YYYY-MM-DD hh:mm:ss
-    const transformedData = data.map((item) => ({
-      ...item,
-      created_at: formatDateTime(item.created_at),
-    }));
+    // Transform the data to format created_at as YYYY-MM-DD hh:mm:ss and add event_at to payload
+    const transformedData = data.map((item) => {
+      const basePayload = item.payload as Record<string, any> | null;
+      const transformedPayload = basePayload
+        ? {
+            ...basePayload,
+            event_at: basePayload.timestemp
+              ? formatDateTime(new Date(Number(basePayload.timestemp)))
+              : basePayload.timestemp,
+          }
+        : {
+            event_at: null,
+          };
+
+      return {
+        ...item,
+        created_at: formatDateTime(item.created_at),
+        payload: transformedPayload,
+      };
+    });
 
     return {
       items: transformedData,

@@ -2,7 +2,6 @@ import { PrismaClient, PermissionType, EventType, DeviceType } from '@prisma/cli
 import * as bcrypt from 'bcrypt';
 import { DeviceDryingConfig } from '../src/shared/device-drying-config';
 import { DeviceWashConfig } from '../src/shared/device-wash-config';
-import { DeviceRow } from '../src/apis/devices/devices.service';
 import { randomInt } from 'crypto';
 
 const prisma = new PrismaClient();
@@ -369,7 +368,7 @@ const generate = async () => {
     ],
   });
 
-  const devices: DeviceRow[] = await prisma.tbl_devices.findMany({
+  const devices = await prisma.tbl_devices.findMany({
     select: {
       id: true,
       name: true,
