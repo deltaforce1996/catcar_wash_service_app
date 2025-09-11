@@ -21,23 +21,23 @@ export abstract class BaseApiClient {
   protected readonly config: ReturnType<typeof getConfigUtils>["config"];
   protected readonly log: ReturnType<typeof getConfigUtils>["log"];
 
-  constructor(
-    baseURL?: string,
-    timeout?: number,
-    additionalHeaders?: Record<string, string>
-  ) {
+  constructor() {
     const { config, log } = getConfigUtils();
     this.config = config;
     this.log = log;
 
+    this.log.debug("Base API Client Constructor", {
+      baseURL: this.config.api.baseURL,
+      timeout: this.config.api.timeout,
+    });
+
     // Create axios instance with configuration
     this.apiClient = axios.create({
-      baseURL: baseURL || config.api.baseURL,
-      timeout: timeout || config.api.timeout,
+      baseURL: this.config.api.baseURL,
+      timeout: this.config.api.timeout,
       headers: {
         "Content-Type": "application/json",
         Accept: "application/json",
-        ...additionalHeaders,
       },
     });
 
@@ -68,7 +68,10 @@ export abstract class BaseApiClient {
         }
 
         // Add x-signature if enabled
-        if (this.config.api.signature.enabled && this.config.api.signature.secretKey) {
+        if (
+          this.config.api.signature.enabled &&
+          this.config.api.signature.secretKey
+        ) {
           try {
             const signature = await SignatureUtils.generateSignature(
               config,
@@ -120,7 +123,9 @@ export abstract class BaseApiClient {
         if (error.response?.status === 401 || error.response?.status === 403) {
           authTokenManager.clearToken();
           this.log.warn(
-            `🔒 ${error.response?.data.message || "Invalid token or access denied"}`
+            `🔒 ${
+              error.response?.data.message || "Invalid token or access denied"
+            }`
           );
         }
 
@@ -234,7 +239,9 @@ export abstract class BaseApiClient {
    */
   public setSignatureEnabled(enabled: boolean): void {
     this.config.api.signature.enabled = enabled;
-    this.log.info(`🔐 Signature generation ${enabled ? "enabled" : "disabled"}`);
+    this.log.info(
+      `🔐 Signature generation ${enabled ? "enabled" : "disabled"}`
+    );
   }
 
   /**

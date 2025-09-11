@@ -36,4 +36,5 @@ export default defineNuxtConfig({
       appVersion: process.env.NUXT_PUBLIC_APP_VERSION,
     },
   },
+  ssr: false,
 });

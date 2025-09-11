@@ -22,29 +22,37 @@ export interface AppConfig {
 export const getConfigUtils = () => {
   const runtimeConfig = useRuntimeConfig();
 
+  const isEmpty = (value: string | number | boolean | undefined | null) => {
+    return value === undefined || value === null || value === "";
+  };
+
+  const getDefault = <T extends string | number | boolean>(
+    value: string | number | boolean | undefined | null,
+    defaultValue: string | number | boolean
+  ): T => {
+    return isEmpty(value) ? (defaultValue as T) : (value as T);
+  };
+
+  console.log("runtimeConfig", runtimeConfig.public.apiUrl);
+
   const config: AppConfig = {
     app: {
-      name: (runtimeConfig.public.appName as string) ?? "X-CatCar Wash Service",
-      version: (runtimeConfig.public.appVersion as string) ?? "1.0.0",
+      name: getDefault(runtimeConfig.public.appName, "X-CatCar Wash Service"),
+      version: "1.0.0",
     },
     api: {
-      baseURL: runtimeConfig.public.apiUrl,
-      timeout: (runtimeConfig.public.apiTimeout as number) ?? 10000,
-      retryAttempts: (runtimeConfig.public.apiRetryAttempts as number) ?? 3,
-      retryDelay: (runtimeConfig.public.apiRetryDelay as number) ?? 1000,
+      baseURL: getDefault(runtimeConfig.public.apiUrl, "http://localhost:3000"),
+      timeout: getDefault(runtimeConfig.public.apiTimeout, 10000),
+      retryAttempts: getDefault(runtimeConfig.public.apiRetryAttempts, 3),
+      retryDelay: getDefault(runtimeConfig.public.apiRetryDelay, 1000),
       signature: {
-        enabled: (runtimeConfig.public.apiSignatureEnabled as boolean) ?? false,
-        secretKey: (runtimeConfig.public.apiSignatureSecretKey as string) ?? "",
+        enabled: true,
+        secretKey: "Cat Car Wash Service",
       },
     },
     debug: {
-      enabled: (runtimeConfig.public.debugEnabled as boolean) ?? false,
-      logLevel:
-        (runtimeConfig.public.logLevel as
-          | "debug"
-          | "info"
-          | "warn"
-          | "error") ?? "info",
+      enabled: true,
+      logLevel: "debug",
     },
   };
 

@@ -3,7 +3,7 @@ import type {
   EnumSortOrder,
   EnumUserStatus,
 } from "~/types";
-import { BaseApiClient } from "./bases/base-api-client";
+import { BaseApiClient } from "../bases/base-api-client";
 
 export interface UserResponseApi {
   id: string;
