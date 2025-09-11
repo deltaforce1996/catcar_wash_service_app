@@ -17,7 +17,7 @@
       </v-card-title>
       <v-card-text>
         <!-- Search Bar for System Config -->
-        <v-text-field
+        <!-- <v-text-field
           v-model="systemConfigSearch"
           prepend-inner-icon="mdi-magnify"
           variant="outlined"
@@ -26,7 +26,7 @@
           hide-details
           clearable
           class="mb-4"
-        />
+        /> -->
 
         <!-- System Config Placeholder -->
         <div class="system-config-placeholder">
@@ -67,7 +67,7 @@
           </v-col>
 
           <!-- Device Filter Dropdown -->
-          <v-col cols="12" md="6">
+          <v-col cols="12" md="3">
             <v-combobox
               v-model="selectedFilters"
               :items="getFilterOptions()"
@@ -85,6 +85,34 @@
                 <v-chip
                   v-bind="props"
                   :color="getStatusColor(item.raw)"
+                  size="small"
+                  variant="tonal"
+                >
+                  {{ item.raw }}
+                </v-chip>
+              </template>
+            </v-combobox>
+          </v-col>
+
+          <!-- User ID Filter Dropdown -->
+          <v-col cols="12" md="3">
+            <v-combobox
+              v-model="selectedUserFilters"
+              :items="getUserOptions()"
+              label="กรองตามผู้ใช้"
+              prepend-inner-icon="mdi-account-filter"
+              variant="outlined"
+              density="compact"
+              chips
+              clearable
+              closable-chips
+              multiple
+              hide-details
+            >
+              <template #chip="{ props, item }">
+                <v-chip
+                  v-bind="props"
+                  color="info"
                   size="small"
                   variant="tonal"
                 >
@@ -336,6 +364,7 @@ const activeDeviceType = ref<"WASH" | "DRYING">("WASH");
 const systemConfigSearch = ref("");
 const deviceSearch = ref("");
 const selectedFilters = ref<string[]>([]);
+const selectedUserFilters = ref<string[]>([]);
 const selectedDevices = ref<Device[]>([]);
 const showApplySystemConfigDialog = ref(false);
 const showDeviceDetailDialog = ref(false);
@@ -380,6 +409,13 @@ const filteredDevices = computed(() => {
     );
   }
 
+  // User filter
+  if (selectedUserFilters.value.length > 0) {
+    filtered = filtered.filter((device) =>
+      selectedUserFilters.value.includes(device.owner.fullname)
+    );
+  }
+
   return filtered;
 });
 
@@ -395,6 +431,17 @@ const getFilterOptions = () => {
     ),
   ];
   return statuses;
+};
+
+const getUserOptions = () => {
+  const users = [
+    ...new Set(
+      allDevices.value
+        .filter((device) => device.type === activeDeviceType.value)
+        .map((device) => device.owner.fullname)
+    ),
+  ];
+  return users;
 };
 
 const getStatusColor = (status: string) => {
@@ -493,6 +540,7 @@ const applyDeviceConfig = () => {
 watch(activeDeviceType, () => {
   selectedDevices.value = [];
   selectedFilters.value = [];
+  selectedUserFilters.value = [];
   deviceSearch.value = "";
 });
 </script>
