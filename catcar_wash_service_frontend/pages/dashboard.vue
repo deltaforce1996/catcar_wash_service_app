@@ -727,61 +727,30 @@ onMounted(() => {
 });
 
 const kpiData = computed(() => [
-  // {
-  //   title: 'รายได้รายปี',
-  //   value: dashboardData.yearRevenue.value,
-  //   trend: dashboardData.yearRevenue.trend,
-  //   chartData: dashboardData.yearRevenue.chartData,
-  //   chartLabels: dashboardData.yearRevenue.chartLabels,
-  //   chartId: 'year-kpi',
-  //   currency: true
-  // },
-  // {
-  //   title: 'รายได้รายเดือน',
-  //   value: dashboardData.monthRevenue.value,
-  //   trend: dashboardData.monthRevenue.trend,
-  //   chartData: dashboardData.monthRevenue.chartData,
-  //   chartLabels: dashboardData.monthRevenue.chartLabels,
-  //   chartId: 'month-kpi',
-  //   currency: true
-  // },
-  // {
-  //   title: 'รายได้รายวัน',
-  //   value: dashboardData.dateRevenue.value,
-  //   trend: dashboardData.dateRevenue.trend,
-  //   chartData: dashboardData.dateRevenue.chartData,
-  //   chartLabels: dashboardData.dateRevenue.chartLabels,
-  //   chartId: 'date-kpi',
-  //   currency: true
-  // }
   {
     title: "รายได้รายปี",
-    value: dashboardData.yearRevenue?.value || dashboardData.monthRevenue.value,
-    trend: dashboardData.yearRevenue?.trend || dashboardData.monthRevenue.trend,
-    chartData:
-      dashboardData.yearRevenue?.chartData ||
-      dashboardData.monthRevenue.chartData,
-    chartLabels:
-      dashboardData.yearRevenue?.chartLabels ||
-      dashboardData.monthRevenue.chartLabels,
+    value: dashboardData.monthRevenue.value,
+    trend: dashboardData.monthRevenue.trend,
+    chartData: dashboardData.monthRevenue.chartData,
+    chartLabels: dashboardData.monthRevenue.chartLabels,
     chartId: "year-kpi",
     currency: true,
   },
   {
     title: "รายได้รายเดือน",
-    value: dashboardData.monthRevenue.value,
-    trend: dashboardData.monthRevenue.trend,
-    chartData: dashboardData.monthRevenue.chartData,
-    chartLabels: dashboardData.monthRevenue.chartLabels,
+    value: dashboardData.dateRevenue.value,
+    trend: dashboardData.dateRevenue.trend,
+    chartData: dashboardData.dateRevenue.chartData,
+    chartLabels: dashboardData.dateRevenue.chartLabels,
     chartId: "month-kpi",
     currency: true,
   },
   {
     title: "รายได้รายวัน",
-    value: dashboardData.dateRevenue.value,
-    trend: dashboardData.dateRevenue.trend,
-    chartData: dashboardData.dateRevenue.chartData,
-    chartLabels: dashboardData.dateRevenue.chartLabels,
+    value: dashboardData.hourlyRevenue.value,
+    trend: dashboardData.hourlyRevenue.trend,
+    chartData: dashboardData.hourlyRevenue.chartData,
+    chartLabels: dashboardData.hourlyRevenue.chartLabels,
     chartId: "date-kpi",
     currency: true,
   },
