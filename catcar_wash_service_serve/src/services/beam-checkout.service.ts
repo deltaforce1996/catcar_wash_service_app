@@ -112,9 +112,6 @@ export class BeamCheckoutService {
     };
   }
 
-  /**
-   * Authenticate with Beam Checkout API
-   */
   async authenticate(): Promise<void> {
     const config = this.getBeamConfig();
 
@@ -143,27 +140,15 @@ export class BeamCheckoutService {
     }
   }
 
-  /**
-   * Ensure we have a valid access token
-   */
   private async ensureAuthenticated(): Promise<void> {
     if (!this.accessToken || !this.tokenExpiresAt || this.tokenExpiresAt <= new Date()) {
       await this.authenticate();
     }
   }
 
-  /**
-   * Create a new charge
-   */
   async createCharge(data: ChargeData): Promise<ChargeResult> {
-    if (data.amount <= 0) {
-      throw new BadRequestException('Amount must be greater than 0');
-    }
-
-    if (!data.referenceId) {
-      throw new BadRequestException('Reference ID is required');
-    }
-
+    if (data.amount <= 0) throw new BadRequestException('Amount must be greater than 0');
+    if (!data.referenceId) throw new BadRequestException('Reference ID is required');
     try {
       const payload = {
         amount: data.amount,
@@ -200,9 +185,6 @@ export class BeamCheckoutService {
     }
   }
 
-  /**
-   * Get charge status
-   */
   async getChargeStatus(chargeId: string): Promise<ChargeStatus> {
     try {
       const response: AxiosResponse<{
@@ -232,9 +214,6 @@ export class BeamCheckoutService {
     }
   }
 
-  /**
-   * Cancel a charge
-   */
   async cancelCharge(chargeId: string): Promise<void> {
     try {
       await this.httpClient.post(`/api/v1/charges/${chargeId}/cancel`);
@@ -245,9 +224,6 @@ export class BeamCheckoutService {
     }
   }
 
-  /**
-   * Generate QR code as data URL
-   */
   async generateQRCodeDataUrl(data: string, options: QRCodeOptions = {}): Promise<string> {
     try {
       const defaultOptions = {
@@ -267,9 +243,6 @@ export class BeamCheckoutService {
     }
   }
 
-  /**
-   * Generate QR code as buffer
-   */
   async generateQRCodeBuffer(data: string, options: QRCodeOptions = {}): Promise<Buffer> {
     try {
       const defaultOptions = {
@@ -289,9 +262,6 @@ export class BeamCheckoutService {
     }
   }
 
-  /**
-   * Generate QR code as SVG string
-   */
   async generateQRCodeSVG(data: string, options: QRCodeOptions = {}): Promise<string> {
     try {
       const defaultOptions = {
