@@ -6,6 +6,7 @@ import { UpdateUserDto } from './dtos/update-user.dto';
 import { parseKeyValueOnly } from 'src/shared/kv-parser';
 import { PaginatedResult } from 'src/types/internal.type';
 import { SearchUserDto } from './dtos/search-user.dto';
+import { formatDateTime } from 'src/shared/date-formatter';
 
 export const userPublicSelect = Prisma.validator<Prisma.tbl_usersSelect>()({
   id: true,
@@ -28,11 +29,23 @@ export const userPublicSelect = Prisma.validator<Prisma.tbl_usersSelect>()({
 
 type UserRow = Prisma.tbl_usersGetPayload<{ select: typeof userPublicSelect }>;
 
-export type UserWithDeviceCountsRow = UserRow & {
+export type UserWithDeviceCountsRow = Omit<UserRow, 'created_at' | 'updated_at'> & {
+  created_at?: string;
+  updated_at?: string;
   device_counts: { total: number; active: number; inactive: number };
 };
 
-const ALLOWED = ['id', 'email', 'fullname', 'phone', 'address', 'custom_name', 'status', 'permission'] as const;
+const ALLOWED = [
+  'id',
+  'email',
+  'fullname',
+  'phone',
+  'address',
+  'custom_name',
+  'status',
+  'permission',
+  'search',
+] as const;
 
 @Injectable()
 export class UsersService {
@@ -45,6 +58,21 @@ export class UsersService {
     const pairs = parseKeyValueOnly(q.query ?? '', ALLOWED);
 
     const ands: Prisma.tbl_usersWhereInput['AND'] = [];
+
+    // Handle general search - search id, fullname, email, phone, and address fields
+    const search = pairs.find((p) => p.key === 'search')?.value;
+    if (search) {
+      ands.push({
+        OR: [
+          { id: { contains: search, mode: 'insensitive' } },
+          { fullname: { contains: search, mode: 'insensitive' } },
+          { email: { contains: search, mode: 'insensitive' } },
+          { phone: { contains: search, mode: 'insensitive' } },
+          { address: { contains: search, mode: 'insensitive' } },
+        ],
+      });
+    }
+
     for (const { key, value } of pairs) {
       switch (key) {
         case 'id':
@@ -105,6 +133,8 @@ export class UsersService {
 
     const items: UserWithDeviceCountsRow[] = users.map((u) => ({
       ...u,
+      created_at: u.created_at ? formatDateTime(u.created_at) : undefined,
+      updated_at: u.updated_at ? formatDateTime(u.updated_at) : undefined,
       device_counts: {
         total: (counters.get(u.id)?.active ?? 0) + (counters.get(u.id)?.inactive ?? 0),
         active: counters.get(u.id)?.active ?? 0,
@@ -142,6 +172,8 @@ export class UsersService {
 
     return {
       ...user,
+      created_at: user.created_at ? formatDateTime(user.created_at) : undefined,
+      updated_at: user.updated_at ? formatDateTime(user.updated_at) : undefined,
       device_counts: { total: counts.active + counts.inactive, ...counts },
     };
   }
@@ -167,6 +199,8 @@ export class UsersService {
 
     return {
       ...user,
+      created_at: user.created_at ? formatDateTime(user.created_at) : undefined,
+      updated_at: user.updated_at ? formatDateTime(user.updated_at) : undefined,
       device_counts: { total: counts.active + counts.inactive, ...counts },
     };
   }

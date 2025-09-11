@@ -1,141 +1,141 @@
 # Dashboard API
 
-API สำหรับดึงข้อมูลสรุป Dashboard พร้อม filtering capabilities
+This API provides dashboard data and analytics for the car wash service application, focusing on revenue analytics across different time periods.
 
 ## Endpoints
 
-### GET /api/v1/dashboard/summary
+### GET /api/v1/dashboard
 
-ดึงข้อมูลสรุป Dashboard พร้อม filtering options
+Get dashboard revenue summary with various filtering options and time-based analytics.
 
 #### Query Parameters
 
-- `user_id` (optional): กรองตาม user ID
-- `device_id` (optional): กรองตาม device ID  
-- `device_status` (optional): กรองตามสถานะอุปกรณ์ (ACTIVE, INACTIVE, MAINTENANCE)
-- `payment_status` (optional): กรองตามสถานะการชำระเงิน (SUCCESS, FAILED, PENDING)
-- `date` (optional): กรองตามวันที่เฉพาะ (รูปแบบ: YYYY-MM-DD) - ใช้กับ hourly data เท่านั้น
-- `include_charts` (optional): รวมข้อมูลสำหรับกราฟ (true/false)
+- `user_id` (optional): Filter by specific user ID
+- `device_id` (optional): Filter by specific device ID
+- `device_status` (optional): Filter by device status - 'DEPLOYED' or 'DISABLED'
+- `device_type` (optional): Filter by device type - 'WASH' or 'DRYING'
+- `payment_status` (optional): Filter by payment status - 'SUCCESS', 'FAILED', or 'CANCELLED' (defaults to 'SUCCESS')
+- `date` (optional): Filter by specific date (ISO 8601 format: YYYY-MM-DD)
+- `include_charts` (optional): Include chart data in response (boolean: true/false)
+
+#### Example Queries
+
+```
+# Get basic dashboard data
+GET /api/v1/dashboard
+
+# Get dashboard data for specific user
+GET /api/v1/dashboard?user_id=user123
+
+# Get dashboard data for specific device
+GET /api/v1/dashboard?device_id=device123
+
+# Get dashboard data with device status filter
+GET /api/v1/dashboard?device_status=DEPLOYED
+
+# Get dashboard data with device type filter
+GET /api/v1/dashboard?device_type=WASH
+
+# Get dashboard data with payment status filter
+GET /api/v1/dashboard?payment_status=SUCCESS
+
+# Get dashboard data for specific date
+GET /api/v1/dashboard?date=2024-01-01
+
+# Get dashboard data with charts
+GET /api/v1/dashboard?include_charts=true
+
+# Complex filtering
+GET /api/v1/dashboard?device_status=DEPLOYED&device_type=WASH&payment_status=SUCCESS&date=2024-01-01&include_charts=true
+```
 
 #### Response Format
 
 ```json
 {
   "success": true,
+  "message": "Dashboard data fetched successfully",
   "data": {
     "monthly": {
-      "revenue": 4500,
-      "change": 24.2,
+      "revenue": 50000.00,
+      "change": 15.5,
       "data": [
-        { "month": "01", "amount": 0 },
-        { "month": "02", "amount": 0 },
-        { "month": "03", "amount": 1500 },
-        { "month": "04", "amount": 0 },
-        { "month": "05", "amount": 0 },
-        { "month": "06", "amount": 0 },
-        { "month": "07", "amount": 0 },
-        { "month": "08", "amount": 3000 },
-        { "month": "09", "amount": 0 },
-        { "month": "10", "amount": 0 },
-        { "month": "11", "amount": 0 },
-        { "month": "12", "amount": 0 }
+        { "month": "01", "amount": 4200.00 },
+        { "month": "02", "amount": 4800.00 },
+        { "month": "03", "amount": 5100.00 }
       ]
     },
     "daily": {
-      "revenue": 1875,
-      "change": 12.3,
+      "revenue": 1500.00,
+      "change": -5.2,
       "data": [
-        { "day": "01", "amount": 0 },
-        { "day": "02", "amount": 0 },
-        { "day": "03", "amount": 0 },
-        { "day": "04", "amount": 0 },
-        { "day": "05", "amount": 0 },
-        { "day": "06", "amount": 0 },
-        { "day": "07", "amount": 0 },
-        { "day": "08", "amount": 0 },
-        { "day": "09", "amount": 0 },
-        { "day": "10", "amount": 0 },
-        { "day": "11", "amount": 0 },
-        { "day": "12", "amount": 0 },
-        { "day": "13", "amount": 0 },
-        { "day": "14", "amount": 0 },
-        { "day": "15", "amount": 0 },
-        { "day": "16", "amount": 0 },
-        { "day": "17", "amount": 0 },
-        { "day": "18", "amount": 0 },
-        { "day": "19", "amount": 0 },
-        { "day": "20", "amount": 0 },
-        { "day": "21", "amount": 0 },
-        { "day": "22", "amount": 0 },
-        { "day": "23", "amount": 0 },
-        { "day": "24", "amount": 1875 },
-        { "day": "25", "amount": 0 },
-        { "day": "26", "amount": 0 },
-        { "day": "27", "amount": 0 },
-        { "day": "28", "amount": 0 },
-        { "day": "29", "amount": 0 },
-        { "day": "30", "amount": 0 },
-        { "day": "31", "amount": 0 }
+        { "day": "01", "amount": 120.00 },
+        { "day": "02", "amount": 150.00 },
+        { "day": "03", "amount": 180.00 }
       ]
     },
     "hourly": {
-      "revenue": 156.25,
-      "change": 8.5,
+      "revenue": 75.00,
+      "change": 12.3,
       "data": [
-        { "hour": "00", "amount": 0 },
-        { "hour": "01", "amount": 0 },
-        { "hour": "02", "amount": 0 },
-        { "hour": "03", "amount": 0 },
-        { "hour": "04", "amount": 0 },
-        { "hour": "05", "amount": 0 },
-        { "hour": "06", "amount": 0 },
-        { "hour": "07", "amount": 0 },
-        { "hour": "08", "amount": 0 },
-        { "hour": "09", "amount": 0 },
-        { "hour": "10", "amount": 0 },
-        { "hour": "11", "amount": 0 },
-        { "hour": "12", "amount": 0 },
-        { "hour": "13", "amount": 0 },
-        { "hour": "14", "amount": 0 },
-        { "hour": "15", "amount": 0 },
-        { "hour": "16", "amount": 0 },
-        { "hour": "17", "amount": 0 },
-        { "hour": "18", "amount": 0 },
-        { "hour": "19", "amount": 0 },
-        { "hour": "20", "amount": 0 },
-        { "hour": "21", "amount": 0 },
-        { "hour": "22", "amount": 0 },
-        { "hour": "23", "amount": 156.25 }
-              ]
-      },
-      "payment_status": "SUCCESS"
+        { "hour": "00", "amount": 5.00 },
+        { "hour": "01", "amount": 8.00 },
+        { "hour": "02", "amount": 12.00 }
+      ]
     },
-    "message": "Dashboard summary retrieved successfully"
+    "payment_status": "SUCCESS"
+  }
 }
 ```
 
-#### Features
+#### Authentication & Authorization
 
-- **Complete Range Data**: แสดงข้อมูลครบทุกช่วงเวลา (เดือน 01-12, วัน 01-31, ชั่วโมง 00-23)
-- **Zero Values**: ถ้าไม่มีข้อมูลในช่วงเวลานั้น จะแสดงเป็น 0
-- **Percentage Change**: คำนวณเปอร์เซ็นต์การเปลี่ยนแปลงเทียบกับช่วงเวลาเดียวกันในอดีต
-- **Flexible Filtering**: สามารถกรองข้อมูลตาม user_id, device_id, status, และ date
-- **Chart Data**: สามารถรวมข้อมูลสำหรับแสดงกราฟได้
+This endpoint requires JWT authentication. Include the JWT token in the Authorization header:
 
-#### Data Scope
+```
+Authorization: Bearer <your_jwt_token>
+```
 
-- **Monthly Data**: แสดงข้อมูลของทั้งปี (รวมทุกเดือน)
-- **Daily Data**: แสดงข้อมูลของทั้งปี (รวมทุกวัน)
-- **Hourly Data**: แสดงข้อมูลของวันที่เฉพาะ (รวมทุกชั่วโมงของวันนั้น)
+**Access Control:**
+- Users with `USER` permission can only access dashboard data for devices they own
+- Users with other permission types (e.g., `ADMIN`) can access dashboard data for all devices
+- The service automatically filters results based on the authenticated user's permissions
 
-#### Revenue Calculation
+## Data Types
 
-- **Monthly Revenue**: ยอดรวมของทั้งปี
-- **Daily Revenue**: ยอดรวมของทั้งเดือนของปี (ไม่ใช่แค่วันเดียว)
-- **Hourly Revenue**: ยอดรวมของทั้งวันของเดือนของปี (ไม่ใช่แค่ชั่วโมงเดียว)
+The API uses various Prisma enums and types:
 
-#### Notes
+- `DeviceStatus`: 'DEPLOYED' | 'DISABLED'
+- `DeviceType`: 'WASH' | 'DRYING'
+- `PaymentStatus`: 'SUCCESS' | 'FAILED' | 'CANCELLED'
 
-- **JWT Authentication**: ปัจจุบันถูกปิดใช้งานชั่วคราว
-- **Date Filter**: ใช้กับ hourly data เท่านั้น เพื่อกรองตามวันที่เฉพาะ
-- **Default Payment Status**: ถ้าไม่ระบุ payment_status จะใช้ SUCCESS เป็นค่าเริ่มต้น
+## Database Schema
+
+This API queries multiple tables:
+
+- `tbl_devices`: Device information and status
+- `tbl_devices_events`: Device event logs and transactions
+- `tbl_users`: User information
+- `tbl_emps`: Employee information
+- `mv_device_payments_hour`: Materialized view for hourly payment data
+- `mv_device_payments_day`: Materialized view for daily payment data
+- `mv_device_payments_month`: Materialized view for monthly payment data
+- `mv_device_payments_year`: Materialized view for yearly payment data
+
+## Analytics Features
+
+- **Monthly Revenue**: Shows revenue data for each month of the year with year-over-year percentage change
+- **Daily Revenue**: Shows revenue data for each day of the month with month-over-month percentage change  
+- **Hourly Revenue**: Shows revenue data for each hour of the day with day-over-day percentage change
+- **Percentage Changes**: Calculates percentage changes compared to previous periods:
+  - Monthly: Compared to same month previous year
+  - Daily: Compared to same day previous month
+  - Hourly: Compared to same hour previous day
+
+## Performance Notes
+
+- Uses materialized views for aggregated payment data (`mv_device_payments_month`, `mv_device_payments_day`, `mv_device_payments_hour`)
+- Optimized queries for dashboard performance with proper indexing
+- Chart data is conditionally included based on `include_charts` parameter
+- Filters are applied at database level for efficiency
+- Uses raw SQL queries for complex aggregations and time-based calculations

@@ -1,21 +1,10 @@
 import { BadRequestException, Injectable, Logger } from '@nestjs/common';
-import { EventType, PaymentStatus, Prisma } from '@prisma/client';
+import { EventType, PaymentStatus, PermissionType, Prisma } from '@prisma/client';
 import { PrismaService } from 'src/database/prisma/prisma.service';
 import { parseKeyValueOnly } from 'src/shared/kv-parser';
-import { PaginatedResult } from 'src/types/internal.type';
+import { formatDateTime } from 'src/shared/date-formatter';
+import { AuthenticatedUser, PaginatedResult } from 'src/types/internal.type';
 import { SearchDeviceEventLogsDto } from './dtos/search-devcie-event.dto';
-
-// Helper function to format date to YYYY-MM-DD hh:mm:ss
-const formatDateTime = (date: Date): string => {
-  const year = date.getFullYear();
-  const month = String(date.getMonth() + 1).padStart(2, '0');
-  const day = String(date.getDate()).padStart(2, '0');
-  const hours = String(date.getHours()).padStart(2, '0');
-  const minutes = String(date.getMinutes()).padStart(2, '0');
-  const seconds = String(date.getSeconds()).padStart(2, '0');
-
-  return `${year}-${month}-${day} ${hours}:${minutes}:${seconds}`;
-};
 
 export const deviceEventLogsPublicSelect = Prisma.validator<Prisma.tbl_devices_eventsSelect>()({
   id: true,
@@ -41,9 +30,10 @@ export const deviceEventLogsPublicSelect = Prisma.validator<Prisma.tbl_devices_e
 // Base type from Prisma
 type DeviceEventLogRowBase = Prisma.tbl_devices_eventsGetPayload<{ select: typeof deviceEventLogsPublicSelect }>;
 
-// Extended type with formatted created_at
-export type DeviceEventLogRow = Omit<DeviceEventLogRowBase, 'created_at'> & {
+// Extended type with formatted created_at and modified payload
+export type DeviceEventLogRow = Omit<DeviceEventLogRowBase, 'created_at' | 'payload'> & {
   created_at: string;
+  payload: (DeviceEventLogRowBase['payload'] & { event_at: string }) | null;
 };
 
 @Injectable()
@@ -54,19 +44,39 @@ export class DeviceEventLogsService {
     'device_id',
     'device_name',
     'type',
-    'payload_timestemp',
+    'payload_timestamp',
     'user_id',
     'payment_status',
+    'search',
   ] as const;
 
   constructor(private readonly prisma: PrismaService) {
     this.logger.log('DeviceEventLogsService initialized');
   }
 
-  async searchDeviceEventLogs(q: SearchDeviceEventLogsDto): Promise<PaginatedResult<DeviceEventLogRow>> {
+  async searchDeviceEventLogs(
+    q: SearchDeviceEventLogsDto,
+    user?: AuthenticatedUser,
+  ): Promise<PaginatedResult<DeviceEventLogRow>> {
     const pairs = parseKeyValueOnly(q.query ?? '', this.allowed);
 
     const ands: Prisma.tbl_devices_eventsWhereInput['AND'] = [];
+
+    if (user?.permission?.name === PermissionType.USER) {
+      ands.push({ device: { owner_id: user.id } });
+    }
+
+    // Handle general search - search device_id and device_name fields
+    const search = pairs.find((p) => p.key === 'search')?.value;
+    if (search) {
+      ands.push({
+        OR: [
+          { device_id: { contains: search, mode: 'insensitive' } },
+          { device: { name: { contains: search, mode: 'insensitive' } } },
+          { device: { owner: { fullname: { contains: search, mode: 'insensitive' } } } },
+        ],
+      });
+    }
 
     for (const { key, value } of pairs) {
       switch (key) {
@@ -96,7 +106,7 @@ export class DeviceEventLogsService {
           }
           break;
         }
-        case 'payload_timestemp': {
+        case 'payload_timestamp': {
           // Parse timestamp value (expecting format: start-end or single timestamp)
           const timestampParts = value.split('-');
 
@@ -108,14 +118,14 @@ export class DeviceEventLogsService {
             if (!isNaN(startTimestamp) && !isNaN(endTimestamp)) {
               ands.push({
                 payload: {
-                  path: ['timestemp'],
+                  path: ['timestamp'],
                   not: Prisma.DbNull,
                 },
               });
 
               ands.push({
                 payload: {
-                  path: ['timestemp'],
+                  path: ['timestamp'],
                   gte: startTimestamp,
                   lte: endTimestamp,
                 },
@@ -127,14 +137,14 @@ export class DeviceEventLogsService {
             if (!isNaN(timestamp)) {
               ands.push({
                 payload: {
-                  path: ['timestemp'],
+                  path: ['timestamp'],
                   not: Prisma.DbNull,
                 },
               });
 
               ands.push({
                 payload: {
-                  path: ['timestemp'],
+                  path: ['timestamp'],
                   equals: timestamp,
                 },
               });
@@ -173,11 +183,26 @@ export class DeviceEventLogsService {
       this.prisma.tbl_devices_events.count({ where }),
     ]);
 
-    // Transform the data to format created_at as YYYY-MM-DD hh:mm:ss
-    const transformedData = data.map((item) => ({
-      ...item,
-      created_at: formatDateTime(item.created_at),
-    }));
+    // Transform the data to format created_at as YYYY-MM-DD hh:mm:ss and add event_at to payload
+    const transformedData = data.map((item) => {
+      const basePayload = item.payload as Record<string, any> | null;
+      const transformedPayload = basePayload
+        ? {
+            ...basePayload,
+            event_at: basePayload.timestamp
+              ? formatDateTime(new Date(Number(basePayload.timestamp)))
+              : basePayload.timestamp,
+          }
+        : {
+            event_at: null,
+          };
+
+      return {
+        ...item,
+        created_at: formatDateTime(item.created_at),
+        payload: transformedPayload,
+      };
+    });
 
     return {
       items: transformedData,

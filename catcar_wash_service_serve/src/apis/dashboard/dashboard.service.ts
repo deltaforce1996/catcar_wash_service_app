@@ -1,15 +1,16 @@
 import { Injectable } from '@nestjs/common';
-import { PaymentStatus, Prisma } from '@prisma/client';
+import { PaymentStatus, PermissionType, Prisma } from '@prisma/client';
 import { PrismaService } from 'src/database/prisma/prisma.service';
 import { DashboardFilterDto } from './dto/dashboard.dto';
+import { AuthenticatedUser } from 'src/types/internal.type';
 
 @Injectable()
 export class DashboardService {
   constructor(private readonly prisma: PrismaService) {}
 
-  async getDashboardSummary(filter: DashboardFilterDto) {
+  async getDashboardSummary(filter: DashboardFilterDto, user?: AuthenticatedUser) {
     // สร้าง WHERE conditions สำหรับ filter
-    const whereConditions = this.buildWhereConditions(filter);
+    const whereConditions = this.buildWhereConditions(filter, user);
 
     // Query ข้อมูลรายได้รายเดือน
     const monthlyRevenue = await this.getMonthlyRevenue(whereConditions);
@@ -28,25 +29,30 @@ export class DashboardService {
     return {
       monthly: {
         revenue: monthlyRevenue.total,
-        change: monthlyChange,
+        change: Number(monthlyChange.toFixed(2)),
         data: filter.include_charts ? monthlyRevenue.data : null,
       },
       daily: {
         revenue: dailyRevenue.total,
-        change: dailyChange,
+        change: Number(dailyChange.toFixed(2)),
         data: filter.include_charts ? dailyRevenue.data : null,
       },
       hourly: {
         revenue: hourlyRevenue.total,
-        change: hourlyChange,
+        change: Number(hourlyChange.toFixed(2)),
         data: filter.include_charts ? hourlyRevenue.data : null,
       },
       payment_status: filter.payment_status || 'SUCCESS',
     };
   }
 
-  private buildWhereConditions(filter: DashboardFilterDto): string {
+  private buildWhereConditions(filter: DashboardFilterDto, user?: AuthenticatedUser): string {
     const conditions: string[] = [];
+
+    // Add permission-based filtering for USER role
+    if (user?.permission?.name === PermissionType.USER) {
+      conditions.push(`d.owner_id = '${user.id}'`);
+    }
 
     if (filter.user_id) {
       conditions.push(`d.owner_id = '${filter.user_id}'`);
@@ -58,6 +64,10 @@ export class DashboardService {
 
     if (filter.device_status) {
       conditions.push(`d.status = '${filter.device_status}'`);
+    }
+
+    if (filter.device_type) {
+      conditions.push(`d.type = '${filter.device_type}'`);
     }
 
     if (filter.payment_status) {

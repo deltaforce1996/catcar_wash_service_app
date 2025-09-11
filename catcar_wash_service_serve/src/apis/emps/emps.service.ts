@@ -6,6 +6,7 @@ import { UpdateEmpDto } from './dtos/update-emp.dto';
 import { parseKeyValueOnly } from 'src/shared/kv-parser';
 import { PaginatedResult } from 'src/types/internal.type';
 import { SearchEmpDto } from './dtos/search-emp.dto';
+import { formatDateTime } from 'src/shared/date-formatter';
 
 export const empPublicSelect = Prisma.validator<Prisma.tbl_empsSelect>()({
   id: true,
@@ -25,9 +26,14 @@ export const empPublicSelect = Prisma.validator<Prisma.tbl_empsSelect>()({
   },
 });
 
-export type EmpRow = Prisma.tbl_empsGetPayload<{ select: typeof empPublicSelect }>;
+type EmpRowBase = Prisma.tbl_empsGetPayload<{ select: typeof empPublicSelect }>;
 
-const ALLOWED = ['id', 'email', 'name', 'phone', 'line', 'address', 'status', 'permission'] as const;
+export type EmpRow = Omit<EmpRowBase, 'created_at' | 'updated_at'> & {
+  created_at?: string;
+  updated_at?: string;
+};
+
+const ALLOWED = ['id', 'email', 'name', 'phone', 'line', 'address', 'status', 'permission', 'search'] as const;
 
 @Injectable()
 export class EmpsService {
@@ -40,9 +46,26 @@ export class EmpsService {
     const pairs = parseKeyValueOnly(q.query ?? '', ALLOWED);
 
     const ands: Prisma.tbl_empsWhereInput['AND'] = [];
+
+    // Handle general search - search id, name, email, line, and address fields
+    const search = pairs.find((p) => p.key === 'search')?.value;
+    if (search) {
+      ands.push({
+        OR: [
+          { id: { contains: search, mode: 'insensitive' } },
+          { name: { contains: search, mode: 'insensitive' } },
+          { email: { contains: search, mode: 'insensitive' } },
+          { line: { contains: search, mode: 'insensitive' } },
+          { address: { contains: search, mode: 'insensitive' } },
+        ],
+      });
+    }
+
     for (const { key, value } of pairs) {
       switch (key) {
         case 'id':
+          ands.push({ id: value });
+          break;
         case 'email':
         case 'name':
         case 'phone':
@@ -83,8 +106,14 @@ export class EmpsService {
       this.prisma.tbl_emps.count({ where }),
     ]);
 
+    const formattedData: EmpRow[] = data.map((emp) => ({
+      ...emp,
+      created_at: emp.created_at ? formatDateTime(emp.created_at) : undefined,
+      updated_at: emp.updated_at ? formatDateTime(emp.updated_at) : undefined,
+    }));
+
     return {
-      items: data,
+      items: formattedData,
       total,
       page: safePage,
       limit: safeLimit,
@@ -93,18 +122,23 @@ export class EmpsService {
   }
 
   async findById(id: string): Promise<EmpRow> {
-    const emp: EmpRow | null = await this.prisma.tbl_emps.findUnique({
+    const emp: EmpRowBase | null = await this.prisma.tbl_emps.findUnique({
       where: { id },
       select: empPublicSelect,
     });
     if (!emp) {
       throw new ItemNotFoundException('Employee not found');
     }
-    return emp;
+
+    return {
+      ...emp,
+      created_at: emp.created_at ? formatDateTime(emp.created_at) : undefined,
+      updated_at: emp.updated_at ? formatDateTime(emp.updated_at) : undefined,
+    };
   }
 
   async updateById(id: string, data: UpdateEmpDto): Promise<EmpRow> {
-    const emp: EmpRow = await this.prisma.tbl_emps.update({
+    const emp: EmpRowBase = await this.prisma.tbl_emps.update({
       where: { id },
       data,
       select: empPublicSelect,
@@ -112,6 +146,11 @@ export class EmpsService {
     if (!emp) {
       throw new ItemNotFoundException('Employee not found');
     }
-    return emp;
+
+    return {
+      ...emp,
+      created_at: emp.created_at ? formatDateTime(emp.created_at) : undefined,
+      updated_at: emp.updated_at ? formatDateTime(emp.updated_at) : undefined,
+    };
   }
 }

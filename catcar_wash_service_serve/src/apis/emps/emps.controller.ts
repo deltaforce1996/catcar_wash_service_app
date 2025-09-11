@@ -6,11 +6,14 @@ import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { PaginatedResult } from 'src/types/internal.type';
 import { UpdateEmpDto } from './dtos/update-emp.dto';
 import { SuccessResponse } from 'src/types';
+import { RoleAuthGuard } from '../auth/guards/role-auth.guard';
+import { RoleAdminAndTechnician } from '../auth/decorators/roles.decorator';
 
 type EmpPublicResponse = PaginatedResult<EmpRow>;
 
 @UseFilters(AllExceptionFilter)
-@UseGuards(JwtAuthGuard)
+@UseGuards(JwtAuthGuard, RoleAuthGuard)
+@RoleAdminAndTechnician()
 @Controller('api/v1/emps')
 export class EmpsController {
   constructor(private readonly empsService: EmpsService) {}
