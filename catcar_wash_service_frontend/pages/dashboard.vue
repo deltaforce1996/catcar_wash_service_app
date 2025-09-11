@@ -299,6 +299,15 @@
             }}</span>
           </div>
         </template>
+        <template #[`item.payload.status`]="{ item }">
+          <v-chip
+            :color="getPaymentStatusColor(item.payload.status)"
+            size="small"
+            variant="tonal"
+          >
+            {{ item.payload.status }}
+          </v-chip>
+        </template>
         <template #[`item.device.type`]="{ item }">
           <v-chip
             :color="getDeviceTypeColor(item.device.type)"
@@ -759,6 +768,7 @@ const kpiData = computed(() => [
 const salesHeaders = [
   { title: "เวลา", key: "created_at", sortable: true },
   { title: "ชื่ออุปกรณ์", key: "device.name", sortable: true },
+  { title: "สถานะ", key: "payload.status", sortable: true },
   { title: "ประเภท", key: "device.type", sortable: true },
   { title: "จำนวนเงิน", key: "payload.total_amount", sortable: true },
   { title: "", key: "data-table-expand", sortable: false },
