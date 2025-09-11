@@ -60,7 +60,7 @@
               prepend-inner-icon="mdi-magnify"
               variant="outlined"
               density="compact"
-              placeholder="ค้นหาด้วยชื่ออุปกรณ์ หรือรหัสเครื่อง"
+              placeholder="ค้นหาด้วยชื่ออุปกรณ์ หรือรหัสเครื่อง หรือขื่อเจ้าของ"
               hide-details
               clearable
             />
