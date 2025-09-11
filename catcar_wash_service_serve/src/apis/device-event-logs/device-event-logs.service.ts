@@ -44,7 +44,7 @@ export class DeviceEventLogsService {
     'device_id',
     'device_name',
     'type',
-    'payload_timestemp',
+    'payload_timestamp',
     'user_id',
     'payment_status',
     'search',
@@ -106,7 +106,7 @@ export class DeviceEventLogsService {
           }
           break;
         }
-        case 'payload_timestemp': {
+        case 'payload_timestamp': {
           // Parse timestamp value (expecting format: start-end or single timestamp)
           const timestampParts = value.split('-');
 
@@ -118,14 +118,14 @@ export class DeviceEventLogsService {
             if (!isNaN(startTimestamp) && !isNaN(endTimestamp)) {
               ands.push({
                 payload: {
-                  path: ['timestemp'],
+                  path: ['timestamp'],
                   not: Prisma.DbNull,
                 },
               });
 
               ands.push({
                 payload: {
-                  path: ['timestemp'],
+                  path: ['timestamp'],
                   gte: startTimestamp,
                   lte: endTimestamp,
                 },
@@ -137,14 +137,14 @@ export class DeviceEventLogsService {
             if (!isNaN(timestamp)) {
               ands.push({
                 payload: {
-                  path: ['timestemp'],
+                  path: ['timestamp'],
                   not: Prisma.DbNull,
                 },
               });
 
               ands.push({
                 payload: {
-                  path: ['timestemp'],
+                  path: ['timestamp'],
                   equals: timestamp,
                 },
               });
@@ -189,9 +189,9 @@ export class DeviceEventLogsService {
       const transformedPayload = basePayload
         ? {
             ...basePayload,
-            event_at: basePayload.timestemp
-              ? formatDateTime(new Date(Number(basePayload.timestemp)))
-              : basePayload.timestemp,
+            event_at: basePayload.timestamp
+              ? formatDateTime(new Date(Number(basePayload.timestamp)))
+              : basePayload.timestamp,
           }
         : {
             event_at: null,

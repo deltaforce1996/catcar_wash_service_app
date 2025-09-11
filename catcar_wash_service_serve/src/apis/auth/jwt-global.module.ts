@@ -14,7 +14,7 @@ import { JwtStrategy } from './passport-srategies/jwt.strategy';
       imports: [],
       useFactory: (configService: ConfigService) => {
         const secret = configService.get('jwt.secret') || 'default';
-        const expiresIn = configService.get('jwt.expiresIn') || '1d';
+        const expiresIn = configService.get('jwt.expiresIn') || '7d';
         return {
           secret,
           signOptions: { expiresIn },

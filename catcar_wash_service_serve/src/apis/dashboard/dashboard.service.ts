@@ -29,17 +29,17 @@ export class DashboardService {
     return {
       monthly: {
         revenue: monthlyRevenue.total,
-        change: monthlyChange,
+        change: Number(monthlyChange.toFixed(2)),
         data: filter.include_charts ? monthlyRevenue.data : null,
       },
       daily: {
         revenue: dailyRevenue.total,
-        change: dailyChange,
+        change: Number(dailyChange.toFixed(2)),
         data: filter.include_charts ? dailyRevenue.data : null,
       },
       hourly: {
         revenue: hourlyRevenue.total,
-        change: hourlyChange,
+        change: Number(hourlyChange.toFixed(2)),
         data: filter.include_charts ? hourlyRevenue.data : null,
       },
       payment_status: filter.payment_status || 'SUCCESS',
