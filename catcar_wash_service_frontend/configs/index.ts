@@ -4,6 +4,10 @@ export interface AppConfig {
     timeout: number;
     retryAttempts: number;
     retryDelay: number;
+    signature: {
+      enabled: boolean;
+      secretKey: string;
+    };
   };
   app: {
     name: string;
@@ -16,26 +20,31 @@ export interface AppConfig {
 }
 
 export const getConfigUtils = () => {
-  const getEnvValue = (envKey: string): string | null => {
-    return typeof process !== "undefined" ? process.env[envKey] ?? null : null;
-  };
+  const runtimeConfig = useRuntimeConfig();
 
   const config: AppConfig = {
     app: {
-      name: getEnvValue("APP_NAME") ?? "",
-      version: getEnvValue("APP_VERSION") ?? "",
+      name: (runtimeConfig.public.appName as string) ?? "X-CatCar Wash Service",
+      version: (runtimeConfig.public.appVersion as string) ?? "1.0.0",
     },
     api: {
-      baseURL: getEnvValue("API_BASE_URL") ?? "",
-      timeout: parseInt(getEnvValue("API_TIMEOUT") ?? "10000", 10),
-      retryAttempts: parseInt(getEnvValue("API_RETRY_ATTEMPTS") ?? "3", 10),
-      retryDelay: parseInt(getEnvValue("API_RETRY_DELAY") ?? "1000", 10),
+      baseURL: runtimeConfig.public.apiUrl,
+      timeout: (runtimeConfig.public.apiTimeout as number) ?? 10000,
+      retryAttempts: (runtimeConfig.public.apiRetryAttempts as number) ?? 3,
+      retryDelay: (runtimeConfig.public.apiRetryDelay as number) ?? 1000,
+      signature: {
+        enabled: (runtimeConfig.public.apiSignatureEnabled as boolean) ?? false,
+        secretKey: (runtimeConfig.public.apiSignatureSecretKey as string) ?? "",
+      },
     },
     debug: {
-      enabled: getEnvValue("DEBUG_ENABLED") === "true",
+      enabled: (runtimeConfig.public.debugEnabled as boolean) ?? false,
       logLevel:
-        (getEnvValue("LOG_LEVEL") as "debug" | "info" | "warn" | "error") ??
-        "info",
+        (runtimeConfig.public.logLevel as
+          | "debug"
+          | "info"
+          | "warn"
+          | "error") ?? "info",
     },
   };
 
@@ -44,19 +53,19 @@ export const getConfigUtils = () => {
     log: {
       debug: (message: string, data?: unknown) => {
         if (config.debug.enabled && config.debug.logLevel === "debug") {
-          console.debug(`[DEBUG] ${message}`, data);
+          console.debug(`🐛 [DEBUG] ${message}`, data);
         }
       },
       info: (message: string, data?: unknown) => {
         if (config.debug.enabled) {
-          console.info(`[INFO] ${message}`, data);
+          console.info(`ℹ️ [INFO] ${message}`, data);
         }
       },
       warn: (message: string, data?: unknown) => {
-        console.warn(`[WARN] ${message}`, data);
+        console.warn(`⚠️ [WARN] ${message}`, data);
       },
       error: (message: string, data?: unknown) => {
-        console.error(`[ERROR] ${message}`, data);
+        console.error(`❌ [ERROR] ${message}`, data);
       },
     },
   };
