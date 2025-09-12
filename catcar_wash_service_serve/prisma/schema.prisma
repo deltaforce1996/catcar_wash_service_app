@@ -78,6 +78,7 @@ model tbl_users {
   permission_id String?
   created_at    DateTime   @default(now())
   updated_at    DateTime   @updatedAt
+  payment_info  Json?
 
   // Relations
   permission   tbl_permissions?            @relation(fields: [permission_id], references: [id], onDelete: SetNull)
@@ -204,6 +205,8 @@ model tbl_reset_password_token {
   @@index([owner_user_id])
   @@index([owner_emp_id])
 }
+
+
 
 model mv_device_payments_hour {
   device_id    String

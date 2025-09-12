@@ -3,12 +3,32 @@ import { BeamCheckoutService, ChargeData, ChargeResult } from 'src/services/beam
 import { CreatePaymentDto } from './dtos/create-payment.dto';
 import { PaymentCallbackDto } from './dtos/payment-callback.dto';
 import { AuthenticatedUser } from 'src/types/internal.type';
+import { Prisma } from '@prisma/client';
+import { PrismaService } from 'src/database/prisma/prisma.service';
+
+type PaymentInfoByDevice = Prisma.tbl_devicesGetPayload<{
+  select: { id: true; owner: { select: { payment_info: true } } };
+}>;
 
 @Injectable()
 export class PaymentGatewayService {
   private readonly logger = new Logger(PaymentGatewayService.name);
 
-  constructor(private readonly beamCheckoutService: BeamCheckoutService) {}
+  constructor(
+    private readonly beamCheckoutService: BeamCheckoutService,
+    private readonly prisma: PrismaService,
+  ) {}
+
+  private async getPaymentInfo(device_id: string): Promise<PaymentInfoByDevice> {
+    const paymentInfo: PaymentInfoByDevice | null = await this.prisma.tbl_devices.findUnique({
+      where: { id: device_id },
+      select: { id: true, owner: { select: { payment_info: true } } },
+    });
+    if (!paymentInfo) {
+      throw new BadRequestException('Payment info not found');
+    }
+    return paymentInfo;
+  }
 
   /**
    * สร้างการชำระเงินใหม่
@@ -20,6 +40,11 @@ export class PaymentGatewayService {
     void _user; // TODO: ใช้ user parameter เมื่อเพิ่ม permission checking
     try {
       this.logger.log(`Creating payment for device: ${createPaymentDto.device_id}, amount: ${createPaymentDto.amount}`);
+
+      const paymentInfo: PaymentInfoByDevice = await this.getPaymentInfo(createPaymentDto.device_id);
+      if (!paymentInfo) {
+        throw new BadRequestException('Payment info not found');
+      }
 
       // TODO: ตรวจสอบว่า device มีอยู่จริงหรือไม่
       // const device = await this.prisma.device.findUnique({
@@ -49,8 +74,21 @@ export class PaymentGatewayService {
       // สร้าง reference_id ชั่วคราว
       const referenceId = createPaymentDto.reference_id || this.generateReferenceId();
 
+      // ตรวจสอบว่า payment_info มีข้อมูลครบถ้วน
+      if (!paymentInfo.owner.payment_info) {
+        throw new BadRequestException('Payment information not configured for this device owner');
+      }
+
+      const paymentInfoData = paymentInfo.owner.payment_info as any;
+      if (!paymentInfoData.merchant_id || !paymentInfoData.api_key) {
+        throw new BadRequestException('Merchant ID or API Key is missing in payment configuration');
+      }
+
       // เรียกใช้ Beam Checkout Service
-      this.beamCheckoutService.authenticate();
+      this.beamCheckoutService.authenticate({
+        merchantId: paymentInfoData.merchant_id as string,
+        secretKey: paymentInfoData.api_key as string,
+      });
 
       // เตรียมข้อมูลสำหรับสร้าง charge
       const chargeData: ChargeData = {

@@ -120,8 +120,13 @@ export class BeamCheckoutService {
     return config;
   }
 
-  authenticate(): void {
+  authenticate(configOverride?: Partial<BeamCheckoutConfig>): void {
     const config = this.getBeamConfig();
+
+    if (configOverride) {
+      config.merchantId = configOverride.merchantId || config.merchantId;
+      config.secretKey = configOverride.secretKey || config.secretKey;
+    }
 
     if (!config.merchantId || !config.secretKey) {
       throw new BadRequestException('Beam Checkout credentials not configured');

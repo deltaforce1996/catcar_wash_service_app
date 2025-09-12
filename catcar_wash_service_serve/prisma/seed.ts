@@ -172,6 +172,11 @@ const generate = async () => {
     },
   });
 
+  const paymentInfo = {
+    merchant_id: 'catcarwash',
+    api_key: 'vNp7Pg8oJmFMs2ImOVZjHgYoxAzSmfDDfqeZw+eKr9E=',
+  };
+
   const user = await prisma.tbl_users.upsert({
     where: { email: 'user@catcarwash.com' },
     update: {
@@ -182,6 +187,7 @@ const generate = async () => {
       status: 'ACTIVE',
       custom_name: 'ลูกค้าประจำ VIP',
       address: '123/45 ถนนลาดพร้าว แขวงจอมพล เขตจตุจักร กรุงเทพมหานคร 10900',
+      payment_info: paymentInfo,
     },
     create: {
       fullname: 'นายสมชาย ใจดี',
@@ -192,6 +198,7 @@ const generate = async () => {
       status: 'ACTIVE',
       custom_name: 'ลูกค้าประจำ VIP',
       address: '123/45 ถนนลาดพร้าว แขวงจอมพล เขตจตุจักร กรุงเทพมหานคร 10900',
+      payment_info: paymentInfo,
     },
   });
 
@@ -206,6 +213,7 @@ const generate = async () => {
       status: 'ACTIVE',
       custom_name: 'ลูกค้าธุรกิจ',
       address: '789 ถนนสุขุมวิท แขวงคลองตัน เขตวัฒนา กรุงเทพมหานคร 10110',
+      payment_info: paymentInfo,
     },
     create: {
       fullname: 'นางสาวสมหญิง รักดี',
@@ -216,6 +224,7 @@ const generate = async () => {
       status: 'ACTIVE',
       custom_name: 'ลูกค้าธุรกิจ',
       address: '789 ถนนสุขุมวิท แขวงคลองตัน เขตวัฒนา กรุงเทพมหานคร 10110',
+      payment_info: paymentInfo,
     },
   });
 

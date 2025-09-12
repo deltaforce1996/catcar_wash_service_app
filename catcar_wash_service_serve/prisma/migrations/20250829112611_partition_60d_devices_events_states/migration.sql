@@ -27,7 +27,7 @@ CREATE TABLE IF NOT EXISTS "public"."tbl_devices_events_p" (
   "id"         TEXT NOT NULL,
   "device_id"  TEXT NOT NULL,
   "payload"    JSONB,
-  "created_at" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  "created_at" TIMESTAMPTZ(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
   CONSTRAINT "tbl_devices_events_p_device_id_fkey"
     FOREIGN KEY ("device_id") REFERENCES "public"."tbl_devices"("id")
     ON DELETE CASCADE ON UPDATE CASCADE
@@ -87,8 +87,8 @@ $$;
 -- ---------------------------------------------------------
 DO $$
 DECLARE
-  v_min TIMESTAMP;
-  v_max TIMESTAMP;
+  v_min TIMESTAMPTZ;
+  v_max TIMESTAMPTZ;
   v_from DATE;
   v_to   DATE;
 BEGIN
@@ -98,12 +98,12 @@ BEGIN
 
   IF v_min IS NULL OR v_max IS NULL THEN
     -- ไม่มีข้อมูล: seed ช่วงปกติ (ปรับได้ตามต้องการ)
-    v_from := date_trunc('day', now())::date;
+    v_from := date_trunc('day', now() AT TIME ZONE 'UTC')::date;
     v_to   := (v_from + interval '365 days')::date;
   ELSE
-    v_from := date_trunc('day', v_min)::date;
+    v_from := date_trunc('day', v_min AT TIME ZONE 'UTC')::date;
     -- บวก buffer เพื่อครอบคลุมพาร์ทิชันสุดท้าย
-    v_to   := (date_trunc('day', v_max) + interval '60 days')::date;
+    v_to   := (date_trunc('day', v_max AT TIME ZONE 'UTC') + interval '60 days')::date;
   END IF;
 
   PERFORM "public"."create_tbl_devices_events_partitions"(v_from, v_to);
