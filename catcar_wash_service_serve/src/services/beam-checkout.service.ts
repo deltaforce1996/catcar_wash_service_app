@@ -104,7 +104,7 @@ export class BeamCheckoutService {
   private getBeamConfig(): BeamCheckoutConfig {
     const config = {
       apiUrl: this.configService.get<string>('beamCheckout.apiUrl', 'https://playground.api.beamcheckout.com'),
-      merchantId: this.configService.get<string>('beamCheckout.merchatId') || '',
+      merchantId: this.configService.get<string>('beamCheckout.merchantId') || '',
       secretKey: this.configService.get<string>('beamCheckout.secretKey') || '',
       webhookUrl: this.configService.get<string>('beamCheckout.webhookUrl') || '',
     };
