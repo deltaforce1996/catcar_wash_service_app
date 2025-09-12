@@ -17,7 +17,6 @@ Module สำหรับจัดการการชำระเงินผ�
 ```json
 {
   "device_id": "string",
-  "user_id": "string (optional)",
   "amount": "number",
   "description": "string (optional)",
   "payment_method": "string (optional)",

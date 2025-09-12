@@ -3,7 +3,7 @@ import { ConfigModule } from '@nestjs/config';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { PrismaModule } from './database/prisma/prisma.module';
-import { appConfig, jwtConfig } from './configs';
+import { appConfig, jwtConfig, beamCheckoutConfig } from './configs';
 import { AuthModule } from './apis/auth';
 import { JwtGlobalModule } from './apis/auth/jwt-global.module';
 import { EmpsModule } from './apis/emps/emps.module';
@@ -18,7 +18,7 @@ import { PaymentGatewayModule } from './apis/payment-gateway/payment-gateway.mod
   imports: [
     ConfigModule.forRoot({
       isGlobal: true,
-      load: [appConfig, jwtConfig],
+      load: [appConfig, jwtConfig, beamCheckoutConfig],
     }),
     PrismaModule,
     JwtGlobalModule,

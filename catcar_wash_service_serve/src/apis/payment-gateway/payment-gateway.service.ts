@@ -38,13 +38,11 @@ export class PaymentGatewayService {
       // const payment = await this.prisma.payment.create({
       //   data: {
       //     device_id: createPaymentDto.device_id,
-      //     user_id: createPaymentDto.user_id || device.owner_id,
       //     amount: createPaymentDto.amount,
       //     description: createPaymentDto.description || `Payment for device ${device.name}`,
       //     payment_method: createPaymentDto.payment_method,
       //     reference_id: createPaymentDto.reference_id || this.generateReferenceId(),
       //     status: 'PENDING',
-      //     callback_url: createPaymentDto.callback_url,
       //   }
       // });
 
@@ -63,7 +61,7 @@ export class PaymentGatewayService {
           paymentMethodType: this.mapPaymentMethodToBeam(createPaymentDto.payment_method || 'QR_PROMPT_PAY'),
           ...(createPaymentDto.payment_method === 'QR_PROMPT_PAY' && {
             qrPromptPay: {
-              expiryTime: '15m', // 15 minutes expiry
+              expiresAt: new Date(Date.now() + 15 * 60 * 1000).toISOString(), // 15 minutes from now
             },
           }),
         },

@@ -4,10 +4,6 @@ export class CreatePaymentDto {
   @IsString()
   device_id: string;
 
-  @IsString()
-  @IsOptional()
-  user_id?: string;
-
   @IsNumber()
   @Min(0.01)
   amount: number;

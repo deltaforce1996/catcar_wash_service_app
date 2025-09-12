@@ -17,7 +17,7 @@ export interface ChargeData {
   paymentMethod: {
     paymentMethodType: 'QR_PROMPT_PAY' | 'CARD' | 'ALIPAY' | 'LINE_PAY' | 'SHOPEE_PAY' | 'TRUE_MONEY' | 'WECHAT_PAY';
     qrPromptPay?: {
-      expiryTime?: string;
+      expiresAt?: string;
     };
     card?: {
       cardHolderName: string;
@@ -86,7 +86,7 @@ export class BeamCheckoutService {
     // Add request interceptor for authentication
     this.httpClient.interceptors.request.use((config) => {
       if (this.accessToken) {
-        config.headers.Authorization = `Bearer ${this.accessToken}`;
+        config.headers.Authorization = `Basic ${this.accessToken}`;
       }
       return config;
     });
@@ -102,12 +102,22 @@ export class BeamCheckoutService {
   }
 
   private getBeamConfig(): BeamCheckoutConfig {
-    return {
+    const config = {
       apiUrl: this.configService.get<string>('beamCheckout.apiUrl', 'https://playground.api.beamcheckout.com'),
-      merchantId: this.configService.get<string>('beamCheckout.merchantId') || '',
+      merchantId: this.configService.get<string>('beamCheckout.merchatId') || '',
       secretKey: this.configService.get<string>('beamCheckout.secretKey') || '',
       webhookUrl: this.configService.get<string>('beamCheckout.webhookUrl') || '',
     };
+
+    // Debug log to check individual config values
+    this.logger.debug('Beam Config Debug:', {
+      apiUrl: config.apiUrl,
+      merchantId: config.merchantId ? '***SET***' : 'EMPTY',
+      secretKey: config.secretKey ? '***SET***' : 'EMPTY',
+      webhookUrl: config.webhookUrl ? '***SET***' : 'EMPTY',
+    });
+
+    return config;
   }
 
   authenticate(): void {
@@ -117,7 +127,9 @@ export class BeamCheckoutService {
       throw new BadRequestException('Beam Checkout credentials not configured');
     }
 
-    this.accessToken = `${config.merchantId}${config.secretKey}`;
+    // Encode credentials for Basic Authentication
+    const credentials = Buffer.from(`${config.merchantId}:${config.secretKey}`).toString('base64');
+    this.accessToken = credentials;
   }
 
   private ensureAuthenticated(): void {
@@ -136,19 +148,7 @@ export class BeamCheckoutService {
         returnUrl: data.returnUrl,
       };
 
-      const response: AxiosResponse<{
-        actionRequired: string;
-        chargeId: string;
-        paymentMethodType: string;
-        redirect?: {
-          redirectUrl: string;
-        };
-        encodedImage?: {
-          expiry: string;
-          imageBase64Encoded: string;
-          rawData: string;
-        };
-      }> = await this.httpClient.post('/api/v1/charges', payload);
+      const response: AxiosResponse<ChargeResult> = await this.httpClient.post('/api/v1/charges', payload);
 
       return {
         actionRequired: response.data.actionRequired as any,

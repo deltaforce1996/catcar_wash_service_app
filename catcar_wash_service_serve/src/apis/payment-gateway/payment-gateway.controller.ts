@@ -1,14 +1,14 @@
-import { Controller, Post, Get, Put, Delete, Body, Param, UseFilters, UseGuards, Request } from '@nestjs/common';
+import { Controller, Post, Get, Put, Delete, Body, Param, UseFilters, Request } from '@nestjs/common';
 import { PaymentGatewayService } from './payment-gateway.service';
 import { CreatePaymentDto } from './dtos/create-payment.dto';
 import { PaymentCallbackDto } from './dtos/payment-callback.dto';
 import { AllExceptionFilter } from 'src/common';
 import { SuccessResponse } from 'src/types';
-import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
+// import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { AuthenticatedUser } from 'src/types/internal.type';
 
 @UseFilters(AllExceptionFilter)
-@UseGuards(JwtAuthGuard)
+// @UseGuards(JwtAuthGuard)
 @Controller('api/v1/payment-gateway')
 export class PaymentGatewayController {
   constructor(private readonly paymentGatewayService: PaymentGatewayService) {}
