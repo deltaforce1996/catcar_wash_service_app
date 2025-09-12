@@ -5,8 +5,8 @@ import axios, { AxiosInstance, AxiosResponse } from 'axios';
 
 export interface BeamCheckoutConfig {
   apiUrl: string;
-  clientId: string;
-  clientSecret: string;
+  merchantId: string;
+  secretKey: string;
   webhookUrl?: string;
 }
 
@@ -70,7 +70,6 @@ export class BeamCheckoutService {
   private readonly logger = new Logger(BeamCheckoutService.name);
   private readonly httpClient: AxiosInstance;
   private accessToken: string | null = null;
-  private tokenExpiresAt: Date | null = null;
 
   constructor(private readonly configService: ConfigService) {
     const config = this.getBeamConfig();
@@ -85,8 +84,7 @@ export class BeamCheckoutService {
     });
 
     // Add request interceptor for authentication
-    this.httpClient.interceptors.request.use(async (config) => {
-      await this.ensureAuthenticated();
+    this.httpClient.interceptors.request.use((config) => {
       if (this.accessToken) {
         config.headers.Authorization = `Bearer ${this.accessToken}`;
       }
@@ -105,45 +103,25 @@ export class BeamCheckoutService {
 
   private getBeamConfig(): BeamCheckoutConfig {
     return {
-      apiUrl: this.configService.get<string>('BEAM_API_URL', 'https://api.beamcheckout.com'),
-      clientId: this.configService.get<string>('BEAM_CLIENT_ID') || '',
-      clientSecret: this.configService.get<string>('BEAM_CLIENT_SECRET') || '',
-      webhookUrl: this.configService.get<string>('BEAM_WEBHOOK_URL') || '',
+      apiUrl: this.configService.get<string>('beamCheckout.apiUrl', 'https://playground.api.beamcheckout.com'),
+      merchantId: this.configService.get<string>('beamCheckout.merchantId') || '',
+      secretKey: this.configService.get<string>('beamCheckout.secretKey') || '',
+      webhookUrl: this.configService.get<string>('beamCheckout.webhookUrl') || '',
     };
   }
 
-  async authenticate(): Promise<void> {
+  authenticate(): void {
     const config = this.getBeamConfig();
 
-    if (!config.clientId || !config.clientSecret) {
+    if (!config.merchantId || !config.secretKey) {
       throw new BadRequestException('Beam Checkout credentials not configured');
     }
 
-    try {
-      const response: AxiosResponse<{
-        access_token: string;
-        token_type: string;
-        expires_in: number;
-      }> = await axios.post(`${config.apiUrl}/oauth/token`, {
-        grant_type: 'client_credentials',
-        client_id: config.clientId,
-        client_secret: config.clientSecret,
-      });
-
-      this.accessToken = response.data.access_token;
-      this.tokenExpiresAt = new Date(Date.now() + response.data.expires_in * 1000);
-
-      this.logger.log('Successfully authenticated with Beam Checkout API');
-    } catch (error: any) {
-      this.logger.error('Failed to authenticate with Beam Checkout API', error.response?.data);
-      throw new BadRequestException('Failed to authenticate with Beam Checkout API');
-    }
+    this.accessToken = `${config.merchantId}${config.secretKey}`;
   }
 
-  private async ensureAuthenticated(): Promise<void> {
-    if (!this.accessToken || !this.tokenExpiresAt || this.tokenExpiresAt <= new Date()) {
-      await this.authenticate();
-    }
+  private ensureAuthenticated(): void {
+    throw Error("Not implemented yet because this is playground API and we don't need refresh token to authenticate");
   }
 
   async createCharge(data: ChargeData): Promise<ChargeResult> {

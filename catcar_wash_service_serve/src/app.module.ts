@@ -12,6 +12,7 @@ import { DevicesModule } from './apis/devices/devices.module';
 import { DeviceEventLogsModule } from './apis/device-event-logs/device-event-logs.module';
 import { DeviceStatesModule } from './apis/device-states/device-states.module';
 import { DashboardModule } from './apis/dashboard/dashboard.module';
+import { PaymentGatewayModule } from './apis/payment-gateway/payment-gateway.module';
 
 @Module({
   imports: [
@@ -28,6 +29,7 @@ import { DashboardModule } from './apis/dashboard/dashboard.module';
     DeviceEventLogsModule,
     DeviceStatesModule,
     DashboardModule,
+    PaymentGatewayModule,
   ],
   controllers: [AppController],
   providers: [AppService],
