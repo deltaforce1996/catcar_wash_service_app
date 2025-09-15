@@ -26,8 +26,8 @@ export class PaymentGatewayController {
     const result = await this.paymentGatewayService.createPayment(createPaymentDto, req.user);
     return {
       success: true,
-      data: result.data,
-      message: result.message,
+      data: result,
+      message: 'Payment created successfully',
     };
   }
 

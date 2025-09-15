@@ -1,5 +1,17 @@
 // Beam Webhook Event Types
 export type BeamWebhookEventType = 'charge.succeeded';
+export type BeamPaymentMethodType =
+  | 'CARD'
+  | 'QR_PROMPT_PAY'
+  | 'ALIPAY'
+  | 'WECHAT_PAY'
+  | 'TRUE_MONEY'
+  | 'LINE_PAY'
+  | 'SHOPEE_PAY'
+  | 'BANGKOK_BANK_APP'
+  | 'K_PLUS'
+  | 'SCB_EASY'
+  | 'KRUNGSRI_APP';
 
 // Base webhook payload structure
 export interface BeamWebhookPayload {
@@ -19,18 +31,7 @@ export interface BeamChargeSucceededPayload extends BeamWebhookPayload {
   sourceId: string;
   transactionTime: string;
   paymentMethod: {
-    paymentMethodType:
-      | 'CARD'
-      | 'QR_PROMPT_PAY'
-      | 'ALIPAY'
-      | 'WECHAT_PAY'
-      | 'TRUE_MONEY'
-      | 'LINE_PAY'
-      | 'SHOPEE_PAY'
-      | 'BANGKOK_BANK_APP'
-      | 'K_PLUS'
-      | 'SCB_EASY'
-      | 'KRUNGSRI_APP';
+    paymentMethodType: BeamPaymentMethodType;
     card?: {
       last4: string;
       brand: string;

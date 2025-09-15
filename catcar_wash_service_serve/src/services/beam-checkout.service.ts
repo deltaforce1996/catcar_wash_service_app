@@ -1,7 +1,9 @@
-import { Injectable, Logger, BadRequestException } from '@nestjs/common';
+import { Injectable, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import * as QRCode from 'qrcode';
 import axios, { AxiosInstance, AxiosResponse } from 'axios';
+import { BeamPaymentMethodType } from 'src/types/beam-webhook.types';
+import { BadRequestException } from 'src/errors';
 
 export interface BeamCheckoutConfig {
   apiUrl: string;
@@ -15,7 +17,7 @@ export interface ChargeData {
   currency: string;
   referenceId: string;
   paymentMethod: {
-    paymentMethodType: 'QR_PROMPT_PAY' | 'CARD' | 'ALIPAY' | 'LINE_PAY' | 'SHOPEE_PAY' | 'TRUE_MONEY' | 'WECHAT_PAY';
+    paymentMethodType: BeamPaymentMethodType;
     qrPromptPay?: {
       expiresAt?: string;
     };
@@ -104,33 +106,31 @@ export class BeamCheckoutService {
   private getBeamConfig(): BeamCheckoutConfig {
     const config = {
       apiUrl: this.configService.get<string>('beamCheckout.apiUrl', 'https://playground.api.beamcheckout.com'),
-      merchantId: this.configService.get<string>('beamCheckout.merchantId') || '',
-      secretKey: this.configService.get<string>('beamCheckout.secretKey') || '',
+      merchantId: '',
+      secretKey: '',
       webhookUrl: this.configService.get<string>('beamCheckout.webhookUrl') || '',
     };
-
-    // Debug log to check individual config values
-    this.logger.debug('Beam Config Debug:', {
-      apiUrl: config.apiUrl,
-      merchantId: config.merchantId ? '***SET***' : 'EMPTY',
-      secretKey: config.secretKey ? '***SET***' : 'EMPTY',
-      webhookUrl: config.webhookUrl ? '***SET***' : 'EMPTY',
-    });
-
     return config;
   }
 
   authenticate(configOverride?: Partial<BeamCheckoutConfig>): void {
     const config = this.getBeamConfig();
 
-    if (configOverride) {
-      config.merchantId = configOverride.merchantId || config.merchantId;
-      config.secretKey = configOverride.secretKey || config.secretKey;
-    }
-
-    if (!config.merchantId || !config.secretKey) {
+    if (!configOverride) {
       throw new BadRequestException('Beam Checkout credentials not configured');
     }
+
+    if (configOverride.merchantId === '' || configOverride.secretKey === '') {
+      throw new BadRequestException('Beam Checkout credentials not configured');
+    }
+
+    if (configOverride) {
+      config.merchantId = configOverride.merchantId as string;
+      config.secretKey = configOverride.secretKey as string;
+    }
+
+    this.logger.debug(`Beam credentail merchantId set **********`);
+    this.logger.debug(`Beam credentail secretKey set **********`);
 
     // Encode credentials for Basic Authentication
     const credentials = Buffer.from(`${config.merchantId}:${config.secretKey}`).toString('base64');
@@ -163,8 +163,9 @@ export class BeamCheckoutService {
         encodedImage: response.data.encodedImage,
       };
     } catch (error: any) {
-      this.logger.error('Failed to create charge', error.response?.data);
-      throw new BadRequestException('Failed to create charge');
+      throw new BadRequestException(
+        `Failed to create charge ErrorCode ${error.response?.data.error.errorCode} ${error.response?.data.error.message}`,
+      );
     }
   }
 
@@ -192,8 +193,9 @@ export class BeamCheckoutService {
         succeededAt: response.data.succeededAt,
       };
     } catch (error: any) {
-      this.logger.error('Failed to get charge status', error.response?.data);
-      throw new BadRequestException('Failed to get charge status');
+      throw new BadRequestException(
+        `Failed to get charge status ErrorCode ${error.response?.data.error.errorCode} ${error.response?.data.error.message}`,
+      );
     }
   }
 
@@ -202,8 +204,9 @@ export class BeamCheckoutService {
       await this.httpClient.post(`/api/v1/charges/${chargeId}/cancel`);
       this.logger.log(`Charge ${chargeId} cancelled successfully`);
     } catch (error: any) {
-      this.logger.error('Failed to cancel charge', error.response?.data);
-      throw new BadRequestException('Failed to cancel charge');
+      throw new BadRequestException(
+        `Failed to cancel charge ErrorCode ${error.response?.data.error.errorCode} ${error.response?.data.error.message}`,
+      );
     }
   }
 

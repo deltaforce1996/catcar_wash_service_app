@@ -10,8 +10,8 @@ export class BeamWebhookSignatureGuard implements CanActivate {
 
   canActivate(context: ExecutionContext): boolean {
     const request = context.switchToHttp().getRequest();
-    const signature = request.headers['x-beam-signature'];
-    const eventType = request.headers['x-beam-event'];
+    const signature = request.headers['x-beam-signature'] as string;
+    const eventType = request.headers['x-beam-event'] as string;
 
     // Log webhook attempt
     this.logger.log(`Webhook received - Event: ${eventType}, Signature: ${signature ? 'Present' : 'Missing'}`);
@@ -68,17 +68,18 @@ export class BeamWebhookSignatureGuard implements CanActivate {
     try {
       // Convert payload to JSON string if it's an object
       const payloadString = typeof payload === 'string' ? payload : JSON.stringify(payload);
-
       // Decode the base64-encoded HMAC key
       const decodedHmacKey = Buffer.from(hmacKey, 'base64');
-
       // Create HMAC-SHA256 hash
       const hmac = crypto.createHmac('sha256', decodedHmacKey);
       hmac.update(payloadString, 'utf8');
       const computedSignature = hmac.digest('base64');
-
       // Compare signatures using timing-safe comparison
-      return crypto.timingSafeEqual(Buffer.from(signature, 'base64'), Buffer.from(computedSignature, 'base64'));
+      const isVerified = crypto.timingSafeEqual(
+        Buffer.from(signature, 'base64'),
+        Buffer.from(computedSignature, 'base64'),
+      );
+      return isVerified;
     } catch (error) {
       this.logger.error('Error during signature verification', error);
       return false;
