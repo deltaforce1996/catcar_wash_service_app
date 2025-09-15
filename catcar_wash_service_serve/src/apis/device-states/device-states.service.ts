@@ -2,7 +2,7 @@ import { BadRequestException, Injectable, Logger } from '@nestjs/common';
 import { PermissionType, Prisma } from '@prisma/client';
 import { PrismaService } from 'src/database/prisma/prisma.service';
 import { parseKeyValueOnly } from 'src/shared/kv-parser';
-import { PaginatedResult, DeviceState, AuthenticatedUser } from 'src/types/internal.type';
+import { PaginatedResult, AuthenticatedUser } from 'src/types/internal.type';
 import { SearchDeviceStatesDto } from './dtos/search-device-states.dto';
 
 export const deviceStatesPublicSelect = Prisma.validator<Prisma.tbl_devices_stateSelect>()({
@@ -32,10 +32,7 @@ export const deviceStatesPublicSelect = Prisma.validator<Prisma.tbl_devices_stat
 type DeviceStateRowBase = Prisma.tbl_devices_stateGetPayload<{ select: typeof deviceStatesPublicSelect }>;
 
 // Extended type with formatted created_at and parsed state_data (with date_state)
-export type DeviceStateRow = DeviceStateRowBase & {
-  created_at: string;
-  state_data: DeviceState | null;
-};
+export type DeviceStateRow = DeviceStateRowBase;
 
 @Injectable()
 export class DeviceStatesService {
@@ -156,7 +153,7 @@ export class DeviceStatesService {
     ]);
 
     return {
-      items: data as DeviceStateRow[],
+      items: data,
       total,
       page: safePage,
       limit: safeLimit,
