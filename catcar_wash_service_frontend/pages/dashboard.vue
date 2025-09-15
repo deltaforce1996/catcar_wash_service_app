@@ -335,18 +335,9 @@
               <v-card-text class="pa-4">
                 <div class="payment-breakdown">
                   <!-- Header with transaction summary -->
-                  <div class="d-flex justify-space-between align-center mb-4">
-                    <h3 class="text-subtitle-1 font-weight-bold">
-                      รายละเอียดการชำระเงิน
-                    </h3>
-                    <v-chip
-                      :color="getPaymentStatusColor(item.payload.status)"
-                      size="small"
-                      variant="tonal"
-                    >
-                      {{ item.payload.status }}
-                    </v-chip>
-                  </div>
+                  <h3 class="text-subtitle-1 font-weight-bold">
+                    รายละเอียดการชำระเงิน
+                  </h3>
 
                   <!-- Payment methods grid for desktop -->
                   <v-row
