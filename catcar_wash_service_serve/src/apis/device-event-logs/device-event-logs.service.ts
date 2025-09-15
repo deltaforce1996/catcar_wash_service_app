@@ -30,9 +30,11 @@ export const deviceEventLogsPublicSelect = Prisma.validator<Prisma.tbl_devices_e
 type DeviceEventLogRowBase = Prisma.tbl_devices_eventsGetPayload<{ select: typeof deviceEventLogsPublicSelect }>;
 
 // Extended type with formatted created_at and modified payload
-export type DeviceEventLogRow = DeviceEventLogRowBase & {
-  payload: (DeviceEventLogRowBase['payload'] & { event_at: string }) | null;
-};
+// export type DeviceEventLogRow = DeviceEventLogRowBase & {
+//   payload: (DeviceEventLogRowBase['payload'] & { event_at: string }) | null;
+// };
+
+export type DeviceEventLogRow = DeviceEventLogRowBase;
 
 @Injectable()
 export class DeviceEventLogsService {
@@ -182,23 +184,23 @@ export class DeviceEventLogsService {
     ]);
 
     // Transform the data to format created_at as YYYY-MM-DD hh:mm:ss and add event_at to payload
-    const transformedData = data.map((item) => {
-      const basePayload = item.payload as Record<string, any> | null;
-      const transformedPayload = basePayload
-        ? {
-            ...basePayload,
-            event_at: basePayload.timestamp ? new Date(Number(basePayload.timestamp)) : basePayload.timestamp,
-          }
-        : basePayload;
+    // const transformedData = data.map((item) => {
+    //   const basePayload = item.payload as Record<string, any> | null;
+    //   const transformedPayload = basePayload
+    //     ? {
+    //         ...basePayload,
+    //         event_at: basePayload.timestamp ? new Date(Number(basePayload.timestamp)) : basePayload.timestamp,
+    //       }
+    //     : basePayload;
 
-      return {
-        ...item,
-        payload: transformedPayload,
-      };
-    });
+    //   return {
+    //     ...item,
+    //     payload: transformedPayload,
+    //   };
+    // });
 
     return {
-      items: transformedData,
+      items: data,
       total,
       page: safePage,
       limit: safeLimit,
