@@ -6,7 +6,6 @@ import { UpdateUserDto } from './dtos/update-user.dto';
 import { parseKeyValueOnly } from 'src/shared/kv-parser';
 import { PaginatedResult } from 'src/types/internal.type';
 import { SearchUserDto } from './dtos/search-user.dto';
-import { formatDateTime } from 'src/shared/date-formatter';
 
 export const userPublicSelect = Prisma.validator<Prisma.tbl_usersSelect>()({
   id: true,
@@ -29,9 +28,9 @@ export const userPublicSelect = Prisma.validator<Prisma.tbl_usersSelect>()({
 
 type UserRow = Prisma.tbl_usersGetPayload<{ select: typeof userPublicSelect }>;
 
-export type UserWithDeviceCountsRow = Omit<UserRow, 'created_at' | 'updated_at'> & {
-  created_at?: string;
-  updated_at?: string;
+export type UserWithDeviceCountsRow = UserRow & {
+  // created_at?: string;
+  // updated_at?: string;
   device_counts: { total: number; active: number; inactive: number };
 };
 
@@ -133,8 +132,6 @@ export class UsersService {
 
     const items: UserWithDeviceCountsRow[] = users.map((u) => ({
       ...u,
-      created_at: u.created_at ? formatDateTime(u.created_at) : undefined,
-      updated_at: u.updated_at ? formatDateTime(u.updated_at) : undefined,
       device_counts: {
         total: (counters.get(u.id)?.active ?? 0) + (counters.get(u.id)?.inactive ?? 0),
         active: counters.get(u.id)?.active ?? 0,
@@ -172,8 +169,6 @@ export class UsersService {
 
     return {
       ...user,
-      created_at: user.created_at ? formatDateTime(user.created_at) : undefined,
-      updated_at: user.updated_at ? formatDateTime(user.updated_at) : undefined,
       device_counts: { total: counts.active + counts.inactive, ...counts },
     };
   }
@@ -199,8 +194,6 @@ export class UsersService {
 
     return {
       ...user,
-      created_at: user.created_at ? formatDateTime(user.created_at) : undefined,
-      updated_at: user.updated_at ? formatDateTime(user.updated_at) : undefined,
       device_counts: { total: counts.active + counts.inactive, ...counts },
     };
   }

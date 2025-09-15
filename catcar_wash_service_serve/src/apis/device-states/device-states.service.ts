@@ -2,7 +2,6 @@ import { BadRequestException, Injectable, Logger } from '@nestjs/common';
 import { PermissionType, Prisma } from '@prisma/client';
 import { PrismaService } from 'src/database/prisma/prisma.service';
 import { parseKeyValueOnly } from 'src/shared/kv-parser';
-import { formatDateTime } from 'src/shared/date-formatter';
 import { PaginatedResult, DeviceState, AuthenticatedUser } from 'src/types/internal.type';
 import { SearchDeviceStatesDto } from './dtos/search-device-states.dto';
 
@@ -33,7 +32,7 @@ export const deviceStatesPublicSelect = Prisma.validator<Prisma.tbl_devices_stat
 type DeviceStateRowBase = Prisma.tbl_devices_stateGetPayload<{ select: typeof deviceStatesPublicSelect }>;
 
 // Extended type with formatted created_at and parsed state_data (with date_state)
-export type DeviceStateRow = Omit<DeviceStateRowBase, 'created_at' | 'state_data'> & {
+export type DeviceStateRow = DeviceStateRowBase & {
   created_at: string;
   state_data: DeviceState | null;
 };
@@ -156,20 +155,8 @@ export class DeviceStatesService {
       this.prisma.tbl_devices_state.count({ where }),
     ]);
 
-    // Transform the data to format created_at and parse state_data with state_at
-    const transformedData = data.map((item) => ({
-      ...item,
-      created_at: formatDateTime(item.created_at),
-      state_data: item.state_data
-        ? {
-            ...(item.state_data as DeviceState),
-            state_at: formatDateTime(item.created_at),
-          }
-        : null,
-    }));
-
     return {
-      items: transformedData,
+      items: data as DeviceStateRow[],
       total,
       page: safePage,
       limit: safeLimit,

@@ -13,6 +13,7 @@ import { DeviceEventLogsModule } from './apis/device-event-logs/device-event-log
 import { DeviceStatesModule } from './apis/device-states/device-states.module';
 import { DashboardModule } from './apis/dashboard/dashboard.module';
 import { PaymentGatewayModule } from './apis/payment-gateway/payment-gateway.module';
+import { DateTimeService } from './services';
 
 @Module({
   imports: [
@@ -32,6 +33,6 @@ import { PaymentGatewayModule } from './apis/payment-gateway/payment-gateway.mod
     PaymentGatewayModule,
   ],
   controllers: [AppController],
-  providers: [AppService],
+  providers: [AppService, DateTimeService],
 })
 export class AppModule {}

@@ -3,6 +3,8 @@ import { AppModule } from './app.module';
 import { NestExpressApplication } from '@nestjs/platform-express';
 import { Logger, ValidationPipe } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
+import { DateTimeTransformInterceptor } from './common';
+import { DateTimeService } from './services';
 
 async function bootstrap() {
   const app = await NestFactory.create<NestExpressApplication>(AppModule);
@@ -20,6 +22,10 @@ async function bootstrap() {
       },
     }),
   );
+
+  // Register global DateTime interceptor to convert Date objects to Thai format
+  const dateTimeService = app.get(DateTimeService);
+  app.useGlobalInterceptors(new DateTimeTransformInterceptor(dateTimeService));
 
   const configService = app.get(ConfigService);
   const port = configService.get<number>('app.port');

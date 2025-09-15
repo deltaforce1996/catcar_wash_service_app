@@ -2,7 +2,6 @@ import { BadRequestException, Injectable, Logger } from '@nestjs/common';
 import { EventType, PaymentStatus, PermissionType, Prisma } from '@prisma/client';
 import { PrismaService } from 'src/database/prisma/prisma.service';
 import { parseKeyValueOnly } from 'src/shared/kv-parser';
-import { formatDateTime } from 'src/shared/date-formatter';
 import { AuthenticatedUser, PaginatedResult } from 'src/types/internal.type';
 import { SearchDeviceEventLogsDto } from './dtos/search-devcie-event.dto';
 
@@ -31,8 +30,7 @@ export const deviceEventLogsPublicSelect = Prisma.validator<Prisma.tbl_devices_e
 type DeviceEventLogRowBase = Prisma.tbl_devices_eventsGetPayload<{ select: typeof deviceEventLogsPublicSelect }>;
 
 // Extended type with formatted created_at and modified payload
-export type DeviceEventLogRow = Omit<DeviceEventLogRowBase, 'created_at' | 'payload'> & {
-  created_at: string;
+export type DeviceEventLogRow = DeviceEventLogRowBase & {
   payload: (DeviceEventLogRowBase['payload'] & { event_at: string }) | null;
 };
 
@@ -189,17 +187,12 @@ export class DeviceEventLogsService {
       const transformedPayload = basePayload
         ? {
             ...basePayload,
-            event_at: basePayload.timestamp
-              ? formatDateTime(new Date(Number(basePayload.timestamp)))
-              : basePayload.timestamp,
+            event_at: basePayload.timestamp ? new Date(Number(basePayload.timestamp)) : basePayload.timestamp,
           }
-        : {
-            event_at: null,
-          };
+        : basePayload;
 
       return {
         ...item,
-        created_at: formatDateTime(item.created_at),
         payload: transformedPayload,
       };
     });

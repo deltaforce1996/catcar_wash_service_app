@@ -11,7 +11,6 @@ import {
 } from './dtos/index';
 import { parseKeyValueOnly } from 'src/shared/kv-parser';
 import { AuthenticatedUser, PaginatedResult } from 'src/types/internal.type';
-import { formatDateTime } from 'src/shared/date-formatter';
 
 export const devicePublicSelect = Prisma.validator<Prisma.tbl_devicesSelect>()({
   id: true,
@@ -40,10 +39,12 @@ export const devicePublicSelect = Prisma.validator<Prisma.tbl_devicesSelect>()({
 
 type DeviceRowBase = Prisma.tbl_devicesGetPayload<{ select: typeof devicePublicSelect }>;
 
-export type DeviceRow = Omit<DeviceRowBase, 'created_at' | 'updated_at'> & {
-  created_at?: string;
-  updated_at?: string;
-};
+// export type DeviceRow = Omit<DeviceRowBase, 'created_at' | 'updated_at'> & {
+//   created_at?: string;
+//   updated_at?: string;
+// };
+
+export type DeviceRow = DeviceRowBase;
 
 const ALLOWED = ['id', 'name', 'type', 'status', 'owner', 'register', 'search'] as const;
 
@@ -126,14 +127,8 @@ export class DevicesService {
       this.prisma.tbl_devices.count({ where }),
     ]);
 
-    const formattedData: DeviceRow[] = data.map((device) => ({
-      ...device,
-      created_at: device.created_at ? formatDateTime(device.created_at) : undefined,
-      updated_at: device.updated_at ? formatDateTime(device.updated_at) : undefined,
-    }));
-
     return {
-      items: formattedData,
+      items: data,
       total,
       page: safePage,
       limit: safeLimit,
@@ -156,11 +151,7 @@ export class DevicesService {
       throw new ItemNotFoundException('Device not found');
     }
 
-    return {
-      ...device,
-      created_at: device.created_at ? formatDateTime(device.created_at) : undefined,
-      updated_at: device.updated_at ? formatDateTime(device.updated_at) : undefined,
-    };
+    return device;
   }
 
   async createDevice(data: CreateDeviceDto): Promise<DeviceRow> {
@@ -194,11 +185,7 @@ export class DevicesService {
       select: devicePublicSelect,
     });
 
-    return {
-      ...device,
-      created_at: device.created_at ? formatDateTime(device.created_at) : undefined,
-      updated_at: device.updated_at ? formatDateTime(device.updated_at) : undefined,
-    };
+    return device;
   }
 
   async updateBasicById(id: string, data: UpdateDeviceBasicDto): Promise<DeviceRow> {
@@ -224,11 +211,7 @@ export class DevicesService {
       throw new ItemNotFoundException('Device not found');
     }
 
-    return {
-      ...device,
-      created_at: device.created_at ? formatDateTime(device.created_at) : undefined,
-      updated_at: device.updated_at ? formatDateTime(device.updated_at) : undefined,
-    };
+    return device;
   }
 
   async updateConfigsById(id: string, data: UpdateDeviceConfigsDto): Promise<DeviceRow> {
@@ -292,11 +275,7 @@ export class DevicesService {
       select: devicePublicSelect,
     });
 
-    return {
-      ...device,
-      created_at: device.created_at ? formatDateTime(device.created_at) : undefined,
-      updated_at: device.updated_at ? formatDateTime(device.updated_at) : undefined,
-    };
+    return device;
   }
 
   async setDeviceState(id: string, data: SetDeviceStateDto, user?: AuthenticatedUser): Promise<void> {
