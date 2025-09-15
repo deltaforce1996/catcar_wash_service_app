@@ -60,7 +60,6 @@ export class PaymentGatewayController {
     const result = await this.paymentGatewayService.handleBeamWebhook(webhookPayload, eventType);
     return {
       success: true,
-      data: result.data,
       message: result.message,
     };
   }

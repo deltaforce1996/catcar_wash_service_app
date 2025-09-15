@@ -153,7 +153,7 @@ export class PaymentGatewayService {
           const paymentTemp: tbl_payment_temps = await tx.tbl_payment_temps.create({
             data: {
               device_id: createPaymentDto.device_id,
-              amount: createPaymentDto.amount,
+              amount: Number(createPaymentDto.amount / 100).toFixed(2),
               payment_method: createPaymentDto.payment_method || 'QR_PROMPT_PAY',
               reference_id: referenceId,
               status: 'PENDING',
@@ -372,7 +372,7 @@ export class PaymentGatewayService {
   async handleBeamWebhook(
     webhookPayload: BeamWebhookPayloadUnion,
     eventType: BeamWebhookEventType,
-  ): Promise<{ data: any; message: string }> {
+  ): Promise<{ message: string }> {
     this.logger.log(`Processing Beam webhook: ${eventType}`);
 
     try {
@@ -391,42 +391,21 @@ export class PaymentGatewayService {
   /**
    * จัดการ charge.succeeded webhook
    */
-  private async handleChargeSucceeded(payload: BeamChargeSucceededPayload): Promise<{ data: any; message: string }> {
+  private async handleChargeSucceeded(payload: BeamChargeSucceededPayload): Promise<{ message: string }> {
     this.logger.log(`Processing charge succeeded: ${payload.chargeId}`);
-    return await Promise.resolve({
-      data: null,
-      message: 'Charge succeeded webhook processed successfully',
+
+    // TODO: อัปเดตสถานะใน database
+    await this.prisma.tbl_payment_temps.updateMany({
+      where: {
+        reference_id: payload.referenceId,
+      },
+      data: {
+        status: payload.status,
+      },
     });
 
-    // try {
-    //   // Update payment status in database
-    //   const updatedPayment = await this.prisma.tbl_payment_temps.updateMany({
-    //     where: {
-    //       reference_id: payload.referenceId,
-    //     },
-    //     data: {
-    //       status: 'SUCCEEDED',
-    //       updated_at: new Date(),
-    //     },
-    //   });
-
-    //   this.logger.log(`Updated ${updatedPayment.count} payment records for reference: ${payload.referenceId}`);
-
-    //   // TODO: Add business logic here (e.g., trigger device activation, send notifications, etc.)
-    //   return {
-    //     data: {
-    //       chargeId: payload.chargeId,
-    //       referenceId: payload.referenceId,
-    //       status: payload.status,
-    //       amount: payload.amount,
-    //       currency: payload.currency,
-    //       updatedRecords: updatedPayment.count,
-    //     },
-    //     message: 'Charge succeeded webhook processed successfully',
-    //   };
-    // } catch (error) {
-    //   this.logger.error('Error processing charge succeeded webhook:', error);
-    //   throw new BadRequestException('Failed to process charge succeeded webhook');
-    // }
+    return {
+      message: 'Charge succeeded webhook processed successfully',
+    };
   }
 }

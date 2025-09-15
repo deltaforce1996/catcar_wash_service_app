@@ -1,3 +1,5 @@
+import { PaymentApiStatus } from '@prisma/client';
+
 // Beam Webhook Event Types
 export type BeamWebhookEventType = 'charge.succeeded';
 export type BeamPaymentMethodType =
@@ -24,7 +26,7 @@ export interface BeamWebhookPayload {
 export interface BeamChargeSucceededPayload extends BeamWebhookPayload {
   chargeId: string;
   referenceId: string;
-  status: 'SUCCEEDED';
+  status: PaymentApiStatus;
   currency: string;
   amount: number;
   source: 'PAYMENT_LINK' | 'API' | 'STORE_LINK' | 'QR_PROMPT_PAY_LINK';
