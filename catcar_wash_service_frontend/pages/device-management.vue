@@ -99,7 +99,7 @@
             <v-combobox
               v-model="selectedUserFilters"
               :items="getUserOptions()"
-              label="กรองตามผู้ใช้"
+              label="กรองตามผู้รหัสเจ้าของ"
               prepend-inner-icon="mdi-account-filter"
               variant="outlined"
               density="compact"
@@ -438,7 +438,7 @@ const getUserOptions = () => {
     ...new Set(
       allDevices.value
         .filter((device) => device.type === activeDeviceType.value)
-        .map((device) => device.owner.fullname)
+        .map((device) => device.owner.id)
     ),
   ];
   return users;
