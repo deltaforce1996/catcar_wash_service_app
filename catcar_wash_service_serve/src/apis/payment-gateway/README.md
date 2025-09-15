@@ -1,99 +1,124 @@
-# Payment Gateway Module
+# Payment Gateway API
 
-Module สำหรับจัดการการชำระเงินผ่าน Beam Checkout Service
+This module handles payment processing using Beam Checkout service and includes webhook handling for payment notifications.
 
-## สถานะปัจจุบัน
-- ✅ สร้าง module พื้นฐานแล้ว
-- ✅ เชื่อมต่อกับ Beam Checkout Service แล้ว
-- ⏳ ยังไม่ได้เชื่อมต่อกับ Database
-- ⏳ ยังไม่ได้ implement business logic เต็มรูปแบบ
+## Features
 
-## API Endpoints
+- Payment creation and management
+- Beam Checkout integration
+- Webhook signature verification
+- Payment status tracking
 
-### POST /api/v1/payment-gateway/payments
-สร้างการชำระเงินใหม่
+## Webhook Integration
 
-**Request Body:**
-```json
+### Beam Webhook Signature Guard
+
+The `BeamWebhookSignatureGuard` validates incoming webhook requests from Beam Checkout to ensure they are authentic and haven't been tampered with.
+
+#### Configuration
+
+Add the following environment variable to your `.env` file:
+
+```env
+BEAM_WEBHOOK_HMAC_KEY=your_webhook_hmac_key_from_beam_lighthouse
+```
+
+#### Usage
+
+The webhook endpoint is automatically protected by the signature guard:
+
+```typescript
+@Post('webhook')
+@UseGuards(BeamWebhookSignatureGuard)
+async handleBeamWebhook(
+  @Body() webhookPayload: BeamWebhookPayloadUnion,
+  @Headers('x-beam-event') eventType: BeamWebhookEventType,
+): Promise<SuccessResponse<any>>
+```
+
+#### Supported Webhook Events
+
+- `charge.succeeded` - When a charge has been successfully processed
+
+#### Webhook Signature Verification
+
+The guard performs the following verification steps:
+
+1. **Header Validation**: Checks for required headers (`x-beam-signature`, `x-beam-event`)
+2. **Event Type Validation**: Ensures the event type is supported
+3. **Signature Verification**: Uses HMAC-SHA256 to verify the webhook signature
+4. **Timing-Safe Comparison**: Prevents timing attacks during signature comparison
+
+#### Example Webhook Request
+
+```http
+POST /api/v1/payment-gateway/webhook
+Content-Type: application/json
+X-Beam-Signature: TIJ+djHBA1D4dviJ0EmFmctWf/w498Scaqjz4v0qNDU=
+X-Beam-Event: charge.succeeded
+
 {
-  "device_id": "string",
-  "amount": "number",
-  "description": "string (optional)",
-  "payment_method": "string (optional)",
-  "reference_id": "string (optional)",
-  "callback_url": "string (optional)"
+  "chargeId": "ch_30GtUweMWec7r2hHIsV5xxQeJKp",
+  "merchantId": "merchantId",
+  "referenceId": "order#10001",
+  "status": "SUCCEEDED",
+  "currency": "THB",
+  "amount": 3000000,
+  "source": "PAYMENT_LINK",
+  "sourceId": "sourceId",
+  "transactionTime": "2025-07-23T10:16:12Z",
+  "paymentMethod": {
+    "paymentMethodType": "CARD",
+    "card": {
+      "last4": "1234",
+      "brand": "VISA"
+    }
+  },
+  "customer": {
+    "primaryPhone": {
+      "countryCode": "+66",
+      "number": "0123456789"
+    },
+    "email": "beamcheckout@email.com"
+  },
+  "createdAt": "2025-07-23T10:15:56.102401Z",
+  "updatedAt": "2025-07-23T10:16:17.418991Z"
 }
 ```
 
-### GET /api/v1/payment-gateway/payments/:id/status
-ตรวจสอบสถานะการชำระเงิน
+## API Endpoints
 
-### PUT /api/v1/payment-gateway/payments/:id/callback
-จัดการ payment callback จาก payment gateway
+### Payment Management
 
-### DELETE /api/v1/payment-gateway/payments/:id
-ยกเลิกการชำระเงิน
+- `POST /api/v1/payment-gateway/payments` - Create a new payment
+- `GET /api/v1/payment-gateway/payments/:id/status` - Get payment status
+- `DELETE /api/v1/payment-gateway/payments/:id` - Cancel payment
+- `POST /api/v1/payment-gateway/payments/:id/callback` - Handle payment callback
 
-## TODO List
+### Webhook
 
-### 1. Database Integration
-- [ ] เพิ่ม Payment model ใน Prisma schema
-- [ ] เพิ่ม PaymentMethod และ PaymentStatus enums
-- [ ] สร้าง migration สำหรับ payment table
-- [ ] เชื่อมต่อ PrismaService ใน PaymentGatewayService
+- `POST /api/v1/payment-gateway/webhook` - Handle Beam webhook notifications
 
-### 2. Business Logic
-- [ ] เพิ่มการตรวจสอบ device และ user permissions
-- [ ] เพิ่มการ validate ข้อมูลก่อนสร้าง charge
-- [ ] เพิ่มการบันทึกข้อมูล payment ลง database
-- [ ] เพิ่มการอัปเดตสถานะ payment จาก Beam Checkout
+## Security
 
-### 3. Security & Validation
-- [ ] เพิ่มการ validate signature สำหรับ webhook
-- [ ] เพิ่มการตรวจสอบ permissions ตาม role
-- [ ] เพิ่ม rate limiting สำหรับ payment endpoints
+- All webhook requests are validated using HMAC-SHA256 signature verification
+- Event types are validated against a whitelist
+- Timing-safe comparison prevents timing attacks
+- Comprehensive logging for security monitoring
 
-### 4. Error Handling & Logging
-- [ ] เพิ่ม comprehensive error handling
-- [ ] เพิ่ม structured logging
-- [ ] เพิ่ม monitoring และ alerting
+## Error Handling
 
-### 5. Testing
-- [ ] เพิ่ม unit tests สำหรับ service methods
-- [ ] เพิ่ม integration tests สำหรับ API endpoints
-- [ ] เพิ่ม mock สำหรับ Beam Checkout Service
+The webhook guard will throw `UnauthorizedException` for:
+- Missing webhook signature
+- Missing event type
+- Invalid event type
+- Invalid webhook signature
+- Missing webhook HMAC key configuration
 
-### 6. Documentation
-- [ ] เพิ่ม API documentation ด้วย Swagger
-- [ ] เพิ่มตัวอย่างการใช้งาน
-- [ ] เพิ่ม error codes และ messages
+## Testing
 
-## การใช้งาน Beam Checkout Service
+To test webhook signature verification, you can use the example data provided in the [Beam documentation](https://docs.beamcheckout.com/v1/guides/webhook):
 
-Module นี้ใช้ Beam Checkout Service สำหรับ:
-- สร้าง charge สำหรับการชำระเงิน
-- ตรวจสอบสถานะการชำระเงิน
-- ยกเลิก charge
-- สร้าง QR code สำหรับ PromptPay
-
-## ตัวอย่างการใช้งาน
-
-```typescript
-// สร้างการชำระเงิน
-const payment = await paymentGatewayService.createPayment({
-  device_id: 'device-123',
-  amount: 100,
-  payment_method: 'QR_PROMPT_PAY',
-  description: 'Car wash payment'
-});
-
-// ตรวจสอบสถานะ
-const status = await paymentGatewayService.getPaymentStatus('payment-123');
-```
-
-## หมายเหตุ
-
-- Module นี้ยังอยู่ในขั้นตอน development
-- ต้องเพิ่ม database integration ก่อนใช้งานจริง
-- ต้องเพิ่ม proper error handling และ validation
-- ต้องเพิ่ม security measures สำหรับ production
+- `X-Beam-Signature`: `CJ9Itj/ZY18MqOj5ohTmPqe1Q7USJqIItIKZmHDrkuM=`
+- `HMAC Key`: `KOFELguf5L1ltuDlkDHGUkPPnQhrgYYijTR4Fqh7APc=`
+- Request Body: (as shown in the documentation)

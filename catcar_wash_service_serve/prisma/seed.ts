@@ -473,11 +473,11 @@ const generateDeviceEvents = (deviceIds: string[], type: EventType, count: numbe
     for (let i = 0; i < count; i++) {
       // Generate random timestamp within safe partition range
       const randomOffset = randomInt(-maxPastMs, maxFutureMs);
-      const timestemp = now + randomOffset;
+      const timestamp = now + randomOffset;
 
       const payload = {
         type: type,
-        timestemp: timestemp,
+        timestamp: timestamp,
         coin: {
           1: randomInt(0, 10),
           2: 0,

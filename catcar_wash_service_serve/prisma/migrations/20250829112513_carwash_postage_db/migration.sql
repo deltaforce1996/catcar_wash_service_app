@@ -180,3 +180,7 @@ ALTER TABLE "public"."tbl_reset_password_token" ADD CONSTRAINT "tbl_reset_passwo
 
 -- AddForeignKey
 ALTER TABLE "public"."tbl_reset_password_token" ADD CONSTRAINT "tbl_reset_password_token_owner_emp_id_fkey" FOREIGN KEY ("owner_emp_id") REFERENCES "public"."tbl_emps"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+
+ALTER TABLE "public"."tbl_devices_events" DROP CONSTRAINT "tbl_devices_events_pkey",
+ALTER COLUMN "created_at" SET DATA TYPE TIMESTAMPTZ(3),
+ADD CONSTRAINT "tbl_devices_events_pkey" PRIMARY KEY ("id", "created_at");

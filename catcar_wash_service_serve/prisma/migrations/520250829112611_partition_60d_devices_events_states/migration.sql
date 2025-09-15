@@ -150,3 +150,11 @@ COMMIT;
 -- (ทางเลือก) เก็บตารางเดิมไว้ชั่วคราว หรือจะลบทิ้งก็ได้หลังตรวจสอบครบ
 DROP TABLE IF EXISTS "public"."tbl_devices_events_old";
 -- ---------------------------------------------------------
+
+
+
+-- AlterTable
+ALTER TABLE "public"."tbl_devices_events" ADD CONSTRAINT "tbl_devices_events_pkey" PRIMARY KEY ("id", "created_at");
+
+-- CreateIndex
+CREATE INDEX "tbl_devices_events_device_id_created_at_idx" ON "public"."tbl_devices_events"("device_id", "created_at");

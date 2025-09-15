@@ -1,6 +1,6 @@
 import { DeviceType } from '@prisma/client';
 import { IsEnum, IsNotEmpty, IsOptional, IsString, IsObject } from 'class-validator';
-import type { DeviceConfig } from '../types/device-config.types';
+import type { DeviceConfig } from '../../../types/device-config.types';
 
 export class CreateDeviceDto {
   @IsString()

@@ -53,6 +53,13 @@ enum PaymentStatus {
   CANCELLED
 }
 
+enum PaymentApiStatus {
+  PENDING
+  SUCCEEDED
+  FAILED
+  CANCELLED
+}
+
 model tbl_permissions {
   id         String         @id @default(cuid())
   name       PermissionType @unique
@@ -127,6 +134,7 @@ model tbl_devices {
   device_states tbl_devices_state[]
   device_events tbl_devices_events[]
   last_state    tbl_devices_last_state?
+  payment_temps tbl_payment_temps[]
 
   @@map("tbl_devices")
   @@index([owner_id])
@@ -206,7 +214,25 @@ model tbl_reset_password_token {
   @@index([owner_emp_id])
 }
 
+model tbl_payment_temps {
+  id             String        @id @default(cuid())
+  device_id      String
+  amount         Decimal
+  payment_method String
+  reference_id   String
+  status         PaymentApiStatus @default(PENDING)
+  payment_results Json?
+  created_at     DateTime      @default(now())
+  updated_at     DateTime      @updatedAt
 
+  // Relations
+  device         tbl_devices   @relation(fields: [device_id], references: [id], onDelete: Cascade)
+
+  @@map("tbl_payment_temps")
+  @@index([device_id])
+  @@index([status])
+  @@index([reference_id])
+}
 
 model mv_device_payments_hour {
   device_id    String

@@ -1,11 +1,12 @@
-import { Controller, Post, Get, Put, Delete, Body, Param, UseFilters, Request } from '@nestjs/common';
+import { Controller, Post, Get, Delete, Body, Param, UseFilters, Request, UseGuards, Headers } from '@nestjs/common';
 import { PaymentGatewayService } from './payment-gateway.service';
 import { CreatePaymentDto } from './dtos/create-payment.dto';
-import { PaymentCallbackDto } from './dtos/payment-callback.dto';
 import { AllExceptionFilter } from 'src/common';
 import { SuccessResponse } from 'src/types';
 // import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { AuthenticatedUser } from 'src/types/internal.type';
+import { BeamWebhookSignatureGuard } from './guards/beam-webhook-signature.guard';
+import type { BeamWebhookPayloadUnion, BeamWebhookEventType } from 'src/types';
 
 @UseFilters(AllExceptionFilter)
 // @UseGuards(JwtAuthGuard)
@@ -46,17 +47,17 @@ export class PaymentGatewayController {
       message: result.message,
     };
   }
-
   /**
-   * จัดการ payment callback จาก payment gateway
-   * PUT /api/v1/payment-gateway/payments/:id/callback
+   * จัดการ Beam webhook callbacks
+   * POST /api/v1/payment-gateway/webhook
    */
-  @Put('payments/:id/callback')
-  async handlePaymentCallback(
-    @Param('id') paymentId: string,
-    @Body() callbackDto: PaymentCallbackDto,
+  @Post('webhook')
+  @UseGuards(BeamWebhookSignatureGuard)
+  async handleBeamWebhook(
+    @Body() webhookPayload: BeamWebhookPayloadUnion,
+    @Headers('x-beam-event') eventType: BeamWebhookEventType,
   ): Promise<SuccessResponse<any>> {
-    const result = await this.paymentGatewayService.handlePaymentCallback(paymentId, callbackDto);
+    const result = await this.paymentGatewayService.handleBeamWebhook(webhookPayload, eventType);
     return {
       success: true,
       data: result.data,
