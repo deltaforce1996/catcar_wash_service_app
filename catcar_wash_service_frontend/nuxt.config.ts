@@ -24,4 +24,17 @@ export default defineNuxtConfig({
       },
     },
   },
+  runtimeConfig: {
+    public: {
+      apiUrl: process.env.NUXT_PUBLIC_API_URL,
+      apiTimeout: process.env.NUXT_PUBLIC_API_TIMEOUT,
+      apiRetryAttempts: process.env.NUXT_PUBLIC_API_RETRY_ATTEMPTS,
+      apiRetryDelay: process.env.NUXT_PUBLIC_API_RETRY_DELAY,
+      debugEnabled: process.env.NUXT_PUBLIC_DEBUG_ENABLED,
+      logLevel: process.env.NUXT_PUBLIC_LOG_LEVEL,
+      appName: process.env.NUXT_PUBLIC_APP_NAME,
+      appVersion: process.env.NUXT_PUBLIC_APP_VERSION,
+    },
+  },
+  ssr: false,
 });
