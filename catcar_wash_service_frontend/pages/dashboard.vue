@@ -26,13 +26,142 @@
                 @update:model-value="datePickerMenu = false"
               />
             </v-menu>
-            <v-btn
-              variant="outlined"
-              prepend-icon="mdi-filter-variant"
-              class="text-none"
-            >
-              กรองข้อมูล
-            </v-btn>
+            <v-menu v-model="filterMenu" :close-on-content-click="false">
+              <template #activator="{ props }">
+                <v-btn
+                  v-bind="props"
+                  variant="outlined"
+                  prepend-icon="mdi-filter-variant"
+                  class="text-none"
+                >
+                  <template #default>
+                    <span>กรองข้อมูล</span>
+                    <v-chip
+                      v-if="activeFilterCount > 0"
+                      :text="activeFilterCount.toString()"
+                      color="primary"
+                      size="small"
+                      class="ml-2"
+                    />
+                  </template>
+                </v-btn>
+              </template>
+
+              <v-card
+                class="pa-4"
+                elevation="8"
+                rounded="lg"
+                min-width="320"
+                max-width="400"
+              >
+                <v-card-title class="pa-0 mb-4">
+                  <h3 class="text-h6 font-weight-bold">ตัวกรองข้อมูล</h3>
+                </v-card-title>
+
+                <v-card-text class="pa-0">
+                  <div class="d-flex flex-column ga-4">
+                    <!-- User ID Filter -->
+                    <v-combobox
+                      v-model="tempSelectedUserIds"
+                      :items="userOptions"
+                      label="ชื่อผู้ใช้"
+                      prepend-inner-icon="mdi-account"
+                      variant="outlined"
+                      density="compact"
+                      chips
+                      clearable
+                      closable-chips
+                      multiple
+                      hide-details
+                    >
+                      <template #chip="{ props, item }">
+                        <v-chip
+                          v-bind="props"
+                          color="primary"
+                          size="small"
+                          variant="tonal"
+                        >
+                          {{ item.raw }}
+                        </v-chip>
+                      </template>
+                    </v-combobox>
+
+                    <!-- Payment Status Filter -->
+                    <v-combobox
+                      v-model="tempSelectedPaymentStatuses"
+                      :items="paymentStatusOptions"
+                      label="สถานะการชำระเงิน"
+                      prepend-inner-icon="mdi-credit-card"
+                      variant="outlined"
+                      density="compact"
+                      chips
+                      clearable
+                      closable-chips
+                      multiple
+                      hide-details
+                    >
+                      <template #chip="{ props, item }">
+                        <v-chip
+                          v-bind="props"
+                          :color="getPaymentStatusColor(item.raw)"
+                          size="small"
+                          variant="tonal"
+                        >
+                          {{ item.raw }}
+                        </v-chip>
+                      </template>
+                    </v-combobox>
+
+                    <!-- Device Type Filter -->
+                    <v-combobox
+                      v-model="tempSelectedDeviceTypes"
+                      :items="deviceTypeOptions"
+                      label="ประเภทอุปกรณ์"
+                      prepend-inner-icon="mdi-cog"
+                      variant="outlined"
+                      density="compact"
+                      chips
+                      clearable
+                      closable-chips
+                      multiple
+                      hide-details
+                    >
+                      <template #chip="{ props, item }">
+                        <v-chip
+                          v-bind="props"
+                          :color="getDeviceTypeColor(item.raw)"
+                          size="small"
+                          variant="tonal"
+                        >
+                          {{ item.raw }}
+                        </v-chip>
+                      </template>
+                    </v-combobox>
+                  </div>
+                </v-card-text>
+
+                <v-card-actions class="pa-0 mt-4">
+                  <v-btn
+                    variant="outlined"
+                    size="small"
+                    prepend-icon="mdi-refresh"
+                    @click="resetPopoverFilters"
+                  >
+                    ล้างตัวกรอง
+                  </v-btn>
+                  <v-spacer />
+                  <v-btn
+                    variant="elevated"
+                    color="primary"
+                    size="small"
+                    prepend-icon="mdi-check"
+                    @click="applyPopoverFilters"
+                  >
+                    ยืนยันตัวกรอง
+                  </v-btn>
+                </v-card-actions>
+              </v-card>
+            </v-menu>
             <v-btn
               color="primary"
               prepend-icon="mdi-download"
@@ -667,8 +796,42 @@ const tempStartTimeObj = ref<TimeObject | Date | string | null>(null);
 const tempEndTimeObj = ref<TimeObject | Date | string | null>(null);
 const tempSelectedServiceTypes = ref<string[]>([]);
 
+// Popover filter menu state
+const filterMenu = ref(false);
+
+// Popover filter states (temporary)
+const tempSelectedUserIds = ref<string[]>([]);
+const tempSelectedPaymentStatuses = ref<string[]>([]);
+const tempSelectedDeviceTypes = ref<string[]>([]);
+
+// Applied popover filter states
+const selectedUserIds = ref<string[]>([]);
+const selectedPaymentStatuses = ref<string[]>([]);
+const selectedDeviceTypes = ref<string[]>([]);
+
 // Device type options
 const serviceTypeOptions = ["WASH", "DRYING"];
+
+// Popover filter options
+const userOptions = computed(() => {
+  const users = new Set<string>();
+  salesData.value.forEach((item) => {
+    users.add(item.device.owner.fullname);
+  });
+  return Array.from(users).sort();
+});
+
+const paymentStatusOptions = ["SUCCESS", "FAILED", "PENDING"];
+const deviceTypeOptions = ["WASH", "DRYING"];
+
+// Filter count badge logic
+const activeFilterCount = computed(() => {
+  let count = 0;
+  if (selectedUserIds.value.length > 0) count++;
+  if (selectedPaymentStatuses.value.length > 0) count++;
+  if (selectedDeviceTypes.value.length > 0) count++;
+  return count;
+});
 
 // Helper function to format time object to HH:mm string
 const formatTimeToString = (
@@ -718,12 +881,36 @@ const clearAllFilters = () => {
   selectedServiceTypes.value = [];
 };
 
+// Popover filter functions
+const applyPopoverFilters = () => {
+  selectedUserIds.value = [...tempSelectedUserIds.value];
+  selectedPaymentStatuses.value = [...tempSelectedPaymentStatuses.value];
+  selectedDeviceTypes.value = [...tempSelectedDeviceTypes.value];
+  filterMenu.value = false;
+};
+
+const resetPopoverFilters = () => {
+  // Clear both temp and actual values for popover filters
+  tempSelectedUserIds.value = [];
+  tempSelectedPaymentStatuses.value = [];
+  tempSelectedDeviceTypes.value = [];
+
+  selectedUserIds.value = [];
+  selectedPaymentStatuses.value = [];
+  selectedDeviceTypes.value = [];
+};
+
 // Initialize temp values on component mount
 onMounted(() => {
   tempSearchQuery.value = searchQuery.value;
   tempStartTimeObj.value = startTimeObj.value;
   tempEndTimeObj.value = endTimeObj.value;
   tempSelectedServiceTypes.value = [...selectedServiceTypes.value];
+
+  // Initialize popover filter temp values
+  tempSelectedUserIds.value = [...selectedUserIds.value];
+  tempSelectedPaymentStatuses.value = [...selectedPaymentStatuses.value];
+  tempSelectedDeviceTypes.value = [...selectedDeviceTypes.value];
 });
 
 const kpiData = computed(() => [
@@ -824,6 +1011,28 @@ const filteredSalesData = computed(() => {
   if (selectedServiceTypes.value.length > 0) {
     filtered = filtered.filter((item) =>
       selectedServiceTypes.value.includes(item.device.type)
+    );
+  }
+
+  // Popover filters
+  // User ID filter (by fullname)
+  if (selectedUserIds.value.length > 0) {
+    filtered = filtered.filter((item) =>
+      selectedUserIds.value.includes(item.device.owner.fullname)
+    );
+  }
+
+  // Payment status filter
+  if (selectedPaymentStatuses.value.length > 0) {
+    filtered = filtered.filter((item) =>
+      selectedPaymentStatuses.value.includes(item.payload.status)
+    );
+  }
+
+  // Device type filter (from popover)
+  if (selectedDeviceTypes.value.length > 0) {
+    filtered = filtered.filter((item) =>
+      selectedDeviceTypes.value.includes(item.device.type)
     );
   }
 
