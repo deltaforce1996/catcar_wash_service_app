@@ -219,7 +219,7 @@
       <v-card-text class="pb-2">
         <v-row>
           <!-- Search Bar -->
-          <v-col cols="12" md="4">
+          <v-col cols="12" md="6">
             <v-text-field
               v-model="tempSearchQuery"
               prepend-inner-icon="mdi-magnify"
@@ -234,7 +234,7 @@
           </v-col>
 
           <!-- Time Range Picker -->
-          <v-col cols="12" md="4">
+          <v-col cols="12" md="6">
             <div class="d-flex ga-2">
               <!-- Start Time Field -->
               <v-menu v-model="startTimeMenu" :close-on-content-click="false">
@@ -335,7 +335,7 @@
           </v-col>
 
           <!-- Service Type Filter -->
-          <v-col cols="12" md="4">
+          <!-- <v-col cols="12" md="4">
             <v-combobox
               v-model="tempSelectedServiceTypes"
               :items="serviceTypeOptions"
@@ -360,7 +360,7 @@
                 </v-chip>
               </template>
             </v-combobox>
-          </v-col>
+          </v-col> -->
         </v-row>
 
         <!-- Filter Actions -->
