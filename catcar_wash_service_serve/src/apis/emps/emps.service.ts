@@ -2,6 +2,8 @@ import { Injectable, Logger } from '@nestjs/common';
 import { EmpStatus, PermissionType, Prisma } from '@prisma/client';
 import { PrismaService } from 'src/database/prisma/prisma.service';
 import { ItemNotFoundException } from 'src/errors';
+import { BcryptService } from 'src/services/bcrypt.service';
+import { CreateEmpDto } from './dtos/create-emp.dto';
 import { UpdateEmpDto } from './dtos/update-emp.dto';
 import { parseKeyValueOnly } from 'src/shared/kv-parser';
 import { PaginatedResult } from 'src/types/internal.type';
@@ -34,7 +36,10 @@ const ALLOWED = ['id', 'email', 'name', 'phone', 'line', 'address', 'status', 'p
 @Injectable()
 export class EmpsService {
   private readonly logger = new Logger(EmpsService.name);
-  constructor(private readonly prisma: PrismaService) {
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly bcryptService: BcryptService,
+  ) {
     this.logger.log('EmpsService initialized');
   }
 
@@ -109,6 +114,38 @@ export class EmpsService {
       limit: safeLimit,
       totalPages: Math.max(1, Math.ceil(total / safeLimit)),
     };
+  }
+
+  async register(data: CreateEmpDto): Promise<EmpRow> {
+    // Use default password for all technicians
+    const defaultPassword = 'technician123';
+    const hashedPassword = await this.bcryptService.hashPassword(defaultPassword);
+
+    // Get TECHNICIAN permission only
+    const permission = await this.prisma.tbl_permissions.findUnique({
+      where: { name: PermissionType.TECHNICIAN },
+    });
+    if (!permission) {
+      throw new ItemNotFoundException('TECHNICIAN permission not found');
+    }
+
+    // Create the employee
+    const emp: EmpRowBase = await this.prisma.tbl_emps.create({
+      data: {
+        name: data.name,
+        email: data.email,
+        password: hashedPassword,
+        phone: data.phone,
+        line: data.line,
+        address: data.address,
+        permission_id: permission.id,
+        status: EmpStatus.ACTIVE,
+      },
+      select: empPublicSelect,
+    });
+
+    this.logger.log(`Technician registered: ${emp.id} (${emp.email}) with default password`);
+    return emp;
   }
 
   async findById(id: string): Promise<EmpRow> {
