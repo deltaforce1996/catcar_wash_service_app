@@ -64,9 +64,9 @@ GET /api/v1/users/search?query=status:ACTIVE permission:ADMIN
 GET /api/v1/users/search?search=john&page=1&limit=10&sort_by=fullname&sort_order=asc
 ```
 
-### PUT /api/v1/users/update-by-id/:id
+### PUT /api/v1/users/update-profile
 
-Update user information by ID.
+Update your own user profile information. This endpoint automatically uses the authenticated user's ID from the JWT token.
 
 #### Request Body
 
@@ -88,7 +88,7 @@ Update user information by ID.
 ```json
 {
   "success": true,
-  "message": "User updated successfully",
+  "message": "User profile updated successfully",
   "data": {
     "id": "user_id",
     "fullname": "John Doe Updated",
@@ -101,7 +101,7 @@ Update user information by ID.
     "updated_at": "2024-01-01T15:30:00.000Z",
     "permission": {
       "id": "permission_id",
-      "name": "ADMIN"
+      "name": "USER"
     },
     "device_counts": {
       "total": 5,
@@ -112,15 +112,38 @@ Update user information by ID.
 }
 ```
 
+### PUT /api/v1/users/update-by-id/:id
+
+Update any user's information by ID. **Admin only.**
+
+#### Request Body
+
+```json
+{
+  "email": "newemail@example.com",
+  "fullname": "John Doe Updated",
+  "phone": "+1234567890",
+  "address": "123 Main St",
+  "custom_name": "Johnny",
+  "status": "ACTIVE"
+}
+```
+
+#### Response Format
+
+Same as update-profile endpoint.
+
 #### Authentication & Authorization
 
-This endpoint requires JWT authentication. Include the JWT token in the Authorization header:
+Both endpoints require JWT authentication. Include the JWT token in the Authorization header:
 
 ```
 Authorization: Bearer <your_jwt_token>
 ```
 
-**Note:** The users API does not implement permission-based filtering - all authenticated users can access all user data.
+**Permission Requirements:**
+- `PUT /api/v1/users/update-profile`: Requires **USER** role - can only update your own profile
+- `PUT /api/v1/users/update-by-id/:id`: Requires **ADMIN** role - can update any user's profile
 
 ## Data Types
 
@@ -137,6 +160,10 @@ The API uses various Prisma enums and types:
   - `inactive`: Number of devices with DISABLED status
 - **Search Functionality**: Supports both general search and specific field filtering
 - **Pagination**: Built-in pagination with configurable page size
+- **Role-based Access Control**: 
+  - Users can only update their own profile
+  - Admins can update any user's profile
+  - Proper permission validation using JWT tokens
 
 ## Database Schema
 

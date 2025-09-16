@@ -1,10 +1,10 @@
 import { Module } from '@nestjs/common';
 import { UsersService } from './users.service';
 import { UsersController } from './users.controller';
-import { ErrorLoggerService } from 'src/services';
+import { ErrorLoggerService, BcryptService } from 'src/services';
 
 @Module({
-  providers: [UsersService, ErrorLoggerService],
+  providers: [UsersService, ErrorLoggerService, BcryptService],
   controllers: [UsersController],
   exports: [UsersService],
 })

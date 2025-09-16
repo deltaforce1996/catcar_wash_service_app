@@ -1,87 +1,22 @@
-# Employees API
+# Emps (Technicians) API
 
-This API provides CRUD operations and search functionality for employees stored in the `tbl_emps` table.
+This API provides CRUD operations and search functionality for technicians (employees) stored in the `tbl_emps` table.
 
 ## Endpoints
 
-### GET /api/v1/emps/search
+### POST /api/v1/emps/register
 
-Search employees with various filtering options.
-
-#### Query Parameters
-
-- `query` (optional): Search query string with key-value pairs
-- `search` (optional): General search term that searches id, name, email, line, and address fields
-- `page` (optional): Page number (default: 1)
-- `limit` (optional): Items per page (default: 20, max: 100)
-- `sort_by` (optional): Sort field - 'created_at', 'updated_at', 'name', 'email', 'phone', 'line', 'address', 'status', or 'permission' (default: 'created_at')
-- `sort_order` (optional): Sort order - 'asc' or 'desc' (default: 'desc')
-
-#### Query String Format
-
-The `query` parameter supports the following searchable fields:
-
-- `id`: Employee ID (partial match, case-insensitive)
-- `name`: Employee name (partial match, case-insensitive)
-- `email`: Employee email (partial match, case-insensitive)
-- `phone`: Employee phone number (partial match, case-insensitive)
-- `line`: Employee LINE ID (partial match, case-insensitive)
-- `address`: Employee address (partial match, case-insensitive)
-- `status`: Employee status - 'ACTIVE' or 'INACTIVE'
-- `permission`: Permission type - 'ADMIN', 'TECHNICIAN', or 'USER' (partial match, case-insensitive)
-
-#### Example Queries
-
-**General Search (searches id, name, email, line, and address fields):**
-```
-# Search for "john" in id, name, email, line, and address fields
-GET /api/v1/emps/search?search=john
-
-# Search for "emp001" in id, name, email, line, and address fields
-GET /api/v1/emps/search?search=emp001
-
-# Search for "tech" in id, name, email, line, and address fields
-GET /api/v1/emps/search?search=tech
-```
-
-**Specific Field Search:**
-```
-# Query by name
-GET /api/v1/emps/search?query=name:John
-
-# Query by email
-GET /api/v1/emps/search?query=email:john@company.com
-
-# Query by status
-GET /api/v1/emps/search?query=status:ACTIVE
-
-# Query by permission
-GET /api/v1/emps/search?query=permission:TECHNICIAN
-
-# Query by LINE ID
-GET /api/v1/emps/search?query=line:john_line
-
-# Complex query with multiple filters
-GET /api/v1/emps/search?query=status:ACTIVE permission:TECHNICIAN
-
-# With pagination and sorting
-GET /api/v1/emps/search?search=john&page=1&limit=10&sort_by=name&sort_order=asc
-```
-
-### PUT /api/v1/emps/update-by-id/:id
-
-Update employee information by ID.
+Register a new technician. **Admin only.**
 
 #### Request Body
 
 ```json
 {
-  "email": "newemail@company.com",
-  "name": "John Smith Updated",
+  "fullname": "John Technician",
+  "email": "john.tech@example.com",
   "phone": "+1234567890",
-  "line": "john_line_updated",
-  "address": "456 Tech St",
-  "status": "ACTIVE"
+  "address": "123 Tech St",
+  "custom_name": "Johnny"
 }
 ```
 
@@ -90,15 +25,87 @@ Update employee information by ID.
 ```json
 {
   "success": true,
-  "message": "Employee updated successfully",
+  "message": "Technician registered successfully",
   "data": {
     "id": "emp_id",
-    "name": "John Smith Updated",
-    "email": "newemail@company.com",
-    "phone": "+1234567890",
-    "line": "john_line_updated",
-    "address": "456 Tech St",
+    "fullname": "John Technician",
+    "email": "john.tech@example.com",
     "status": "ACTIVE",
+    "phone": "+1234567890",
+    "address": "123 Tech St",
+    "custom_name": "Johnny",
+    "created_at": "2024-01-01T12:00:00.000Z",
+    "updated_at": "2024-01-01T12:00:00.000Z",
+    "permission": {
+      "id": "permission_id",
+      "name": "TECHNICIAN"
+    }
+  }
+}
+```
+
+### GET /api/v1/emps/search
+
+Search technicians with various filtering options.
+
+#### Query Parameters
+
+- `query` (optional): Search query string with key-value pairs
+- `search` (optional): General search term
+- `page` (optional): Page number (default: 1)
+- `limit` (optional): Items per page (default: 20, max: 100)
+
+#### Example Queries
+
+```bash
+# General search
+GET /api/v1/emps/search?search=john
+
+# Search by status
+GET /api/v1/emps/search?query=status:ACTIVE
+
+# With pagination
+GET /api/v1/emps/search?search=tech&page=1&limit=10
+```
+
+### GET /api/v1/emps/find-by-id/:id
+
+Get technician information by ID.
+
+#### Response Format
+
+Same as register endpoint.
+
+### PUT /api/v1/emps/update-profile
+
+Update your own technician profile information. This endpoint automatically uses the authenticated technician's ID from the JWT token.
+
+#### Request Body
+
+```json
+{
+  "email": "newemail@example.com",
+  "fullname": "John Technician Updated",
+  "phone": "+1234567890",
+  "address": "123 Tech St Updated",
+  "custom_name": "Johnny Updated"
+}
+```
+
+#### Response Format
+
+```json
+{
+  "success": true,
+  "message": "Emp profile updated successfully",
+  "data": {
+    "id": "emp_id",
+    "fullname": "John Technician Updated",
+    "email": "newemail@example.com",
+    "status": "ACTIVE",
+    "phone": "+1234567890",
+    "address": "123 Tech St Updated",
+    "custom_name": "Johnny Updated",
     "created_at": "2024-01-01T12:00:00.000Z",
     "updated_at": "2024-01-01T15:30:00.000Z",
     "permission": {
@@ -109,35 +116,62 @@ Update employee information by ID.
 }
 ```
 
-#### Authentication & Authorization
+### PUT /api/v1/emps/update-by-id/:id
 
-This endpoint requires JWT authentication. Include the JWT token in the Authorization header:
+Update any technician's information by ID. **Admin only.**
+
+#### Request Body
+
+Same as update-profile endpoint.
+
+#### Response Format
+
+Same as update-profile endpoint.
+
+## Authentication & Authorization
+
+All endpoints require JWT authentication. Include the JWT token in the Authorization header:
 
 ```
 Authorization: Bearer <your_jwt_token>
 ```
 
-**Note:** The employees API does not implement permission-based filtering - all authenticated users can access all employee data.
+**Permission Requirements:**
+- `POST /api/v1/emps/register`: Requires **ADMIN** role
+- `GET /api/v1/emps/search`: Requires **ADMIN** or **TECHNICIAN** role
+- `GET /api/v1/emps/find-by-id/:id`: Requires **ADMIN** or **TECHNICIAN** role
+- `PUT /api/v1/emps/update-profile`: Requires **TECHNICIAN** role - can only update your own profile
+- `PUT /api/v1/emps/update-by-id/:id`: Requires **ADMIN** role - can update any technician's profile
 
 ## Data Types
 
 The API uses various Prisma enums and types:
 
-- `EmpStatus`: 'ACTIVE' | 'INACTIVE'
+- `UserStatus`: 'ACTIVE' | 'INACTIVE'
 - `PermissionType`: 'ADMIN' | 'TECHNICIAN' | 'USER'
+
+## Features
+
+- **Role-based Access Control**: 
+  - Technicians can only update their own profile
+  - Admins can update any technician's profile
+  - Proper permission validation using JWT tokens
+- **Search Functionality**: Supports both general search and specific field filtering
+- **Pagination**: Built-in pagination with configurable page size
 
 ## Database Schema
 
 This API queries the `tbl_emps` table. The table contains:
 
-- `id`: Unique employee ID
-- `name`: Employee's name
-- `email`: Employee's email address (unique)
-- `phone`: Employee's phone number (optional)
-- `line`: Employee's LINE ID (optional)
-- `address`: Employee's address (optional)
+**tbl_emps:**
+- `id`: Unique technician ID
+- `fullname`: Technician's full name
+- `email`: Technician's email address (unique)
+- `status`: Technician status (ACTIVE/INACTIVE)
+- `phone`: Technician's phone number (optional)
+- `address`: Technician's address (optional)
 - `password`: Hashed password
-- `permission_id`: Reference to permission
-- `status`: Employee status (ACTIVE/INACTIVE)
-- `created_at`: Timestamp when the employee was created
-- `updated_at`: Timestamp when the employee was last updated
+- `custom_name`: Custom display name (optional)
+- `permission_id`: Reference to permission (TECHNICIAN)
+- `created_at`: Timestamp when the technician was created
+- `updated_at`: Timestamp when the technician was last updated
