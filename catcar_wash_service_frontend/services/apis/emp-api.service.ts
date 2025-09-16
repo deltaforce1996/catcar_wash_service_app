@@ -32,6 +32,16 @@ export interface SearchEmpsRequest {
   sort_order?: EnumSortOrder;
 }
 
+export interface CreateEmpPayload {
+  email: string;
+  name: string;
+  phone: string;
+  line: string;
+  address: string;
+  status: EnumEmpStatus;
+  permission_id: string;
+}
+
 export interface UpdateEmpPayload {
   email?: string;
   name?: string;
@@ -59,6 +69,26 @@ export class EmpApiService extends BaseApiClient {
   async GetEmpById(id: string): Promise<ApiSuccessResponse<EmpResponseApi>> {
     const response = await this.get<ApiSuccessResponse<EmpResponseApi>>(
       `api/v1/emps/find-by-id/${id}`
+    );
+    return response;
+  }
+
+  async RegisterEmp(
+    payload: CreateEmpPayload
+  ): Promise<ApiSuccessResponse<EmpResponseApi>> {
+    const response = await this.post<ApiSuccessResponse<EmpResponseApi>>(
+      "api/v1/emps/register",
+      payload
+    );
+    return response;
+  }
+
+  async UpdateEmpProfile(
+    payload: UpdateEmpPayload
+  ): Promise<ApiSuccessResponse<EmpResponseApi>> {
+    const response = await this.put<ApiSuccessResponse<EmpResponseApi>>(
+      "api/v1/emps/update-profile",
+      payload
     );
     return response;
   }

@@ -35,6 +35,16 @@ export interface SearchUsersRequest {
   sort_order?: EnumSortOrder;
 }
 
+export interface RegisterUserPayload {
+  email: string;
+  fullname: string;
+  phone: string;
+  address: string;
+  custom_name: string;
+  status: EnumUserStatus;
+  permission_id: string;
+}
+
 export interface UpdateUserPayload {
   email?: string;
   fullname?: string;
@@ -62,6 +72,26 @@ export class UserApiService extends BaseApiClient {
   async GetUserById(id: string): Promise<ApiSuccessResponse<UserResponseApi>> {
     const response = await this.get<ApiSuccessResponse<UserResponseApi>>(
       `api/v1/users/find-by-id/${id}`
+    );
+    return response;
+  }
+
+  async RegisterUser(
+    payload: RegisterUserPayload
+  ): Promise<ApiSuccessResponse<UserResponseApi>> {
+    const response = await this.post<ApiSuccessResponse<UserResponseApi>>(
+      "api/v1/users/register",
+      payload
+    );
+    return response;
+  }
+
+  async UpdateUserProfile(
+    payload: UpdateUserPayload
+  ): Promise<ApiSuccessResponse<UserResponseApi>> {
+    const response = await this.put<ApiSuccessResponse<UserResponseApi>>(
+      "api/v1/users/update-profile",
+      payload
     );
     return response;
   }
