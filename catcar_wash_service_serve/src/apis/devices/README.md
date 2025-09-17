@@ -16,6 +16,7 @@ Search devices with various filtering options.
 - `limit` (optional): Items per page (default: 20, max: 100)
 - `sort_by` (optional): Sort field - 'created_at', 'updated_at', 'name', 'type', 'status', or 'register_at' (default: 'created_at')
 - `sort_order` (optional): Sort order - 'asc' or 'desc' (default: 'desc')
+- `exclude_all_ref_table` (optional): Boolean flag to exclude reference tables (owner, registered_by) from response (default: false)
 
 #### Query String Format
 
@@ -67,6 +68,90 @@ GET /api/v1/devices/search?query=type:WASH status:DEPLOYED
 
 # With pagination and sorting
 GET /api/v1/devices/search?search=เครื่องที 1&page=1&limit=10&sort_by=name&sort_order=asc
+
+# Exclude reference tables for better performance
+GET /api/v1/devices/search?search=เครื่องที 1&exclude_all_ref_table=true
+
+# Complex query without reference tables
+GET /api/v1/devices/search?query=type:WASH status:DEPLOYED&exclude_all_ref_table=true&page=1&limit=20
+```
+
+#### Response Format
+
+**With reference tables (default behavior):**
+```json
+{
+  "success": true,
+  "message": "Devices searched successfully",
+  "data": {
+    "items": [
+      {
+        "id": "device_id",
+        "name": "WASH-001",
+        "type": "WASH",
+        "status": "DEPLOYED",
+        "information": {
+          "mac_address": "00:11:22:33:44:55",
+          "firmware_version": "1.0.0"
+        },
+        "configs": {
+          "wash_setup": {
+            "hp_water": { "value": 80, "unit": "psi", "description": "High pressure water" }
+          }
+        },
+        "created_at": "2024-01-01T12:00:00.000Z",
+        "updated_at": "2024-01-01T15:30:00.000Z",
+        "owner": {
+          "id": "owner_id",
+          "fullname": "John Doe",
+          "email": "john@example.com"
+        },
+        "registered_by": {
+          "id": "emp_id",
+          "name": "Tech Smith",
+          "email": "tech@company.com"
+        }
+      }
+    ],
+    "total": 1,
+    "page": 1,
+    "limit": 20,
+    "totalPages": 1
+  }
+}
+```
+
+**Without reference tables (exclude_all_ref_table=true):**
+```json
+{
+  "success": true,
+  "message": "Devices searched successfully",
+  "data": {
+    "items": [
+      {
+        "id": "device_id",
+        "name": "WASH-001",
+        "type": "WASH",
+        "status": "DEPLOYED",
+        "information": {
+          "mac_address": "00:11:22:33:44:55",
+          "firmware_version": "1.0.0"
+        },
+        "configs": {
+          "wash_setup": {
+            "hp_water": { "value": 80, "unit": "psi", "description": "High pressure water" }
+          }
+        },
+        "created_at": "2024-01-01T12:00:00.000Z",
+        "updated_at": "2024-01-01T15:30:00.000Z"
+      }
+    ],
+    "total": 1,
+    "page": 1,
+    "limit": 20,
+    "totalPages": 1
+  }
+}
 ```
 
 ### GET /api/v1/devices/find-by-id/:id
@@ -236,6 +321,17 @@ curl -X PUT "https://api.example.com/api/v1/devices/set-status/device-id-123" \
 - **ADMIN/SUPER_ADMIN roles**: Can set status for any device
 
 If a USER tries to set status for a device they don't own, they will receive a "Device not found or access denied" error.
+
+## Features
+
+- **Performance Optimization**: Use `exclude_all_ref_table=true` to skip reference table joins for faster response times
+- **Permission-based Access Control**: 
+  - Users with `USER` permission can only access devices they own
+  - Users with other permission types can access all devices
+  - Automatic filtering based on authenticated user's permissions
+- **Search Functionality**: Supports both general search and specific field filtering
+- **Pagination**: Built-in pagination with configurable page size
+- **Reference Table Control**: Can exclude owner and registered_by information for better performance
 
 ## Data Types
 

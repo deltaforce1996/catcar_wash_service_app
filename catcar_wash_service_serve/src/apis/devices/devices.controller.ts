@@ -1,5 +1,5 @@
 import { Body, Controller, Get, Param, Post, Put, Query, UseFilters, UseGuards, Request } from '@nestjs/common';
-import { DeviceRow, DevicesService } from './devices.service';
+import { DeviceRow, DeviceWithoutRefRow, DevicesService } from './devices.service';
 import { AllExceptionFilter } from 'src/common';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { AuthenticatedUser, PaginatedResult } from 'src/types/internal.type';
@@ -12,7 +12,7 @@ import {
   SetDeviceStateDto,
 } from './dtos/index';
 
-type DevicePublicResponse = PaginatedResult<DeviceRow>;
+type DevicePublicResponse = PaginatedResult<DeviceRow | DeviceWithoutRefRow>;
 
 @UseFilters(AllExceptionFilter)
 @UseGuards(JwtAuthGuard)
