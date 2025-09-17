@@ -36,6 +36,8 @@ export type UserWithDeviceCountsRow = UserRow & {
   device_counts: { total: number; active: number; inactive: number };
 };
 
+export type UserWithoutDeviceCountsRow = UserRow;
+
 const ALLOWED = [
   'id',
   'email',
@@ -58,7 +60,7 @@ export class UsersService {
     this.logger.log('UsersService initialized');
   }
 
-  async searchUsers(q: SearchUserDto): Promise<PaginatedResult<UserWithDeviceCountsRow>> {
+  async searchUsers(q: SearchUserDto): Promise<PaginatedResult<UserWithDeviceCountsRow | UserWithoutDeviceCountsRow>> {
     const pairs = parseKeyValueOnly(q.query ?? '', ALLOWED);
 
     const ands: Prisma.tbl_usersWhereInput['AND'] = [];
@@ -120,6 +122,18 @@ export class UsersService {
       return { items: [], total, page, limit, totalPages: Math.max(1, Math.ceil(total / limit)) };
     }
 
+    // If exclude_device_counts is true, return users without device counts
+    if (q.exclude_device_counts) {
+      return {
+        items: users as UserWithoutDeviceCountsRow[],
+        total,
+        page,
+        limit,
+        totalPages: Math.max(1, Math.ceil(total / limit)),
+      };
+    }
+
+    // Otherwise, include device counts (original behavior)
     const userIds = users.map((u) => u.id);
     const grouped = await this.prisma.tbl_devices.groupBy({
       by: ['owner_id', 'status'],

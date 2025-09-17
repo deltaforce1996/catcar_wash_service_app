@@ -51,21 +51,45 @@ Search technicians with various filtering options.
 #### Query Parameters
 
 - `query` (optional): Search query string with key-value pairs
-- `search` (optional): General search term
+- `search` (optional): General search term that searches id, name, email, line, and address fields
 - `page` (optional): Page number (default: 1)
 - `limit` (optional): Items per page (default: 20, max: 100)
+- `sort_by` (optional): Sort field - 'created_at', 'updated_at', 'name', 'email', 'phone', 'line', 'address', 'status', or 'permission' (default: 'created_at')
+- `sort_order` (optional): Sort order - 'asc' or 'desc' (default: 'desc')
+
+#### Query String Format
+
+The `query` parameter supports the following searchable fields:
+
+- `id`: Technician ID (exact match)
+- `name`: Technician name (partial match, case-insensitive)
+- `email`: Technician email (partial match, case-insensitive)
+- `phone`: Technician phone number (partial match, case-insensitive)
+- `line`: Technician LINE ID (partial match, case-insensitive)
+- `address`: Technician address (partial match, case-insensitive)
+- `status`: Technician status - 'ACTIVE' or 'INACTIVE'
+- `permission`: Permission type - 'TECHNICIAN'
 
 #### Example Queries
 
 ```bash
-# General search
+# General search (searches id, name, email, line, and address fields)
 GET /api/v1/emps/search?search=john
+
+# Search by specific field
+GET /api/v1/emps/search?query=name:John
 
 # Search by status
 GET /api/v1/emps/search?query=status:ACTIVE
 
-# With pagination
-GET /api/v1/emps/search?search=tech&page=1&limit=10
+# Search by email
+GET /api/v1/emps/search?query=email:john@example.com
+
+# Complex query with multiple filters
+GET /api/v1/emps/search?query=status:ACTIVE permission:TECHNICIAN
+
+# With pagination and sorting
+GET /api/v1/emps/search?search=tech&page=1&limit=10&sort_by=name&sort_order=asc
 ```
 
 ### GET /api/v1/emps/find-by-id/:id

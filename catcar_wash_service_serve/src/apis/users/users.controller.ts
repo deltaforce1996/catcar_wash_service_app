@@ -1,5 +1,5 @@
 import { Body, Controller, Get, Param, Post, Put, Query, UseFilters, UseGuards, Request } from '@nestjs/common';
-import { UserWithDeviceCountsRow, UsersService } from './users.service';
+import { UserWithDeviceCountsRow, UserWithoutDeviceCountsRow, UsersService } from './users.service';
 import { AllExceptionFilter } from 'src/common';
 import { SearchUserDto } from './dtos/search-user.dto';
 import { RegisterUserDto } from './dtos/register-user.dto';
@@ -13,7 +13,7 @@ import { UserSelfUpdateGuard } from '../auth/guards/user-self-update.guard';
 import { SelfUpdate } from '../auth/decorators/self-update.decorator';
 import { AuthenticatedUser } from 'src/types/internal.type';
 
-type UserPublicResponse = PaginatedResult<UserWithDeviceCountsRow>;
+type UserPublicResponse = PaginatedResult<UserWithDeviceCountsRow | UserWithoutDeviceCountsRow>;
 
 @UseFilters(AllExceptionFilter)
 @UseGuards(JwtAuthGuard, RoleAuthGuard, UserSelfUpdateGuard)

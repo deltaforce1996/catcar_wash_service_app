@@ -16,6 +16,7 @@ Search users with various filtering options.
 - `limit` (optional): Items per page (default: 20, max: 100)
 - `sort_by` (optional): Sort field - 'created_at', 'updated_at', 'fullname', 'email', 'phone', 'address', 'status', or 'permission' (default: 'created_at')
 - `sort_order` (optional): Sort order - 'asc' or 'desc' (default: 'desc')
+- `exclude_device_counts` (optional): Boolean flag to exclude device counts from response (default: false)
 
 #### Query String Format
 
@@ -62,6 +63,81 @@ GET /api/v1/users/search?query=status:ACTIVE permission:ADMIN
 
 # With pagination and sorting
 GET /api/v1/users/search?search=john&page=1&limit=10&sort_by=fullname&sort_order=asc
+
+# Exclude device counts for better performance
+GET /api/v1/users/search?search=john&exclude_device_counts=true
+
+# Complex query without device counts
+GET /api/v1/users/search?query=status:ACTIVE permission:ADMIN&exclude_device_counts=true&page=1&limit=20
+```
+
+#### Response Format
+
+**With device counts (default behavior):**
+```json
+{
+  "success": true,
+  "message": "Users searched successfully",
+  "data": {
+    "items": [
+      {
+        "id": "user_id",
+        "fullname": "John Doe",
+        "email": "john@example.com",
+        "status": "ACTIVE",
+        "phone": "+1234567890",
+        "address": "123 Main St",
+        "custom_name": "Johnny",
+        "created_at": "2024-01-01T12:00:00.000Z",
+        "updated_at": "2024-01-01T15:30:00.000Z",
+        "permission": {
+          "id": "permission_id",
+          "name": "USER"
+        },
+        "device_counts": {
+          "total": 5,
+          "active": 3,
+          "inactive": 2
+        }
+      }
+    ],
+    "total": 1,
+    "page": 1,
+    "limit": 20,
+    "totalPages": 1
+  }
+}
+```
+
+**Without device counts (exclude_device_counts=true):**
+```json
+{
+  "success": true,
+  "message": "Users searched successfully",
+  "data": {
+    "items": [
+      {
+        "id": "user_id",
+        "fullname": "John Doe",
+        "email": "john@example.com",
+        "status": "ACTIVE",
+        "phone": "+1234567890",
+        "address": "123 Main St",
+        "custom_name": "Johnny",
+        "created_at": "2024-01-01T12:00:00.000Z",
+        "updated_at": "2024-01-01T15:30:00.000Z",
+        "permission": {
+          "id": "permission_id",
+          "name": "USER"
+        }
+      }
+    ],
+    "total": 1,
+    "page": 1,
+    "limit": 20,
+    "totalPages": 1
+  }
+}
 ```
 
 ### PUT /api/v1/users/update-profile
@@ -154,10 +230,11 @@ The API uses various Prisma enums and types:
 
 ## Features
 
-- **Device Counts**: Each user response includes device statistics:
+- **Device Counts**: Each user response includes device statistics (can be excluded for better performance):
   - `total`: Total number of devices owned by the user
   - `active`: Number of devices with DEPLOYED status
   - `inactive`: Number of devices with DISABLED status
+- **Performance Optimization**: Use `exclude_device_counts=true` to skip device count calculations for faster response times
 - **Search Functionality**: Supports both general search and specific field filtering
 - **Pagination**: Built-in pagination with configurable page size
 - **Role-based Access Control**: 
