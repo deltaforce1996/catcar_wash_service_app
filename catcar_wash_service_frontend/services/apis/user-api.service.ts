@@ -16,9 +16,8 @@ export interface UserResponseApi {
   created_at: string;
   updated_at: string;
   permission: { id: string; name: string };
-  device_counts: { total: number; active: number; inactive: number };
+  device_counts?: { total: number; active: number; inactive: number };
 }
-
 export interface SearchUsersRequest {
   query?: string;
   page?: number;
@@ -33,6 +32,7 @@ export interface SearchUsersRequest {
     | "status"
     | "permission";
   sort_order?: EnumSortOrder;
+  exclude_device_counts?: boolean;
 }
 
 export interface RegisterUserPayload {

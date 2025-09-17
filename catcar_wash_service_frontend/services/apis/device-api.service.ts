@@ -120,12 +120,12 @@ export interface DeviceResponseApi {
   };
   created_at?: string;
   updated_at?: string;
-  owner: {
+  owner?: {
     id: string;
     fullname: string;
     email: string;
   };
-  registered_by: {
+  registered_by?: {
     id: string;
     name: string;
     email: string;
@@ -144,6 +144,7 @@ export interface SearchDevicesRequest {
     | "status"
     | "register_at";
   sort_order?: EnumSortOrder;
+  exclude_all_ref_table?: boolean;
 }
 
 export interface CreateDevicePayload {
