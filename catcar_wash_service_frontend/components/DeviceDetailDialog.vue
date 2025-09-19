@@ -106,8 +106,14 @@
             <!-- Device Status Control Card (only in edit mode) -->
 
             <!-- Tabs Section -->
-            <v-card color="surface-container-low" elevation="3" rounded="lg">
-              <v-tabs v-model="currentTab" color="primary">
+            <v-card
+              color="surface-container-low"
+              elevation="3"
+              rounded="lg"
+              class="d-flex flex-column"
+              style="height: 70vh"
+            >
+              <v-tabs v-model="currentTab" color="primary" class="flex-shrink-0">
                 <v-tab value="logging">
                   <v-icon class="mr-2">mdi-file-document-outline</v-icon>
                   บันทึกการใช้งาน
@@ -120,38 +126,18 @@
                   <v-icon class="mr-2">mdi-cog-outline</v-icon>
                   การตั้งค่า
                 </v-tab>
-                <!-- <v-spacer /> -->
-
-                <!-- Status indicators for setup tab -->
-                <!-- <div
-                  v-if="currentTab === 'setup'"
-                  class="d-flex align-center ga-2 mr-4"
-                >
-                  <v-chip
-                    v-if="isEditMode && hasConfigChanges"
-                    color="error"
-                    size="x-small"
-                    variant="elevated"
-                    class="text-caption"
-                  >
-                    {{ configChangeCount }} การเปลี่ยนแปลง
-                  </v-chip>
-                  <v-chip
-                    :color="isEditMode ? 'warning' : 'success'"
-                    size="small"
-                    variant="tonal"
-                  >
-                    {{ isEditMode ? "โหมดแก้ไข" : "โหมดดู" }}
-                  </v-chip>
-                </div> -->
               </v-tabs>
 
-              <v-card-text>
-                <!-- <v-divider /> -->
+              <v-divider class="flex-shrink-0" />
 
-                <v-tabs-window v-model="currentTab">
+              <v-card-text class="flex-grow-1 d-flex flex-column pa-0">
+                <v-tabs-window
+                  v-model="currentTab"
+                  class="flex-grow-1"
+                  style="overflow-y: auto"
+                >
                   <!-- Setup Tab -->
-                  <v-tabs-window-item value="setup">
+                  <v-tabs-window-item value="setup" class="pa-6">
                     <!-- Edit Mode Toggle -->
                     <v-card variant="text">
                       <v-card-title>
@@ -398,39 +384,33 @@
                   </v-tabs-window-item>
 
                   <!-- Logging Tab -->
-                  <v-tabs-window-item value="logging">
-                    <v-card-text class="pa-6">
-                      <div class="text-center py-12">
-                        <v-icon size="80" color="grey-lighten-1" class="mb-4">
-                          mdi-file-document-outline
-                        </v-icon>
-                        <h3 class="text-h6 text-grey-darken-1 mb-2">
-                          บันทึกการใช้งาน
-                        </h3>
-                        <p class="text-body-2 text-grey-darken-1">
-                          ส่วนนี้จะแสดงประวัติการใช้งานอุปกรณ์<br />
-                          (อยู่ในระหว่างการพัฒนา)
-                        </p>
-                      </div>
-                    </v-card-text>
+                  <v-tabs-window-item value="logging" class="pa-6">
+                    <div class="text-center py-12">
+                      <v-icon size="80" color="grey-lighten-1" class="mb-4">
+                        mdi-file-document-outline
+                      </v-icon>
+                      <h3 class="text-h6 text-grey-darken-1 mb-2">
+                        บันทึกการใช้งาน
+                      </h3>
+                      <p class="text-body-2 text-grey-darken-1">
+                        ส่วนนี้จะแสดงประวัติการใช้งานอุปกรณ์<br />
+                        (อยู่ในระหว่างการพัฒนา)
+                      </p>
+                    </div>
                   </v-tabs-window-item>
 
                   <!-- State Tab -->
-                  <v-tabs-window-item value="state">
-                    <v-card-text class="pa-6">
-                      <div class="text-center py-12">
-                        <v-icon size="80" color="grey-lighten-1" class="mb-4">
-                          mdi-chart-line
-                        </v-icon>
-                        <h3 class="text-h6 text-grey-darken-1 mb-2">
-                          สถานะระบบ
-                        </h3>
-                        <p class="text-body-2 text-grey-darken-1">
-                          ส่วนนี้จะแสดงสถานะการทำงานของอุปกรณ์แบบเรียลไทม์<br />
-                          (อยู่ในระหว่างการพัฒนา)
-                        </p>
-                      </div>
-                    </v-card-text>
+                  <v-tabs-window-item value="state" class="pa-6">
+                    <div class="text-center py-12">
+                      <v-icon size="80" color="grey-lighten-1" class="mb-4">
+                        mdi-chart-line
+                      </v-icon>
+                      <h3 class="text-h6 text-grey-darken-1 mb-2">สถานะระบบ</h3>
+                      <p class="text-body-2 text-grey-darken-1">
+                        ส่วนนี้จะแสดงสถานะการทำงานของอุปกรณ์แบบเรียลไทม์<br />
+                        (อยู่ในระหว่างการพัฒนา)
+                      </p>
+                    </div>
                   </v-tabs-window-item>
                 </v-tabs-window>
               </v-card-text>
