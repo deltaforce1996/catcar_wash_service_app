@@ -177,8 +177,9 @@ const generate = async () => {
   });
 
   const paymentInfo = {
-    merchant_id: 'catcarwash',
-    api_key: 'vNp7Pg8oJmFMs2ImOVZjHgYoxAzSmfDDfqeZw+eKr9E=',
+    merchant_id: '',
+    api_key: '',
+    HMAC_key: '',
   };
 
   const user = await prisma.tbl_users.upsert({

@@ -28,11 +28,15 @@ export const userPublicSelect = Prisma.validator<Prisma.tbl_usersSelect>()({
   // _count: { select: { devices: true } },
 });
 
+export const userInternalSelect = Prisma.validator<Prisma.tbl_usersSelect>()({
+  id: true,
+  fullname: true,
+  payment_info: true,
+});
+
 type UserRow = Prisma.tbl_usersGetPayload<{ select: typeof userPublicSelect }>;
 
 export type UserWithDeviceCountsRow = UserRow & {
-  // created_at?: string;
-  // updated_at?: string;
   device_counts: { total: number; active: number; inactive: number };
 };
 
@@ -252,6 +256,7 @@ export class UsersService {
         custom_name: data.custom_name,
         permission_id: permission.id,
         status: UserStatus.ACTIVE,
+        payment_info: data.payment_info,
       },
       select: userPublicSelect,
     });

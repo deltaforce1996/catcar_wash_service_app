@@ -25,4 +25,12 @@ export class UpdateUserDto {
   @IsEnum(UserStatus)
   @IsOptional()
   status?: UserStatus;
+
+  @IsString()
+  @IsOptional()
+  payment_info?: {
+    merchant_id: string;
+    api_key: string;
+    HMAC_key?: string;
+  };
 }

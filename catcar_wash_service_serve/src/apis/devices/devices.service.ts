@@ -43,7 +43,7 @@ export const deviceWithoutRefSelect = Prisma.validator<Prisma.tbl_devicesSelect>
   type: true,
   status: true,
   information: true,
-  configs: true,
+  configs: false,
   created_at: true,
   updated_at: true,
 });

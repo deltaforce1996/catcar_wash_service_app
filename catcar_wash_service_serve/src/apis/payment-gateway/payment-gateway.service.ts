@@ -104,6 +104,14 @@ export class PaymentGatewayService {
     if (!paymentInfo) {
       throw new BadRequestException('Payment info not found');
     }
+    if (!paymentInfo.payment_info) {
+      throw new BadRequestException('Payment info not found');
+    }
+
+    const paymentInfoData = paymentInfo.payment_info as any;
+    if (!paymentInfoData.merchant_id || !paymentInfoData.api_key || !paymentInfoData.HMAC_key) {
+      throw new BadRequestException('Merchant ID or API Key or HMAC Key is missing in payment configuration');
+    }
     return paymentInfo;
   }
 
@@ -207,7 +215,6 @@ export class PaymentGatewayService {
 
           this.logger.log(`Payment created successfully with charge ID: ${chargeResult.chargeId}`);
 
-          // eslint-disable-next-line @typescript-eslint/no-unsafe-return
           return updatedPaymentTemp;
         },
         {
@@ -236,67 +243,6 @@ export class PaymentGatewayService {
     }
   }
 
-  /**
-   * ตรวจสอบสถานะการชำระเงิน
-   * TODO: เพิ่มการดึงข้อมูลจาก database
-   * TODO: เพิ่มการอัปเดตสถานะใน database
-   */
-  async getPaymentStatus(paymentId: string, _user?: AuthenticatedUser) {
-    void _user; // TODO: ใช้ user parameter เมื่อเพิ่ม permission checking
-    try {
-      this.logger.log(`Getting payment status for: ${paymentId}`);
-
-      // TODO: ดึงข้อมูล payment จาก database
-      // const payment = await this.prisma.payment.findUnique({
-      //   where: { id: paymentId },
-      //   include: {
-      //     device: {
-      //       select: { id: true, name: true, owner_id: true }
-      //     }
-      //   }
-      // });
-      // if (!payment) {
-      //   throw new NotFoundException('Payment not found');
-      // }
-
-      // TODO: ตรวจสอบ permissions
-      // if (user && user.permission?.name === 'USER' && payment.device.owner_id !== user.id) {
-      //   throw new BadRequestException('You do not have permission to view this payment');
-      // }
-
-      // TODO: ถ้ามี transaction_id ให้ตรวจสอบสถานะจาก Beam Checkout
-      // if (payment.transaction_id) {
-      //   this.beamCheckoutService.authenticate();
-      //   const chargeStatus = await this.beamCheckoutService.getChargeStatus(payment.transaction_id);
-      //
-      //   // อัปเดตสถานะใน database ถ้าเปลี่ยน
-      //   if (chargeStatus && this.mapBeamStatusToPayment(chargeStatus.status) !== payment.status) {
-      //     await this.prisma.payment.update({
-      //       where: { id: paymentId },
-      //       data: {
-      //         status: this.mapBeamStatusToPayment(chargeStatus.status),
-      //         gateway_response: JSON.stringify(chargeStatus),
-      //       }
-      //     });
-      //   }
-      // }
-
-      // TODO: เพิ่ม await สำหรับ database operations
-      await Promise.resolve(); // Placeholder for future database operations
-
-      return {
-        success: true,
-        data: {
-          // TODO: เพิ่ม payment data จาก database
-          message: 'Payment status retrieved successfully',
-        },
-        message: 'Payment status retrieved successfully',
-      };
-    } catch (error) {
-      this.logger.error('Failed to get payment status', error);
-      throw new BadRequestException('Failed to get payment status');
-    }
-  }
   /**
    * ยกเลิกการชำระเงิน
    * TODO: เพิ่มการอัปเดตสถานะใน database
@@ -407,5 +353,88 @@ export class PaymentGatewayService {
     return {
       message: 'Charge succeeded webhook processed successfully',
     };
+  }
+
+  /**
+   * Manual status check for a specific payment
+   * This method allows manual checking of payment status and updates the database
+   */
+  async getPaymentStatus(chargeId: string): Promise<{
+    chargeId: string;
+    status: string;
+  }> {
+    this.logger.log(`Performing manual status check for charge: ${chargeId}`);
+
+    // หา payment ที่มี chargeId นี้ใน payment_results
+    const payment = await this.prisma.tbl_payment_temps.findFirst({
+      where: {
+        payment_results: {
+          path: ['chargeId'],
+          equals: chargeId,
+        },
+      },
+      include: {
+        device: {
+          select: { id: true, owner_id: true },
+        },
+      },
+    });
+
+    if (!payment) {
+      throw new ItemNotFoundException('Payment not found for this charge ID');
+    }
+
+    // ดึงข้อมูล payment info สำหรับ authentication
+    const paymentInfo = await this.getPaymentInfo(payment.device.owner_id);
+    const paymentInfoData = paymentInfo.payment_info as any;
+
+    // Authenticate Beam Checkout service
+    this.beamCheckoutService.authenticate({
+      merchantId: paymentInfoData.merchant_id as string,
+      secretKey: paymentInfoData.api_key as string,
+    });
+
+    // ตรวจสอบสถานะจาก Beam Checkout
+    const chargeStatus = await this.beamCheckoutService.getChargeStatus(chargeId);
+
+    // อัปเดตสถานะใน database โดยใช้ chargeId
+    await this.prisma.tbl_payment_temps.updateMany({
+      where: {
+        payment_results: {
+          path: ['chargeId'],
+          equals: chargeId,
+        },
+      },
+      data: {
+        status: this.mapBeamStatusToPayment(chargeStatus.status) as any,
+      },
+    });
+
+    this.logger.log(
+      `Payment status updated for charge ${chargeId}: ${payment.status} -> ${this.mapBeamStatusToPayment(chargeStatus.status)}`,
+    );
+
+    return {
+      chargeId: chargeId,
+      status: this.mapBeamStatusToPayment(chargeStatus.status),
+    };
+  }
+
+  /**
+   * Map Beam Checkout status to internal payment status
+   */
+  private mapBeamStatusToPayment(beamStatus: string): string {
+    switch (beamStatus) {
+      case 'PENDING':
+        return 'PENDING';
+      case 'SUCCEEDED':
+        return 'SUCCEEDED';
+      case 'FAILED':
+        return 'FAILED';
+      case 'CANCELLED':
+        return 'CANCELLED';
+      default:
+        return 'UNKNOWN';
+    }
   }
 }

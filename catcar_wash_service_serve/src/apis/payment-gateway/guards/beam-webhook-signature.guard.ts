@@ -1,17 +1,45 @@
 import { Injectable, CanActivate, ExecutionContext, UnauthorizedException, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import * as crypto from 'crypto';
+import { PrismaService } from 'src/database/prisma/prisma.service';
 
 @Injectable()
 export class BeamWebhookSignatureGuard implements CanActivate {
   private readonly logger = new Logger(BeamWebhookSignatureGuard.name);
 
-  constructor(private readonly configService: ConfigService) {}
+  constructor(
+    private readonly configService: ConfigService,
+    private readonly prisma: PrismaService,
+  ) {}
 
-  canActivate(context: ExecutionContext): boolean {
+  private async getWebhookHmacKey(referenceId: string): Promise<string> {
+    const payment = await this.prisma.$queryRaw<{ webhook_hmac_key: string }[]>`
+      SELECT tbl_users.payment_info->>'HMAC_key' as webhook_hmac_key
+      FROM tbl_payment_temps
+      INNER JOIN tbl_devices ON tbl_payment_temps.device_id = tbl_devices.id
+      INNER JOIN tbl_users ON tbl_devices.owner_id = tbl_users.id
+      WHERE reference_id = ${referenceId} LIMIT 1
+    `;
+    if (!payment[0].webhook_hmac_key) {
+      throw new UnauthorizedException('Webhook HMAC key not found');
+    }
+    return payment[0].webhook_hmac_key;
+  }
+
+  async canActivate(context: ExecutionContext): Promise<boolean> {
     const request = context.switchToHttp().getRequest();
     const signature = request.headers['x-beam-signature'] as string;
     const eventType = request.headers['x-beam-event'] as string;
+
+    // Get raw body for signature verification
+    const rawBody = request.body;
+    if (!rawBody) {
+      this.logger.warn('Webhook body is empty');
+      throw new UnauthorizedException('Webhook body is required');
+    }
+
+    const referenceId = rawBody.referenceId as string;
+    const webhookHmacKey = await this.getWebhookHmacKey(referenceId);
 
     // Log webhook attempt
     this.logger.log(`Webhook received - Event: ${eventType}, Signature: ${signature ? 'Present' : 'Missing'}`);
@@ -33,18 +61,9 @@ export class BeamWebhookSignatureGuard implements CanActivate {
       throw new UnauthorizedException(`Invalid webhook event type: ${eventType}`);
     }
 
-    // Get webhook HMAC key from configuration
-    const webhookHmacKey = this.configService.get<string>('beamCheckout.webhookHmacKey');
     if (!webhookHmacKey) {
       this.logger.error('Webhook HMAC key not configured');
       throw new UnauthorizedException('Webhook authentication not configured');
-    }
-
-    // Get raw body for signature verification
-    const rawBody = request.body;
-    if (!rawBody) {
-      this.logger.warn('Webhook body is empty');
-      throw new UnauthorizedException('Webhook body is required');
     }
 
     try {

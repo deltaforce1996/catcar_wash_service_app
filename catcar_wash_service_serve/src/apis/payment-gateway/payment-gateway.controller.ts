@@ -1,4 +1,4 @@
-import { Controller, Post, Get, Delete, Body, Param, UseFilters, Request, UseGuards, Headers } from '@nestjs/common';
+import { Controller, Post, Get, Body, Param, UseFilters, Request, UseGuards, Headers } from '@nestjs/common';
 import { PaymentGatewayService } from './payment-gateway.service';
 import { CreatePaymentDto } from './dtos/create-payment.dto';
 import { AllExceptionFilter } from 'src/common';
@@ -38,13 +38,12 @@ export class PaymentGatewayController {
   @Get('payments/:id/status')
   async getPaymentStatus(
     @Param('id') paymentId: string,
-    @Request() req: Request & { user: AuthenticatedUser },
-  ): Promise<SuccessResponse<any>> {
-    const result = await this.paymentGatewayService.getPaymentStatus(paymentId, req.user);
+  ): Promise<SuccessResponse<{ chargeId: string; status: string }>> {
+    const result = await this.paymentGatewayService.getPaymentStatus(paymentId);
     return {
       success: true,
-      data: result.data,
-      message: result.message,
+      data: result,
+      message: 'Payment status checked successfully',
     };
   }
   /**
@@ -60,23 +59,6 @@ export class PaymentGatewayController {
     const result = await this.paymentGatewayService.handleBeamWebhook(webhookPayload, eventType);
     return {
       success: true,
-      message: result.message,
-    };
-  }
-
-  /**
-   * ยกเลิกการชำระเงิน
-   * DELETE /api/v1/payment-gateway/payments/:id
-   */
-  @Delete('payments/:id')
-  async cancelPayment(
-    @Param('id') paymentId: string,
-    @Request() req: Request & { user: AuthenticatedUser },
-  ): Promise<SuccessResponse<any>> {
-    const result = await this.paymentGatewayService.cancelPayment(paymentId, req.user);
-    return {
-      success: true,
-      data: result.data,
       message: result.message,
     };
   }
