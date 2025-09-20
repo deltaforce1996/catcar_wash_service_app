@@ -25,14 +25,14 @@ export class DateTimeTransformInterceptor implements NestInterceptor {
       const transformed = { ...data };
 
       // แปลง datetime fields
-      const dateFields = ['created_at', 'updated_at', 'expire_date', 'deleted_at', 'event_at', 'timestamp'];
+      const dateFields = ['created_at', 'updated_at', 'expire_date', 'deleted_at', 'event_at', 'timestamp', 'expiry'];
       dateFields.forEach((field) => {
         if (transformed[field]) {
           // Handle timestamp field specially since it might be a number (Unix timestamp)
           if (field === 'timestamp' && typeof transformed[field] === 'number') {
             const timestamp = transformed[field];
             const dateObj = timestamp > 1e10 ? new Date(timestamp) : new Date(timestamp * 1000);
-            transformed[field] = this.dateTimeService.convertToThailandTime(dateObj);
+            transformed['datetime'] = this.dateTimeService.convertToThailandTime(dateObj);
           } else {
             transformed[field] = this.dateTimeService.convertToThailandTime(transformed[field] as Date | string);
           }

@@ -47,12 +47,6 @@ enum TokenState {
   DISABLED
 }
 
-enum PaymentStatus {
-  SUCCESS
-  FAILED
-  CANCELLED
-}
-
 enum PaymentApiStatus {
   PENDING
   SUCCEEDED

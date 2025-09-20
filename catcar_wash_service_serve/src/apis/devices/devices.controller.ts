@@ -4,13 +4,7 @@ import { AllExceptionFilter } from 'src/common';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { AuthenticatedUser, PaginatedResult } from 'src/types/internal.type';
 import { SuccessResponse } from 'src/types';
-import {
-  UpdateDeviceBasicDto,
-  CreateDeviceDto,
-  SearchDeviceDto,
-  UpdateDeviceConfigsDto,
-  SetDeviceStateDto,
-} from './dtos/index';
+import { UpdateDeviceBasicDto, CreateDeviceDto, SearchDeviceDto, UpdateDeviceConfigsDto } from './dtos/index';
 
 type DevicePublicResponse = PaginatedResult<DeviceRow | DeviceWithoutRefRow>;
 
@@ -82,21 +76,6 @@ export class DevicesController {
       success: true,
       data: result,
       message: 'Device configurations updated successfully',
-    };
-  }
-
-  @Put('set-status/:id')
-  async setDeviceStatus(
-    @Param('id') id: string,
-    @Body() data: SetDeviceStateDto,
-    @Request() req: Request & { user: AuthenticatedUser },
-  ): Promise<SuccessResponse<null>> {
-    const user = req.user;
-    await this.devicesService.setDeviceState(id, data, user);
-    return {
-      success: true,
-      data: null,
-      message: 'Device status updated successfully',
     };
   }
 }

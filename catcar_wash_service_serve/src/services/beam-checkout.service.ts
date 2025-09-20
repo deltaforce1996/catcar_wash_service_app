@@ -21,13 +21,6 @@ export interface ChargeData {
     qrPromptPay?: {
       expiresAt?: string;
     };
-    card?: {
-      cardHolderName: string;
-      expiryMonth: number;
-      expiryYear: number;
-      pan: string;
-      securityCode: string;
-    };
   };
   returnUrl?: string;
 }
@@ -54,7 +47,7 @@ export interface ChargeStatus {
   referenceId: string;
   chargeSource: 'API' | 'PAYMENT_LINK' | 'STORE_LINK' | 'QR_PROMPT_PAY_LINK';
   createdAt: string;
-  succeededAt?: string;
+  updatedAt?: string;
 }
 
 export interface QRCodeOptions {
@@ -65,6 +58,26 @@ export interface QRCodeOptions {
     light?: string;
   };
   errorCorrectionLevel?: 'L' | 'M' | 'Q' | 'H';
+}
+
+export interface RefundData {
+  chargeId: string;
+  reason?: string;
+}
+
+export interface RefundResult {
+  amount: number;
+  chargeId: string;
+  createdAt: string;
+  currency: string;
+  failureCode: string;
+  merchantId: string;
+  referenceId: string;
+  refundId: string;
+  refundReason: string;
+  status: 'PENDING' | 'SUCCEEDED' | 'FAILED';
+  transactionTime: string;
+  updatedAt: string;
 }
 
 @Injectable()
@@ -150,7 +163,6 @@ export class BeamCheckoutService {
         currency: data.currency || 'THB',
         referenceId: data.referenceId,
         paymentMethod: data.paymentMethod,
-        returnUrl: data.returnUrl,
       };
 
       const response: AxiosResponse<ChargeResult> = await this.httpClient.post('/api/v1/charges', payload);
@@ -171,27 +183,18 @@ export class BeamCheckoutService {
 
   async getChargeStatus(chargeId: string): Promise<ChargeStatus> {
     try {
-      const response: AxiosResponse<{
-        chargeId: string;
-        status: string;
-        amount: number;
-        currency: string;
-        referenceId: string;
-        chargeSource: string;
-        createdAt: string;
-        succeededAt?: string;
-      }> = await this.httpClient.get(`/api/v1/charges/${chargeId}`);
-
-      return {
+      const response: AxiosResponse<ChargeStatus> = await this.httpClient.get(`/api/v1/charges/${chargeId}`);
+      const chargeStatus: ChargeStatus = {
         chargeId: response.data.chargeId,
-        status: response.data.status as any,
+        status: response.data.status,
         amount: response.data.amount,
         currency: response.data.currency,
         referenceId: response.data.referenceId,
-        chargeSource: response.data.chargeSource as any,
+        chargeSource: response.data.chargeSource,
         createdAt: response.data.createdAt,
-        succeededAt: response.data.succeededAt,
+        updatedAt: response.data.updatedAt,
       };
+      return chargeStatus;
     } catch (error: any) {
       throw new BadRequestException(
         `Failed to get charge status ErrorCode ${error.response?.data.error.errorCode} ${error.response?.data.error.message}`,
@@ -199,13 +202,43 @@ export class BeamCheckoutService {
     }
   }
 
-  async cancelCharge(chargeId: string): Promise<void> {
+  async createRefund(data: RefundData): Promise<{ refundId: string; reason: string }> {
+    if (!data.chargeId) throw new BadRequestException('Payment token is required for refund');
+
     try {
-      await this.httpClient.post(`/api/v1/charges/${chargeId}/cancel`);
-      this.logger.log(`Charge ${chargeId} cancelled successfully`);
+      const payload = {
+        chargeId: data.chargeId,
+        reason: data?.reason,
+      };
+
+      const response: AxiosResponse<{ refundId: string; reason: string }> = await this.httpClient.post(
+        '/api/v1/refunds',
+        payload,
+      );
+      this.logger.log(`Refund created successfully for token ${data.chargeId}, refundId: ${response.data.refundId}`);
+
+      return {
+        ...response.data,
+      };
     } catch (error: any) {
       throw new BadRequestException(
-        `Failed to cancel charge ErrorCode ${error.response?.data.error.errorCode} ${error.response?.data.error.message}`,
+        `Failed to create refund ErrorCode ${error.response?.data.error.errorCode} ${error.response?.data.error.message}`,
+      );
+    }
+  }
+
+  async getRefundStatus(refundId: string): Promise<RefundResult> {
+    if (!refundId) throw new BadRequestException('Refund ID is required');
+
+    try {
+      const response: AxiosResponse<RefundResult> = await this.httpClient.get(`/api/v1/refunds/${refundId}`);
+
+      return {
+        ...response.data,
+      };
+    } catch (error: any) {
+      throw new BadRequestException(
+        `Failed to get refund status ErrorCode ${error.response?.data.error.errorCode} ${error.response?.data.error.message}`,
       );
     }
   }

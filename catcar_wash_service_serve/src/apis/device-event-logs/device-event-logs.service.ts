@@ -1,5 +1,6 @@
-import { BadRequestException, Injectable, Logger } from '@nestjs/common';
-import { EventType, PaymentStatus, PermissionType, Prisma } from '@prisma/client';
+import { Injectable, Logger } from '@nestjs/common';
+import { BadRequestException } from 'src/errors';
+import { EventType, PaymentApiStatus, PermissionType, Prisma } from '@prisma/client';
 import { PrismaService } from 'src/database/prisma/prisma.service';
 import { parseKeyValueOnly } from 'src/shared/kv-parser';
 import { AuthenticatedUser, PaginatedResult } from 'src/types/internal.type';
@@ -92,7 +93,7 @@ export class DeviceEventLogsService {
           });
           break;
         case 'payment_status':
-          ands.push({ payload: { path: ['status'], equals: value as PaymentStatus } });
+          ands.push({ payload: { path: ['status'], equals: value as PaymentApiStatus } });
           break;
         case 'type': {
           const v = value.toUpperCase();

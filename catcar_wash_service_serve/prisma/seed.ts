@@ -1,4 +1,4 @@
-import { PrismaClient, PermissionType, EventType, DeviceType } from '@prisma/client';
+import { PrismaClient, PermissionType, EventType, DeviceType, PaymentApiStatus } from '@prisma/client';
 import * as bcrypt from 'bcrypt';
 import { DeviceDryingConfig } from '../src/shared/device-drying-config';
 import { DeviceWashConfig } from '../src/shared/device-wash-config';
@@ -177,9 +177,9 @@ const generate = async () => {
   });
 
   const paymentInfo = {
-    merchant_id: '',
-    api_key: '',
-    HMAC_key: '',
+    merchant_id: 'catcarwash',
+    api_key: 'KPDPt2heeX8aNUfOpCD9s0C6L4E7qJnfpN+kt0YkptE=',
+    HMAC_key: 'k5E9ObcIDSGNu0Fa2itrjbs5kiy7nr9IAJwWXRDjr5U=',
   };
 
   const user = await prisma.tbl_users.upsert({
@@ -516,7 +516,7 @@ const generateDeviceEvents = (deviceIds: string[], type: EventType, count: numbe
         (payload.qr as { net_amount: number }).net_amount;
 
       payload['total_amount'] = totalAmount;
-      payload['status'] = 'SUCCESS'; // SUCCESS, FAILED, CANCELLED
+      payload['status'] = PaymentApiStatus.SUCCEEDED;
 
       payloads.push({
         device_id: deviceId,

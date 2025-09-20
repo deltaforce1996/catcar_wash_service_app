@@ -24,7 +24,7 @@ The `query` parameter supports the following searchable fields:
 - `device_id`: Device ID (partial match, case-insensitive)
 - `device_name`: Device name (partial match, case-insensitive)
 - `status`: Device state status - 'normal' or 'error'
-- `payload_timestemp`: Unix timestamp within payload JSON (format: timestamp or start-end range)
+- `payload_timestamp`: Unix timestamp within payload JSON (format: timestamp or start-end range)
 
 #### Example Queries
 
@@ -39,13 +39,13 @@ GET /api/v1/device-states/search?query=device_name:WASH-001
 GET /api/v1/device-states/search?query=status:normal
 
 # Search by timestamp range
-GET /api/v1/device-states/search?query=payload_timestemp:1640995200000-1641081600000
+GET /api/v1/device-states/search?query=payload_timestamp:1640995200000-1641081600000
 
 # Search by single timestamp
-GET /api/v1/device-states/search?query=payload_timestemp:1640995200000
+GET /api/v1/device-states/search?query=payload_timestamp:1640995200000
 
 # Complex search with multiple filters
-GET /api/v1/device-states/search?query=device_id:abc123 status:normal payload_timestemp:1640995200000-1641081600000
+GET /api/v1/device-states/search?query=device_id:abc123 status:normal payload_timestamp:1640995200000-1641081600000
 
 # With pagination and sorting
 GET /api/v1/device-states/search?query=status:error&page=2&limit=10&sort_by=created_at&sort_order=asc

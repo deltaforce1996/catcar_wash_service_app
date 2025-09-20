@@ -25,7 +25,7 @@ The `query` parameter supports the following searchable fields:
 - `device_id`: Device ID (partial match, case-insensitive)
 - `device_name`: Device name (partial match, case-insensitive)
 - `type`: Event type - 'PAYMENT' or 'INFO'
-- `payload_timestemp`: Unix timestamp within payload JSON (format: single timestamp or start-end range)
+- `payload_timestamp`: Unix timestamp within payload JSON (format: single timestamp or start-end range)
 - `user_id`: User ID within payload JSON
 - `payment_status`: Payment status - 'SUCCESS', 'FAILED', or 'CANCELLED'
 
@@ -58,10 +58,10 @@ GET /api/v1/device-event-logs/search?query=type:PAYMENT
 GET /api/v1/device-event-logs/search?query=payment_status:SUCCESS
 
 # Query by single timestamp
-GET /api/v1/device-event-logs/search?query=payload_timestemp:1640995200000
+GET /api/v1/device-event-logs/search?query=payload_timestamp:1640995200000
 
 # Query by timestamp range
-GET /api/v1/device-event-logs/search?query=payload_timestemp:1640995200000-1641081600000
+GET /api/v1/device-event-logs/search?query=payload_timestamp:1640995200000-1641081600000
 
 # Query by user ID
 GET /api/v1/device-event-logs/search?query=user_id:user123
@@ -90,7 +90,7 @@ GET /api/v1/device-event-logs/search?search=WASH&page=1&limit=10&sort_by=created
           "type": "PAYMENT",
           "status": "SUCCESS",
           "amount": 100,
-          "timestemp": 1640995200000,
+          "timestamp": 1640995200000,
           "user_id": "user123"
         },
         "created_at": "2024-01-01 12:00:00",
@@ -132,7 +132,7 @@ Authorization: Bearer <your_jwt_token>
 The API uses various Prisma enums and types:
 
 - `EventType`: 'PAYMENT' | 'INFO'
-- `PaymentStatus`: 'SUCCESS' | 'FAILED' | 'CANCELLED'
+- `PaymentApiStatus`: 'PENDING' | 'SUCCEEDED' | 'FAILED' | 'CANCELLED'
 - `DeviceType`: 'WASH' | 'DRYING'
 - `DeviceStatus`: 'DEPLOYED' | 'DISABLED'
 

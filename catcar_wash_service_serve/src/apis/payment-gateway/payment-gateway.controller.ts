@@ -1,6 +1,6 @@
 import { Controller, Post, Get, Body, Param, UseFilters, Request, UseGuards, Headers } from '@nestjs/common';
 import { PaymentGatewayService } from './payment-gateway.service';
-import { CreatePaymentDto } from './dtos/create-payment.dto';
+import { CreatePaymentDto, CreateRefundDto } from './dtos';
 import { AllExceptionFilter } from 'src/common';
 import { SuccessResponse } from 'src/types';
 // import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
@@ -46,6 +46,23 @@ export class PaymentGatewayController {
       message: 'Payment status checked successfully',
     };
   }
+  /**
+   * สร้างการคืนเงิน
+   * POST /api/v1/payment-gateway/refunds
+   */
+  @Post('refunds')
+  async createRefund(
+    @Body() createRefundDto: CreateRefundDto,
+    @Request() req: Request & { user: AuthenticatedUser },
+  ): Promise<SuccessResponse<any>> {
+    const result = await this.paymentGatewayService.createRefund(createRefundDto, req.user);
+    return {
+      success: true,
+      data: result,
+      message: 'Refund created successfully',
+    };
+  }
+
   /**
    * จัดการ Beam webhook callbacks
    * POST /api/v1/payment-gateway/webhook

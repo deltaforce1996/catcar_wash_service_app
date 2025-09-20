@@ -1,8 +1,15 @@
 import { Injectable, Logger } from '@nestjs/common';
-import { BeamCheckoutService, ChargeData, ChargeResult } from 'src/services/beam-checkout.service';
-import { CreatePaymentDto } from './dtos/create-payment.dto';
+import {
+  BeamCheckoutService,
+  ChargeData,
+  ChargeResult,
+  ChargeStatus,
+  RefundData,
+  RefundResult,
+} from 'src/services/beam-checkout.service';
+import { CreatePaymentDto, CreateRefundDto } from './dtos';
 import { AuthenticatedUser } from 'src/types/internal.type';
-import { Prisma, tbl_payment_temps } from '@prisma/client';
+import { PaymentApiStatus, Prisma, tbl_payment_temps } from '@prisma/client';
 import { PrismaService } from 'src/database/prisma/prisma.service';
 import { BadRequestException, ItemNotFoundException } from 'src/errors';
 import {
@@ -142,20 +149,17 @@ export class PaymentGatewayService {
           }
 
           const paymentInfo: PaymentInfoByDevice = await this.getPaymentInfo(device.owner_id);
-          if (!paymentInfo) {
-            throw new ItemNotFoundException('Payment info not found');
-          }
 
           // สร้าง reference_id ชั่วคราว
           const referenceId = createPaymentDto.reference_id || this.generateReferenceId();
 
-          // ตรวจสอบ duplicate payment
-          if (createPaymentDto.reference_id) {
-            const isDuplicate = await this.checkDuplicatePayment(referenceId, createPaymentDto.device_id);
-            if (isDuplicate) {
-              throw new BadRequestException('Payment with this reference ID already exists');
-            }
-          }
+          // // ตรวจสอบ duplicate payment
+          // if (createPaymentDto.reference_id) {
+          //   const isDuplicate = await this.checkDuplicatePayment(referenceId, createPaymentDto.device_id);
+          //   if (isDuplicate) {
+          //     throw new BadRequestException('Payment with this reference ID already exists');
+          //   }
+          // }
 
           // สร้าง payment record ใน database
           const paymentTemp: tbl_payment_temps = await tx.tbl_payment_temps.create({
@@ -244,66 +248,6 @@ export class PaymentGatewayService {
   }
 
   /**
-   * ยกเลิกการชำระเงิน
-   * TODO: เพิ่มการอัปเดตสถานะใน database
-   */
-  async cancelPayment(paymentId: string, _user?: AuthenticatedUser) {
-    void _user; // TODO: ใช้ user parameter เมื่อเพิ่ม permission checking
-    try {
-      this.logger.log(`Cancelling payment: ${paymentId}`);
-
-      // TODO: ดึงข้อมูล payment จาก database
-      // const payment = await this.prisma.payment.findUnique({
-      //   where: { id: paymentId },
-      //   include: {
-      //     device: {
-      //       select: { owner_id: true }
-      //     }
-      //   }
-      // });
-      // if (!payment) {
-      //   throw new NotFoundException('Payment not found');
-      // }
-
-      // TODO: ตรวจสอบ permissions
-      // if (user && user.permission?.name === 'USER' && payment.device.owner_id !== user.id) {
-      //   throw new BadRequestException('You do not have permission to cancel this payment');
-      // }
-
-      // TODO: ยกเลิก charge ใน Beam Checkout ถ้ามี transaction_id
-      // if (payment.transaction_id) {
-      //   this.beamCheckoutService.authenticate();
-      //   await this.beamCheckoutService.cancelCharge(payment.transaction_id);
-      // }
-
-      // TODO: อัปเดตสถานะใน database
-      // const updatedPayment = await this.prisma.payment.update({
-      //   where: { id: paymentId },
-      //   data: {
-      //     status: 'CANCELLED'
-      //   }
-      // });
-
-      // TODO: เพิ่ม await สำหรับ database operations
-      await Promise.resolve(); // Placeholder for future database operations
-
-      this.logger.log(`Payment cancelled successfully: ${paymentId}`);
-
-      return {
-        success: true,
-        data: {
-          // TODO: เพิ่ม updated payment data
-          message: 'Payment cancelled successfully',
-        },
-        message: 'Payment cancelled successfully',
-      };
-    } catch (error) {
-      this.logger.error('Failed to cancel payment', error);
-      throw new BadRequestException('Failed to cancel payment');
-    }
-  }
-
-  /**
    * สร้าง reference ID
    */
   private generateReferenceId(): string {
@@ -362,6 +306,8 @@ export class PaymentGatewayService {
   async getPaymentStatus(chargeId: string): Promise<{
     chargeId: string;
     status: string;
+    updated_at: string;
+    created_at: string;
   }> {
     this.logger.log(`Performing manual status check for charge: ${chargeId}`);
 
@@ -395,7 +341,8 @@ export class PaymentGatewayService {
     });
 
     // ตรวจสอบสถานะจาก Beam Checkout
-    const chargeStatus = await this.beamCheckoutService.getChargeStatus(chargeId);
+    const chargeStatus: ChargeStatus = await this.beamCheckoutService.getChargeStatus(chargeId);
+    this.logger.debug(`Charge status: ${JSON.stringify(chargeStatus, null, 2)}`);
 
     // อัปเดตสถานะใน database โดยใช้ chargeId
     await this.prisma.tbl_payment_temps.updateMany({
@@ -417,6 +364,8 @@ export class PaymentGatewayService {
     return {
       chargeId: chargeId,
       status: this.mapBeamStatusToPayment(chargeStatus.status),
+      updated_at: chargeStatus.updatedAt ?? new Date().toISOString(),
+      created_at: chargeStatus.createdAt ?? null,
     };
   }
 
@@ -435,6 +384,86 @@ export class PaymentGatewayService {
         return 'CANCELLED';
       default:
         return 'UNKNOWN';
+    }
+  }
+
+  /**
+   * Create a refund for a successful payment and return the complete refund status
+   */
+  async createRefund(createRefundDto: CreateRefundDto, _user?: AuthenticatedUser): Promise<RefundResult> {
+    void _user; // TODO: ใช้ user parameter เมื่อเพิ่ม permission checking
+    this.logger.log(`Creating refund for charge: ${createRefundDto.chargeId}`);
+
+    try {
+      // Find the payment record by chargeId
+      const payment = await this.prisma.tbl_payment_temps.findFirst({
+        where: {
+          payment_results: {
+            path: ['chargeId'],
+            equals: createRefundDto.chargeId,
+          },
+        },
+        include: {
+          device: {
+            select: { id: true, owner_id: true },
+          },
+        },
+      });
+
+      if (!payment) {
+        throw new ItemNotFoundException('Payment not found for this charge ID');
+      }
+
+      if (payment.status !== 'SUCCEEDED') {
+        throw new BadRequestException('Only successful payments can be refunded');
+      }
+
+      // Get payment info for authentication
+      const paymentInfo = await this.getPaymentInfo(payment.device.owner_id);
+      const paymentInfoData = paymentInfo.payment_info as any;
+
+      // Authenticate Beam Checkout service
+      this.beamCheckoutService.authenticate({
+        merchantId: paymentInfoData.merchant_id as string,
+        secretKey: paymentInfoData.api_key as string,
+      });
+
+      // Create refund through Beam Checkout
+      const refundData: RefundData = {
+        chargeId: createRefundDto.chargeId,
+        reason: createRefundDto.reason,
+      };
+
+      const refundResult: { refundId: string; reason: string } =
+        await this.beamCheckoutService.createRefund(refundData);
+
+      this.logger.log(`Refund created successfully: ${refundResult.refundId}`);
+
+      // Get complete refund status immediately after creation
+      const refundStatus: RefundResult = await this.beamCheckoutService.getRefundStatus(refundResult.refundId);
+
+      await this.prisma.tbl_payment_temps.update({
+        where: { id: payment.id },
+        data: {
+          status: PaymentApiStatus.CANCELLED,
+          payment_results: {
+            ...(payment.payment_results as any),
+            refund: refundStatus,
+          },
+        },
+      });
+
+      this.logger.log(`Refund created and status retrieved: ${refundStatus.status}`);
+
+      return refundStatus;
+    } catch (error) {
+      this.logger.error('Failed to create refund', error);
+
+      if (error instanceof ItemNotFoundException || error instanceof BadRequestException) {
+        throw error;
+      }
+
+      throw new BadRequestException('Failed to create refund');
     }
   }
 }

@@ -1,1 +1,526 @@
-{"success":true,"data":{"items":[{"id":"cmfdx1e8x000fzs30a78ojpnf","name":"เครื่องเป่าลมหมายเลข 3","type":"DRYING","status":"DEPLOYED","information":{"model":"AirBlow Premium v2.1","chip_id":"ESP32-005","description":"เครื่องเป่าลมและทำความสะอาดภายในรถยนต์ พร้อมระบบน้ำหอม","mac_address":"00:1B:44:11:3A:BB","firmware_version":"2.1.0"},"configs":{"sale":{"uv":{"unit":"วินาที","value":10,"description":"UV"},"ozone":{"unit":"วินาที","value":10,"description":"Ozone"},"drying":{"unit":"วินาที","value":10,"description":"เป่าแห้ง"},"perfume":{"unit":"วินาที","value":10,"description":"น้ำหอม"},"blow_dust":{"unit":"วินาที","value":10,"description":"เป่าฝุ่น"},"promotion":{"unit":"(%) เปอร์เซ็นต์","value":10,"description":"โปรโมชั่น"},"sterilize":{"unit":"วินาที","value":10,"description":"ฆ่าเชื้อ"},"start_service_fee":{"unit":"บาท","value":10,"description":"ค่าบริการเริ่มต้น"}},"system":{"on_time":"00:00","off_time":"23:59","payment_method":{"coin":true,"bank_note":true,"promptpay":true}}},"created_at":"2025-09-10 18:48:17","updated_at":"2025-09-10 18:48:17","owner":{"id":"cmfdx1e8l000azs30mrb4cmdh","fullname":"นางสาวสมหญิง รักดี","email":"user2@catcarwash.com"},"registered_by":{"id":"cmfdx1e8e0006zs302crmsh1q","name":"นายสมคิด ช่างเทคนิค","email":"technician@catcarwash.com"}},{"id":"cmfdx1e8q000dzs30ksu7xay9","name":"เครื่องเป่าลมหมายเลข 2","type":"DRYING","status":"DEPLOYED","information":{"model":"AirBlow Pro v2.0","chip_id":"ESP32-003","description":"เครื่องเป่าลมและทำความสะอาดภายในรถยนต์ พร้อมระบบฆ่าเชื้อ","mac_address":"00:1B:44:11:3A:B9","firmware_version":"1.0.0"},"configs":{"sale":{"uv":{"unit":"วินาที","value":10,"description":"UV"},"ozone":{"unit":"วินาที","value":10,"description":"Ozone"},"drying":{"unit":"วินาที","value":10,"description":"เป่าแห้ง"},"perfume":{"unit":"วินาที","value":10,"description":"น้ำหอม"},"blow_dust":{"unit":"วินาที","value":10,"description":"เป่าฝุ่น"},"promotion":{"unit":"(%) เปอร์เซ็นต์","value":10,"description":"โปรโมชั่น"},"sterilize":{"unit":"วินาที","value":10,"description":"ฆ่าเชื้อ"},"start_service_fee":{"unit":"บาท","value":10,"description":"ค่าบริการเริ่มต้น"}},"system":{"on_time":"00:00","off_time":"23:59","payment_method":{"coin":true,"bank_note":true,"promptpay":true}}},"created_at":"2025-09-10 18:48:17","updated_at":"2025-09-10 18:48:17","owner":{"id":"cmfdx1e8h0008zs300ov04roq","fullname":"นายสมชาย ใจดี","email":"user@catcarwash.com"},"registered_by":{"id":"cmfdx1e8e0006zs302crmsh1q","name":"นายสมคิด ช่างเทคนิค","email":"technician@catcarwash.com"}},{"id":"cmfdx1e8q000czs30lytn5fq3","name":"เครื่องเป่าลมหมายเลข 1","type":"DRYING","status":"DISABLED","information":{"model":"AirBlow Standard v1.5","chip_id":"ESP32-002","description":"เครื่องเป่าลมและทำความสะอาดภายในรถยนต์","mac_address":"00:1B:44:11:3A:B8","firmware_version":"1.5.2"},"configs":{"sale":{"uv":{"unit":"วินาที","value":10,"description":"UV"},"ozone":{"unit":"วินาที","value":10,"description":"Ozone"},"drying":{"unit":"วินาที","value":10,"description":"เป่าแห้ง"},"perfume":{"unit":"วินาที","value":10,"description":"น้ำหอม"},"blow_dust":{"unit":"วินาที","value":10,"description":"เป่าฝุ่น"},"promotion":{"unit":"(%) เปอร์เซ็นต์","value":10,"description":"โปรโมชั่น"},"sterilize":{"unit":"วินาที","value":10,"description":"ฆ่าเชื้อ"},"start_service_fee":{"unit":"บาท","value":10,"description":"ค่าบริการเริ่มต้น"}},"system":{"on_time":"00:00","off_time":"23:59","payment_method":{"coin":true,"bank_note":true,"promptpay":true}}},"created_at":"2025-09-10 18:48:17","updated_at":"2025-09-10 18:48:17","owner":{"id":"cmfdx1e8h0008zs300ov04roq","fullname":"นายสมชาย ใจดี","email":"user@catcarwash.com"},"registered_by":{"id":"cmfdx1e8e0006zs302crmsh1q","name":"นายสมคิด ช่างเทคนิค","email":"technician@catcarwash.com"}},{"id":"cmfdx1e8x000hzs30xn9dkbv4","name":"เครื่องล้างรถหมายเลข 4","type":"WASH","status":"DEPLOYED","information":{"model":"CarWash Tire v2.1","chip_id":"ESP32-007","description":"เครื่องล้างรถอัตโนมัติพร้อมระบบขัดยาง","mac_address":"00:1B:44:11:3A:BD","firmware_version":"2.1.2"},"configs":{"sale":{"air":{"unit":"วินาที","value":10,"description":"ลม"},"wax":{"unit":"วินาที","value":10,"description":"ลง wax"},"foam":{"unit":"วินาที","value":10,"description":"โฟม"},"water":{"unit":"วินาที","value":10,"description":"น้ำยาปรับอากาศ"},"vacuum":{"unit":"วินาที","value":10,"description":"ดูดฝุ่น"},"hp_water":{"unit":"วินาที","value":10,"description":"ปริมาณน้ำ"},"promotion":{"unit":"(%) เปอร์เซ็นต์","value":10,"description":"โปรโมชั่น"},"black_tire":{"unit":"วินาที","value":10,"description":"ล้างล้อ"},"parking_fee":{"unit":"วินาที","value":10,"description":"ค่าปรับที่จอดรถ"},"air_conditioner":{"unit":"วินาที","value":10,"description":"ปรับอากาศ"}},"system":{"on_time":"00:00","off_time":"23:59","payment_method":{"coin":true,"bank_note":true,"promptpay":true}}},"created_at":"2025-09-10 18:48:17","updated_at":"2025-09-10 18:48:17","owner":{"id":"cmfdx1e8l000azs30mrb4cmdh","fullname":"นางสาวสมหญิง รักดี","email":"user2@catcarwash.com"},"registered_by":{"id":"cmfdx1e8e0006zs302crmsh1q","name":"นายสมคิด ช่างเทคนิค","email":"technician@catcarwash.com"}},{"id":"cmfdx1e8x000gzs301bfhvp3d","name":"เครื่องล้างรถหมายเลข 3","type":"WASH","status":"DEPLOYED","information":{"model":"CarWash Shine v2.2","chip_id":"ESP32-006","description":"เครื่องล้างรถอัตโนมัติพร้อมระบบขัดเงา","mac_address":"00:1B:44:11:3A:BC","firmware_version":"2.2.1"},"configs":{"sale":{"air":{"unit":"วินาที","value":10,"description":"ลม"},"wax":{"unit":"วินาที","value":10,"description":"ลง wax"},"foam":{"unit":"วินาที","value":10,"description":"โฟม"},"water":{"unit":"วินาที","value":10,"description":"น้ำยาปรับอากาศ"},"vacuum":{"unit":"วินาที","value":10,"description":"ดูดฝุ่น"},"hp_water":{"unit":"วินาที","value":10,"description":"ปริมาณน้ำ"},"promotion":{"unit":"(%) เปอร์เซ็นต์","value":10,"description":"โปรโมชั่น"},"black_tire":{"unit":"วินาที","value":10,"description":"ล้างล้อ"},"parking_fee":{"unit":"วินาที","value":10,"description":"ค่าปรับที่จอดรถ"},"air_conditioner":{"unit":"วินาที","value":10,"description":"ปรับอากาศ"}},"system":{"on_time":"00:00","off_time":"23:59","payment_method":{"coin":true,"bank_note":true,"promptpay":true}}},"created_at":"2025-09-10 18:48:17","updated_at":"2025-09-10 18:48:17","owner":{"id":"cmfdx1e8l000azs30mrb4cmdh","fullname":"นางสาวสมหญิง รักดี","email":"user2@catcarwash.com"},"registered_by":{"id":"cmfdx1e8e0006zs302crmsh1q","name":"นายสมคิด ช่างเทคนิค","email":"technician@catcarwash.com"}},{"id":"cmfdx1e8x000ezs3028gukfws","name":"เครื่องล้างรถหมายเลข 2","type":"WASH","status":"DISABLED","information":{"model":"CarWash XL v2.0","chip_id":"ESP32-004","description":"เครื่องล้างรถอัตโนมัติสำหรับรถยนต์ขนาดใหญ่","mac_address":"00:1B:44:11:3A:BA","firmware_version":"2.0.1"},"configs":{"sale":{"air":{"unit":"วินาที","value":10,"description":"ลม"},"wax":{"unit":"วินาที","value":10,"description":"ลง wax"},"foam":{"unit":"วินาที","value":10,"description":"โฟม"},"water":{"unit":"วินาที","value":10,"description":"น้ำยาปรับอากาศ"},"vacuum":{"unit":"วินาที","value":10,"description":"ดูดฝุ่น"},"hp_water":{"unit":"วินาที","value":10,"description":"ปริมาณน้ำ"},"promotion":{"unit":"(%) เปอร์เซ็นต์","value":10,"description":"โปรโมชั่น"},"black_tire":{"unit":"วินาที","value":10,"description":"ล้างล้อ"},"parking_fee":{"unit":"วินาที","value":10,"description":"ค่าปรับที่จอดรถ"},"air_conditioner":{"unit":"วินาที","value":10,"description":"ปรับอากาศ"}},"system":{"on_time":"00:00","off_time":"23:59","payment_method":{"coin":true,"bank_note":true,"promptpay":true}}},"created_at":"2025-09-10 18:48:17","updated_at":"2025-09-10 18:48:17","owner":{"id":"cmfdx1e8l000azs30mrb4cmdh","fullname":"นางสาวสมหญิง รักดี","email":"user2@catcarwash.com"},"registered_by":{"id":"cmfdx1e8e0006zs302crmsh1q","name":"นายสมคิด ช่างเทคนิค","email":"technician@catcarwash.com"}},{"id":"cmfdx1e8q000bzs30v59y5d2q","name":"เครื่องล้างรถหมายเลข 1","type":"WASH","status":"DEPLOYED","information":{"model":"CarWash Pro v2.1","chip_id":"ESP32-001","description":"เครื่องล้างรถอัตโนมัติสำหรับรถยนต์ขนาดเล็กและกลาง","mac_address":"00:1B:44:11:3A:B7","firmware_version":"2.1.3"},"configs":{"sale":{"air":{"unit":"วินาที","value":10,"description":"ลม"},"wax":{"unit":"วินาที","value":10,"description":"ลง wax"},"foam":{"unit":"วินาที","value":10,"description":"โฟม"},"water":{"unit":"วินาที","value":10,"description":"น้ำยาปรับอากาศ"},"vacuum":{"unit":"วินาที","value":10,"description":"ดูดฝุ่น"},"hp_water":{"unit":"วินาที","value":10,"description":"ปริมาณน้ำ"},"promotion":{"unit":"(%) เปอร์เซ็นต์","value":10,"description":"โปรโมชั่น"},"black_tire":{"unit":"วินาที","value":10,"description":"ล้างล้อ"},"parking_fee":{"unit":"วินาที","value":10,"description":"ค่าปรับที่จอดรถ"},"air_conditioner":{"unit":"วินาที","value":10,"description":"ปรับอากาศ"}},"system":{"on_time":"00:00","off_time":"23:59","payment_method":{"coin":true,"bank_note":true,"promptpay":true}}},"created_at":"2025-09-10 18:48:17","updated_at":"2025-09-10 18:48:17","owner":{"id":"cmfdx1e8h0008zs300ov04roq","fullname":"นายสมชาย ใจดี","email":"user@catcarwash.com"},"registered_by":{"id":"cmfdx1e8e0006zs302crmsh1q","name":"นายสมคิด ช่างเทคนิค","email":"technician@catcarwash.com"}}],"total":7,"page":1,"limit":20,"totalPages":1},"message":"Devices searched successfully"}
+{
+  "success": true,
+  "data": {
+    "items": [
+      {
+        "id": "cmfdx1e8x000fzs30a78ojpnf",
+        "name": "เครื่องเป่าลมหมายเลข 3",
+        "type": "DRYING",
+        "status": "DEPLOYED",
+        "information": {
+          "model": "AirBlow Premium v2.1",
+          "chip_id": "ESP32-005",
+          "description": "เครื่องเป่าลมและทำความสะอาดภายในรถยนต์ พร้อมระบบน้ำหอม",
+          "mac_address": "00:1B:44:11:3A:BB",
+          "firmware_version": "2.1.0"
+        },
+        "configs": {
+          "sale": {
+            "uv": { "unit": "วินาที", "value": 10, "description": "UV" },
+            "ozone": { "unit": "วินาที", "value": 10, "description": "Ozone" },
+            "drying": {
+              "unit": "วินาที",
+              "value": 10,
+              "description": "เป่าแห้ง"
+            },
+            "perfume": {
+              "unit": "วินาที",
+              "value": 10,
+              "description": "น้ำหอม"
+            },
+            "blow_dust": {
+              "unit": "วินาที",
+              "value": 10,
+              "description": "เป่าฝุ่น"
+            },
+            "promotion": {
+              "unit": "(%) เปอร์เซ็นต์",
+              "value": 10,
+              "description": "โปรโมชั่น"
+            },
+            "sterilize": {
+              "unit": "วินาที",
+              "value": 10,
+              "description": "ฆ่าเชื้อ"
+            },
+            "start_service_fee": {
+              "unit": "บาท",
+              "value": 10,
+              "description": "ค่าบริการเริ่มต้น"
+            }
+          },
+          "system": {
+            "on_time": "00:00",
+            "off_time": "23:59",
+            "payment_method": {
+              "coin": true,
+              "bank_note": true,
+              "promptpay": true
+            }
+          }
+        },
+        "created_at": "2025-09-10 18:48:17",
+        "updated_at": "2025-09-10 18:48:17",
+        "owner": {
+          "id": "cmfdx1e8l000azs30mrb4cmdh",
+          "fullname": "นางสาวสมหญิง รักดี",
+          "email": "user2@catcarwash.com"
+        },
+        "registered_by": {
+          "id": "cmfdx1e8e0006zs302crmsh1q",
+          "name": "นายสมคิด ช่างเทคนิค",
+          "email": "technician@catcarwash.com"
+        }
+      },
+      {
+        "id": "cmfdx1e8q000dzs30ksu7xay9",
+        "name": "เครื่องเป่าลมหมายเลข 2",
+        "type": "DRYING",
+        "status": "DEPLOYED",
+        "information": {
+          "model": "AirBlow Pro v2.0",
+          "chip_id": "ESP32-003",
+          "description": "เครื่องเป่าลมและทำความสะอาดภายในรถยนต์ พร้อมระบบฆ่าเชื้อ",
+          "mac_address": "00:1B:44:11:3A:B9",
+          "firmware_version": "1.0.0"
+        },
+        "configs": {
+          "sale": {
+            "uv": { "unit": "วินาที", "value": 10, "description": "UV" },
+            "ozone": { "unit": "วินาที", "value": 10, "description": "Ozone" },
+            "drying": {
+              "unit": "วินาที",
+              "value": 10,
+              "description": "เป่าแห้ง"
+            },
+            "perfume": {
+              "unit": "วินาที",
+              "value": 10,
+              "description": "น้ำหอม"
+            },
+            "blow_dust": {
+              "unit": "วินาที",
+              "value": 10,
+              "description": "เป่าฝุ่น"
+            },
+            "promotion": {
+              "unit": "(%) เปอร์เซ็นต์",
+              "value": 10,
+              "description": "โปรโมชั่น"
+            },
+            "sterilize": {
+              "unit": "วินาที",
+              "value": 10,
+              "description": "ฆ่าเชื้อ"
+            },
+            "start_service_fee": {
+              "unit": "บาท",
+              "value": 10,
+              "description": "ค่าบริการเริ่มต้น"
+            }
+          },
+          "system": {
+            "on_time": "00:00",
+            "off_time": "23:59",
+            "payment_method": {
+              "coin": true,
+              "bank_note": true,
+              "promptpay": true
+            }
+          }
+        },
+        "created_at": "2025-09-10 18:48:17",
+        "updated_at": "2025-09-10 18:48:17",
+        "owner": {
+          "id": "cmfdx1e8h0008zs300ov04roq",
+          "fullname": "นายสมชาย ใจดี",
+          "email": "user@catcarwash.com"
+        },
+        "registered_by": {
+          "id": "cmfdx1e8e0006zs302crmsh1q",
+          "name": "นายสมคิด ช่างเทคนิค",
+          "email": "technician@catcarwash.com"
+        }
+      },
+      {
+        "id": "cmfdx1e8q000czs30lytn5fq3",
+        "name": "เครื่องเป่าลมหมายเลข 1",
+        "type": "DRYING",
+        "status": "DISABLED",
+        "information": {
+          "model": "AirBlow Standard v1.5",
+          "chip_id": "ESP32-002",
+          "description": "เครื่องเป่าลมและทำความสะอาดภายในรถยนต์",
+          "mac_address": "00:1B:44:11:3A:B8",
+          "firmware_version": "1.5.2"
+        },
+        "configs": {
+          "sale": {
+            "uv": { "unit": "วินาที", "value": 10, "description": "UV" },
+            "ozone": { "unit": "วินาที", "value": 10, "description": "Ozone" },
+            "drying": {
+              "unit": "วินาที",
+              "value": 10,
+              "description": "เป่าแห้ง"
+            },
+            "perfume": {
+              "unit": "วินาที",
+              "value": 10,
+              "description": "น้ำหอม"
+            },
+            "blow_dust": {
+              "unit": "วินาที",
+              "value": 10,
+              "description": "เป่าฝุ่น"
+            },
+            "promotion": {
+              "unit": "(%) เปอร์เซ็นต์",
+              "value": 10,
+              "description": "โปรโมชั่น"
+            },
+            "sterilize": {
+              "unit": "วินาที",
+              "value": 10,
+              "description": "ฆ่าเชื้อ"
+            },
+            "start_service_fee": {
+              "unit": "บาท",
+              "value": 10,
+              "description": "ค่าบริการเริ่มต้น"
+            }
+          },
+          "system": {
+            "on_time": "00:00",
+            "off_time": "23:59",
+            "payment_method": {
+              "coin": true,
+              "bank_note": true,
+              "promptpay": true
+            }
+          }
+        },
+        "created_at": "2025-09-10 18:48:17",
+        "updated_at": "2025-09-10 18:48:17",
+        "owner": {
+          "id": "cmfdx1e8h0008zs300ov04roq",
+          "fullname": "นายสมชาย ใจดี",
+          "email": "user@catcarwash.com"
+        },
+        "registered_by": {
+          "id": "cmfdx1e8e0006zs302crmsh1q",
+          "name": "นายสมคิด ช่างเทคนิค",
+          "email": "technician@catcarwash.com"
+        }
+      },
+      {
+        "id": "cmfdx1e8x000hzs30xn9dkbv4",
+        "name": "เครื่องล้างรถหมายเลข 4",
+        "type": "WASH",
+        "status": "DEPLOYED",
+        "information": {
+          "model": "CarWash Tire v2.1",
+          "chip_id": "ESP32-007",
+          "description": "เครื่องล้างรถอัตโนมัติพร้อมระบบขัดยาง",
+          "mac_address": "00:1B:44:11:3A:BD",
+          "firmware_version": "2.1.2"
+        },
+        "configs": {
+          "sale": {
+            "air": { "unit": "วินาที", "value": 10, "description": "ลม" },
+            "wax": { "unit": "วินาที", "value": 10, "description": "ลง wax" },
+            "foam": { "unit": "วินาที", "value": 10, "description": "โฟม" },
+            "water": {
+              "unit": "วินาที",
+              "value": 10,
+              "description": "น้ำยาปรับอากาศ"
+            },
+            "vacuum": {
+              "unit": "วินาที",
+              "value": 10,
+              "description": "ดูดฝุ่น"
+            },
+            "hp_water": {
+              "unit": "วินาที",
+              "value": 10,
+              "description": "ปริมาณน้ำ"
+            },
+            "promotion": {
+              "unit": "(%) เปอร์เซ็นต์",
+              "value": 10,
+              "description": "โปรโมชั่น"
+            },
+            "black_tire": {
+              "unit": "วินาที",
+              "value": 10,
+              "description": "ล้างล้อ"
+            },
+            "parking_fee": {
+              "unit": "วินาที",
+              "value": 10,
+              "description": "ค่าปรับที่จอดรถ"
+            },
+            "air_conditioner": {
+              "unit": "วินาที",
+              "value": 10,
+              "description": "ปรับอากาศ"
+            }
+          },
+          "system": {
+            "on_time": "00:00",
+            "off_time": "23:59",
+            "payment_method": {
+              "coin": true,
+              "bank_note": true,
+              "promptpay": true
+            }
+          }
+        },
+        "created_at": "2025-09-10 18:48:17",
+        "updated_at": "2025-09-10 18:48:17",
+        "owner": {
+          "id": "cmfdx1e8l000azs30mrb4cmdh",
+          "fullname": "นางสาวสมหญิง รักดี",
+          "email": "user2@catcarwash.com"
+        },
+        "registered_by": {
+          "id": "cmfdx1e8e0006zs302crmsh1q",
+          "name": "นายสมคิด ช่างเทคนิค",
+          "email": "technician@catcarwash.com"
+        }
+      },
+      {
+        "id": "cmfdx1e8x000gzs301bfhvp3d",
+        "name": "เครื่องล้างรถหมายเลข 3",
+        "type": "WASH",
+        "status": "DEPLOYED",
+        "information": {
+          "model": "CarWash Shine v2.2",
+          "chip_id": "ESP32-006",
+          "description": "เครื่องล้างรถอัตโนมัติพร้อมระบบขัดเงา",
+          "mac_address": "00:1B:44:11:3A:BC",
+          "firmware_version": "2.2.1"
+        },
+        "configs": {
+          "sale": {
+            "air": { "unit": "วินาที", "value": 10, "description": "ลม" },
+            "wax": { "unit": "วินาที", "value": 10, "description": "ลง wax" },
+            "foam": { "unit": "วินาที", "value": 10, "description": "โฟม" },
+            "water": {
+              "unit": "วินาที",
+              "value": 10,
+              "description": "น้ำยาปรับอากาศ"
+            },
+            "vacuum": {
+              "unit": "วินาที",
+              "value": 10,
+              "description": "ดูดฝุ่น"
+            },
+            "hp_water": {
+              "unit": "วินาที",
+              "value": 10,
+              "description": "ปริมาณน้ำ"
+            },
+            "promotion": {
+              "unit": "(%) เปอร์เซ็นต์",
+              "value": 10,
+              "description": "โปรโมชั่น"
+            },
+            "black_tire": {
+              "unit": "วินาที",
+              "value": 10,
+              "description": "ล้างล้อ"
+            },
+            "parking_fee": {
+              "unit": "วินาที",
+              "value": 10,
+              "description": "ค่าปรับที่จอดรถ"
+            },
+            "air_conditioner": {
+              "unit": "วินาที",
+              "value": 10,
+              "description": "ปรับอากาศ"
+            }
+          },
+          "system": {
+            "on_time": "00:00",
+            "off_time": "23:59",
+            "payment_method": {
+              "coin": true,
+              "bank_note": true,
+              "promptpay": true
+            }
+          }
+        },
+        "created_at": "2025-09-10 18:48:17",
+        "updated_at": "2025-09-10 18:48:17",
+        "owner": {
+          "id": "cmfdx1e8l000azs30mrb4cmdh",
+          "fullname": "นางสาวสมหญิง รักดี",
+          "email": "user2@catcarwash.com"
+        },
+        "registered_by": {
+          "id": "cmfdx1e8e0006zs302crmsh1q",
+          "name": "นายสมคิด ช่างเทคนิค",
+          "email": "technician@catcarwash.com"
+        }
+      },
+      {
+        "id": "cmfdx1e8x000ezs3028gukfws",
+        "name": "เครื่องล้างรถหมายเลข 2",
+        "type": "WASH",
+        "status": "DISABLED",
+        "information": {
+          "model": "CarWash XL v2.0",
+          "chip_id": "ESP32-004",
+          "description": "เครื่องล้างรถอัตโนมัติสำหรับรถยนต์ขนาดใหญ่",
+          "mac_address": "00:1B:44:11:3A:BA",
+          "firmware_version": "2.0.1"
+        },
+        "configs": {
+          "sale": {
+            "air": { "unit": "วินาที", "value": 10, "description": "ลม" },
+            "wax": { "unit": "วินาที", "value": 10, "description": "ลง wax" },
+            "foam": { "unit": "วินาที", "value": 10, "description": "โฟม" },
+            "water": {
+              "unit": "วินาที",
+              "value": 10,
+              "description": "น้ำยาปรับอากาศ"
+            },
+            "vacuum": {
+              "unit": "วินาที",
+              "value": 10,
+              "description": "ดูดฝุ่น"
+            },
+            "hp_water": {
+              "unit": "วินาที",
+              "value": 10,
+              "description": "ปริมาณน้ำ"
+            },
+            "promotion": {
+              "unit": "(%) เปอร์เซ็นต์",
+              "value": 10,
+              "description": "โปรโมชั่น"
+            },
+            "black_tire": {
+              "unit": "วินาที",
+              "value": 10,
+              "description": "ล้างล้อ"
+            },
+            "parking_fee": {
+              "unit": "วินาที",
+              "value": 10,
+              "description": "ค่าปรับที่จอดรถ"
+            },
+            "air_conditioner": {
+              "unit": "วินาที",
+              "value": 10,
+              "description": "ปรับอากาศ"
+            }
+          },
+          "system": {
+            "on_time": "00:00",
+            "off_time": "23:59",
+            "payment_method": {
+              "coin": true,
+              "bank_note": true,
+              "promptpay": true
+            }
+          }
+        },
+        "created_at": "2025-09-10 18:48:17",
+        "updated_at": "2025-09-10 18:48:17",
+        "owner": {
+          "id": "cmfdx1e8l000azs30mrb4cmdh",
+          "fullname": "นางสาวสมหญิง รักดี",
+          "email": "user2@catcarwash.com"
+        },
+        "registered_by": {
+          "id": "cmfdx1e8e0006zs302crmsh1q",
+          "name": "นายสมคิด ช่างเทคนิค",
+          "email": "technician@catcarwash.com"
+        }
+      },
+      {
+        "id": "cmfdx1e8q000bzs30v59y5d2q",
+        "name": "เครื่องล้างรถหมายเลข 1",
+        "type": "WASH",
+        "status": "DEPLOYED",
+        "information": {
+          "model": "CarWash Pro v2.1",
+          "chip_id": "ESP32-001",
+          "description": "เครื่องล้างรถอัตโนมัติสำหรับรถยนต์ขนาดเล็กและกลาง",
+          "mac_address": "00:1B:44:11:3A:B7",
+          "firmware_version": "2.1.3"
+        },
+        "configs": {
+          "sale": {
+            "air": { "unit": "วินาที", "value": 10, "description": "ลม" },
+            "wax": { "unit": "วินาที", "value": 10, "description": "ลง wax" },
+            "foam": { "unit": "วินาที", "value": 10, "description": "โฟม" },
+            "water": {
+              "unit": "วินาที",
+              "value": 10,
+              "description": "น้ำยาปรับอากาศ"
+            },
+            "vacuum": {
+              "unit": "วินาที",
+              "value": 10,
+              "description": "ดูดฝุ่น"
+            },
+            "hp_water": {
+              "unit": "วินาที",
+              "value": 10,
+              "description": "ปริมาณน้ำ"
+            },
+            "promotion": {
+              "unit": "(%) เปอร์เซ็นต์",
+              "value": 10,
+              "description": "โปรโมชั่น"
+            },
+            "black_tire": {
+              "unit": "วินาที",
+              "value": 10,
+              "description": "ล้างล้อ"
+            },
+            "parking_fee": {
+              "unit": "วินาที",
+              "value": 10,
+              "description": "ค่าปรับที่จอดรถ"
+            },
+            "air_conditioner": {
+              "unit": "วินาที",
+              "value": 10,
+              "description": "ปรับอากาศ"
+            }
+          },
+          "system": {
+            "on_time": "00:00",
+            "off_time": "23:59",
+            "payment_method": {
+              "coin": true,
+              "bank_note": true,
+              "promptpay": true
+            }
+          }
+        },
+        "created_at": "2025-09-10 18:48:17",
+        "updated_at": "2025-09-10 18:48:17",
+        "owner": {
+          "id": "cmfdx1e8h0008zs300ov04roq",
+          "fullname": "นายสมชาย ใจดี",
+          "email": "user@catcarwash.com"
+        },
+        "registered_by": {
+          "id": "cmfdx1e8e0006zs302crmsh1q",
+          "name": "นายสมคิด ช่างเทคนิค",
+          "email": "technician@catcarwash.com"
+        }
+      }
+    ],
+    "total": 7,
+    "page": 1,
+    "limit": 20,
+    "totalPages": 1
+  },
+  "message": "Devices searched successfully"
+}

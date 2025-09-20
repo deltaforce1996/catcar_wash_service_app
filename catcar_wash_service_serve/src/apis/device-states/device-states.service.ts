@@ -1,4 +1,5 @@
-import { BadRequestException, Injectable, Logger } from '@nestjs/common';
+import { Injectable, Logger } from '@nestjs/common';
+import { BadRequestException } from 'src/errors';
 import { PermissionType, Prisma } from '@prisma/client';
 import { PrismaService } from 'src/database/prisma/prisma.service';
 import { parseKeyValueOnly } from 'src/shared/kv-parser';
@@ -37,7 +38,7 @@ export type DeviceStateRow = DeviceStateRowBase;
 @Injectable()
 export class DeviceStatesService {
   private readonly logger = new Logger(DeviceStatesService.name);
-  private readonly allowed = ['id', 'device_id', 'device_name', 'status', 'payload_timestemp'] as const;
+  private readonly allowed = ['id', 'device_id', 'device_name', 'status', 'payload_timestamp'] as const;
 
   constructor(private readonly prisma: PrismaService) {
     this.logger.log('DeviceStatesService initialized');
@@ -84,7 +85,7 @@ export class DeviceStatesService {
           }
           break;
         }
-        case 'payload_timestemp': {
+        case 'payload_timestamp': {
           // Parse timestamp value (expecting format: start-end or single timestamp)
           const timestampParts = value.split('-');
 

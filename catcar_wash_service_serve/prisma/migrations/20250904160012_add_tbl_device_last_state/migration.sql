@@ -1,6 +1,3 @@
--- CreateEnum
-CREATE TYPE "public"."PaymentStatus" AS ENUM ('SUCCESS', 'FAILED', 'CANCELLED');
-
 -- CreateTable
 CREATE TABLE "public"."tbl_devices_last_state" (
     "id" TEXT NOT NULL,
