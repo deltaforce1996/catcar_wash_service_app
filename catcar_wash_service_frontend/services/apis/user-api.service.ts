@@ -54,6 +54,14 @@ export interface UpdateUserPayload {
   status?: EnumUserStatus;
 }
 
+export interface UpdateUserProfilePayload extends UpdateUserPayload {
+  payment_info?: {
+    merchant_id?: string;
+    api_key?: string;
+    HMAC_key?: string;
+  };
+}
+
 export class UserApiService extends BaseApiClient {
   async SearchUsers(
     payload: SearchUsersRequest
@@ -87,7 +95,7 @@ export class UserApiService extends BaseApiClient {
   }
 
   async UpdateUserProfile(
-    payload: UpdateUserPayload
+    payload: UpdateUserProfilePayload
   ): Promise<ApiSuccessResponse<UserResponseApi>> {
     const response = await this.put<ApiSuccessResponse<UserResponseApi>>(
       "api/v1/users/update-profile",

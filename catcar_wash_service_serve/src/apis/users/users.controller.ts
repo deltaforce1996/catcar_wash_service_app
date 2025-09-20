@@ -5,7 +5,7 @@ import { SearchUserDto } from './dtos/search-user.dto';
 import { RegisterUserDto } from './dtos/register-user.dto';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { PaginatedResult } from 'src/types/internal.type';
-import { UpdateUserDto } from './dtos/update-user.dto';
+import { UpdateUserDto, UpdateUserProfileDto } from './dtos/update-user.dto';
 import { SuccessResponse } from 'src/types';
 import { RoleAdminAndTechnician, RoleAdmin } from '../auth/decorators/roles.decorator';
 import { RoleAuthGuard } from '../auth/guards/role-auth.guard';
@@ -16,12 +16,13 @@ import { AuthenticatedUser } from 'src/types/internal.type';
 type UserPublicResponse = PaginatedResult<UserWithDeviceCountsRow | UserWithoutDeviceCountsRow>;
 
 @UseFilters(AllExceptionFilter)
-@UseGuards(JwtAuthGuard, RoleAuthGuard, UserSelfUpdateGuard)
+@UseGuards(JwtAuthGuard)
 @Controller('api/v1/users')
-@RoleAdminAndTechnician()
 export class UsersController {
   constructor(private readonly usersService: UsersService) {}
 
+  @UseGuards(RoleAuthGuard)
+  @RoleAdminAndTechnician()
   @Get('search')
   async searchUsers(@Query() q: SearchUserDto): Promise<SuccessResponse<UserPublicResponse>> {
     const result = await this.usersService.searchUsers(q);
@@ -42,11 +43,12 @@ export class UsersController {
     };
   }
 
-  @Put('update-profile')
+  @UseGuards(UserSelfUpdateGuard)
   @SelfUpdate()
+  @Put('update-profile')
   async updateUserProfile(
     @Request() req: Request & { user: AuthenticatedUser },
-    @Body() data: UpdateUserDto,
+    @Body() data: UpdateUserProfileDto,
   ): Promise<SuccessResponse<UserWithDeviceCountsRow>> {
     const userId = req.user.id;
     const result = await this.usersService.updateById(userId, data);
@@ -57,8 +59,9 @@ export class UsersController {
     };
   }
 
-  @Put('update-by-id/:id')
+  @UseGuards(RoleAuthGuard)
   @RoleAdmin()
+  @Put('update-by-id/:id')
   async updateUserById(
     @Param('id') id: string,
     @Body() data: UpdateUserDto,
@@ -71,6 +74,8 @@ export class UsersController {
     };
   }
 
+  @UseGuards(RoleAuthGuard)
+  @RoleAdminAndTechnician()
   @Post('register')
   async registerUser(@Body() data: RegisterUserDto): Promise<SuccessResponse<UserWithDeviceCountsRow>> {
     const result = await this.usersService.registerUser(data);

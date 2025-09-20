@@ -3,7 +3,6 @@ import { Reflector } from '@nestjs/core';
 import { AuthenticatedUser } from '../../../types/internal.type';
 import { PermissionDeniedException } from 'src/errors/permission-denied.exception';
 import { SELF_UPDATE_KEY } from '../decorators/self-update.decorator';
-import { TECHNICIAN } from '../decorators/roles.decorator';
 
 @Injectable()
 export class EmpSelfUpdateGuard implements CanActivate {
@@ -36,11 +35,6 @@ export class EmpSelfUpdateGuard implements CanActivate {
     if (!requiresSelfUpdate) {
       // If no self-update decorator, allow access (fallback to other guards)
       return true;
-    }
-
-    // Only allow TECHNICIAN role for emp self-update
-    if (userRole !== TECHNICIAN) {
-      throw new PermissionDeniedException('Access denied. This endpoint is only for TECHNICIAN role');
     }
 
     // Allow access for authenticated users with TECHNICIAN permission

@@ -8,15 +8,17 @@ This API provides CRUD operations and search functionality for technicians (empl
 
 Register a new technician. **Admin only.**
 
+**Note:** All technicians are created with the default password `technician123`. They should change this password after first login.
+
 #### Request Body
 
 ```json
 {
-  "fullname": "John Technician",
+  "name": "John Technician",
   "email": "john.tech@example.com",
   "phone": "+1234567890",
-  "address": "123 Tech St",
-  "custom_name": "Johnny"
+  "line": "john_tech_line",
+  "address": "123 Tech St"
 }
 ```
 
@@ -28,12 +30,12 @@ Register a new technician. **Admin only.**
   "message": "Technician registered successfully",
   "data": {
     "id": "emp_id",
-    "fullname": "John Technician",
+    "name": "John Technician",
     "email": "john.tech@example.com",
     "status": "ACTIVE",
     "phone": "+1234567890",
+    "line": "john_tech_line",
     "address": "123 Tech St",
-    "custom_name": "Johnny",
     "created_at": "2024-01-01T12:00:00.000Z",
     "updated_at": "2024-01-01T12:00:00.000Z",
     "permission": {
@@ -109,10 +111,11 @@ Update your own technician profile information. This endpoint automatically uses
 ```json
 {
   "email": "newemail@example.com",
-  "fullname": "John Technician Updated",
+  "name": "John Technician Updated",
   "phone": "+1234567890",
+  "line": "john_tech_line_updated",
   "address": "123 Tech St Updated",
-  "custom_name": "Johnny Updated"
+  "status": "ACTIVE"
 }
 ```
 
@@ -124,12 +127,12 @@ Update your own technician profile information. This endpoint automatically uses
   "message": "Emp profile updated successfully",
   "data": {
     "id": "emp_id",
-    "fullname": "John Technician Updated",
+    "name": "John Technician Updated",
     "email": "newemail@example.com",
     "status": "ACTIVE",
     "phone": "+1234567890",
+    "line": "john_tech_line_updated",
     "address": "123 Tech St Updated",
-    "custom_name": "Johnny Updated",
     "created_at": "2024-01-01T12:00:00.000Z",
     "updated_at": "2024-01-01T15:30:00.000Z",
     "permission": {
@@ -189,13 +192,13 @@ This API queries the `tbl_emps` table. The table contains:
 
 **tbl_emps:**
 - `id`: Unique technician ID
-- `fullname`: Technician's full name
+- `name`: Technician's full name
 - `email`: Technician's email address (unique)
 - `status`: Technician status (ACTIVE/INACTIVE)
 - `phone`: Technician's phone number (optional)
+- `line`: Technician's LINE ID (optional)
 - `address`: Technician's address (optional)
 - `password`: Hashed password
-- `custom_name`: Custom display name (optional)
 - `permission_id`: Reference to permission (TECHNICIAN)
 - `created_at`: Timestamp when the technician was created
 - `updated_at`: Timestamp when the technician was last updated

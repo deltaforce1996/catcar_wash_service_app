@@ -102,11 +102,13 @@ export interface DeviceResponseApi {
         value: number;
         description: string;
       };
-      [key: string]: {
-        unit: string;
-        value: number;
-        description: string;
-      } | undefined;
+      [key: string]:
+        | {
+            unit: string;
+            value: number;
+            description: string;
+          }
+        | undefined;
     };
     system?: {
       on_time?: string;
@@ -152,7 +154,13 @@ export interface CreateDevicePayload {
   type: EnumDeviceType;
   owner_id: string;
   register_by: string;
-  information?: unknown;
+  information?: {
+    description: string;
+    mac_address: string;
+    chip_id: string;
+    model: string;
+    firmware_version: string;
+  };
   configs?: unknown;
 }
 
@@ -196,7 +204,9 @@ export class DeviceApiService extends BaseApiClient {
     return response;
   }
 
-  async GetDeviceById(id: string): Promise<ApiSuccessResponse<DeviceResponseApi>> {
+  async GetDeviceById(
+    id: string
+  ): Promise<ApiSuccessResponse<DeviceResponseApi>> {
     const response = await this.get<ApiSuccessResponse<DeviceResponseApi>>(
       `api/v1/devices/find-by-id/${id}`
     );

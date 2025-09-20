@@ -1,9 +1,9 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { UserStatus, PermissionType, Prisma, DeviceStatus } from '@prisma/client';
 import { PrismaService } from 'src/database/prisma/prisma.service';
-import { ItemNotFoundException } from 'src/errors';
+import { ItemNotFoundException, BadRequestException } from 'src/errors';
 import { BcryptService } from 'src/services/bcrypt.service';
-import { UpdateUserDto } from './dtos/update-user.dto';
+import { UpdateUserProfileDto } from './dtos/update-user.dto';
 import { RegisterUserDto } from './dtos/register-user.dto';
 import { parseKeyValueOnly } from 'src/shared/kv-parser';
 import { PaginatedResult } from 'src/types/internal.type';
@@ -196,20 +196,33 @@ export class UsersService {
     };
   }
 
-  async updateById(id: string, data: UpdateUserDto): Promise<UserWithDeviceCountsRow> {
+  async updateById(id: string, data: UpdateUserProfileDto): Promise<UserWithDeviceCountsRow> {
     // Check if user exists first
     const existingUser = await this.prisma.tbl_users.findUnique({
       where: { id },
-      select: { id: true },
+      select: { id: true, payment_info: true },
     });
 
     if (!existingUser) {
       throw new ItemNotFoundException('User not found');
     }
 
+    const updateData: any = { ...data };
+
+    // Handle partial update of payment_info (only for UpdateUserProfileDto)
+    if ('payment_info' in data && data.payment_info) {
+      const existingPaymentInfo = (existingUser.payment_info as any) || {};
+
+      // Merge with existing payment_info, only updating provided fields
+      updateData.payment_info = {
+        ...existingPaymentInfo,
+        ...data.payment_info,
+      };
+    }
+
     const user = await this.prisma.tbl_users.update({
       where: { id },
-      data,
+      data: updateData,
       select: userPublicSelect,
     });
 
@@ -232,6 +245,16 @@ export class UsersService {
   }
 
   async registerUser(data: RegisterUserDto): Promise<UserWithDeviceCountsRow> {
+    // Check if email already exists
+    const existingUser = await this.prisma.tbl_users.findUnique({
+      where: { email: data.email },
+      select: { id: true },
+    });
+
+    if (existingUser) {
+      throw new BadRequestException(`Email ${data.email} is already registered`);
+    }
+
     // Default password for new users
     const defaultPassword = 'CatCarWash123!';
     const hashedPassword = await this.bcryptService.hashPassword(defaultPassword);
@@ -256,7 +279,6 @@ export class UsersService {
         custom_name: data.custom_name,
         permission_id: permission.id,
         status: UserStatus.ACTIVE,
-        payment_info: data.payment_info,
       },
       select: userPublicSelect,
     });

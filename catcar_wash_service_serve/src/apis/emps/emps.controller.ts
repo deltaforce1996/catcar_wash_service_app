@@ -16,11 +16,12 @@ import { AuthenticatedUser } from 'src/types/internal.type';
 type EmpPublicResponse = PaginatedResult<EmpRow>;
 
 @UseFilters(AllExceptionFilter)
-@UseGuards(JwtAuthGuard, RoleAuthGuard, EmpSelfUpdateGuard)
+@UseGuards(JwtAuthGuard)
 @Controller('api/v1/emps')
 export class EmpsController {
   constructor(private readonly empsService: EmpsService) {}
 
+  @UseGuards(RoleAuthGuard)
   @RoleAdmin()
   @Post('register')
   async registerEmp(@Body() data: CreateEmpDto): Promise<SuccessResponse<EmpRow>> {
@@ -32,6 +33,7 @@ export class EmpsController {
     };
   }
 
+  @UseGuards(RoleAuthGuard)
   @RoleAdminAndTechnician()
   @Get('search')
   async searchEmps(@Query() q: SearchEmpDto): Promise<SuccessResponse<EmpPublicResponse>> {
@@ -43,8 +45,9 @@ export class EmpsController {
     };
   }
 
-  @Get('find-by-id/:id')
+  @UseGuards(RoleAuthGuard)
   @RoleAdminAndTechnician()
+  @Get('find-by-id/:id')
   async getEmpById(@Param('id') id: string): Promise<SuccessResponse<EmpRow>> {
     const result = await this.empsService.findById(id);
     return {
@@ -54,8 +57,9 @@ export class EmpsController {
     };
   }
 
-  @Put('update-profile')
+  @UseGuards(EmpSelfUpdateGuard)
   @SelfUpdate()
+  @Put('update-profile')
   async updateEmpProfile(
     @Request() req: Request & { user: AuthenticatedUser },
     @Body() data: UpdateEmpDto,
@@ -69,6 +73,7 @@ export class EmpsController {
     };
   }
 
+  @UseGuards(RoleAuthGuard)
   @RoleAdmin()
   @Put('update-by-id/:id')
   async updateEmpById(@Param('id') id: string, @Body() data: UpdateEmpDto): Promise<SuccessResponse<EmpRow>> {

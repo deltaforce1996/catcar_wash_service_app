@@ -4,6 +4,53 @@ This API provides CRUD operations and search functionality for users stored in t
 
 ## Endpoints
 
+### POST /api/v1/users/register
+
+Register a new user. **Admin and Technician only.**
+
+**Note:** All users are created with the default password `CatCarWash123!`. They should change this password after first login.
+
+#### Request Body
+
+```json
+{
+  "fullname": "John Doe",
+  "email": "john@example.com",
+  "phone": "+1234567890",
+  "address": "123 Main St",
+  "custom_name": "Johnny"
+}
+```
+
+#### Response Format
+
+```json
+{
+  "success": true,
+  "message": "User registered successfully",
+  "data": {
+    "id": "user_id",
+    "fullname": "John Doe",
+    "email": "john@example.com",
+    "status": "ACTIVE",
+    "phone": "+1234567890",
+    "address": "123 Main St",
+    "custom_name": "Johnny",
+    "created_at": "2024-01-01T12:00:00.000Z",
+    "updated_at": "2024-01-01T12:00:00.000Z",
+    "permission": {
+      "id": "permission_id",
+      "name": "USER"
+    },
+    "device_counts": {
+      "total": 0,
+      "active": 0,
+      "inactive": 0
+    }
+  }
+}
+```
+
 ### GET /api/v1/users/search
 
 Search users with various filtering options.
@@ -140,6 +187,14 @@ GET /api/v1/users/search?query=status:ACTIVE permission:ADMIN&exclude_device_cou
 }
 ```
 
+### GET /api/v1/users/find-by-id/:id
+
+Get user information by ID.
+
+#### Response Format
+
+Same as register endpoint with device counts included.
+
 ### PUT /api/v1/users/update-profile
 
 Update your own user profile information. This endpoint automatically uses the authenticated user's ID from the JWT token.
@@ -153,7 +208,12 @@ Update your own user profile information. This endpoint automatically uses the a
   "phone": "+1234567890",
   "address": "123 Main St",
   "custom_name": "Johnny",
-  "status": "ACTIVE"
+  "status": "ACTIVE",
+  "payment_info": {
+    "merchant_id": "merchant_123",
+    "api_key": "api_key_123",
+    "HMAC_key": "hmac_key_123"
+  }
 }
 ```
 
@@ -218,6 +278,9 @@ Authorization: Bearer <your_jwt_token>
 ```
 
 **Permission Requirements:**
+- `POST /api/v1/users/register`: Requires **ADMIN** or **TECHNICIAN** role
+- `GET /api/v1/users/search`: Requires **ADMIN** or **TECHNICIAN** role
+- `GET /api/v1/users/find-by-id/:id`: No specific role requirement (authenticated users only)
 - `PUT /api/v1/users/update-profile`: Requires **USER** role - can only update your own profile
 - `PUT /api/v1/users/update-by-id/:id`: Requires **ADMIN** role - can update any user's profile
 
@@ -234,6 +297,7 @@ The API uses various Prisma enums and types:
   - `total`: Total number of devices owned by the user
   - `active`: Number of devices with DEPLOYED status
   - `inactive`: Number of devices with DISABLED status
+- **Payment Information**: Users can store payment gateway information including merchant_id, api_key, and HMAC_key
 - **Performance Optimization**: Use `exclude_device_counts=true` to skip device count calculations for faster response times
 - **Search Functionality**: Supports both general search and specific field filtering
 - **Pagination**: Built-in pagination with configurable page size
@@ -241,6 +305,7 @@ The API uses various Prisma enums and types:
   - Users can only update their own profile
   - Admins can update any user's profile
   - Proper permission validation using JWT tokens
+- **Default Passwords**: New users are created with the default password `CatCarWash123!`
 
 ## Database Schema
 
@@ -255,6 +320,7 @@ This API queries the `tbl_users` table and aggregates data from `tbl_devices` fo
 - `address`: User's address (optional)
 - `password`: Hashed password
 - `custom_name`: Custom display name (optional)
+- `payment_info`: JSON object containing payment gateway information (optional)
 - `permission_id`: Reference to permission
 - `created_at`: Timestamp when the user was created
 - `updated_at`: Timestamp when the user was last updated
