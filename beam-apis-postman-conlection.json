@@ -1,0 +1,835 @@
+{
+    "info": {
+      "_postman_id": "44124059-3a61-41ab-a703-2b749ef25fb0",
+      "name": "[For merchant test] Playground (SANDBOX) version 1.7.1",
+      "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+      "_exporter_id": "34657924",
+      "_collection_link": "https://orange-meteor-635984.postman.co/workspace/BEAM-x-API~31dc3c72-80c1-4d05-a89a-4cc1a74e2105/collection/34657924-44124059-3a61-41ab-a703-2b749ef25fb0?action=share&source=collection_link&creator=34657924"
+    },
+    "item": [
+      {
+        "name": "V1",
+        "item": [
+          {
+            "name": "api-payment-links",
+            "item": [
+              {
+                "name": "Create a Payment Link",
+                "request": {
+                  "auth": {
+                    "type": "basic",
+                    "basic": [
+                      {
+                        "key": "password",
+                        "value": "{{apikey}}",
+                        "type": "string"
+                      },
+                      {
+                        "key": "username",
+                        "value": "{{merchantId}}",
+                        "type": "string"
+                      }
+                    ]
+                  },
+                  "method": "POST",
+                  "header": [],
+                  "body": {
+                    "mode": "raw",
+                    "raw": "{\n    \"collectDeliveryAddress\": false,\n    \"expiresAt\": \"2026-06-05T04:20:04.067Z\",\n    \"linkSettings\": {\n        \"buyNowPayLater\": {\n            \"isEnabled\": false\n        },\n        \"card\": {\n            \"isEnabled\": true\n        },\n        \"cardInstallments\": {\n            \"installments3m\": {\n                \"isEnabled\": true\n            },\n            \"installments4m\": {\n                \"isEnabled\": true\n            },\n            \"installments6m\": {\n                \"isEnabled\": true\n            },\n            \"installments10m\": {\n                \"isEnabled\": true\n            },\n            \"isEnabled\": true\n        },\n        \"eWallets\": {\n            \"isEnabled\": true\n        },\n        \"mobileBanking\": {\n            \"isEnabled\": true\n        },\n        \"qrPromptPay\": {\n            \"isEnabled\": true\n        }\n    },\n    \"order\": {\n        \"currency\": \"THB\",\n        \"description\": \"Pets Shop\",\n        \"internalNote\": \"string\",\n        \"netAmount\": 100,\n        \"orderItems\": [\n            {\n                \"description\": \"Cat\",\n                \"imageUrl\": \"https://encrypted-tbn3.gstatic.com/images?q=tbn:ANd9GcQhgTNCuDgVXM3besQcyklPg1UG_yct9CbGEiAqAlFu3SjHmjdWcJtjqpM8on3RGifxrsApvWGqisu49inxSZDFpQ\",\n                \"itemName\": \"American shorthair\",\n                \"price\": 1000000,\n                \"productId\": \"automated_01\",\n                \"quantity\": 2,\n                \"sku\": \"S\"\n            },\n            {\n                \"description\": \"Dog\",\n                \"imageUrl\": \"https://cdn05.zipify.com/TArsw3DvFfNX8o-_adR4MItDEM8=/fit-in/1940x0/6d8d9a148fd542fba5faa74e9aeb5f60/2.jpeg\",\n                \"itemName\": \"Chihuahua\",\n                \"price\": 1000000,\n                \"productId\": \"automated_02\",\n                \"quantity\": 1,\n                \"sku\": \"XS\"\n            }\n        ],\n        \"referenceId\": \"order#10001\"\n    },\n    \"redirectUrl\": \"https://www.beamcheckout.com\"\n}",
+                    "options": {
+                      "raw": {
+                        "language": "json"
+                      }
+                    }
+                  },
+                  "url": {
+                    "raw": "{{url}}/api/v1/payment-links",
+                    "host": [
+                      "{{url}}"
+                    ],
+                    "path": [
+                      "api",
+                      "v1",
+                      "payment-links"
+                    ]
+                  }
+                },
+                "response": []
+              },
+              {
+                "name": "Retrieves a Payment Link with the given ID",
+                "request": {
+                  "auth": {
+                    "type": "basic",
+                    "basic": [
+                      {
+                        "key": "password",
+                        "value": "{{apikey}}",
+                        "type": "string"
+                      },
+                      {
+                        "key": "username",
+                        "value": "{{merchantId}}",
+                        "type": "string"
+                      }
+                    ]
+                  },
+                  "method": "GET",
+                  "header": [],
+                  "url": {
+                    "raw": "{{url}}/api/v1/payment-links/{{paymentLinkId}}",
+                    "host": [
+                      "{{url}}"
+                    ],
+                    "path": [
+                      "api",
+                      "v1",
+                      "payment-links",
+                      "{{paymentLinkId}}"
+                    ]
+                  }
+                },
+                "response": []
+              },
+              {
+                "name": "Disable a Payment Link with the given ID",
+                "request": {
+                  "auth": {
+                    "type": "basic",
+                    "basic": [
+                      {
+                        "key": "password",
+                        "value": "{{apikey}}",
+                        "type": "string"
+                      },
+                      {
+                        "key": "username",
+                        "value": "{{merchantId}}",
+                        "type": "string"
+                      }
+                    ]
+                  },
+                  "method": "PATCH",
+                  "header": [],
+                  "url": {
+                    "raw": "{{url}}/api/v1/payment-links/{{paymentLinkId}}/disable",
+                    "host": [
+                      "{{url}}"
+                    ],
+                    "path": [
+                      "api",
+                      "v1",
+                      "payment-links",
+                      "{{paymentLinkId}}",
+                      "disable"
+                    ]
+                  }
+                },
+                "response": []
+              }
+            ]
+          },
+          {
+            "name": "api-charges",
+            "item": [
+              {
+                "name": "Lists the Charges",
+                "request": {
+                  "auth": {
+                    "type": "basic",
+                    "basic": [
+                      {
+                        "key": "password",
+                        "value": "{{apikey}}",
+                        "type": "string"
+                      },
+                      {
+                        "key": "username",
+                        "value": "{{merchantId}}",
+                        "type": "string"
+                      }
+                    ]
+                  },
+                  "method": "GET",
+                  "header": [],
+                  "url": {
+                    "raw": "{{url}}/api/v1/charges",
+                    "host": [
+                      "{{url}}"
+                    ],
+                    "path": [
+                      "api",
+                      "v1",
+                      "charges"
+                    ],
+                    "query": [
+                      {
+                        "key": "referenceId",
+                        "value": null,
+                        "disabled": true
+                      },
+                      {
+                        "key": "source_in",
+                        "value": "",
+                        "description": "PAYMENT_LINK,STORE_LINK,QR_PROMPT_PAY_LINK,API,BOLT",
+                        "disabled": true
+                      },
+                      {
+                        "key": "sourceId",
+                        "value": null,
+                        "disabled": true
+                      },
+                      {
+                        "key": "offset",
+                        "value": null,
+                        "description": "\u003E=0",
+                        "disabled": true
+                      },
+                      {
+                        "key": "limit",
+                        "value": "",
+                        "description": "1-100",
+                        "disabled": true
+                      }
+                    ]
+                  }
+                },
+                "response": []
+              },
+              {
+                "name": "Creates a Charge - Example for QR PromptPay",
+                "event": [
+                  {
+                    "listen": "test",
+                    "script": {
+                      "exec": [
+                        ""
+                      ],
+                      "type": "text/javascript",
+                      "packages": {
+  
+                      }
+                    }
+                  },
+                  {
+                    "listen": "prerequest",
+                    "script": {
+                      "exec": [
+                        ""
+                      ],
+                      "type": "text/javascript",
+                      "packages": {
+  
+                      }
+                    }
+                  }
+                ],
+                "request": {
+                  "auth": {
+                    "type": "basic",
+                    "basic": [
+                      {
+                        "key": "password",
+                        "value": "{{apikey}}",
+                        "type": "string"
+                      },
+                      {
+                        "key": "username",
+                        "value": "{{merchantId}}",
+                        "type": "string"
+                      }
+                    ]
+                  },
+                  "method": "POST",
+                  "header": [],
+                  "body": {
+                    "mode": "raw",
+                    "raw": "{\n    \"amount\": 11100,\n    \"currency\": \"THB\",\n    \"paymentMethod\": {\n        \"paymentMethodType\": \"QR_PROMPT_PAY\",\n        \"qrPromptPay\": {\n            \"expiresAt\": \"2025-10-24T06:10:45.279018989Z\"\n        }\n    },\n    \"referenceId\": \"TestReferenceId\",\n    \"returnUrl\": \"https://www.beamcheckout.com\"\n}",
+                    "options": {
+                      "raw": {
+                        "language": "json"
+                      }
+                    }
+                  },
+                  "url": {
+                    "raw": "{{url}}/api/v1/charges",
+                    "host": [
+                      "{{url}}"
+                    ],
+                    "path": [
+                      "api",
+                      "v1",
+                      "charges"
+                    ]
+                  }
+                },
+                "response": [
+                  {
+                    "name": "Example for Credit Card",
+                    "originalRequest": {
+                      "method": "POST",
+                      "header": [],
+                      "body": {
+                        "mode": "raw",
+                        "raw": "{\n    \"amount\": 300099,\n    \"currency\": \"THB\",\n    \"paymentMethod\": {\n        \"paymentMethodType\": \"CARD\",\n        \"card\": {\n            \"cardHolderName\": \"CreditCardVISASucceed\",\n            \"expiryMonth\": 12,\n            \"expiryYear\": 30,\n            \"pan\": \"4111111111111111\",\n            \"securityCode\": \"123\"\n        }\n    },\n    \"referenceId\": \"TestReferenceId\",\n    \"returnUrl\": \"https://www.beamcheckout.com\"\n}",
+                        "options": {
+                          "raw": {
+                            "language": "json"
+                          }
+                        }
+                      },
+                      "url": {
+                        "raw": "{{url}}/api/v1/charges",
+                        "host": [
+                          "{{url}}"
+                        ],
+                        "path": [
+                          "api",
+                          "v1",
+                          "charges"
+                        ]
+                      }
+                    },
+                    "_postman_previewlanguage": "",
+                    "header": [
+                      {
+  
+                      }
+                    ],
+                    "cookie": [
+                      {
+                        "expires": "Invalid Date"
+                      }
+                    ],
+                    "body": ""
+                  },
+                  {
+                    "name": "Example for Installment (3 months)",
+                    "originalRequest": {
+                      "method": "POST",
+                      "header": [],
+                      "body": {
+                        "mode": "raw",
+                        "raw": "{\n    \"amount\": 300099,\n    \"currency\": \"THB\",\n    \"paymentMethod\": {\n        \"paymentMethodType\": \"CARD_INSTALLMENTS\",\n        \"cardInstallments\": {\n            \"cardHolderName\": \"CreditCardInstallmentsKBankSucceed\",\n            \"expiryMonth\": 12,\n            \"expiryYear\": 30,\n            \"installmentPeriod\": 3,\n            \"pan\": \"4417704002802961\",\n            \"securityCode\": \"123\"\n        }\n    },\n    \"referenceId\": \"TestReferenceId\",\n    \"returnUrl\": \"https://www.beamcheckout.com\"\n}",
+                        "options": {
+                          "raw": {
+                            "language": "json"
+                          }
+                        }
+                      },
+                      "url": {
+                        "raw": "{{url}}/api/v1/charges",
+                        "host": [
+                          "{{url}}"
+                        ],
+                        "path": [
+                          "api",
+                          "v1",
+                          "charges"
+                        ]
+                      }
+                    },
+                    "_postman_previewlanguage": null,
+                    "header": null,
+                    "cookie": [],
+                    "body": null
+                  },
+                  {
+                    "name": "Example for Installment (4 months)",
+                    "originalRequest": {
+                      "method": "POST",
+                      "header": [],
+                      "body": {
+                        "mode": "raw",
+                        "raw": "{\n    \"amount\": 300099,\n    \"currency\": \"THB\",\n    \"paymentMethod\": {\n        \"paymentMethodType\": \"CARD_INSTALLMENTS\",\n        \"cardInstallments\": {\n            \"cardHolderName\": \"CreditCardInstallmentsKBankSucceed\",\n            \"expiryMonth\": 12,\n            \"expiryYear\": 30,\n            \"installmentPeriod\": 4,\n            \"pan\": \"4417704002802961\",\n            \"securityCode\": \"123\"\n        }\n    },\n    \"referenceId\": \"TestReferenceId\",\n    \"returnUrl\": \"https://www.beamcheckout.com\"\n}",
+                        "options": {
+                          "raw": {
+                            "language": "json"
+                          }
+                        }
+                      },
+                      "url": {
+                        "raw": "{{url}}/api/v1/charges",
+                        "host": [
+                          "{{url}}"
+                        ],
+                        "path": [
+                          "api",
+                          "v1",
+                          "charges"
+                        ]
+                      }
+                    },
+                    "_postman_previewlanguage": null,
+                    "header": null,
+                    "cookie": [],
+                    "body": null
+                  },
+                  {
+                    "name": "Example for Installment (6 months)",
+                    "originalRequest": {
+                      "method": "POST",
+                      "header": [],
+                      "body": {
+                        "mode": "raw",
+                        "raw": "{\n    \"amount\": 400099,\n    \"currency\": \"THB\",\n    \"paymentMethod\": {\n        \"paymentMethodType\": \"CARD_INSTALLMENTS\",\n        \"cardInstallments\": {\n            \"cardHolderName\": \"CreditCardInstallmentsKTCSucceed\",\n            \"expiryMonth\": 12,\n            \"expiryYear\": 30,\n            \"installmentPeriod\": 6,\n            \"pan\": \"4391370000000006\",\n            \"securityCode\": \"123\"\n        }\n    },\n    \"referenceId\": \"TestReferenceId\",\n    \"returnUrl\": \"https://www.beamcheckout.com\"\n}",
+                        "options": {
+                          "raw": {
+                            "language": "json"
+                          }
+                        }
+                      },
+                      "url": {
+                        "raw": "{{url}}/api/v1/charges",
+                        "host": [
+                          "{{url}}"
+                        ],
+                        "path": [
+                          "api",
+                          "v1",
+                          "charges"
+                        ]
+                      }
+                    },
+                    "_postman_previewlanguage": null,
+                    "header": null,
+                    "cookie": [],
+                    "body": null
+                  },
+                  {
+                    "name": "Example for Installment (10 months)",
+                    "originalRequest": {
+                      "method": "POST",
+                      "header": [
+                        {
+                          "key": "x-beam-idempotency-key",
+                          "value": "QA-{{$guid}}",
+                          "disabled": true
+                        }
+                      ],
+                      "body": {
+                        "mode": "raw",
+                        "raw": "{\n    \"amount\": 500099,\n    \"currency\": \"THB\",\n    \"paymentMethod\": {\n        \"paymentMethodType\": \"CARD_INSTALLMENTS\",\n        \"cardInstallments\": {\n            \"cardHolderName\": \"CreditCardInstallmentsKTCSucceed\",\n            \"expiryMonth\": 12,\n            \"expiryYear\": 30,\n            \"installmentPeriod\": 10,\n            \"pan\": \"4391370000000006\",\n            \"securityCode\": \"123\"\n        }\n    },\n    \"referenceId\": \"TestReferenceId\",\n    \"returnUrl\": \"https://www.beamcheckout.com\"\n}",
+                        "options": {
+                          "raw": {
+                            "language": "json"
+                          }
+                        }
+                      },
+                      "url": {
+                        "raw": "{{url}}/api/v1/charges",
+                        "host": [
+                          "{{url}}"
+                        ],
+                        "path": [
+                          "api",
+                          "v1",
+                          "charges"
+                        ]
+                      }
+                    },
+                    "_postman_previewlanguage": null,
+                    "header": null,
+                    "cookie": [],
+                    "body": null
+                  },
+                  {
+                    "name": "Example for E-Wallet (Wechat)",
+                    "originalRequest": {
+                      "method": "POST",
+                      "header": [],
+                      "body": {
+                        "mode": "raw",
+                        "raw": "{\n    \"amount\": 11100,\n    \"currency\": \"THB\",\n    \"paymentMethod\": {\n        \"paymentMethodType\": \"WECHAT_PAY\",\n        \"weChatPay\": {}\n    },\n    \"referenceId\": \"TestReferenceId\",\n    \"returnUrl\": \"https://www.beamcheckout.com\"\n}",
+                        "options": {
+                          "raw": {
+                            "language": "json"
+                          }
+                        }
+                      },
+                      "url": {
+                        "raw": "{{url}}/api/v1/charges",
+                        "host": [
+                          "{{url}}"
+                        ],
+                        "path": [
+                          "api",
+                          "v1",
+                          "charges"
+                        ]
+                      }
+                    },
+                    "_postman_previewlanguage": null,
+                    "header": null,
+                    "cookie": [],
+                    "body": null
+                  },
+                  {
+                    "name": "Example for E-Wallet (Alipay)",
+                    "originalRequest": {
+                      "method": "POST",
+                      "header": [],
+                      "body": {
+                        "mode": "raw",
+                        "raw": "{\n    \"amount\": 11100,\n    \"currency\": \"THB\",\n    \"paymentMethod\": {\n        \"paymentMethodType\": \"ALIPAY\",\n        \"alipay\": {}\n    },\n    \"referenceId\": \"TestReferenceId\",\n    \"returnUrl\": \"https://www.beamcheckout.com\"\n}",
+                        "options": {
+                          "raw": {
+                            "language": "json"
+                          }
+                        }
+                      },
+                      "url": {
+                        "raw": "{{url}}/api/v1/charges",
+                        "host": [
+                          "{{url}}"
+                        ],
+                        "path": [
+                          "api",
+                          "v1",
+                          "charges"
+                        ]
+                      }
+                    },
+                    "_postman_previewlanguage": null,
+                    "header": null,
+                    "cookie": [],
+                    "body": null
+                  },
+                  {
+                    "name": "Example for E-Wallet (Shopee)",
+                    "originalRequest": {
+                      "method": "POST",
+                      "header": [],
+                      "body": {
+                        "mode": "raw",
+                        "raw": "{\n    \"amount\": 11100,\n    \"currency\": \"THB\",\n    \"paymentMethod\": {\n        \"paymentMethodType\": \"SHOPEE_PAY\",\n        \"shopeePay\": {}\n    },\n    \"referenceId\": \"TestReferenceId\",\n    \"returnUrl\": \"https://www.beamcheckout.com\"\n}",
+                        "options": {
+                          "raw": {
+                            "language": "json"
+                          }
+                        }
+                      },
+                      "url": {
+                        "raw": "{{url}}/api/v1/charges",
+                        "host": [
+                          "{{url}}"
+                        ],
+                        "path": [
+                          "api",
+                          "v1",
+                          "charges"
+                        ]
+                      }
+                    },
+                    "_postman_previewlanguage": null,
+                    "header": null,
+                    "cookie": [],
+                    "body": null
+                  },
+                  {
+                    "name": "Example for E-Wallet (Line)",
+                    "originalRequest": {
+                      "method": "POST",
+                      "header": [],
+                      "body": {
+                        "mode": "raw",
+                        "raw": "{\n    \"amount\": 11100,\n    \"currency\": \"THB\",\n    \"paymentMethod\": {\n        \"paymentMethodType\": \"LINE_PAY\",\n        \"linePay\": {}\n    },\n    \"referenceId\": \"TestReferenceId\",\n    \"returnUrl\": \"https://www.beamcheckout.com\"\n}",
+                        "options": {
+                          "raw": {
+                            "language": "json"
+                          }
+                        }
+                      },
+                      "url": {
+                        "raw": "{{url}}/api/v1/charges",
+                        "host": [
+                          "{{url}}"
+                        ],
+                        "path": [
+                          "api",
+                          "v1",
+                          "charges"
+                        ]
+                      }
+                    },
+                    "_postman_previewlanguage": null,
+                    "header": null,
+                    "cookie": [],
+                    "body": null
+                  },
+                  {
+                    "name": "Example for E-Wallet (True)",
+                    "originalRequest": {
+                      "method": "POST",
+                      "header": [],
+                      "body": {
+                        "mode": "raw",
+                        "raw": "{\n    \"amount\": 11100,\n    \"currency\": \"THB\",\n    \"paymentMethod\": {\n        \"paymentMethodType\": \"TRUE_MONEY\",\n        \"trueMoney\": {}\n    },\n    \"referenceId\": \"TestReferenceId\",\n    \"returnUrl\": \"https://www.beamcheckout.com\"\n}",
+                        "options": {
+                          "raw": {
+                            "language": "json"
+                          }
+                        }
+                      },
+                      "url": {
+                        "raw": "{{url}}/api/v1/charges",
+                        "host": [
+                          "{{url}}"
+                        ],
+                        "path": [
+                          "api",
+                          "v1",
+                          "charges"
+                        ]
+                      }
+                    },
+                    "_postman_previewlanguage": null,
+                    "header": null,
+                    "cookie": [],
+                    "body": null
+                  }
+                ]
+              },
+              {
+                "name": "Gets a Charge",
+                "request": {
+                  "auth": {
+                    "type": "basic",
+                    "basic": [
+                      {
+                        "key": "password",
+                        "value": "{{apikey}}",
+                        "type": "string"
+                      },
+                      {
+                        "key": "username",
+                        "value": "{{merchantId}}",
+                        "type": "string"
+                      }
+                    ]
+                  },
+                  "method": "GET",
+                  "header": [],
+                  "url": {
+                    "raw": "{{url}}/api/v1/charges/{{chargeId}}",
+                    "host": [
+                      "{{url}}"
+                    ],
+                    "path": [
+                      "api",
+                      "v1",
+                      "charges",
+                      "{{chargeId}}"
+                    ]
+                  }
+                },
+                "response": []
+              }
+            ]
+          },
+          {
+            "name": "api-refunds",
+            "item": [
+              {
+                "name": "Creates a Refund",
+                "event": [
+                  {
+                    "listen": "test",
+                    "script": {
+                      "exec": [
+                        ""
+                      ],
+                      "type": "text/javascript",
+                      "packages": {
+  
+                      }
+                    }
+                  },
+                  {
+                    "listen": "prerequest",
+                    "script": {
+                      "exec": [
+                        ""
+                      ],
+                      "type": "text/javascript",
+                      "packages": {
+  
+                      }
+                    }
+                  }
+                ],
+                "request": {
+                  "auth": {
+                    "type": "basic",
+                    "basic": [
+                      {
+                        "key": "password",
+                        "value": "{{apikey}}",
+                        "type": "string"
+                      },
+                      {
+                        "key": "username",
+                        "value": "{{merchantId}}",
+                        "type": "string"
+                      }
+                    ]
+                  },
+                  "method": "POST",
+                  "header": [],
+                  "body": {
+                    "mode": "raw",
+                    "raw": "{\n    \"chargeId\": \"{{chargeId}}\",\n    \"reason\": \"Defective item\"\n}",
+                    "options": {
+                      "raw": {
+                        "language": "json"
+                      }
+                    }
+                  },
+                  "url": {
+                    "raw": "{{url}}/api/v1/refunds",
+                    "host": [
+                      "{{url}}"
+                    ],
+                    "path": [
+                      "api",
+                      "v1",
+                      "refunds"
+                    ]
+                  }
+                },
+                "response": []
+              },
+              {
+                "name": "Gets a Refund",
+                "request": {
+                  "auth": {
+                    "type": "basic",
+                    "basic": [
+                      {
+                        "key": "password",
+                        "value": "{{apikey}}",
+                        "type": "string"
+                      },
+                      {
+                        "key": "username",
+                        "value": "{{merchantId}}",
+                        "type": "string"
+                      }
+                    ]
+                  },
+                  "method": "GET",
+                  "header": [],
+                  "url": {
+                    "raw": "{{url}}/api/v1/refunds/{{refundId}}",
+                    "host": [
+                      "{{url}}"
+                    ],
+                    "path": [
+                      "api",
+                      "v1",
+                      "refunds",
+                      "{{refundId}}"
+                    ]
+                  }
+                },
+                "response": []
+              }
+            ]
+          },
+          {
+            "name": "api-transactions",
+            "item": [
+              {
+                "name": "Lists the Transactions",
+                "request": {
+                  "auth": {
+                    "type": "basic",
+                    "basic": [
+                      {
+                        "key": "password",
+                        "value": "{{apikey}}",
+                        "type": "string"
+                      },
+                      {
+                        "key": "username",
+                        "value": "{{merchantId}}",
+                        "type": "string"
+                      }
+                    ]
+                  },
+                  "method": "GET",
+                  "header": [],
+                  "url": {
+                    "raw": "{{url}}/api/v1/transactions",
+                    "host": [
+                      "{{url}}"
+                    ],
+                    "path": [
+                      "api",
+                      "v1",
+                      "transactions"
+                    ],
+                    "query": [
+                      {
+                        "key": "referenceId",
+                        "value": "",
+                        "disabled": true
+                      },
+                      {
+                        "key": "offset",
+                        "value": "",
+                        "description": "\u003E=0",
+                        "disabled": true
+                      },
+                      {
+                        "key": "limit",
+                        "value": "",
+                        "description": "1-100",
+                        "disabled": true
+                      }
+                    ]
+                  }
+                },
+                "response": []
+              },
+              {
+                "name": "Gets a successful transaction",
+                "request": {
+                  "auth": {
+                    "type": "basic",
+                    "basic": [
+                      {
+                        "key": "password",
+                        "value": "{{apikey}}",
+                        "type": "string"
+                      },
+                      {
+                        "key": "username",
+                        "value": "{{merchantId}}",
+                        "type": "string"
+                      }
+                    ]
+                  },
+                  "method": "GET",
+                  "header": [],
+                  "url": {
+                    "raw": "{{url}}/api/v1/transactions/{{transactionId}}",
+                    "host": [
+                      "{{url}}"
+                    ],
+                    "path": [
+                      "api",
+                      "v1",
+                      "transactions",
+                      "{{transactionId}}"
+                    ]
+                  }
+                },
+                "response": []
+              }
+            ]
+          }
+        ]
+      }
+    ]
+  }

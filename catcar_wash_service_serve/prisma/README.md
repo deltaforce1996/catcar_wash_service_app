@@ -1,379 +1,586 @@
-# Prisma + SQL Migration Guide
+# CatCar Wash Service - Database Setup Guide
 
-> ขั้นตอนแบบเป็นไฟล์ **3 ชุด**: 1) Create base tables → 2) Create partitioned table(s) → 3) Create view
->
-> ตัวอย่างนี้ใช้ **PostgreSQL** และ **Prisma** (Node.js)
+> A comprehensive guide for setting up the CatCar Wash Service database with **PostgreSQL**, **Prisma ORM**, and **partitioned tables** for optimal performance.
 
----
+## 🚀 Project Overview
+
+The CatCar Wash Service is a full-stack application consisting of:
+
+- **Backend API** (`catcar_wash_service_serve`): NestJS server with Prisma ORM
+- **Frontend** (`catcar_wash_service_frontend`): Nuxt.js Vue.js application
+- **Scripts** (`catcar_wash_service_script`): Python utilities for database maintenance
+- **Database**: PostgreSQL with advanced partitioning and materialized views
 
 ## ✅ Prerequisites
 
-* Node.js 18+
-* PostgreSQL 13+
-* `psql` CLI (แนะนำ)
+* **Node.js** 18+ 
+* **PostgreSQL** 13+
+* **pnpm** (recommended) or npm
+* `psql` CLI for database operations
+
+### Installation
 
 ```bash
-npm i -D prisma
-npm i @prisma/client
-npx prisma init
+# Clone the repository
+git clone <repository-url>
+cd catcar_wash_service_app
+
+# Install dependencies for backend
+cd catcar_wash_service_serve
+pnpm install
+
+# Install Prisma CLI globally (if not already installed)
+pnpm add -g prisma
 ```
 
-ตั้งค่าไฟล์ `.env`
+### Environment Configuration
+
+Create `.env` file in `catcar_wash_service_serve/`:
 
 ```env
-DATABASE_URL="postgresql://user:password@localhost:5432/mydb?schema=public"
+DATABASE_URL="postgresql://username:password@localhost:5432/catcar_wash_db?schema=public"
+JWT_SECRET="your-jwt-secret-key"
 ```
 
 ---
 
-## 📁 โครงสร้างโปรเจกต์ (แนะนำ)
+## 📁 Prisma Folder Structure
 
 ```
-project/
- ├─ prisma/
- │   ├─ migrations/                 # โฟลเดอร์ migration ของ Prisma
- │   ├─ raw-sql/                    # เก็บ SQL 3 ขั้นตอน
- │   │   ├─ 01_create_tables.sql
- │   │   ├─ 02_create_partitions.sql
- │   │   └─ 03_create_views.sql
- │   └─ schema.prisma
- └─ README.md
+catcar_wash_service_serve/
+├── prisma/                             # Prisma configuration directory
+│   ├── migrations/                     # Database migration files
+│   │   ├── 20250829112513_carwash_postage_db/
+│   │   │   └── migration.sql           # Base tables and core schema
+│   │   ├── 20250829112611_partition_60d_devices_events_states/
+│   │   │   └── migration.sql           # Partitioned tables setup
+│   │   ├── 20250829112710_materialzed_view/
+│   │   │   └── migration.sql           # Analytics materialized views
+│   │   ├── 20250904160012_add_tbl_device_last_state/
+│   │   │   └── migration.sql           # Device state optimization
+│   │   └── migration_lock.toml         # Migration lock file
+│   ├── schema.prisma                   # Database schema definition
+│   ├── seed.ts                         # Database seeding script
+│   └── README.md                       # This documentation file
+└── src/
+    └── database/
+        └── prisma/                     # NestJS Prisma integration
+            ├── prisma.service.ts       # PrismaClient service wrapper
+            └── prisma.module.ts        # Global Prisma module
 ```
 
-> เราจะคุมสคีมาด้วย **raw SQL** แล้วให้ Prisma รู้จักเฉพาะ base tables/views ผ่าน `schema.prisma`
+### Key Files Explained
+
+- **`schema.prisma`**: Defines database models, relationships, and enums
+- **`migrations/`**: Contains SQL migration files with version history
+- **`seed.ts`**: Populates database with initial data (permissions, super admin)
+- **`prisma.service.ts`**: NestJS service that extends PrismaClient with lifecycle hooks
+- **`prisma.module.ts`**: Global module that provides PrismaService across the app
+
+> The database schema is managed through **Prisma migrations** with **partitioned tables** and **materialized views** for optimal performance.
 
 ---
 
-## 1) Create Base Tables — `prisma/raw-sql/01_create_tables.sql`
+## 🗄️ Database Schema Overview
+
+The CatCar Wash Service database includes the following main entities:
+
+### Core Tables
+- **`tbl_permissions`** - User permission levels (ADMIN, TECHNICIAN, USER)
+- **`tbl_users`** - Customer user accounts
+- **`tbl_emps`** - Employee accounts
+- **`tbl_devices`** - Car wash devices (WASH/DRYING types)
+
+### Partitioned Tables (for performance)
+- **`tbl_devices_state`** - Device state logs (partitioned by 60 days)
+- **`tbl_devices_events`** - Device event logs (partitioned by 30 days)
+
+### Materialized Views (for analytics)
+- **`mv_device_payments_hour`** - Hourly payment summaries
+- **`mv_device_payments_day`** - Daily payment summaries  
+- **`mv_device_payments_month`** - Monthly payment summaries
+- **`mv_device_payments_year`** - Yearly payment summaries
+
+### Key Features
+- **Partitioning**: Large tables are partitioned by time for optimal query performance
+- **Materialized Views**: Pre-computed analytics for dashboard reporting
+- **Soft Deletes**: Status-based deletion (ACTIVE/INACTIVE)
+- **Audit Trails**: Created/updated timestamps on all entities
+
+---
+
+## 🚀 Quick Setup Guide
+
+### 1. Database Migration
+
+```bash
+# Navigate to backend directory
+cd catcar_wash_service_serve
+
+# Run database migrations (creates tables, partitions, and views)
+npx prisma migrate dev
+
+# Generate Prisma client
+npx prisma generate
+```
+
+### 2. Database Seeding
+
+```bash
+# Seed the database with initial data (permissions and super admin)
+npm run db:seed
+# or
+npx prisma db seed
+```
+
+### 3. Start the Application
+
+```bash
+# Development mode
+npm run start:dev
+
+# Production mode
+npm run build
+npm run start:prod
+```
+
+## 📊 Database Features
+
+### Partitioning Strategy
+
+The database uses **time-based partitioning** for optimal performance:
+
+- **`tbl_devices_state`**: Partitioned by **60 days**
+- **`tbl_devices_events`**: Partitioned by **30 days**
+
+Partitioning is automatically handled through Prisma migrations and Python scripts in `catcar_wash_service_script/`.
+
+### Materialized Views
+
+Pre-computed analytics views for dashboard performance:
 
 ```sql
--- Users & Events (ตัวอย่าง)
-CREATE TABLE IF NOT EXISTS users (
-  id SERIAL PRIMARY KEY,
-  email TEXT NOT NULL UNIQUE,
-  created_at TIMESTAMP NOT NULL DEFAULT now()
-);
-
-CREATE TABLE IF NOT EXISTS events (
-  id BIGSERIAL PRIMARY KEY,
-  user_id INT NOT NULL REFERENCES users(id),
-  amount NUMERIC(12,2) NOT NULL,
-  event_type TEXT NOT NULL,
-  created_at TIMESTAMP NOT NULL DEFAULT now()
-);
-
--- สำหรับประสิทธิภาพ
-CREATE INDEX IF NOT EXISTS idx_events_created_at ON events (created_at);
-CREATE INDEX IF NOT EXISTS idx_events_user_id ON events (user_id);
+-- Example: Query daily payment summaries
+SELECT * FROM mv_device_payments_day 
+WHERE day >= CURRENT_DATE - INTERVAL '30 days'
+ORDER BY day DESC;
 ```
 
 ---
 
-## 2) Create Partitioned Table — `prisma/raw-sql/02_create_partitions.sql`
+## 🔧 Prisma Service Integration
 
-> Prisma ยังไม่รองรับการประกาศ partition โดยตรง เราจะใช้ **native SQL**
+The application uses a **PrismaService** that extends PrismaClient with NestJS lifecycle hooks:
 
-```sql
--- ตารางหลักแบบ Partitioned (ตามช่วงเวลา)
-CREATE TABLE IF NOT EXISTS event_logs (
-  id BIGSERIAL,
-  user_id INT,
-  amount NUMERIC(12,2),
-  event_type TEXT,
-  created_at TIMESTAMP NOT NULL,
-  PRIMARY KEY (id, created_at)
-) PARTITION BY RANGE (created_at);
+```typescript
+// src/database/prisma/prisma.service.ts
+@Injectable()
+export class PrismaService extends PrismaClient implements OnModuleInit, OnModuleDestroy {
+  constructor(config: ConfigService) {
+    super({
+      log: ['query', 'info', 'warn', 'error'],
+      datasources: {
+        db: {
+          url: config.get<string>('DATABASE_URL'),
+        },
+      },
+    });
+  }
 
--- ตัวอย่าง: สร้างพาร์ทิชันรายเดือน (สิงหาคม 2025)
-CREATE TABLE IF NOT EXISTS event_logs_2025_08
-  PARTITION OF event_logs
-  FOR VALUES FROM ('2025-08-01') TO ('2025-09-01');
+  async onModuleInit() {
+    await this.$connect();
+  }
 
--- ดัชนีแนะนำ (สร้างบน parent ถ้าเหมาะสม หรือแต่ละ partition ตามเคส)
-CREATE INDEX IF NOT EXISTS idx_event_logs_created_at ON event_logs (created_at);
-CREATE INDEX IF NOT EXISTS idx_event_logs_user_id ON event_logs (user_id);
+  async onModuleDestroy() {
+    await this.$disconnect();
+  }
+}
 ```
 
-> เคล็ดลับ: เขียนสคริปต์ SQL/PLpgSQL เพื่อสร้างพาร์ทิชันล่วงหน้าทุกเดือน (optional)
+### Usage in Controllers
+
+```typescript
+// Example: Using PrismaService in a controller
+@Controller('devices')
+export class DevicesController {
+  constructor(private readonly prisma: PrismaService) {}
+
+  @Get()
+  async findAll() {
+    return this.prisma.tbl_devices.findMany({
+      include: {
+        owner: true,
+        registered_by: true,
+        device_states: {
+          take: 10,
+          orderBy: { created_at: 'desc' }
+        }
+      }
+    });
+  }
+}
+```
+
+### Materialized View Queries
+
+```typescript
+// Query materialized views using raw SQL
+async getDailyPayments(deviceId: string, days: number = 30) {
+  return this.prisma.$queryRaw`
+    SELECT * FROM mv_device_payments_day 
+    WHERE device_id = ${deviceId}
+    AND day >= CURRENT_DATE - INTERVAL '${days} days'
+    ORDER BY day DESC
+  `;
+}
+```
+
+---
+
+## 🔄 Migration Management
+
+### Development Environment
+
+```bash
+# Create and apply new migration
+npx prisma migrate dev --name your_migration_name
+
+# Reset database (⚠️ DESTROYS ALL DATA)
+npx prisma migrate reset
+
+# Check migration status
+npx prisma migrate status
+```
+
+### Production Deployment
+
+```bash
+# Deploy migrations to production (safe, non-destructive)
+npx prisma migrate deploy
+
+# Generate Prisma client for production
+npx prisma generate
+```
+
+### Migration Files Structure
+
+The project includes these key migrations:
+
+1. **`20250829112513_carwash_postage_db`** - Base tables and core schema
+2. **`20250829112611_partition_60d_devices_events_states`** - Partitioned tables setup
+3. **`20250829112710_materialzed_view`** - Analytics materialized views
+4. **`20250904160012_add_tbl_device_last_state`** - Device state optimization
+
+### Custom SQL in Migrations
+
+For complex operations not supported by Prisma schema, add raw SQL to migration files:
 
 ```sql
--- ฟังก์ชันสร้างพาร์ทิชันรายเดือนอัตโนมัติ (ตัวอย่าง)
-CREATE OR REPLACE FUNCTION ensure_event_logs_month(year int, month int) RETURNS void AS $$
+-- Example: Custom partitioning function
+CREATE OR REPLACE FUNCTION create_device_state_partition(start_date DATE, end_date DATE)
+RETURNS void AS $$
 DECLARE
-  start_date date := make_date(year, month, 1);
-  end_date   date := (make_date(year, month, 1) + interval '1 month');
-  part_name  text := format('event_logs_%s_%s', year, to_char(start_date, 'MM'));
+    partition_name TEXT;
 BEGIN
-  EXECUTE format(
-    'CREATE TABLE IF NOT EXISTS %I PARTITION OF event_logs FOR VALUES FROM (%L) TO (%L);',
-    part_name, start_date, end_date
-  );
+    partition_name := 'tbl_devices_state_' || to_char(start_date, 'YYYY_MM');
+    
+    EXECUTE format('CREATE TABLE IF NOT EXISTS %I PARTITION OF tbl_devices_state 
+                   FOR VALUES FROM (%L) TO (%L)', 
+                   partition_name, start_date, end_date);
 END;
 $$ LANGUAGE plpgsql;
 ```
 
-ใช้ฟังก์ชัน:
-
-```sql
-SELECT ensure_event_logs_month(2025, 9);
-```
-
 ---
 
-## 3) Create Views — `prisma/raw-sql/03_create_views.sql`
+## 🗃️ Prisma Schema Configuration
 
-```sql
--- มุมมองยอดรวมรายวัน
-CREATE OR REPLACE VIEW daily_summary AS
-SELECT
-  DATE(created_at) AS day,
-  COUNT(*) AS total_events,
-  SUM(amount) AS total_amount
-FROM event_logs
-GROUP BY DATE(created_at)
-ORDER BY day;
+The `schema.prisma` file defines the database structure with these key models:
 
--- มุมมองยอดรวมรายเดือน
-CREATE OR REPLACE VIEW monthly_summary AS
-SELECT
-  DATE_TRUNC('month', created_at) AS month,
-  COUNT(*) AS total_events,
-  SUM(amount) AS total_amount
-FROM event_logs
-GROUP BY DATE_TRUNC('month', created_at)
-ORDER BY month;
-
--- (ทางเลือก) Materialized View
--- CREATE MATERIALIZED VIEW mv_monthly_summary AS
--- SELECT DATE_TRUNC('month', created_at) AS month,
---        COUNT(*) AS total_events,
---        SUM(amount) AS total_amount
--- FROM event_logs
--- GROUP BY 1;
--- REFRESH MATERIALIZED VIEW CONCURRENTLY mv_monthly_summary;
-```
-
----
-
-## ⚙️ Apply SQL (สองทางเลือก)
-
-### ทางเลือก A: ใช้ `psql` ตรง ๆ (ง่ายและชัดเจน)
-
-```bash
-psql "$DATABASE_URL" -f prisma/raw-sql/01_create_tables.sql
-psql "$DATABASE_URL" -f prisma/raw-sql/02_create_partitions.sql
-psql "$DATABASE_URL" -f prisma/raw-sql/03_create_views.sql
-```
-
-### ทางเลือก B: รวมกับ Prisma Migrate (เก็บประวัติการเปลี่ยนแปลง)
-
-1. สร้าง migration ว่าง
-
-```bash
-npx prisma migrate dev --create-only --name init_base
-```
-
-2. เปิดโฟลเดอร์ที่ Prisma สร้าง เช่น `prisma/migrations/20250829120000_init_base/` แล้ววาง SQL จากไฟล์ `01/02/03` ลงใน `migration.sql` ตามลำดับหรือแยกเป็นหลาย ๆ migration ตามใจเหมาะ
-
-3. รัน
-
-```bash
-npx prisma migrate dev
-```
-
-> บนเซิร์ฟเวอร์/Production ให้ใช้
-
-```bash
-npx prisma migrate deploy
-```
-
----
-
-## 🧩 Prisma Schema (ให้ Prisma รู้จักเฉพาะตารางหลัก/วิว)
-
-`prisma/schema.prisma`
+### Core Models
 
 ```prisma
-datasource db {
-  provider = "postgresql"
-  url      = env("DATABASE_URL")
+// Permission management
+model tbl_permissions {
+  id         String         @id @default(cuid())
+  name       PermissionType @unique
+  created_at DateTime       @default(now())
+  updated_at DateTime       @updatedAt
+  users      tbl_users[]
+  employees  tbl_emps[]
+  @@map("tbl_permissions")
 }
 
-generator client {
-  provider = "prisma-client-js"
-}
-
-model User {
-  id         Int      @id @default(autoincrement())
-  email      String   @unique
-  created_at DateTime @default(now())
-  events     Event[]
-}
-
-model Event {
-  id         BigInt   @id @default(autoincrement())
-  user_id    Int
-  amount     Decimal  @db.Decimal(12, 2)
-  event_type String
-  created_at DateTime @default(now())
-
-  user User @relation(fields: [user_id], references: [id])
+// Device management
+model tbl_devices {
+  id           String       @id @default(cuid())
+  name         String
+  type         DeviceType   // WASH or DRYING
+  status       DeviceStatus @default(DISABLED)
+  owner_id     String
+  register_by_id String
+  created_at   DateTime     @default(now())
+  
+  owner         tbl_users @relation(fields: [owner_id], references: [id])
+  registered_by tbl_emps  @relation(fields: [register_by_id], references: [id])
+  device_states tbl_devices_state[]
+  device_events tbl_devices_events[]
+  
+  @@map("tbl_devices")
 }
 ```
 
-> หมายเหตุ
->
-> * Prisma ไม่จำเป็นต้องรู้จัก **partitioned parent** แยกต่างหาก ถ้าคุณ query ผ่านวิวหรือผ่านตารางหลักที่ประกาศไว้ในสคีมา
-> * ถ้าใช้ **VIEW** กับ Prisma ให้ประกาศเป็น `@@ignore` ในโมเดล (หรือไม่ประกาศในสคีมา) แล้วอ่านด้วย `prisma.$queryRaw` แทนในบางเคสที่ Prisma map ไม่ครบ
+### Partitioned Models (Performance)
 
-ตัวอย่างการใช้ Client:
-
-```ts
-import { PrismaClient } from '@prisma/client'
-const prisma = new PrismaClient()
-
-async function main() {
-  await prisma.user.create({
-    data: { email: 'test@example.com' }
-  })
-
-  const daily = await prisma.$queryRawUnsafe(
-    'SELECT * FROM daily_summary ORDER BY day DESC LIMIT 7'
-  )
-  console.log(daily)
+```prisma
+// Partitioned by 60 days
+model tbl_devices_state {
+  id         String   @id @default(cuid())
+  device_id  String
+  state_data Json?
+  hash_state String?
+  created_at DateTime @default(now())
+  
+  device tbl_devices @relation(fields: [device_id], references: [id])
+  @@map("tbl_devices_state")
+  @@index([device_id, created_at])
 }
 
-main()
-  .catch(console.error)
-  .finally(() => prisma.$disconnect())
+// Partitioned by 30 days
+model tbl_devices_events {
+  id         String    @default(cuid())
+  device_id  String
+  payload    Json?
+  created_at DateTime  @default(now())
+  
+  device tbl_devices @relation(fields: [device_id], references: [id])
+  @@id([id, created_at])
+  @@map("tbl_devices_events")
+}
+```
+
+### Materialized Views (Analytics)
+
+```prisma
+// Ignored by Prisma migrations but queryable
+model mv_device_payments_day {
+  device_id    String
+  day          DateTime
+  status       String?
+  total_amount Decimal
+  coin_sum     Decimal?
+  bank_sum     Decimal?
+  qr_net_sum   Decimal?
+  
+  @@id([device_id, day, status])
+  @@map("mv_device_payments_day")
+  @@ignore // Prevents Prisma from creating/managing this table
+}
+```
+
+> **Note**: Materialized views are marked with `@@ignore` to prevent Prisma from managing them, but they can still be queried using `$queryRaw`.
+
+---
+
+## 🔄 Development Workflow
+
+### Typical Development Cycle
+
+1. **Schema Changes**: Modify `schema.prisma`
+2. **Create Migration**: `npx prisma migrate dev --name describe_change`
+3. **Generate Client**: `npx prisma generate` (automatic with migrate dev)
+4. **Test Changes**: Run application and test functionality
+5. **Deploy**: `npx prisma migrate deploy` (production)
+
+### Working with Partitions
+
+```bash
+# Check partition status
+psql "$DATABASE_URL" -c "SELECT schemaname, tablename, partitionname 
+FROM pg_tables 
+WHERE tablename LIKE 'tbl_devices_%' 
+ORDER BY tablename;"
+
+# Create new partitions (run Python script)
+cd ../catcar_wash_service_script
+python partition_60d_cron.py
 ```
 
 ---
 
-## 🔁 Working Cycle ที่แนะนำ
+## 🛠️ Troubleshooting
 
-1. แก้ SQL ใน `raw-sql` (01 → 02 → 03)
-2. ใช้ `psql` ทดสอบบนเครื่อง
-3. ย้าย SQL เข้า `prisma/migrations/.../migration.sql`
-4. `npx prisma migrate dev` (local) / `npx prisma migrate deploy` (prod)
-5. `npx prisma generate` ทุกครั้งที่แก้ `schema.prisma`
+### Common Issues
 
----
+#### 1. Migration Conflicts
 
-## 🧠 ข้อควรระวัง & Tips
+```bash
+# Reset database (⚠️ DESTROYS DATA)
+npx prisma migrate reset
 
-* ใช้ `IF NOT EXISTS` เพื่อ rerun ได้ปลอดภัยขึ้น
-* ตั้ง **PRIMARY KEY** บน parent partitioned table ที่รวมคีย์ช่วง (เช่น `(id, created_at)`) เพื่อหลีกเลี่ยง duplicate keys ข้ามพาร์ทิชัน
-* เขียนสคริปต์สร้างพาร์ทิชันล่วงหน้า (รายเดือน/รายวัน) และตั้ง cron ถ้าจำเป็น
-* สำหรับ Materialized View ให้ตั้ง `REFRESH MATERIALIZED VIEW CONCURRENTLY ...` ตามรอบเวลา
-* อย่าลืมดัชนีที่สอดคล้องกับคิวรีจริง โดยเฉพาะคอลัมน์ที่ใช้ใน `WHERE`/`JOIN`/`ORDER BY`
+# Or resolve conflicts manually
+npx prisma migrate resolve --applied "migration_name"
+```
 
----
+#### 2. Connection Issues
 
-## 🧹 Rollback (อย่างย่อ)
+```bash
+# Test database connection
+npx prisma db pull
+
+# Check connection string format
+echo $DATABASE_URL
+```
+
+#### 3. Partition Management
 
 ```sql
-DROP VIEW IF EXISTS monthly_summary;
-DROP VIEW IF EXISTS daily_summary;
+-- Check if partitions exist
+SELECT * FROM pg_partitions 
+WHERE parent_table = 'tbl_devices_state';
 
--- ระวัง: ลบ partition ก่อน หรือลบ parent พร้อม CASCADE (ขึ้นกับนโยบาย)
--- DROP TABLE IF EXISTS event_logs_2025_08;
--- DROP TABLE IF EXISTS event_logs CASCADE;  -- จะลบลูกทั้งหมด
+-- Create missing partitions manually
+SELECT create_device_state_partition('2025-01-01', '2025-02-01');
+```
 
-DROP TABLE IF EXISTS events;
-DROP TABLE IF EXISTS users;
+#### 4. Materialized View Refresh
+
+```sql
+-- Refresh materialized views
+REFRESH MATERIALIZED VIEW CONCURRENTLY mv_device_payments_day;
+REFRESH MATERIALIZED VIEW CONCURRENTLY mv_device_payments_hour;
+```
+
+### Performance Optimization
+
+#### Database Indexes
+
+```sql
+-- Check index usage
+SELECT schemaname, tablename, indexname, idx_scan, idx_tup_read, idx_tup_fetch
+FROM pg_stat_user_indexes 
+WHERE schemaname = 'public'
+ORDER BY idx_scan DESC;
+
+-- Add missing indexes for common queries
+CREATE INDEX CONCURRENTLY IF NOT EXISTS idx_devices_owner_status 
+ON tbl_devices(owner_id, status);
+```
+
+#### Query Optimization
+
+```typescript
+// Use select to limit fields
+const devices = await prisma.tbl_devices.findMany({
+  select: {
+    id: true,
+    name: true,
+    status: true,
+    owner: {
+      select: { fullname: true, email: true }
+    }
+  },
+  take: 50,
+  orderBy: { created_at: 'desc' }
+});
+
+// Use raw queries for complex analytics
+const analytics = await prisma.$queryRaw`
+  SELECT device_id, COUNT(*) as event_count
+  FROM tbl_devices_events 
+  WHERE created_at >= NOW() - INTERVAL '7 days'
+  GROUP BY device_id
+  ORDER BY event_count DESC
+`;
 ```
 
 ---
 
-## 📚 อ้างอิงสั้น ๆ
+## 📚 Best Practices
 
-* Prisma Migrate vs db push: ใช้ **migrate** สำหรับการจัดการสคีมาแบบมีประวัติ (Production-ready)
-* Partitioning (Postgres): แนะนำให้พาร์ทิชันตามคอลัมน์เวลา + ทำดัชนีที่เหมาะสม
+### Schema Design
+- Use `cuid()` for primary keys (better than auto-increment)
+- Include `created_at` and `updated_at` on all tables
+- Use enums for fixed value sets
+- Mark materialized views with `@@ignore`
+
+### Performance
+- Partition large tables by time ranges
+- Create indexes on foreign keys and commonly queried columns
+- Use `$queryRaw` for complex analytics queries
+- Implement connection pooling in production
+
+### Security
+- Use environment variables for sensitive data
+- Implement proper authentication and authorization
+- Use parameterized queries to prevent SQL injection
+- Regular security updates for dependencies
 
 ---
 
-> เสร็จแล้ว! คุณสามารถปรับแก้ชื่อคอลัมน์/ดัชนี/พาร์ทิชันให้ตรงกับโดเมนของระบบคุณได้เลย ✨
+## 🔗 Additional Resources
 
-!(https://mikelopster.dev/posts/next-prisma/)
+- [Prisma Documentation](https://www.prisma.io/docs)
+- [PostgreSQL Partitioning Guide](https://www.postgresql.org/docs/current/ddl-partitioning.html)
+- [NestJS Database Integration](https://docs.nestjs.com/recipes/prisma)
+
+---
+
+> **Ready to go!** 🚀 The CatCar Wash Service database is now set up with optimal performance through partitioning and materialized views.
 
 
 
 
 
 
+## 🌱 Database Seeding
 
-# Database Seeding
+The `seed.ts` file populates the database with essential initial data:
 
-This directory contains the database seeding configuration for the CatCar Wash Service application.
+### Default Data Created
 
-## Seed File
-
-The `seed.ts` file populates the database with:
-
-1. **Permissions**: Creates the three permission types defined in the schema:
+1. **Permission Types**:
    - `ADMIN` - Full administrative access
-   - `TECHNICIAN` - Technical staff access
+   - `TECHNICIAN` - Technical staff access  
    - `USER` - Regular user access
 
-2. **SuperAdmin Employee**: Creates a default super administrator account with the following credentials:
+2. **Super Admin Account**:
    - **Email**: `superadmin@catcarwash.com`
    - **Password**: `SuperAdmin123!`
    - **Name**: Super Admin
    - **Permission**: ADMIN
    - **Status**: ACTIVE
 
-## Running the Seed
+### Running the Seed
 
-You can run the seed in two ways:
-
-### Method 1: Using npm script
 ```bash
+# Method 1: Using npm script
 npm run db:seed
-```
 
-### Method 2: Using Prisma CLI
-```bash
+# Method 2: Using Prisma CLI
 npx prisma db seed
 ```
 
-## Important Notes
+### Important Security Notes
 
-- The seed uses `upsert` operations, so it's safe to run multiple times
-- The SuperAdmin password is hashed using bcrypt with a salt rounds of 12
-- Make sure to change the default SuperAdmin password after the first login
-- The seed will create permissions if they don't exist, or update them if they do
+⚠️ **CRITICAL**: Change the default SuperAdmin password immediately after first deployment!
 
-## Security
+- Password is hashed with bcrypt (12 salt rounds)
+- Seed uses `upsert` operations (safe to run multiple times)
+- Always change default credentials in production
 
-⚠️ **Important**: The default SuperAdmin password (`SuperAdmin123!`) should be changed immediately after the first deployment to production.
-
-## Running Prisma and Restarting TypeScript Server
-
-To ensure your database and TypeScript server are up-to-date, follow these steps:
-
-1. **Run Database Migrations:**
-   - **Command:** `npx prisma migrate dev`
-   - **Explanation:** คำสั่งนี้ใช้เพื่อสร้างและปรับปรุงโครงสร้างฐานข้อมูลตามที่กำหนดในไฟล์ `schema.prisma` โดยจะสร้างตารางหรือคอลัมน์ใหม่ตามที่ได้กำหนดไว้
-
-2. **Generate Prisma Client:**
-   - **Command:** `npx prisma generate`
-   - **Explanation:** คำสั่งนี้ใช้เพื่อสร้างโค้ดไคลเอนต์ของ Prisma ที่จะใช้ในการเชื่อมต่อและจัดการฐานข้อมูลในโปรเจกต์ของคุณ
-
-3. **Seed the Database:**
-   - **Command:** `npm run db:seed` หรือ `npx prisma db seed`
-   - **Explanation:** คำสั่งนี้ใช้เพื่อเติมข้อมูลเริ่มต้นลงในฐานข้อมูล เช่น การสร้างบัญชีผู้ดูแลระบบหรือการตั้งค่าการอนุญาตต่างๆ
-
-4. **Restart TypeScript Server:**
-   - **Command:** This step usually involves restarting your development environment or editor. In VSCode, you can do this by opening the command palette (Ctrl+Shift+P) and typing "TypeScript: Restart TS Server".
-
-By following these steps, you ensure that your database is up-to-date and your TypeScript server is running with the latest changes.
-
-## Database Requirements
-
-Make sure your database is migrated and the Prisma client is generated before running the seed:
+### Complete Setup Sequence
 
 ```bash
+# 1. Run migrations
 npx prisma migrate dev
+
+# 2. Generate Prisma client  
 npx prisma generate
+
+# 3. Seed initial data
+npm run db:seed
+
+# 4. Start development server
+npm run start:dev
 ```

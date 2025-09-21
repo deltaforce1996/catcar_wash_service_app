@@ -2,16 +2,9 @@ import { Injectable, Logger } from '@nestjs/common';
 import { DeviceStatus, DeviceType, PermissionType, Prisma } from '@prisma/client';
 import { PrismaService } from 'src/database/prisma/prisma.service';
 import { ItemNotFoundException } from 'src/errors';
-import {
-  UpdateDeviceBasicDto,
-  CreateDeviceDto,
-  SearchDeviceDto,
-  UpdateDeviceConfigsDto,
-  SetDeviceStateDto,
-} from './dtos/index';
+import { UpdateDeviceBasicDto, CreateDeviceDto, SearchDeviceDto, UpdateDeviceConfigsDto } from './dtos/index';
 import { parseKeyValueOnly } from 'src/shared/kv-parser';
 import { AuthenticatedUser, PaginatedResult } from 'src/types/internal.type';
-import { formatDateTime } from 'src/shared/date-formatter';
 
 export const devicePublicSelect = Prisma.validator<Prisma.tbl_devicesSelect>()({
   id: true,
@@ -36,14 +29,34 @@ export const devicePublicSelect = Prisma.validator<Prisma.tbl_devicesSelect>()({
       email: true,
     },
   },
+  last_state: {
+    select: {
+      state_data: true,
+    },
+  },
+});
+
+export const deviceWithoutRefSelect = Prisma.validator<Prisma.tbl_devicesSelect>()({
+  id: true,
+  name: true,
+  type: true,
+  status: true,
+  information: true,
+  configs: false,
+  created_at: true,
+  updated_at: true,
 });
 
 type DeviceRowBase = Prisma.tbl_devicesGetPayload<{ select: typeof devicePublicSelect }>;
+type DeviceWithoutRefRowBase = Prisma.tbl_devicesGetPayload<{ select: typeof deviceWithoutRefSelect }>;
 
-export type DeviceRow = Omit<DeviceRowBase, 'created_at' | 'updated_at'> & {
-  created_at?: string;
-  updated_at?: string;
-};
+// export type DeviceRow = Omit<DeviceRowBase, 'created_at' | 'updated_at'> & {
+//   created_at?: string;
+//   updated_at?: string;
+// };
+
+export type DeviceRow = DeviceRowBase;
+export type DeviceWithoutRefRow = DeviceWithoutRefRowBase;
 
 const ALLOWED = ['id', 'name', 'type', 'status', 'owner', 'register', 'search'] as const;
 
@@ -55,7 +68,10 @@ export class DevicesService {
     this.logger.log('DevicesService initialized');
   }
 
-  async searchDevices(q: SearchDeviceDto, user?: AuthenticatedUser): Promise<PaginatedResult<DeviceRow>> {
+  async searchDevices(
+    q: SearchDeviceDto,
+    user?: AuthenticatedUser,
+  ): Promise<PaginatedResult<DeviceRow | DeviceWithoutRefRow>> {
     const pairs = parseKeyValueOnly(q.query ?? '', ALLOWED);
     const ands: Prisma.tbl_devicesWhereInput['AND'] = [];
 
@@ -67,14 +83,23 @@ export class DevicesService {
     // Handle general search - search both id and name fields
     const search = pairs.find((p) => p.key === 'search')?.value;
     if (search) {
-      ands.push({
-        OR: [
-          { id: { contains: search, mode: 'insensitive' } },
-          { name: { contains: search, mode: 'insensitive' } },
-          { owner: { fullname: { contains: search, mode: 'insensitive' } } },
-        ],
-      });
+      if (q.exclude_all_ref_table) {
+        // If excluding ref tables, only search in device fields
+        ands.push({
+          OR: [{ id: { contains: search, mode: 'insensitive' } }, { name: { contains: search, mode: 'insensitive' } }],
+        });
+      } else {
+        // Include owner search when ref tables are included
+        ands.push({
+          OR: [
+            { id: { contains: search, mode: 'insensitive' } },
+            { name: { contains: search, mode: 'insensitive' } },
+            { owner: { fullname: { contains: search, mode: 'insensitive' } } },
+          ],
+        });
+      }
     }
+
     for (const { key, value } of pairs) {
       switch (key) {
         case 'id':
@@ -84,10 +109,14 @@ export class DevicesService {
           ands.push({ name: { contains: value, mode: 'insensitive' } });
           break;
         case 'owner':
-          ands.push({ owner: { fullname: { contains: value, mode: 'insensitive' } } });
+          if (!q.exclude_all_ref_table) {
+            ands.push({ owner: { fullname: { contains: value, mode: 'insensitive' } } });
+          }
           break;
         case 'register':
-          ands.push({ registered_by: { name: { contains: value, mode: 'insensitive' } } });
+          if (!q.exclude_all_ref_table) {
+            ands.push({ registered_by: { name: { contains: value, mode: 'insensitive' } } });
+          }
           break;
         case 'type': {
           const v = value.toUpperCase();
@@ -113,6 +142,9 @@ export class DevicesService {
     const safeLimit = Math.min(100, Math.max(1, Number(q.limit) || 20));
     const skip = (safePage - 1) * safeLimit;
 
+    // Choose select based on exclude_all_ref_table parameter
+    const selectQuery = q.exclude_all_ref_table ? deviceWithoutRefSelect : devicePublicSelect;
+
     const [data, total] = await Promise.all([
       this.prisma.tbl_devices.findMany({
         where,
@@ -121,19 +153,13 @@ export class DevicesService {
         orderBy: {
           [q.sort_by ?? 'created_at']: q.sort_order ?? 'desc',
         },
-        select: devicePublicSelect,
+        select: selectQuery,
       }),
       this.prisma.tbl_devices.count({ where }),
     ]);
 
-    const formattedData: DeviceRow[] = data.map((device) => ({
-      ...device,
-      created_at: device.created_at ? formatDateTime(device.created_at) : undefined,
-      updated_at: device.updated_at ? formatDateTime(device.updated_at) : undefined,
-    }));
-
     return {
-      items: formattedData,
+      items: data,
       total,
       page: safePage,
       limit: safeLimit,
@@ -156,11 +182,7 @@ export class DevicesService {
       throw new ItemNotFoundException('Device not found');
     }
 
-    return {
-      ...device,
-      created_at: device.created_at ? formatDateTime(device.created_at) : undefined,
-      updated_at: device.updated_at ? formatDateTime(device.updated_at) : undefined,
-    };
+    return device;
   }
 
   async createDevice(data: CreateDeviceDto): Promise<DeviceRow> {
@@ -194,11 +216,7 @@ export class DevicesService {
       select: devicePublicSelect,
     });
 
-    return {
-      ...device,
-      created_at: device.created_at ? formatDateTime(device.created_at) : undefined,
-      updated_at: device.updated_at ? formatDateTime(device.updated_at) : undefined,
-    };
+    return device;
   }
 
   async updateBasicById(id: string, data: UpdateDeviceBasicDto): Promise<DeviceRow> {
@@ -224,11 +242,7 @@ export class DevicesService {
       throw new ItemNotFoundException('Device not found');
     }
 
-    return {
-      ...device,
-      created_at: device.created_at ? formatDateTime(device.created_at) : undefined,
-      updated_at: device.updated_at ? formatDateTime(device.updated_at) : undefined,
-    };
+    return device;
   }
 
   async updateConfigsById(id: string, data: UpdateDeviceConfigsDto): Promise<DeviceRow> {
@@ -292,33 +306,6 @@ export class DevicesService {
       select: devicePublicSelect,
     });
 
-    return {
-      ...device,
-      created_at: device.created_at ? formatDateTime(device.created_at) : undefined,
-      updated_at: device.updated_at ? formatDateTime(device.updated_at) : undefined,
-    };
-  }
-
-  async setDeviceState(id: string, data: SetDeviceStateDto, user?: AuthenticatedUser): Promise<void> {
-    // First, check if device exists and verify permissions
-    const where: Prisma.tbl_devicesWhereUniqueInput = { id };
-    // Add permission-based filtering for USER role - they can only update their own devices
-    if (user?.permission?.name === PermissionType.USER) {
-      where.owner_id = user.id;
-    }
-    const existingDevice = await this.prisma.tbl_devices.findUnique({
-      where,
-      select: { id: true, owner_id: true },
-    });
-    if (!existingDevice) {
-      throw new ItemNotFoundException('Device not found or access denied');
-    }
-    // Update the device status
-    await this.prisma.tbl_devices.update({
-      where: { id },
-      data: {
-        status: data.status,
-      },
-    });
+    return device;
   }
 }

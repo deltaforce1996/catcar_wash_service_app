@@ -7,9 +7,9 @@ export class SearchDeviceStatesDto {
    * - device_id: Device ID
    * - device_name: Device name (case-insensitive search)
    * - status: Device state status (normal, error)
-   * - payload_timestemp: Unix timestamp within payload JSON (format: timestamp or start-end range)
+   * - payload_timestamp: Unix timestamp within payload JSON (format: timestamp or start-end range)
    *
-   * Example: "device_id:abc123 device_name:WASH-001 status:normal payload_timestemp:1640995200000-1641081600000"
+   * Example: "device_id:abc123 device_name:WASH-001 status:normal payload_timestamp:1640995200000-1641081600000"
    */
   @IsString()
   @IsOptional()

@@ -2,11 +2,12 @@ import { Injectable, Logger } from '@nestjs/common';
 import { EmpStatus, PermissionType, Prisma } from '@prisma/client';
 import { PrismaService } from 'src/database/prisma/prisma.service';
 import { ItemNotFoundException } from 'src/errors';
+import { BcryptService } from 'src/services/bcrypt.service';
+import { CreateEmpDto } from './dtos/create-emp.dto';
 import { UpdateEmpDto } from './dtos/update-emp.dto';
 import { parseKeyValueOnly } from 'src/shared/kv-parser';
 import { PaginatedResult } from 'src/types/internal.type';
 import { SearchEmpDto } from './dtos/search-emp.dto';
-import { formatDateTime } from 'src/shared/date-formatter';
 
 export const empPublicSelect = Prisma.validator<Prisma.tbl_empsSelect>()({
   id: true,
@@ -28,17 +29,17 @@ export const empPublicSelect = Prisma.validator<Prisma.tbl_empsSelect>()({
 
 type EmpRowBase = Prisma.tbl_empsGetPayload<{ select: typeof empPublicSelect }>;
 
-export type EmpRow = Omit<EmpRowBase, 'created_at' | 'updated_at'> & {
-  created_at?: string;
-  updated_at?: string;
-};
+export type EmpRow = EmpRowBase;
 
 const ALLOWED = ['id', 'email', 'name', 'phone', 'line', 'address', 'status', 'permission', 'search'] as const;
 
 @Injectable()
 export class EmpsService {
   private readonly logger = new Logger(EmpsService.name);
-  constructor(private readonly prisma: PrismaService) {
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly bcryptService: BcryptService,
+  ) {
     this.logger.log('EmpsService initialized');
   }
 
@@ -106,19 +107,45 @@ export class EmpsService {
       this.prisma.tbl_emps.count({ where }),
     ]);
 
-    const formattedData: EmpRow[] = data.map((emp) => ({
-      ...emp,
-      created_at: emp.created_at ? formatDateTime(emp.created_at) : undefined,
-      updated_at: emp.updated_at ? formatDateTime(emp.updated_at) : undefined,
-    }));
-
     return {
-      items: formattedData,
+      items: data,
       total,
       page: safePage,
       limit: safeLimit,
       totalPages: Math.max(1, Math.ceil(total / safeLimit)),
     };
+  }
+
+  async register(data: CreateEmpDto): Promise<EmpRow> {
+    // Use default password for all technicians
+    const defaultPassword = 'technician123';
+    const hashedPassword = await this.bcryptService.hashPassword(defaultPassword);
+
+    // Get TECHNICIAN permission only
+    const permission = await this.prisma.tbl_permissions.findUnique({
+      where: { name: PermissionType.TECHNICIAN },
+    });
+    if (!permission) {
+      throw new ItemNotFoundException('TECHNICIAN permission not found');
+    }
+
+    // Create the employee
+    const emp: EmpRowBase = await this.prisma.tbl_emps.create({
+      data: {
+        name: data.name,
+        email: data.email,
+        password: hashedPassword,
+        phone: data.phone,
+        line: data.line,
+        address: data.address,
+        permission_id: permission.id,
+        status: EmpStatus.ACTIVE,
+      },
+      select: empPublicSelect,
+    });
+
+    this.logger.log(`Technician registered: ${emp.id} (${emp.email}) with default password`);
+    return emp;
   }
 
   async findById(id: string): Promise<EmpRow> {
@@ -130,11 +157,7 @@ export class EmpsService {
       throw new ItemNotFoundException('Employee not found');
     }
 
-    return {
-      ...emp,
-      created_at: emp.created_at ? formatDateTime(emp.created_at) : undefined,
-      updated_at: emp.updated_at ? formatDateTime(emp.updated_at) : undefined,
-    };
+    return emp;
   }
 
   async updateById(id: string, data: UpdateEmpDto): Promise<EmpRow> {
@@ -147,10 +170,6 @@ export class EmpsService {
       throw new ItemNotFoundException('Employee not found');
     }
 
-    return {
-      ...emp,
-      created_at: emp.created_at ? formatDateTime(emp.created_at) : undefined,
-      updated_at: emp.updated_at ? formatDateTime(emp.updated_at) : undefined,
-    };
+    return emp;
   }
 }

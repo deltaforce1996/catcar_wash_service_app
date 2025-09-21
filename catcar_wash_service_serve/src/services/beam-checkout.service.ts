@@ -1,12 +1,14 @@
-import { Injectable, Logger, BadRequestException } from '@nestjs/common';
+import { Injectable, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import * as QRCode from 'qrcode';
 import axios, { AxiosInstance, AxiosResponse } from 'axios';
+import { BeamPaymentMethodType } from 'src/types/beam-webhook.types';
+import { BadRequestException } from 'src/errors';
 
 export interface BeamCheckoutConfig {
   apiUrl: string;
-  clientId: string;
-  clientSecret: string;
+  merchantId: string;
+  secretKey: string;
   webhookUrl?: string;
 }
 
@@ -15,16 +17,9 @@ export interface ChargeData {
   currency: string;
   referenceId: string;
   paymentMethod: {
-    paymentMethodType: 'QR_PROMPT_PAY' | 'CARD' | 'ALIPAY' | 'LINE_PAY' | 'SHOPEE_PAY' | 'TRUE_MONEY' | 'WECHAT_PAY';
+    paymentMethodType: BeamPaymentMethodType;
     qrPromptPay?: {
-      expiryTime?: string;
-    };
-    card?: {
-      cardHolderName: string;
-      expiryMonth: number;
-      expiryYear: number;
-      pan: string;
-      securityCode: string;
+      expiresAt?: string;
     };
   };
   returnUrl?: string;
@@ -52,7 +47,7 @@ export interface ChargeStatus {
   referenceId: string;
   chargeSource: 'API' | 'PAYMENT_LINK' | 'STORE_LINK' | 'QR_PROMPT_PAY_LINK';
   createdAt: string;
-  succeededAt?: string;
+  updatedAt?: string;
 }
 
 export interface QRCodeOptions {
@@ -65,12 +60,31 @@ export interface QRCodeOptions {
   errorCorrectionLevel?: 'L' | 'M' | 'Q' | 'H';
 }
 
+export interface RefundData {
+  chargeId: string;
+  reason?: string;
+}
+
+export interface RefundResult {
+  amount: number;
+  chargeId: string;
+  createdAt: string;
+  currency: string;
+  failureCode: string;
+  merchantId: string;
+  referenceId: string;
+  refundId: string;
+  refundReason: string;
+  status: 'PENDING' | 'SUCCEEDED' | 'FAILED';
+  transactionTime: string;
+  updatedAt: string;
+}
+
 @Injectable()
 export class BeamCheckoutService {
   private readonly logger = new Logger(BeamCheckoutService.name);
   private readonly httpClient: AxiosInstance;
   private accessToken: string | null = null;
-  private tokenExpiresAt: Date | null = null;
 
   constructor(private readonly configService: ConfigService) {
     const config = this.getBeamConfig();
@@ -85,10 +99,9 @@ export class BeamCheckoutService {
     });
 
     // Add request interceptor for authentication
-    this.httpClient.interceptors.request.use(async (config) => {
-      await this.ensureAuthenticated();
+    this.httpClient.interceptors.request.use((config) => {
       if (this.accessToken) {
-        config.headers.Authorization = `Bearer ${this.accessToken}`;
+        config.headers.Authorization = `Basic ${this.accessToken}`;
       }
       return config;
     });
@@ -104,88 +117,55 @@ export class BeamCheckoutService {
   }
 
   private getBeamConfig(): BeamCheckoutConfig {
-    return {
-      apiUrl: this.configService.get<string>('BEAM_API_URL', 'https://api.beamcheckout.com'),
-      clientId: this.configService.get<string>('BEAM_CLIENT_ID') || '',
-      clientSecret: this.configService.get<string>('BEAM_CLIENT_SECRET') || '',
-      webhookUrl: this.configService.get<string>('BEAM_WEBHOOK_URL') || '',
+    const config = {
+      apiUrl: this.configService.get<string>('beamCheckout.apiUrl', 'https://playground.api.beamcheckout.com'),
+      merchantId: '',
+      secretKey: '',
+      webhookUrl: this.configService.get<string>('beamCheckout.webhookUrl') || '',
     };
+    return config;
   }
 
-  /**
-   * Authenticate with Beam Checkout API
-   */
-  async authenticate(): Promise<void> {
+  authenticate(configOverride?: Partial<BeamCheckoutConfig>): void {
     const config = this.getBeamConfig();
 
-    if (!config.clientId || !config.clientSecret) {
+    if (!configOverride) {
       throw new BadRequestException('Beam Checkout credentials not configured');
     }
 
-    try {
-      const response: AxiosResponse<{
-        access_token: string;
-        token_type: string;
-        expires_in: number;
-      }> = await axios.post(`${config.apiUrl}/oauth/token`, {
-        grant_type: 'client_credentials',
-        client_id: config.clientId,
-        client_secret: config.clientSecret,
-      });
-
-      this.accessToken = response.data.access_token;
-      this.tokenExpiresAt = new Date(Date.now() + response.data.expires_in * 1000);
-
-      this.logger.log('Successfully authenticated with Beam Checkout API');
-    } catch (error: any) {
-      this.logger.error('Failed to authenticate with Beam Checkout API', error.response?.data);
-      throw new BadRequestException('Failed to authenticate with Beam Checkout API');
+    if (configOverride.merchantId === '' || configOverride.secretKey === '') {
+      throw new BadRequestException('Beam Checkout credentials not configured');
     }
+
+    if (configOverride) {
+      config.merchantId = configOverride.merchantId as string;
+      config.secretKey = configOverride.secretKey as string;
+    }
+
+    this.logger.debug(`Beam credentail merchantId set **********`);
+    this.logger.debug(`Beam credentail secretKey set **********`);
+
+    // Encode credentials for Basic Authentication
+    const credentials = Buffer.from(`${config.merchantId}:${config.secretKey}`).toString('base64');
+    this.accessToken = credentials;
   }
 
-  /**
-   * Ensure we have a valid access token
-   */
-  private async ensureAuthenticated(): Promise<void> {
-    if (!this.accessToken || !this.tokenExpiresAt || this.tokenExpiresAt <= new Date()) {
-      await this.authenticate();
-    }
+  private ensureAuthenticated(): void {
+    throw Error("Not implemented yet because this is playground API and we don't need refresh token to authenticate");
   }
 
-  /**
-   * Create a new charge
-   */
   async createCharge(data: ChargeData): Promise<ChargeResult> {
-    if (data.amount <= 0) {
-      throw new BadRequestException('Amount must be greater than 0');
-    }
-
-    if (!data.referenceId) {
-      throw new BadRequestException('Reference ID is required');
-    }
-
+    if (data.amount <= 0) throw new BadRequestException('Amount must be greater than 0');
+    if (!data.referenceId) throw new BadRequestException('Reference ID is required');
     try {
       const payload = {
         amount: data.amount,
         currency: data.currency || 'THB',
         referenceId: data.referenceId,
         paymentMethod: data.paymentMethod,
-        returnUrl: data.returnUrl,
       };
 
-      const response: AxiosResponse<{
-        actionRequired: string;
-        chargeId: string;
-        paymentMethodType: string;
-        redirect?: {
-          redirectUrl: string;
-        };
-        encodedImage?: {
-          expiry: string;
-          imageBase64Encoded: string;
-          rawData: string;
-        };
-      }> = await this.httpClient.post('/api/v1/charges', payload);
+      const response: AxiosResponse<ChargeResult> = await this.httpClient.post('/api/v1/charges', payload);
 
       return {
         actionRequired: response.data.actionRequired as any,
@@ -195,59 +175,74 @@ export class BeamCheckoutService {
         encodedImage: response.data.encodedImage,
       };
     } catch (error: any) {
-      this.logger.error('Failed to create charge', error.response?.data);
-      throw new BadRequestException('Failed to create charge');
+      throw new BadRequestException(
+        `Failed to create charge ErrorCode ${error.response?.data.error.errorCode} ${error.response?.data.error.message}`,
+      );
     }
   }
 
-  /**
-   * Get charge status
-   */
   async getChargeStatus(chargeId: string): Promise<ChargeStatus> {
     try {
-      const response: AxiosResponse<{
-        chargeId: string;
-        status: string;
-        amount: number;
-        currency: string;
-        referenceId: string;
-        chargeSource: string;
-        createdAt: string;
-        succeededAt?: string;
-      }> = await this.httpClient.get(`/api/v1/charges/${chargeId}`);
-
-      return {
+      const response: AxiosResponse<ChargeStatus> = await this.httpClient.get(`/api/v1/charges/${chargeId}`);
+      const chargeStatus: ChargeStatus = {
         chargeId: response.data.chargeId,
-        status: response.data.status as any,
+        status: response.data.status,
         amount: response.data.amount,
         currency: response.data.currency,
         referenceId: response.data.referenceId,
-        chargeSource: response.data.chargeSource as any,
+        chargeSource: response.data.chargeSource,
         createdAt: response.data.createdAt,
-        succeededAt: response.data.succeededAt,
+        updatedAt: response.data.updatedAt,
+      };
+      return chargeStatus;
+    } catch (error: any) {
+      throw new BadRequestException(
+        `Failed to get charge status ErrorCode ${error.response?.data.error.errorCode} ${error.response?.data.error.message}`,
+      );
+    }
+  }
+
+  async createRefund(data: RefundData): Promise<{ refundId: string; reason: string }> {
+    if (!data.chargeId) throw new BadRequestException('Payment token is required for refund');
+
+    try {
+      const payload = {
+        chargeId: data.chargeId,
+        reason: data?.reason,
+      };
+
+      const response: AxiosResponse<{ refundId: string; reason: string }> = await this.httpClient.post(
+        '/api/v1/refunds',
+        payload,
+      );
+      this.logger.log(`Refund created successfully for token ${data.chargeId}, refundId: ${response.data.refundId}`);
+
+      return {
+        ...response.data,
       };
     } catch (error: any) {
-      this.logger.error('Failed to get charge status', error.response?.data);
-      throw new BadRequestException('Failed to get charge status');
+      throw new BadRequestException(
+        `Failed to create refund ErrorCode ${error.response?.data.error.errorCode} ${error.response?.data.error.message}`,
+      );
     }
   }
 
-  /**
-   * Cancel a charge
-   */
-  async cancelCharge(chargeId: string): Promise<void> {
+  async getRefundStatus(refundId: string): Promise<RefundResult> {
+    if (!refundId) throw new BadRequestException('Refund ID is required');
+
     try {
-      await this.httpClient.post(`/api/v1/charges/${chargeId}/cancel`);
-      this.logger.log(`Charge ${chargeId} cancelled successfully`);
+      const response: AxiosResponse<RefundResult> = await this.httpClient.get(`/api/v1/refunds/${refundId}`);
+
+      return {
+        ...response.data,
+      };
     } catch (error: any) {
-      this.logger.error('Failed to cancel charge', error.response?.data);
-      throw new BadRequestException('Failed to cancel charge');
+      throw new BadRequestException(
+        `Failed to get refund status ErrorCode ${error.response?.data.error.errorCode} ${error.response?.data.error.message}`,
+      );
     }
   }
 
-  /**
-   * Generate QR code as data URL
-   */
   async generateQRCodeDataUrl(data: string, options: QRCodeOptions = {}): Promise<string> {
     try {
       const defaultOptions = {
@@ -267,9 +262,6 @@ export class BeamCheckoutService {
     }
   }
 
-  /**
-   * Generate QR code as buffer
-   */
   async generateQRCodeBuffer(data: string, options: QRCodeOptions = {}): Promise<Buffer> {
     try {
       const defaultOptions = {
@@ -289,9 +281,6 @@ export class BeamCheckoutService {
     }
   }
 
-  /**
-   * Generate QR code as SVG string
-   */
   async generateQRCodeSVG(data: string, options: QRCodeOptions = {}): Promise<string> {
     try {
       const defaultOptions = {

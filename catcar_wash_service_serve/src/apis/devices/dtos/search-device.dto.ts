@@ -1,4 +1,4 @@
-import { IsIn, IsNumber, IsOptional, IsString } from 'class-validator';
+import { IsBoolean, IsIn, IsNumber, IsOptional, IsString } from 'class-validator';
 
 export class SearchDeviceDto {
   @IsString()
@@ -24,4 +24,8 @@ export class SearchDeviceDto {
   @IsOptional()
   @IsIn(['asc', 'desc'], { message: 'sort_order must be either "asc" or "desc"' })
   sort_order?: 'asc' | 'desc';
+
+  @IsBoolean()
+  @IsOptional()
+  exclude_all_ref_table?: boolean = false;
 }

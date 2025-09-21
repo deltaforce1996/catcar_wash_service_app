@@ -1,0 +1,82 @@
+import { Controller, Post, Get, Body, Param, UseFilters, Request, UseGuards, Headers } from '@nestjs/common';
+import { PaymentGatewayService } from './payment-gateway.service';
+import { CreatePaymentDto, CreateRefundDto } from './dtos';
+import { AllExceptionFilter } from 'src/common';
+import { SuccessResponse } from 'src/types';
+// import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
+import { AuthenticatedUser } from 'src/types/internal.type';
+import { BeamWebhookSignatureGuard } from './guards/beam-webhook-signature.guard';
+import type { BeamWebhookPayloadUnion, BeamWebhookEventType } from 'src/types';
+
+@UseFilters(AllExceptionFilter)
+// @UseGuards(JwtAuthGuard)
+@Controller('api/v1/payment-gateway')
+export class PaymentGatewayController {
+  constructor(private readonly paymentGatewayService: PaymentGatewayService) {}
+
+  /**
+   * สร้างการชำระเงินใหม่
+   * POST /api/v1/payment-gateway/payments
+   */
+  @Post('payments')
+  async createPayment(
+    @Body() createPaymentDto: CreatePaymentDto,
+    @Request() req: Request & { user: AuthenticatedUser },
+  ): Promise<SuccessResponse<any>> {
+    const result = await this.paymentGatewayService.createPayment(createPaymentDto, req.user);
+    return {
+      success: true,
+      data: result,
+      message: 'Payment created successfully',
+    };
+  }
+
+  /**
+   * ตรวจสอบสถานะการชำระเงิน
+   * GET /api/v1/payment-gateway/payments/:id/status
+   */
+  @Get('payments/:id/status')
+  async getPaymentStatus(
+    @Param('id') paymentId: string,
+  ): Promise<SuccessResponse<{ chargeId: string; status: string }>> {
+    const result = await this.paymentGatewayService.getPaymentStatus(paymentId);
+    return {
+      success: true,
+      data: result,
+      message: 'Payment status checked successfully',
+    };
+  }
+  /**
+   * สร้างการคืนเงิน
+   * POST /api/v1/payment-gateway/refunds
+   */
+  @Post('refunds')
+  async createRefund(
+    @Body() createRefundDto: CreateRefundDto,
+    @Request() req: Request & { user: AuthenticatedUser },
+  ): Promise<SuccessResponse<any>> {
+    const result = await this.paymentGatewayService.createRefund(createRefundDto, req.user);
+    return {
+      success: true,
+      data: result,
+      message: 'Refund created successfully',
+    };
+  }
+
+  /**
+   * จัดการ Beam webhook callbacks
+   * POST /api/v1/payment-gateway/webhook
+   */
+  @Post('webhook')
+  @UseGuards(BeamWebhookSignatureGuard)
+  async handleBeamWebhook(
+    @Body() webhookPayload: BeamWebhookPayloadUnion,
+    @Headers('x-beam-event') eventType: BeamWebhookEventType,
+  ): Promise<SuccessResponse<any>> {
+    const result = await this.paymentGatewayService.handleBeamWebhook(webhookPayload, eventType);
+    return {
+      success: true,
+      message: result.message,
+    };
+  }
+}

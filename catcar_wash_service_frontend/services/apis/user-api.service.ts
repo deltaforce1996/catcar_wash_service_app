@@ -16,9 +16,8 @@ export interface UserResponseApi {
   created_at: string;
   updated_at: string;
   permission: { id: string; name: string };
-  device_counts: { total: number; active: number; inactive: number };
+  device_counts?: { total: number; active: number; inactive: number };
 }
-
 export interface SearchUsersRequest {
   query?: string;
   page?: number;
@@ -33,6 +32,17 @@ export interface SearchUsersRequest {
     | "status"
     | "permission";
   sort_order?: EnumSortOrder;
+  exclude_device_counts?: boolean;
+}
+
+export interface RegisterUserPayload {
+  email: string;
+  fullname: string;
+  phone: string;
+  address: string;
+  custom_name: string;
+  status: EnumUserStatus;
+  permission_id: string;
 }
 
 export interface UpdateUserPayload {
@@ -42,6 +52,14 @@ export interface UpdateUserPayload {
   address?: string;
   custom_name?: string;
   status?: EnumUserStatus;
+}
+
+export interface UpdateUserProfilePayload extends UpdateUserPayload {
+  payment_info?: {
+    merchant_id?: string;
+    api_key?: string;
+    HMAC_key?: string;
+  };
 }
 
 export class UserApiService extends BaseApiClient {
@@ -62,6 +80,26 @@ export class UserApiService extends BaseApiClient {
   async GetUserById(id: string): Promise<ApiSuccessResponse<UserResponseApi>> {
     const response = await this.get<ApiSuccessResponse<UserResponseApi>>(
       `api/v1/users/find-by-id/${id}`
+    );
+    return response;
+  }
+
+  async RegisterUser(
+    payload: RegisterUserPayload
+  ): Promise<ApiSuccessResponse<UserResponseApi>> {
+    const response = await this.post<ApiSuccessResponse<UserResponseApi>>(
+      "api/v1/users/register",
+      payload
+    );
+    return response;
+  }
+
+  async UpdateUserProfile(
+    payload: UpdateUserProfilePayload
+  ): Promise<ApiSuccessResponse<UserResponseApi>> {
+    const response = await this.put<ApiSuccessResponse<UserResponseApi>>(
+      "api/v1/users/update-profile",
+      payload
     );
     return response;
   }

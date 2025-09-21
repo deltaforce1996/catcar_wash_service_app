@@ -25,6 +25,11 @@ export class AllExceptionFilter implements ExceptionFilter {
 
       this.logger.warn(`[HttpException] ${exception.message} ${exception.getStatus()}`);
 
+      // ✅ เขียน log error สำหรับ 400 และ 401
+      if (status === 400 || status === 401) {
+        this.errorLogger.logErrorToFile(exception as Error, request);
+      }
+
       if (typeof exRes === 'string') {
         responseBody = {
           success: false,

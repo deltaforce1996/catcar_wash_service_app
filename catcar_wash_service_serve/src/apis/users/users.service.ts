@@ -1,12 +1,13 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { UserStatus, PermissionType, Prisma, DeviceStatus } from '@prisma/client';
 import { PrismaService } from 'src/database/prisma/prisma.service';
-import { ItemNotFoundException } from 'src/errors';
-import { UpdateUserDto } from './dtos/update-user.dto';
+import { ItemNotFoundException, BadRequestException } from 'src/errors';
+import { BcryptService } from 'src/services/bcrypt.service';
+import { UpdateUserProfileDto } from './dtos/update-user.dto';
+import { RegisterUserDto } from './dtos/register-user.dto';
 import { parseKeyValueOnly } from 'src/shared/kv-parser';
 import { PaginatedResult } from 'src/types/internal.type';
 import { SearchUserDto } from './dtos/search-user.dto';
-import { formatDateTime } from 'src/shared/date-formatter';
 
 export const userPublicSelect = Prisma.validator<Prisma.tbl_usersSelect>()({
   id: true,
@@ -27,13 +28,19 @@ export const userPublicSelect = Prisma.validator<Prisma.tbl_usersSelect>()({
   // _count: { select: { devices: true } },
 });
 
+export const userInternalSelect = Prisma.validator<Prisma.tbl_usersSelect>()({
+  id: true,
+  fullname: true,
+  payment_info: true,
+});
+
 type UserRow = Prisma.tbl_usersGetPayload<{ select: typeof userPublicSelect }>;
 
-export type UserWithDeviceCountsRow = Omit<UserRow, 'created_at' | 'updated_at'> & {
-  created_at?: string;
-  updated_at?: string;
+export type UserWithDeviceCountsRow = UserRow & {
   device_counts: { total: number; active: number; inactive: number };
 };
+
+export type UserWithoutDeviceCountsRow = UserRow;
 
 const ALLOWED = [
   'id',
@@ -50,11 +57,14 @@ const ALLOWED = [
 @Injectable()
 export class UsersService {
   private readonly logger = new Logger(UsersService.name);
-  constructor(private readonly prisma: PrismaService) {
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly bcryptService: BcryptService,
+  ) {
     this.logger.log('UsersService initialized');
   }
 
-  async searchUsers(q: SearchUserDto): Promise<PaginatedResult<UserWithDeviceCountsRow>> {
+  async searchUsers(q: SearchUserDto): Promise<PaginatedResult<UserWithDeviceCountsRow | UserWithoutDeviceCountsRow>> {
     const pairs = parseKeyValueOnly(q.query ?? '', ALLOWED);
 
     const ands: Prisma.tbl_usersWhereInput['AND'] = [];
@@ -116,6 +126,18 @@ export class UsersService {
       return { items: [], total, page, limit, totalPages: Math.max(1, Math.ceil(total / limit)) };
     }
 
+    // If exclude_device_counts is true, return users without device counts
+    if (q.exclude_device_counts) {
+      return {
+        items: users as UserWithoutDeviceCountsRow[],
+        total,
+        page,
+        limit,
+        totalPages: Math.max(1, Math.ceil(total / limit)),
+      };
+    }
+
+    // Otherwise, include device counts (original behavior)
     const userIds = users.map((u) => u.id);
     const grouped = await this.prisma.tbl_devices.groupBy({
       by: ['owner_id', 'status'],
@@ -133,8 +155,6 @@ export class UsersService {
 
     const items: UserWithDeviceCountsRow[] = users.map((u) => ({
       ...u,
-      created_at: u.created_at ? formatDateTime(u.created_at) : undefined,
-      updated_at: u.updated_at ? formatDateTime(u.updated_at) : undefined,
       device_counts: {
         total: (counters.get(u.id)?.active ?? 0) + (counters.get(u.id)?.inactive ?? 0),
         active: counters.get(u.id)?.active ?? 0,
@@ -172,16 +192,37 @@ export class UsersService {
 
     return {
       ...user,
-      created_at: user.created_at ? formatDateTime(user.created_at) : undefined,
-      updated_at: user.updated_at ? formatDateTime(user.updated_at) : undefined,
       device_counts: { total: counts.active + counts.inactive, ...counts },
     };
   }
 
-  async updateById(id: string, data: UpdateUserDto): Promise<UserWithDeviceCountsRow> {
+  async updateById(id: string, data: UpdateUserProfileDto): Promise<UserWithDeviceCountsRow> {
+    // Check if user exists first
+    const existingUser = await this.prisma.tbl_users.findUnique({
+      where: { id },
+      select: { id: true, payment_info: true },
+    });
+
+    if (!existingUser) {
+      throw new ItemNotFoundException('User not found');
+    }
+
+    const updateData: any = { ...data };
+
+    // Handle partial update of payment_info (only for UpdateUserProfileDto)
+    if ('payment_info' in data && data.payment_info) {
+      const existingPaymentInfo = (existingUser.payment_info as any) || {};
+
+      // Merge with existing payment_info, only updating provided fields
+      updateData.payment_info = {
+        ...existingPaymentInfo,
+        ...data.payment_info,
+      };
+    }
+
     const user = await this.prisma.tbl_users.update({
       where: { id },
-      data,
+      data: updateData,
       select: userPublicSelect,
     });
 
@@ -199,8 +240,64 @@ export class UsersService {
 
     return {
       ...user,
-      created_at: user.created_at ? formatDateTime(user.created_at) : undefined,
-      updated_at: user.updated_at ? formatDateTime(user.updated_at) : undefined,
+      device_counts: { total: counts.active + counts.inactive, ...counts },
+    };
+  }
+
+  async registerUser(data: RegisterUserDto): Promise<UserWithDeviceCountsRow> {
+    // Check if email already exists
+    const existingUser = await this.prisma.tbl_users.findUnique({
+      where: { email: data.email },
+      select: { id: true },
+    });
+
+    if (existingUser) {
+      throw new BadRequestException(`Email ${data.email} is already registered`);
+    }
+
+    // Default password for new users
+    const defaultPassword = 'CatCarWash123!';
+    const hashedPassword = await this.bcryptService.hashPassword(defaultPassword);
+
+    // Get USER permission
+    const permission = await this.prisma.tbl_permissions.findUnique({
+      where: { name: PermissionType.USER },
+    });
+
+    if (!permission) {
+      throw new ItemNotFoundException('USER permission not found');
+    }
+
+    // Create new user
+    const user = await this.prisma.tbl_users.create({
+      data: {
+        fullname: data.fullname,
+        email: data.email,
+        password: hashedPassword,
+        phone: data.phone,
+        address: data.address,
+        custom_name: data.custom_name,
+        permission_id: permission.id,
+        status: UserStatus.ACTIVE,
+      },
+      select: userPublicSelect,
+    });
+
+    // Get device counts for the new user (will be 0 for new users)
+    const byStatus = await this.prisma.tbl_devices.groupBy({
+      by: ['status', 'owner_id'],
+      where: { owner_id: user.id },
+      _count: { _all: true },
+    });
+
+    const counts = { active: 0, inactive: 0 };
+    for (const row of byStatus) {
+      if (row.status === DeviceStatus.DEPLOYED) counts.active = row._count._all;
+      else if (row.status === DeviceStatus.DISABLED) counts.inactive = row._count._all;
+    }
+
+    return {
+      ...user,
       device_counts: { total: counts.active + counts.inactive, ...counts },
     };
   }

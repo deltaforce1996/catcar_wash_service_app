@@ -47,8 +47,9 @@ enum TokenState {
   DISABLED
 }
 
-enum PaymentStatus {
-  SUCCESS
+enum PaymentApiStatus {
+  PENDING
+  SUCCEEDED
   FAILED
   CANCELLED
 }
@@ -56,8 +57,8 @@ enum PaymentStatus {
 model tbl_permissions {
   id         String         @id @default(cuid())
   name       PermissionType @unique
-  created_at DateTime       @default(now())
-  updated_at DateTime       @updatedAt
+  created_at DateTime       @default(now()) @db.Timestamptz(3)
+  updated_at DateTime       @updatedAt @db.Timestamptz(3)
 
   // Relations
   users      tbl_users[]
@@ -76,8 +77,9 @@ model tbl_users {
   password      String
   custom_name   String?
   permission_id String?
-  created_at    DateTime   @default(now())
-  updated_at    DateTime   @updatedAt
+  created_at    DateTime   @default(now()) @db.Timestamptz(3)
+  updated_at    DateTime   @updatedAt @db.Timestamptz(3)
+  payment_info  Json?
 
   // Relations
   permission   tbl_permissions?            @relation(fields: [permission_id], references: [id], onDelete: SetNull)
@@ -97,8 +99,8 @@ model tbl_emps {
   address       String?
   permission_id String?
   status        EmpStatus @default(ACTIVE)
-  created_at    DateTime  @default(now())
-  updated_at    DateTime  @updatedAt
+  created_at    DateTime  @default(now()) @db.Timestamptz(3)
+  updated_at    DateTime  @updatedAt @db.Timestamptz(3)
 
   // Relations
   permission          tbl_permissions?           @relation(fields: [permission_id], references: [id], onDelete: SetNull)
@@ -117,8 +119,8 @@ model tbl_devices {
   configs      Json?
   owner_id     String
   register_by_id  String
-  created_at   DateTime     @default(now())
-  updated_at   DateTime     @updatedAt
+  created_at   DateTime     @default(now()) @db.Timestamptz(3)
+  updated_at   DateTime     @updatedAt @db.Timestamptz(3)
 
   // Relations
   owner         tbl_users @relation(fields: [owner_id], references: [id], onDelete: Cascade)
@@ -126,6 +128,7 @@ model tbl_devices {
   device_states tbl_devices_state[]
   device_events tbl_devices_events[]
   last_state    tbl_devices_last_state?
+  payment_temps tbl_payment_temps[]
 
   @@map("tbl_devices")
   @@index([owner_id])
@@ -141,7 +144,7 @@ model tbl_devices_state {
   device_id  String
   state_data Json?
   hash_state String?
-  created_at DateTime @default(now())
+  created_at DateTime @default(now()) @db.Timestamptz(3)
 
   // Relations
   device     tbl_devices @relation(fields: [device_id], references: [id], onDelete: Cascade)
@@ -155,8 +158,8 @@ model tbl_devices_last_state {
   device_id  String   @unique
   state_data Json?
   hash_state String?
-  updated_at DateTime @default(now()) @updatedAt
-
+  updated_at DateTime @updatedAt @db.Timestamptz(3)
+  created_at DateTime @default(now()) @db.Timestamptz(3)
   // Relations
   device     tbl_devices @relation(fields: [device_id], references: [id], onDelete: Cascade)
 
@@ -170,7 +173,7 @@ model tbl_devices_events {
   id         String    @default(cuid())
   device_id  String
   payload    Json?
-  created_at DateTime  @default(now())
+  created_at DateTime  @default(now()) @db.Timestamptz(3)
 
   // Relations
   device     tbl_devices @relation(fields: [device_id], references: [id], onDelete: Cascade)
@@ -187,8 +190,8 @@ model tbl_reset_password_token {
   token        String     @unique
   state        TokenState @default(ACTIVATED)
   expire_date  DateTime
-  created_at   DateTime   @default(now())
-  updated_at   DateTime   @updatedAt
+  created_at   DateTime   @default(now()) @db.Timestamptz(3)
+  updated_at   DateTime   @updatedAt @db.Timestamptz(3)
 
   // เลือกอย่างใดอย่างหนึ่งเท่านั้น (บังคับด้วย CHECK ใน migration SQL)
   owner_user_id String?
@@ -203,6 +206,26 @@ model tbl_reset_password_token {
   @@index([token, state])
   @@index([owner_user_id])
   @@index([owner_emp_id])
+}
+
+model tbl_payment_temps {
+  id             String        @id @default(cuid())
+  device_id      String
+  amount         Decimal
+  payment_method String
+  reference_id   String
+  status         PaymentApiStatus @default(PENDING)
+  payment_results Json?
+  created_at     DateTime      @default(now()) @db.Timestamptz(3)
+  updated_at     DateTime      @updatedAt @db.Timestamptz(3)
+
+  // Relations
+  device         tbl_devices   @relation(fields: [device_id], references: [id], onDelete: Cascade)
+
+  @@map("tbl_payment_temps")
+  @@index([device_id])
+  @@index([status])
+  @@index([reference_id])
 }
 
 model mv_device_payments_hour {

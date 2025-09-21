@@ -1,5 +1,5 @@
 import { Injectable } from '@nestjs/common';
-import { PaymentStatus, PermissionType, Prisma } from '@prisma/client';
+import { PaymentApiStatus, PermissionType, Prisma } from '@prisma/client';
 import { PrismaService } from 'src/database/prisma/prisma.service';
 import { DashboardFilterDto } from './dto/dashboard.dto';
 import { AuthenticatedUser } from 'src/types/internal.type';
@@ -74,7 +74,7 @@ export class DashboardService {
       conditions.push(`mv.status = '${filter.payment_status}'`);
     } else {
       // Default to SUCCESS if not specified
-      conditions.push(`mv.status = '${PaymentStatus.SUCCESS}'`);
+      conditions.push(`mv.status = '${PaymentApiStatus.SUCCEEDED}'`);
     }
 
     return conditions.length > 0 ? `WHERE ${conditions.join(' AND ')}` : '';

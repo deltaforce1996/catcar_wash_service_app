@@ -5,7 +5,7 @@ CREATE MATERIALIZED VIEW IF NOT EXISTS mv_device_payments_day AS
 WITH payments AS (
   SELECT
     e.device_id,
-    (to_timestamp((e.payload->>'timestemp')::bigint / 1000) AT TIME ZONE 'Asia/Bangkok')::date AS day,
+    (to_timestamp((e.payload->>'timestamp')::bigint / 1000) AT TIME ZONE 'Asia/Bangkok')::date AS day,
     e.payload
   FROM tbl_devices_events e
   WHERE e.payload->>'type' = 'PAYMENT'
@@ -46,7 +46,7 @@ WITH payments AS (
     e.device_id,
     date_trunc(
       'month',
-      to_timestamp((e.payload->>'timestemp')::bigint / 1000) AT TIME ZONE 'Asia/Bangkok'
+      to_timestamp((e.payload->>'timestamp')::bigint / 1000) AT TIME ZONE 'Asia/Bangkok'
     )::date AS month_start,
     e.payload
   FROM tbl_devices_events e
@@ -89,7 +89,7 @@ WITH payments AS (
     e.device_id,
     date_trunc(
       'year',
-      to_timestamp((e.payload->>'timestemp')::bigint / 1000) AT TIME ZONE 'Asia/Bangkok'
+      to_timestamp((e.payload->>'timestamp')::bigint / 1000) AT TIME ZONE 'Asia/Bangkok'
     )::date AS year_start,
     e.payload
   FROM tbl_devices_events e
@@ -134,7 +134,7 @@ WITH payments AS (
     e.device_id,
     date_trunc(
       'hour',
-      to_timestamp((e.payload->>'timestemp')::bigint / 1000) AT TIME ZONE 'Asia/Bangkok'
+      to_timestamp((e.payload->>'timestamp')::bigint / 1000) AT TIME ZONE 'Asia/Bangkok'
     ) AS hour_start,          -- เวลาเริ่มชั่วโมงตามโซน Asia/Bangkok
     e.payload
   FROM tbl_devices_events e

@@ -1,9 +1,9 @@
-import { BadRequestException, Injectable, Logger } from '@nestjs/common';
+import { Injectable, Logger } from '@nestjs/common';
+import { BadRequestException } from 'src/errors';
 import { PermissionType, Prisma } from '@prisma/client';
 import { PrismaService } from 'src/database/prisma/prisma.service';
 import { parseKeyValueOnly } from 'src/shared/kv-parser';
-import { formatDateTime } from 'src/shared/date-formatter';
-import { PaginatedResult, DeviceState, AuthenticatedUser } from 'src/types/internal.type';
+import { PaginatedResult, AuthenticatedUser } from 'src/types/internal.type';
 import { SearchDeviceStatesDto } from './dtos/search-device-states.dto';
 
 export const deviceStatesPublicSelect = Prisma.validator<Prisma.tbl_devices_stateSelect>()({
@@ -33,15 +33,12 @@ export const deviceStatesPublicSelect = Prisma.validator<Prisma.tbl_devices_stat
 type DeviceStateRowBase = Prisma.tbl_devices_stateGetPayload<{ select: typeof deviceStatesPublicSelect }>;
 
 // Extended type with formatted created_at and parsed state_data (with date_state)
-export type DeviceStateRow = Omit<DeviceStateRowBase, 'created_at' | 'state_data'> & {
-  created_at: string;
-  state_data: DeviceState | null;
-};
+export type DeviceStateRow = DeviceStateRowBase;
 
 @Injectable()
 export class DeviceStatesService {
   private readonly logger = new Logger(DeviceStatesService.name);
-  private readonly allowed = ['id', 'device_id', 'device_name', 'status', 'payload_timestemp'] as const;
+  private readonly allowed = ['id', 'device_id', 'device_name', 'status', 'payload_timestamp'] as const;
 
   constructor(private readonly prisma: PrismaService) {
     this.logger.log('DeviceStatesService initialized');
@@ -88,7 +85,7 @@ export class DeviceStatesService {
           }
           break;
         }
-        case 'payload_timestemp': {
+        case 'payload_timestamp': {
           // Parse timestamp value (expecting format: start-end or single timestamp)
           const timestampParts = value.split('-');
 
@@ -156,20 +153,8 @@ export class DeviceStatesService {
       this.prisma.tbl_devices_state.count({ where }),
     ]);
 
-    // Transform the data to format created_at and parse state_data with state_at
-    const transformedData = data.map((item) => ({
-      ...item,
-      created_at: formatDateTime(item.created_at),
-      state_data: item.state_data
-        ? {
-            ...(item.state_data as DeviceState),
-            state_at: formatDateTime(item.created_at),
-          }
-        : null,
-    }));
-
     return {
-      items: transformedData,
+      items: data,
       total,
       page: safePage,
       limit: safeLimit,

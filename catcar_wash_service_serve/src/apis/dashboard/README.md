@@ -107,7 +107,7 @@ The API uses various Prisma enums and types:
 
 - `DeviceStatus`: 'DEPLOYED' | 'DISABLED'
 - `DeviceType`: 'WASH' | 'DRYING'
-- `PaymentStatus`: 'SUCCESS' | 'FAILED' | 'CANCELLED'
+- `PaymentApiStatus`: 'PENDING' | 'SUCCEEDED' | 'FAILED' | 'CANCELLED'
 
 ## Database Schema
 

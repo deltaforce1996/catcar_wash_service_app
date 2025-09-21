@@ -1,6 +1,6 @@
 import { IsOptional, IsString, IsDateString, IsEnum } from 'class-validator';
 import { Transform } from 'class-transformer';
-import { DeviceStatus, DeviceType, PaymentStatus } from '@prisma/client';
+import { DeviceStatus, DeviceType, PaymentApiStatus } from '@prisma/client';
 
 export class DashboardFilterDto {
   @IsOptional()
@@ -20,8 +20,8 @@ export class DashboardFilterDto {
   device_type?: DeviceType;
 
   @IsOptional()
-  @IsEnum(PaymentStatus)
-  payment_status?: PaymentStatus;
+  @IsEnum(PaymentApiStatus)
+  payment_status?: PaymentApiStatus;
 
   @IsDateString()
   date?: string;

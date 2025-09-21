@@ -1,5 +1,5 @@
 import { UserStatus } from '@prisma/client';
-import { IsEmail, IsEnum, IsOptional, IsString } from 'class-validator';
+import { IsEmail, IsEnum, IsObject, IsOptional, IsString } from 'class-validator';
 
 export class UpdateUserDto {
   @IsEmail()
@@ -25,4 +25,16 @@ export class UpdateUserDto {
   @IsEnum(UserStatus)
   @IsOptional()
   status?: UserStatus;
+}
+
+export class UpdateUserProfileDto extends UpdateUserDto {
+  @IsObject({
+    each: true,
+  })
+  @IsOptional()
+  payment_info?: {
+    merchant_id?: string;
+    api_key?: string;
+    HMAC_key?: string;
+  };
 }

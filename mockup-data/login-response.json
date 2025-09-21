@@ -1,7 +1,0 @@
-{
-  "success": true,
-  "data": {
-      "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6ImNtZWp6bzR0ZzAwMDh6c2c4bGQydW5lbHoiLCJlbWFpbCI6InVzZXJAY2F0Y2Fyd2FzaC5jb20iLCJuYW1lIjoiVXNlciIsInBlcm1pc3Npb24iOnsiaWQiOiJjbWVqem80bXQwMDAyenNnOGl5MHNscXFoIiwibmFtZSI6IlVTRVIifSwic3RhdHVzIjoiQUNUSVZFIiwiaWF0IjoxNzU1ODU1OTEzNDc4LCJleHAiOjE3NTU4NTY1MTgyNzh9.HuUBXrjbTk0eCUihIX6-t4JBfVcB72N4ler1hCbw8QQ"
-  },
-  "message": "Login successful"
-}

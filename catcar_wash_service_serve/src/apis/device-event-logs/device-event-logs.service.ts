@@ -1,8 +1,8 @@
-import { BadRequestException, Injectable, Logger } from '@nestjs/common';
-import { EventType, PaymentStatus, PermissionType, Prisma } from '@prisma/client';
+import { Injectable, Logger } from '@nestjs/common';
+import { BadRequestException } from 'src/errors';
+import { EventType, PaymentApiStatus, PermissionType, Prisma } from '@prisma/client';
 import { PrismaService } from 'src/database/prisma/prisma.service';
 import { parseKeyValueOnly } from 'src/shared/kv-parser';
-import { formatDateTime } from 'src/shared/date-formatter';
 import { AuthenticatedUser, PaginatedResult } from 'src/types/internal.type';
 import { SearchDeviceEventLogsDto } from './dtos/search-devcie-event.dto';
 
@@ -31,10 +31,11 @@ export const deviceEventLogsPublicSelect = Prisma.validator<Prisma.tbl_devices_e
 type DeviceEventLogRowBase = Prisma.tbl_devices_eventsGetPayload<{ select: typeof deviceEventLogsPublicSelect }>;
 
 // Extended type with formatted created_at and modified payload
-export type DeviceEventLogRow = Omit<DeviceEventLogRowBase, 'created_at' | 'payload'> & {
-  created_at: string;
-  payload: (DeviceEventLogRowBase['payload'] & { event_at: string }) | null;
-};
+// export type DeviceEventLogRow = DeviceEventLogRowBase & {
+//   payload: (DeviceEventLogRowBase['payload'] & { event_at: string }) | null;
+// };
+
+export type DeviceEventLogRow = DeviceEventLogRowBase;
 
 @Injectable()
 export class DeviceEventLogsService {
@@ -92,7 +93,7 @@ export class DeviceEventLogsService {
           });
           break;
         case 'payment_status':
-          ands.push({ payload: { path: ['status'], equals: value as PaymentStatus } });
+          ands.push({ payload: { path: ['status'], equals: value as PaymentApiStatus } });
           break;
         case 'type': {
           const v = value.toUpperCase();
@@ -184,28 +185,23 @@ export class DeviceEventLogsService {
     ]);
 
     // Transform the data to format created_at as YYYY-MM-DD hh:mm:ss and add event_at to payload
-    const transformedData = data.map((item) => {
-      const basePayload = item.payload as Record<string, any> | null;
-      const transformedPayload = basePayload
-        ? {
-            ...basePayload,
-            event_at: basePayload.timestamp
-              ? formatDateTime(new Date(Number(basePayload.timestamp)))
-              : basePayload.timestamp,
-          }
-        : {
-            event_at: null,
-          };
+    // const transformedData = data.map((item) => {
+    //   const basePayload = item.payload as Record<string, any> | null;
+    //   const transformedPayload = basePayload
+    //     ? {
+    //         ...basePayload,
+    //         event_at: basePayload.timestamp ? new Date(Number(basePayload.timestamp)) : basePayload.timestamp,
+    //       }
+    //     : basePayload;
 
-      return {
-        ...item,
-        created_at: formatDateTime(item.created_at),
-        payload: transformedPayload,
-      };
-    });
+    //   return {
+    //     ...item,
+    //     payload: transformedPayload,
+    //   };
+    // });
 
     return {
-      items: transformedData,
+      items: data,
       total,
       page: safePage,
       limit: safeLimit,

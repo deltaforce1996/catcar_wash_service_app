@@ -1,4 +1,4 @@
-import { PrismaClient, PermissionType, EventType, DeviceType } from '@prisma/client';
+import { PrismaClient, PermissionType, EventType, DeviceType, PaymentApiStatus } from '@prisma/client';
 import * as bcrypt from 'bcrypt';
 import { DeviceDryingConfig } from '../src/shared/device-drying-config';
 import { DeviceWashConfig } from '../src/shared/device-wash-config';
@@ -91,9 +91,9 @@ const generate = async () => {
   console.log('Seeding permissions...');
 
   const permissions = [
-    { name: PermissionType.ADMIN },
-    { name: PermissionType.TECHNICIAN },
-    { name: PermissionType.USER },
+    { id: 'PERM-0001', name: PermissionType.ADMIN },
+    { id: 'PERM-0002', name: PermissionType.TECHNICIAN },
+    { id: 'PERM-0003', name: PermissionType.USER },
   ];
 
   for (const permission of permissions) {
@@ -129,6 +129,7 @@ const generate = async () => {
   const superAdmin = await prisma.tbl_emps.upsert({
     where: { email: 'superadmin@catcarwash.com' },
     update: {
+      id: 'superadmin-0001',
       name: 'นายสมพงษ์ ผู้ดูแลระบบหลัก',
       phone: '+66812345678',
       line: '@superadmin_th',
@@ -138,6 +139,7 @@ const generate = async () => {
       status: 'ACTIVE',
     },
     create: {
+      id: 'superadmin-0001',
       name: 'นายสมพงษ์ ผู้ดูแลระบบหลัก',
       email: 'superadmin@catcarwash.com',
       phone: '+66812345678',
@@ -152,6 +154,7 @@ const generate = async () => {
   const technician = await prisma.tbl_emps.upsert({
     where: { email: 'technician@catcarwash.com' },
     update: {
+      id: 'technician-0001',
       name: 'นายสมคิด ช่างเทคนิค',
       phone: '+66823456789',
       line: '@technician_th',
@@ -161,6 +164,7 @@ const generate = async () => {
       status: 'ACTIVE',
     },
     create: {
+      id: 'technician-0001',
       name: 'นายสมคิด ช่างเทคนิค',
       email: 'technician@catcarwash.com',
       phone: '+66823456789',
@@ -172,9 +176,16 @@ const generate = async () => {
     },
   });
 
+  const paymentInfo = {
+    merchant_id: 'catcarwash',
+    api_key: 'KPDPt2heeX8aNUfOpCD9s0C6L4E7qJnfpN+kt0YkptE=',
+    HMAC_key: 'k5E9ObcIDSGNu0Fa2itrjbs5kiy7nr9IAJwWXRDjr5U=',
+  };
+
   const user = await prisma.tbl_users.upsert({
     where: { email: 'user@catcarwash.com' },
     update: {
+      id: 'user-0001',
       fullname: 'นายสมชาย ใจดี',
       phone: '+66834567890',
       password: hashedPassword,
@@ -182,8 +193,10 @@ const generate = async () => {
       status: 'ACTIVE',
       custom_name: 'ลูกค้าประจำ VIP',
       address: '123/45 ถนนลาดพร้าว แขวงจอมพล เขตจตุจักร กรุงเทพมหานคร 10900',
+      payment_info: paymentInfo,
     },
     create: {
+      id: 'user-0001',
       fullname: 'นายสมชาย ใจดี',
       email: 'user@catcarwash.com',
       phone: '+66834567890',
@@ -192,12 +205,14 @@ const generate = async () => {
       status: 'ACTIVE',
       custom_name: 'ลูกค้าประจำ VIP',
       address: '123/45 ถนนลาดพร้าว แขวงจอมพล เขตจตุจักร กรุงเทพมหานคร 10900',
+      payment_info: paymentInfo,
     },
   });
 
   const user2 = await prisma.tbl_users.upsert({
     where: { email: 'user2@catcarwash.com' },
     update: {
+      id: 'user-0002',
       fullname: 'นางสาวสมหญิง รักดี',
       email: 'user2@catcarwash.com',
       phone: '+66845678901',
@@ -206,8 +221,10 @@ const generate = async () => {
       status: 'ACTIVE',
       custom_name: 'ลูกค้าธุรกิจ',
       address: '789 ถนนสุขุมวิท แขวงคลองตัน เขตวัฒนา กรุงเทพมหานคร 10110',
+      payment_info: paymentInfo,
     },
     create: {
+      id: 'user-0002',
       fullname: 'นางสาวสมหญิง รักดี',
       email: 'user2@catcarwash.com',
       phone: '+66845678901',
@@ -216,6 +233,7 @@ const generate = async () => {
       status: 'ACTIVE',
       custom_name: 'ลูกค้าธุรกิจ',
       address: '789 ถนนสุขุมวิท แขวงคลองตัน เขตวัฒนา กรุงเทพมหานคร 10110',
+      payment_info: paymentInfo,
     },
   });
 
@@ -256,7 +274,8 @@ const generate = async () => {
   const devicesUser = await prisma.tbl_devices.createMany({
     data: [
       {
-        name: 'เครื่องล้างรถหมายเลข 1',
+        id: 'device-0000',
+        name: 'เครื่องล้างรถหมายเลข 0',
         type: 'WASH',
         status: 'DEPLOYED',
         owner_id: user.id,
@@ -271,6 +290,7 @@ const generate = async () => {
         },
       },
       {
+        id: 'device-0001',
         name: 'เครื่องเป่าลมหมายเลข 1',
         type: 'DRYING',
         status: 'DISABLED',
@@ -286,6 +306,7 @@ const generate = async () => {
         },
       },
       {
+        id: 'device-0002',
         name: 'เครื่องเป่าลมหมายเลข 2',
         type: 'DRYING',
         status: 'DEPLOYED',
@@ -306,7 +327,8 @@ const generate = async () => {
   const devicesUser2 = await prisma.tbl_devices.createMany({
     data: [
       {
-        name: 'เครื่องล้างรถหมายเลข 2',
+        id: 'device-0003',
+        name: 'เครื่องล้างรถหมายเลข 3',
         type: 'WASH',
         status: 'DISABLED',
         owner_id: user2.id,
@@ -321,7 +343,8 @@ const generate = async () => {
         },
       },
       {
-        name: 'เครื่องเป่าลมหมายเลข 3',
+        id: 'device-0004',
+        name: 'เครื่องเป่าลมหมายเลข 4',
         type: 'DRYING',
         status: 'DEPLOYED',
         owner_id: user2.id,
@@ -336,7 +359,8 @@ const generate = async () => {
         },
       },
       {
-        name: 'เครื่องล้างรถหมายเลข 3',
+        id: 'device-0005',
+        name: 'เครื่องล้างรถหมายเลข 5',
         type: 'WASH',
         status: 'DEPLOYED',
         owner_id: user2.id,
@@ -351,7 +375,8 @@ const generate = async () => {
         },
       },
       {
-        name: 'เครื่องล้างรถหมายเลข 4',
+        id: 'device-0006',
+        name: 'เครื่องล้างรถหมายเลข 6',
         type: 'WASH',
         status: 'DEPLOYED',
         owner_id: user2.id,
@@ -464,11 +489,11 @@ const generateDeviceEvents = (deviceIds: string[], type: EventType, count: numbe
     for (let i = 0; i < count; i++) {
       // Generate random timestamp within safe partition range
       const randomOffset = randomInt(-maxPastMs, maxFutureMs);
-      const timestemp = now + randomOffset;
+      const timestamp = now + randomOffset;
 
       const payload = {
         type: type,
-        timestemp: timestemp,
+        timestamp: timestamp,
         coin: {
           1: randomInt(0, 10),
           2: 0,
@@ -491,7 +516,7 @@ const generateDeviceEvents = (deviceIds: string[], type: EventType, count: numbe
         (payload.qr as { net_amount: number }).net_amount;
 
       payload['total_amount'] = totalAmount;
-      payload['status'] = 'SUCCESS'; // SUCCESS, FAILED, CANCELLED
+      payload['status'] = PaymentApiStatus.SUCCEEDED;
 
       payloads.push({
         device_id: deviceId,
