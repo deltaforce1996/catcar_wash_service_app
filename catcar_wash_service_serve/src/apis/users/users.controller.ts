@@ -1,4 +1,4 @@
-import { Body, Controller, Get, Param, Post, Put, Query, UseFilters, UseGuards, Request } from '@nestjs/common';
+import { Body, Controller, Get, Param, Post, Put, Query, UseFilters, UseGuards } from '@nestjs/common';
 import { UserWithDeviceCountsRow, UserWithoutDeviceCountsRow, UsersService } from './users.service';
 import { AllExceptionFilter } from 'src/common';
 import { SearchUserDto } from './dtos/search-user.dto';
@@ -7,11 +7,9 @@ import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { PaginatedResult } from 'src/types/internal.type';
 import { UpdateUserDto, UpdateUserProfileDto } from './dtos/update-user.dto';
 import { SuccessResponse } from 'src/types';
-import { RoleAdminAndTechnician, RoleAdmin } from '../auth/decorators/roles.decorator';
+import { RoleAdminAndTechnician, RoleAdmin, SelfUpdate, UserAuth } from '../auth/decorators';
 import { RoleAuthGuard } from '../auth/guards/role-auth.guard';
 import { UserSelfUpdateGuard } from '../auth/guards/user-self-update.guard';
-import { SelfUpdate } from '../auth/decorators/self-update.decorator';
-import { AuthenticatedUser } from 'src/types/internal.type';
 
 type UserPublicResponse = PaginatedResult<UserWithDeviceCountsRow | UserWithoutDeviceCountsRow>;
 
@@ -47,10 +45,9 @@ export class UsersController {
   @SelfUpdate()
   @Put('update-profile')
   async updateUserProfile(
-    @Request() req: Request & { user: AuthenticatedUser },
+    @UserAuth('id') userId: string,
     @Body() data: UpdateUserProfileDto,
   ): Promise<SuccessResponse<UserWithDeviceCountsRow>> {
-    const userId = req.user.id;
     const result = await this.usersService.updateById(userId, data);
     return {
       success: true,

@@ -1,10 +1,11 @@
 import { Controller, Post, Request, UseFilters, UseGuards } from '@nestjs/common';
 import { AuthService } from './auth.service';
-import { AuthenticatedUser } from 'src/types/internal.type';
+import type { AuthenticatedUser } from 'src/types/internal.type';
 import { LocalAuthGuard } from './guards/local-auth.guard';
 import { AllExceptionFilter } from 'src/common';
 import type { SuccessResponse } from 'src/types';
 import { JwtAuthGuard } from './guards/jwt-auth.guard';
+import { UserAuth } from './decorators';
 
 @UseFilters(AllExceptionFilter)
 @Controller('api/v1/auth')
@@ -24,10 +25,10 @@ export class AuthController {
 
   @UseGuards(JwtAuthGuard)
   @Post('me')
-  me(@Request() req: Request & { user: AuthenticatedUser }): SuccessResponse<AuthenticatedUser> {
+  me(@UserAuth() user: AuthenticatedUser): SuccessResponse<AuthenticatedUser> {
     return {
       success: true,
-      data: req.user,
+      data: user,
       message: 'User information retrieved successfully',
     };
   }

@@ -1,10 +1,12 @@
-import { Controller, Get, Query, UseFilters, UseGuards, Request } from '@nestjs/common';
-import { AuthenticatedUser, PaginatedResult } from 'src/types/internal.type';
+import { Controller, Get, Query, UseFilters, UseGuards } from '@nestjs/common';
+import { PaginatedResult } from 'src/types/internal.type';
 import { DeviceEventLogsService, DeviceEventLogRow } from './device-event-logs.service';
 import { SearchDeviceEventLogsDto } from './dtos/search-devcie-event.dto';
 import { SuccessResponse } from 'src/types/success-response.type';
 import { AllExceptionFilter } from 'src/common';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
+import { UserAuth } from '../auth/decorators';
+import type { AuthenticatedUser } from 'src/types/internal.type';
 
 type DeviceEventLogsPublicResponse = PaginatedResult<DeviceEventLogRow>;
 
@@ -17,9 +19,8 @@ export class DeviceEventLogsController {
   @Get('search')
   async searchDeviceEventLogs(
     @Query() q: SearchDeviceEventLogsDto,
-    @Request() req: Request & { user: AuthenticatedUser },
+    @UserAuth() user: AuthenticatedUser,
   ): Promise<SuccessResponse<DeviceEventLogsPublicResponse>> {
-    const user = req.user;
     const result = await this.deviceEventLogsService.searchDeviceEventLogs(q, user);
     return {
       success: true,
