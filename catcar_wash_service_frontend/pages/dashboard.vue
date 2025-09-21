@@ -363,6 +363,22 @@
           </v-col> -->
         </v-row>
 
+        <!-- Filter Change Alert -->
+        <v-alert
+          v-if="hasFilterChanges"
+          border
+          density="compact"
+          type="warning"
+          variant="tonal"
+          class="my-2"
+        >
+          <template #prepend>
+            <v-icon>mdi-information</v-icon>
+          </template>
+          <strong>เตือน:</strong> คุณได้เปลี่ยนแปลงตัวกรองแล้ว กรุณากดปุ่ม
+          "ยืนยันตัวกรอง" เพื่อใช้งานตัวกรองใหม่
+        </v-alert>
+
         <!-- Filter Actions -->
         <v-row class="mb-2">
           <v-col cols="12" class="d-flex justify-end ga-2">
@@ -384,21 +400,6 @@
             </v-btn>
           </v-col>
         </v-row>
-
-        <!-- Filter Change Alert -->
-        <v-alert
-          v-if="hasFilterChanges"
-          type="info"
-          variant="tonal"
-          closable
-          class="mt-4"
-        >
-          <template #prepend>
-            <v-icon>mdi-information</v-icon>
-          </template>
-          <strong>เตือน:</strong> คุณได้เปลี่ยนแปลงตัวกรองแล้ว กรุณากดปุ่ม
-          "ยืนยันตัวกรอง" เพื่อใช้งานตัวกรองใหม่
-        </v-alert>
       </v-card-text>
       <v-data-table
         :headers="salesHeaders"
@@ -809,9 +810,6 @@ const selectedUserIds = ref<string[]>([]);
 const selectedPaymentStatuses = ref<string[]>([]);
 const selectedDeviceTypes = ref<string[]>([]);
 
-// Device type options
-const serviceTypeOptions = ["WASH", "DRYING"];
-
 // Popover filter options
 const userOptions = computed(() => {
   const users = new Set<string>();
@@ -1106,17 +1104,6 @@ const hasCoins = (item: SaleItem): boolean => {
     item.payload?.coin &&
     Object.values(item.payload.coin).some((count: number) => count > 0)
   );
-};
-
-const getServiceTypeColor = (serviceType: string) => {
-  switch (serviceType) {
-    case "WASH":
-      return "primary";
-    case "DRYING":
-      return "secondary";
-    default:
-      return "grey";
-  }
 };
 </script>
 
