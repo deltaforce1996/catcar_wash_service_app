@@ -2,35 +2,28 @@
   <div class="d-flex flex-column align-center justify-center pa-4">
     <!-- Welcome Section -->
     <div class="text-center mb-6">
-      <v-avatar 
-        size="60" 
-        class="mb-4 gradient-avatar"
-        color="transparent"
-      >
+      <v-avatar size="60" class="mb-4 gradient-avatar" color="transparent">
         <v-icon icon="mdi-paw" size="32" color="primary" />
       </v-avatar>
-      
+
       <h1 class="text-h4 font-weight-bold gradient-text mb-2">
         ยินดีต้อนรับกลับมา!
       </h1>
-      
+
       <p class="text-body-2 text-medium-emphasis">
         กรุณาลงชื่อเข้าใช้เพื่อเข้าสู่ระบบจัดการ Cat Car Wash
       </p>
     </div>
 
     <!-- Vuetify Form Card -->
-    <v-card
-      class="w-100 glass-card"
-      max-width="450"
-      elevation="8"
-      rounded="xl"
-    >
+    <v-card class="w-100 glass-card" max-width="450" elevation="8" rounded="xl">
       <v-card-text class="pa-6">
         <v-form @submit.prevent="handleLogin">
           <!-- Email Field -->
           <div class="mb-4">
-            <v-label class="text-caption font-weight-medium text-uppercase mb-1">
+            <v-label
+              class="text-caption font-weight-medium text-uppercase mb-1"
+            >
               อีเมล
             </v-label>
             <v-text-field
@@ -49,7 +42,9 @@
 
           <!-- Password Field -->
           <div class="mb-4">
-            <v-label class="text-caption font-weight-medium text-uppercase mb-1">
+            <v-label
+              class="text-caption font-weight-medium text-uppercase mb-1"
+            >
               รหัสผ่าน
             </v-label>
             <v-text-field
@@ -70,7 +65,9 @@
 
           <!-- Role Selection -->
           <div class="mb-4">
-            <v-label class="text-caption font-weight-medium text-uppercase mb-1">
+            <v-label
+              class="text-caption font-weight-medium text-uppercase mb-1"
+            >
               ประเภทบัญชี
             </v-label>
             <v-select
@@ -81,7 +78,7 @@
               prepend-inner-icon="mdi-account-outline"
               :items="[
                 { title: 'ลูกค้า', value: 'USER' },
-                { title: 'พนักงาน', value: 'EMP' }
+                { title: 'พนักงาน', value: 'EMP' },
               ]"
               hide-details="auto"
             />
@@ -91,7 +88,7 @@
           <div class="d-flex justify-end mb-4">
             <v-btn
               variant="text"
-              color="primary" 
+              color="primary"
               size="small"
               class="text-caption"
               @click="forgotPassword"
@@ -150,23 +147,6 @@
         </v-form>
       </v-card-text>
     </v-card>
-
-    <!-- Security Notice -->
-    <v-alert
-      type="success"
-      variant="tonal"
-      density="compact"
-      rounded="lg"
-      class="mt-4"
-      max-width="450"
-    >
-      <template #prepend>
-        <v-icon icon="mdi-shield-check" size="16" />
-      </template>
-      <span class="text-caption">
-        การเชื่อมต่อของคุณได้รับการป้องกันด้วยระบบความปลอดภัยขั้นสูง
-      </span>
-    </v-alert>
   </div>
 </template>
 
@@ -175,51 +155,44 @@ import { ref, computed } from "vue";
 import { emailRules, passwordRulesBasic } from "@/utils/validation-rules";
 import { useAuth } from "~/composables/useAuth";
 
-// Use auth layout
 definePageMeta({
   layout: "auth",
 });
 
-// Auth composable
 const { login, isLoading, error, successMessage } = useAuth();
 
-// Reactive data
 const email = ref("");
 const password = ref("");
 const showPassword = ref(false);
-const role = ref<'USER' | 'EMP'>('USER');
+const role = ref<"USER" | "EMP">("USER");
 
-// Validation rules imported from common
 const passwordRules = passwordRulesBasic;
 
-// Form validation
 const isFormValid = computed(() => {
-  return email.value.trim() !== "" && 
-         password.value.trim() !== "" && 
-         email.value.includes("@") && 
-         password.value.length >= 6;
+  return (
+    email.value.trim() !== "" &&
+    password.value.trim() !== "" &&
+    email.value.includes("@") &&
+    password.value.length >= 6
+  );
 });
 
-// Methods
 const handleLogin = async () => {
   try {
-    await login(email.value, password.value, role.value); 
-    // Show success message briefly before navigating
+    await login(email.value, password.value, role.value);
     setTimeout(async () => {
-      await navigateTo('/');
+      await navigateTo("/");
     }, 1500);
   } catch (err) {
-    console.error('Login failed:', err);
-    // Error is already handled by the composable
+    console.error("Login failed:", err);
   }
 };
 
 const forgotPassword = () => {
-  // Navigate to forgot password page
   navigateTo("/forgot-password");
 };
 </script>
 
 <style scoped>
-@import '@/assets/css/auth-common.css';
+@import "@/assets/css/auth-common.css";
 </style>
