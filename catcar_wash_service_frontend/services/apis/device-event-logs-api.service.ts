@@ -42,10 +42,11 @@ export interface DeviceEventLogResponseApi {
 export interface SearchDeviceEventLogsRequest {
   query?: {
     user_id?: string;
-    device_id?: string;
+    device_id?: string; // Dashboard not implement device_id
     device_type?: EnumDeviceType;
     payment_status?: EnumPaymentStatus;
     payload_timestamp?: string; // timestamp or start-end range
+    search?: string; // Search device_id, device_name fields
   };
   page?: number;
   limit?: number;
@@ -58,10 +59,14 @@ export class DeviceEventLogsApiService extends BaseApiClient {
     query: SearchDeviceEventLogsRequest["query"]
   ): string {
     if (!query) return "";
-    
+
     const parts: string[] = [];
     for (const [key, value] of Object.entries(query)) {
-      if (value != null && value !== "") {
+      if (
+        value != null &&
+        value !== "" &&
+        value.trim().toUpperCase() !== "ALL"
+      ) {
         parts.push(`${key}: {${value}}`);
       }
     }
