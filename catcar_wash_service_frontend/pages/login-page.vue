@@ -1,7 +1,38 @@
 <template>
-  <div class="d-flex flex-column align-center justify-center pa-4">
+  <div
+    class="d-flex flex-column align-center justify-center pa-4 login-container auth-page"
+  >
+    <!-- Loading Overlay -->
+    <div v-if="isLoading" class="loading-overlay">
+      <div class="loading-content">
+        <div class="loading-spinner">
+          <div class="spinner-ring" />
+          <div class="spinner-ring" />
+          <div class="spinner-ring" />
+        </div>
+        <p class="loading-text">กำลังเข้าสู่ระบบ...</p>
+      </div>
+    </div>
+
+    <!-- Success Animation Overlay -->
+    <div v-if="showSuccessAnimation" class="success-overlay">
+      <div class="success-content">
+        <div class="success-checkmark">
+          <div class="checkmark-circle">
+            <div class="checkmark-stem" />
+            <div class="checkmark-kick" />
+          </div>
+        </div>
+        <p class="success-text">เข้าสู่ระบบสำเร็จ!</p>
+        <p class="success-subtext">กำลังเปลี่ยนหน้า...</p>
+      </div>
+    </div>
+
     <!-- Welcome Section -->
-    <div class="text-center mb-6">
+    <div
+      class="text-center mb-6 welcome-section"
+      :class="{ 'fade-out': isLoading }"
+    >
       <v-avatar size="60" class="mb-4 gradient-avatar" color="transparent">
         <v-icon icon="mdi-paw" size="32" color="primary" />
       </v-avatar>
@@ -16,7 +47,13 @@
     </div>
 
     <!-- Vuetify Form Card -->
-    <v-card class="w-100 glass-card" max-width="450" elevation="8" rounded="xl">
+    <v-card
+      class="w-100 glass-card form-card"
+      max-width="450"
+      elevation="8"
+      rounded="xl"
+      :class="{ 'fade-out': isLoading }"
+    >
       <v-card-text class="pa-6">
         <v-form @submit.prevent="handleLogin">
           <!-- Email Field -->
@@ -165,6 +202,7 @@ const email = ref("");
 const password = ref("");
 const showPassword = ref(false);
 const role = ref<"USER" | "EMP">("USER");
+const showSuccessAnimation = ref(false);
 
 const passwordRules = passwordRulesBasic;
 
@@ -180,9 +218,14 @@ const isFormValid = computed(() => {
 const handleLogin = async () => {
   try {
     await login(email.value, password.value, role.value);
+
+    // Show success animation
+    showSuccessAnimation.value = true;
+
+    // Wait for success animation to complete, then navigate
     setTimeout(async () => {
       await navigateTo("/");
-    }, 1500);
+    }, 2500);
   } catch (err) {
     console.error("Login failed:", err);
   }

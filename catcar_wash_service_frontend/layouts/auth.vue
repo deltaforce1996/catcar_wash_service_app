@@ -121,11 +121,7 @@
   border-bottom: 1px solid rgba(var(--v-theme-outline), 0.1);
 }
 
-.mobile-brand {
-  display: flex;
-  align-items: center;
-  gap: 0.75rem;
-}
+/* Removed unused .mobile-brand class */
 
 .mobile-logo-icon {
   height: 40px;
@@ -377,6 +373,10 @@
   border-left-color: rgba(var(--v-theme-outline), 0.2);
 }
 
+.v-theme--dark .mobile-logo-text {
+  filter: brightness(0) invert(1);
+}
+
 /* Responsive Design - Using CSS custom properties with Vuetify breakpoints */
 .brand-title {
   font-size: clamp(2rem, 4vw, 2.5rem);
@@ -403,15 +403,7 @@
   height: clamp(24px, 5vw, 32px);
 }
 
-/* Performance Optimizations */
-.brand-showcase,
-.form-section .d-flex {
-  will-change: transform;
-}
-
-.bg-circle {
-  will-change: transform;
-}
+/* Performance Optimizations - Removed unnecessary will-change properties */
 
 /* Smooth Transitions */
 .form-section,
