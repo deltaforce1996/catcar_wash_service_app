@@ -201,8 +201,8 @@ const drawer = ref(true);
 
 // Profile data (TODO: Replace with real user data)
 const profileData = {
-  name: user.value?.name,
-  email: user.value?.email,
+  name: user.value?.name || "คุณผู้ใช้งาน",
+  email: user.value?.email || "คุณผู้ใช้งาน@คุณผู้ใช้งาน.com",
   avatar: "/Character/character cat-02.png",
 };
 
