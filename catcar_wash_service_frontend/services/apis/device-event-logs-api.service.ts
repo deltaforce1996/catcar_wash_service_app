@@ -1,4 +1,10 @@
-import type { ApiSuccessResponse, EnumDeviceType, EnumEventType, EnumPaymentStatus, EnumSortOrder } from "~/types";
+import type {
+  ApiSuccessResponse,
+  EnumDeviceType,
+  EnumEventType,
+  EnumPaymentStatus,
+  EnumSortOrder,
+} from "~/types";
 import { BaseApiClient } from "../bases/base-api-client";
 
 export interface DeviceEventLogResponseApi {
@@ -11,19 +17,8 @@ export interface DeviceEventLogResponseApi {
       net_amount?: number;
       transaction_id?: string;
     };
-    bank?: {
-      "20"?: number;
-      "50"?: number;
-      "300"?: number;
-      "500"?: number;
-      "1000"?: number;
-    };
-    coin?: {
-      "1"?: number;
-      "2"?: number;
-      "5"?: number;
-      "10"?: number;
-    };
+    bank?: Record<string, number>;
+    coin?: Record<string, number>;
     type?: EnumEventType;
     status?: EnumPaymentStatus;
     timestamp?: number;
@@ -45,28 +40,47 @@ export interface DeviceEventLogResponseApi {
 }
 
 export interface SearchDeviceEventLogsRequest {
-  query?: string;
+  query?: {
+    user_id?: string;
+    device_id?: string;
+    device_type?: EnumDeviceType;
+    payment_status?: EnumPaymentStatus;
+    payload_timestamp?: string; // timestamp or start-end range
+  };
   page?: number;
   limit?: number;
-  sort_by?:
-    | "created_at"
-    | "type"
-    | "device_id";
+  sort_by?: "created_at" | "type" | "device_id";
   sort_order?: EnumSortOrder;
 }
 
 export class DeviceEventLogsApiService extends BaseApiClient {
+  private convertQueryToParams(
+    query: SearchDeviceEventLogsRequest["query"]
+  ): string {
+    if (!query) return "";
+    
+    const parts: string[] = [];
+    for (const [key, value] of Object.entries(query)) {
+      if (value != null && value !== "") {
+        parts.push(`${key}: {${value}}`);
+      }
+    }
+    return parts.join(" ");
+  }
   async SearchDeviceEventLogs(
     payload: SearchDeviceEventLogsRequest
   ): Promise<ApiSuccessResponse<DeviceEventLogResponseApi[]>> {
-    const response = await this.get<ApiSuccessResponse<DeviceEventLogResponseApi[]>>(
-      "api/v1/device-event-logs/search",
-      {
-        params: {
-          ...payload,
-        },
-      }
-    );
+    const response = await this.get<
+      ApiSuccessResponse<DeviceEventLogResponseApi[]>
+    >("api/v1/device-event-logs/search", {
+      params: {
+        query: this.convertQueryToParams(payload.query),
+        page: payload.page,
+        limit: payload.limit,
+        sort_by: payload.sort_by,
+        sort_order: payload.sort_order,
+      },
+    });
     return response;
   }
 }
