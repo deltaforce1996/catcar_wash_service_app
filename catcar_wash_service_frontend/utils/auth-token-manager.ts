@@ -1,3 +1,5 @@
+import type { AuthenticatedUser } from "~/services/apis/auth-api.service";
+
 /**
  * Token Manager Utility
  * Handles token storage and retrieval for authentication
@@ -46,5 +48,45 @@ export const authTokenManager = {
    */
   hasToken: (): boolean => {
     return authTokenManager.getToken() !== null;
+  },
+
+  /**
+   * Get user data from localStorage
+   * @returns {AuthenticatedUser | null} The stored user data or null if not found
+   */
+  getUser: (): AuthenticatedUser | null => {
+    if (typeof window === "undefined") return null;
+    
+    try {
+      const userData = localStorage.getItem("auth_user");
+      return userData ? JSON.parse(userData) : null;
+    } catch {
+      return null;
+    }
+  },
+
+  /**
+   * Set user data in localStorage
+   * @param {AuthenticatedUser} user - The user data to store
+   */
+  setUser: (user: AuthenticatedUser): void => {
+    if (typeof window === "undefined") return;
+    localStorage.setItem("auth_user", JSON.stringify(user));
+  },
+
+  /**
+   * Clear user data from localStorage
+   */
+  clearUser: (): void => {
+    if (typeof window === "undefined") return;
+    localStorage.removeItem("auth_user");
+  },
+
+  /**
+   * Clear all auth data (token and user)
+   */
+  clearAll: (): void => {
+    authTokenManager.clearToken();
+    authTokenManager.clearUser();
   },
 };

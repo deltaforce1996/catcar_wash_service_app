@@ -68,6 +68,25 @@
             />
           </div>
 
+          <!-- Role Selection -->
+          <div class="mb-4">
+            <v-label class="text-caption font-weight-medium text-uppercase mb-1">
+              ประเภทบัญชี
+            </v-label>
+            <v-select
+              v-model="role"
+              variant="outlined"
+              density="comfortable"
+              rounded="lg"
+              prepend-inner-icon="mdi-account-outline"
+              :items="[
+                { title: 'ลูกค้า', value: 'USER' },
+                { title: 'พนักงาน', value: 'EMP' }
+              ]"
+              hide-details="auto"
+            />
+          </div>
+
           <!-- Forgot Password -->
           <div class="d-flex justify-end mb-4">
             <v-btn
@@ -81,6 +100,37 @@
             </v-btn>
           </div>
 
+          <!-- Success Alert -->
+          <v-alert
+            v-if="successMessage"
+            type="success"
+            variant="tonal"
+            density="compact"
+            rounded="lg"
+            class="mb-4"
+            closable
+            @click:close="successMessage = null"
+          >
+            <template #prepend>
+              <v-icon icon="mdi-check-circle" size="16" />
+            </template>
+            {{ successMessage }}
+          </v-alert>
+
+          <!-- Error Alert -->
+          <v-alert
+            v-if="error"
+            type="error"
+            variant="tonal"
+            density="compact"
+            rounded="lg"
+            class="mb-4"
+            closable
+            @click:close="error = null"
+          >
+            {{ error }}
+          </v-alert>
+
           <!-- Login Button -->
           <v-btn
             type="submit"
@@ -88,8 +138,8 @@
             size="large"
             rounded="lg"
             class="gradient-btn text-none font-weight-bold mb-3"
-            :loading="loading"
-            :disabled="loading || !isFormValid"
+            :loading="isLoading"
+            :disabled="isLoading || !isFormValid"
             elevation="4"
           >
             <template #prepend>
@@ -123,18 +173,21 @@
 <script setup lang="ts">
 import { ref, computed } from "vue";
 import { emailRules, passwordRulesBasic } from "@/utils/validation-rules";
+import { useAuth } from "~/composables/useAuth";
 
 // Use auth layout
 definePageMeta({
   layout: "auth",
 });
 
+// Auth composable
+const { login, isLoading, error, successMessage } = useAuth();
+
 // Reactive data
 const email = ref("");
 const password = ref("");
 const showPassword = ref(false);
-// const rememberMe = ref(false)
-const loading = ref(false);
+const role = ref<'USER' | 'EMP'>('USER');
 
 // Validation rules imported from common
 const passwordRules = passwordRulesBasic;
@@ -148,33 +201,23 @@ const isFormValid = computed(() => {
 });
 
 // Methods
-const handleLogin = () => {
-  loading.value = true;
-
-  // TODO: Implement login logic
-  console.log("Login attempt:", {
-    email: email.value,
-    password: password.value,
-  });
-
-  // Simulate API call
-  setTimeout(() => {
-    loading.value = false;
-    // TODO: Navigate to dashboard or home page
-    // navigateTo('/')
-    console.log("Login successful - navigate to dashboard");
-  }, 1500);
+const handleLogin = async () => {
+  try {
+    await login(email.value, password.value, role.value); 
+    // Show success message briefly before navigating
+    setTimeout(async () => {
+      await navigateTo('/');
+    }, 1500);
+  } catch (err) {
+    console.error('Login failed:', err);
+    // Error is already handled by the composable
+  }
 };
 
 const forgotPassword = () => {
   // Navigate to forgot password page
   navigateTo("/forgot-password");
 };
-
-// const goToSignUp = () => {
-//   // TODO: Navigate to sign up page
-//   console.log("Go to sign up");
-// };
 </script>
 
 <style scoped>

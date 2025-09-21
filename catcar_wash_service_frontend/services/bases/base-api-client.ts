@@ -134,7 +134,7 @@ export abstract class BaseApiClient {
           this.log.error("🔥 Server error: Please try again later");
         }
 
-        return Promise.reject(error);
+        return Promise.reject(error.response?.data);
       }
     );
   }

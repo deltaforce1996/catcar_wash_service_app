@@ -103,7 +103,7 @@
                     <v-list-item
                       prepend-icon="mdi-logout"
                       title="ออกจากระบบ"
-                      @click="logout"
+                      @click="handleLogout"
                     />
                   </v-list>
                 </v-menu>
@@ -190,17 +190,19 @@
 <script setup lang="ts">
 import { ref } from "vue";
 import { useTheme } from "vuetify";
+import { useAuth } from "~/composables/useAuth";
 
 // Theme management
 const theme = useTheme();
+const { logout, user } = useAuth();
 
 // Navigation drawer state
 const drawer = ref(true);
 
 // Profile data (TODO: Replace with real user data)
 const profileData = {
-  name: "Admin User",
-  email: "admin@catcarwash.com",
+  name: user.value?.name,
+  email: user.value?.email,
   avatar: "/Character/character cat-02.png",
 };
 
@@ -252,10 +254,9 @@ const goToSettings = () => {
   navigateTo("/settings");
 };
 
-const logout = () => {
-  // TODO: Implement logout logic
-  console.log("Logout clicked");
-  // navigateTo('/login-page')
+const handleLogout = () => {
+  logout();
+  navigateTo("/login-page");
 };
 </script>
 
