@@ -103,22 +103,32 @@
           <!-- Role Selection -->
           <div class="mb-4">
             <v-label
-              class="text-caption font-weight-medium text-uppercase mb-1"
+              class="text-caption font-weight-medium text-uppercase mb-3 d-block"
             >
               ประเภทบัญชี
             </v-label>
-            <v-select
-              v-model="role"
-              variant="outlined"
-              density="comfortable"
-              rounded="lg"
-              prepend-inner-icon="mdi-account-outline"
-              :items="[
-                { title: 'ลูกค้า', value: 'USER' },
-                { title: 'พนักงาน', value: 'EMP' },
-              ]"
-              hide-details="auto"
-            />
+            <v-btn-group variant="outlined" density="comfortable" divided>
+              <v-btn
+                :color="role === 'USER' ? 'primary' : 'default'"
+                :variant="role === 'USER' ? 'flat' : 'outlined'"
+                size="large"
+                class="text-none"
+                prepend-icon="mdi-account-outline"
+                @click="role = 'USER'"
+              >
+                ลูกค้า
+              </v-btn>
+              <v-btn
+                :color="role === 'EMP' ? 'primary' : 'default'"
+                :variant="role === 'EMP' ? 'flat' : 'outlined'"
+                size="large"
+                class="text-none"
+                prepend-icon="mdi-account-tie-outline"
+                @click="role = 'EMP'"
+              >
+                พนักงาน
+              </v-btn>
+            </v-btn-group>
           </div>
 
           <!-- Forgot Password -->
