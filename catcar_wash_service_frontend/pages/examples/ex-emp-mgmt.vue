@@ -5,9 +5,9 @@
       <v-col cols="12">
         <div class="d-flex justify-space-between align-center flex-wrap">
           <div>
-            <h3 class="font-weight-bold mb-1">จัดการลูกค้า</h3>
+            <h3 class="font-weight-bold mb-1">จัดการพนักงาน</h3>
             <v-chip variant="tonal" color="primary" class="mt-2">
-              {{ totalUsers }} ลูกค้าทั้งหมด
+              {{ totalEmployees }} พนักงานทั้งหมด
             </v-chip>
           </div>
           <div class="d-flex align-center ga-3 flex-wrap">
@@ -15,16 +15,16 @@
               color="primary"
               prepend-icon="mdi-account-plus"
               class="text-none"
-              @click="showAddCustomerDialog = true"
+              @click="showAddEmployeeDialog = true"
             >
-              เพิ่มลูกค้าใหม่
+              เพิ่มพนักงานใหม่
             </v-btn>
           </div>
         </div>
       </v-col>
     </v-row>
 
-    <!-- Customer Management Table -->
+    <!-- Employee Management Table -->
     <v-card elevation="2" rounded="lg" class="mt-8">
       <!-- Filter Section -->
       <v-card-text class="pb-2">
@@ -41,10 +41,10 @@
                 prepend-inner-icon="mdi-magnify"
                 variant="outlined"
                 density="compact"
-                placeholder="ค้นหาด้วยชื่อ อีเมล เบอร์โทร ที่อยู่และชื่อลูกค้า"
+                placeholder="ค้นหาด้วยชื่อ อีเมล เบอร์โทร ไลน์ และที่อยู่"
                 hide-details
                 clearable
-                aria-label="ค้นหาลูกค้า"
+                aria-label="ค้นหาพนักงาน"
                 role="searchbox"
               />
             </div>
@@ -131,12 +131,12 @@
 
       <!-- Data Table -->
       <v-data-table
-        :headers="customerHeaders"
-        :items="users"
+        :headers="employeeHeaders"
+        :items="employees"
         :loading="isSearching || isLoading"
-        :items-per-page="currentSearchParams.limit || 1"
+        :items-per-page="currentSearchParams.limit || 10"
         :page="currentSearchParams.page || 1"
-        :items-length="totalUsers"
+        :items-length="totalEmployees"
         class="elevation-0"
         hover
         show-expand
@@ -145,31 +145,28 @@
         hide-default-footer
       >
         <!-- Name Column -->
-        <template #[`item.fullname`]="{ item }">
+        <template #[`item.name`]="{ item }">
           <div>
             <div class="text-body-2 font-weight-medium">
-              {{ item.fullname }}
+              {{ item.name }}
             </div>
-            <div
-              v-if="item.custom_name"
-              class="text-caption text-medium-emphasis"
-            >
-              {{ item.custom_name }}
+            <div class="text-caption text-medium-emphasis">
+              {{ item.email }}
             </div>
-          </div>
-        </template>
-
-        <!-- Email Column -->
-        <template #[`item.email`]="{ item }">
-          <div class="text-body-2">
-            {{ item.email }}
           </div>
         </template>
 
         <!-- Phone Column -->
         <template #[`item.phone`]="{ item }">
           <div class="text-body-2">
-            {{ item.phone }}
+            {{ item.phone || '-' }}
+          </div>
+        </template>
+
+        <!-- Line Column -->
+        <template #[`item.line`]="{ item }">
+          <div class="text-body-2">
+            {{ item.line || '-' }}
           </div>
         </template>
 
@@ -184,26 +181,21 @@
           </v-chip>
         </template>
 
-        <!-- Device Count Column -->
-        <template #[`item.device_counts`]="{ item }">
-          <div v-if="item.device_counts" class="text-body-2">
-            <div class="font-weight-medium">
-              {{ item.device_counts.total }} อุปกรณ์
-            </div>
-            <div class="text-caption text-medium-emphasis">
-              ใช้งาน: {{ item.device_counts.active }} / หยุด:
-              {{ item.device_counts.inactive }}
-            </div>
-          </div>
-          <div v-else class="text-caption text-medium-emphasis">
-            ไม่มีข้อมูล
-          </div>
+        <!-- Permission Column -->
+        <template #[`item.permission`]="{ item }">
+          <v-chip
+            :color="getPermissionColor(item.permission.name)"
+            size="small"
+            variant="tonal"
+          >
+            {{ getPermissionLabel(item.permission.name) }}
+          </v-chip>
         </template>
 
         <!-- Registration Date Column -->
         <template #[`item.created_at`]="{ item }">
           <div class="text-body-2">
-            {{ formatDate(item.created_at) }}
+            {{ formatDate(item.created_at || '') }}
           </div>
         </template>
 
@@ -211,23 +203,23 @@
         <template #expanded-row="{ columns, item }">
           <td :colspan="columns.length" class="pa-0">
             <v-card
-              class="ma-2 customer-details-card"
+              class="ma-2 employee-details-card"
               color="surface-container"
               elevation="1"
               rounded="lg"
             >
               <v-card-text class="pa-4">
-                <div class="customer-breakdown">
-                  <!-- Header with customer summary -->
+                <div class="employee-breakdown">
+                  <!-- Header with employee summary -->
                   <h3 class="text-subtitle-1 font-weight-bold mb-4">
-                    รายละเอียดลูกค้า
+                    รายละเอียดพนักงาน
                   </h3>
 
-                  <!-- Customer details grid for desktop -->
-                  <v-row no-gutters class="customer-details-grid">
+                  <!-- Employee details grid for desktop -->
+                  <v-row no-gutters class="employee-details-grid">
                     <!-- Personal Information Section -->
-                    <v-col cols="12" md="6" class="customer-section">
-                      <div class="customer-info-section pa-3">
+                    <v-col cols="12" md="6" class="employee-section">
+                      <div class="employee-info-section pa-3">
                         <div class="d-flex align-center mb-3">
                           <v-icon color="primary" size="small" class="me-2">
                             mdi-account-circle
@@ -237,11 +229,11 @@
                           </span>
                         </div>
 
-                        <div class="customer-info-grid">
+                        <div class="employee-info-grid">
                           <v-card class="mb-2" color="primary" variant="tonal">
                             <v-card-text class="pa-3">
                               <div class="text-caption text-medium-emphasis">
-                                รหัสลูกค้า
+                                รหัสพนักงาน
                               </div>
                               <div class="text-body-2 font-family-monospace">
                                 {{ item.id.slice(-8) }}
@@ -255,7 +247,18 @@
                                 ที่อยู่
                               </div>
                               <div class="text-body-2">
-                                {{ item.address }}
+                                {{ item.address || 'ไม่ระบุ' }}
+                              </div>
+                            </v-card-text>
+                          </v-card>
+
+                          <v-card class="mb-2" color="success" variant="tonal">
+                            <v-card-text class="pa-3">
+                              <div class="text-caption text-medium-emphasis">
+                                LINE ID
+                              </div>
+                              <div class="text-body-2">
+                                {{ item.line || 'ไม่ระบุ' }}
                               </div>
                             </v-card-text>
                           </v-card>
@@ -281,68 +284,83 @@
                       </div>
                     </v-col>
 
-                    <!-- Device Information Section -->
-                    <v-col cols="12" md="6" class="customer-section">
-                      <div class="device-info-section pa-3">
+                    <!-- Contact Information Section -->
+                    <v-col cols="12" md="6" class="employee-section">
+                      <div class="contact-info-section pa-3">
                         <div class="d-flex align-center mb-3">
                           <v-icon color="success" size="small" class="me-2">
-                            mdi-devices
+                            mdi-contacts
                           </v-icon>
                           <span class="text-subtitle-2 font-weight-medium">
-                            ข้อมูลอุปกรณ์
+                            ข้อมูลการติดต่อ
                           </span>
                         </div>
 
-                        <div v-if="item.device_counts">
-                          <v-row dense>
-                            <v-col cols="12">
-                              <v-card
-                                class="device-count-card"
-                                color="success-lighten-1"
-                                variant="tonal"
-                              >
-                                <v-card-text class="pa-3 text-center">
-                                  <div
-                                    class="text-h4 font-weight-bold text-success"
+                        <div class="contact-info-grid">
+                          <v-card
+                            class="mb-3 contact-info-card"
+                            color="primary-lighten-1"
+                            variant="tonal"
+                          >
+                            <v-card-text class="pa-3">
+                              <div class="d-flex align-center">
+                                <v-icon color="primary" class="me-2">mdi-email</v-icon>
+                                <div>
+                                  <div class="text-caption text-medium-emphasis">
+                                    อีเมล
+                                  </div>
+                                  <div class="text-body-2 font-weight-medium">
+                                    {{ item.email }}
+                                  </div>
+                                </div>
+                              </div>
+                            </v-card-text>
+                          </v-card>
+
+                          <v-card
+                            class="mb-3 contact-info-card"
+                            color="success-lighten-1"
+                            variant="tonal"
+                          >
+                            <v-card-text class="pa-3">
+                              <div class="d-flex align-center">
+                                <v-icon color="success" class="me-2">mdi-phone</v-icon>
+                                <div>
+                                  <div class="text-caption text-medium-emphasis">
+                                    เบอร์โทร
+                                  </div>
+                                  <div class="text-body-2 font-weight-medium">
+                                    {{ item.phone || 'ไม่ระบุ' }}
+                                  </div>
+                                </div>
+                              </div>
+                            </v-card-text>
+                          </v-card>
+
+                          <v-card
+                            class="contact-info-card"
+                            color="warning-lighten-1"
+                            variant="tonal"
+                          >
+                            <v-card-text class="pa-3">
+                              <div class="d-flex align-center">
+                                <v-icon color="warning" class="me-2">mdi-account-group</v-icon>
+                                <div>
+                                  <div class="text-caption text-medium-emphasis">
+                                    สถานะ
+                                  </div>
+                                  <v-chip
+                                    :color="getStatusColor(item.status)"
+                                    size="small"
+                                    variant="tonal"
+                                    class="mt-1"
                                   >
-                                    {{ item.device_counts.total }}
-                                  </div>
-                                  <div class="text-caption">อุปกรณ์ทั้งหมด</div>
-                                </v-card-text>
-                              </v-card>
-                            </v-col>
-                            <v-col cols="6">
-                              <v-card
-                                class="device-count-card"
-                                color="primary-lighten-1"
-                                variant="tonal"
-                              >
-                                <v-card-text class="pa-2 text-center">
-                                  <div class="text-h6 font-weight-bold">
-                                    {{ item.device_counts.active }}
-                                  </div>
-                                  <div class="text-caption">ใช้งาน</div>
-                                </v-card-text>
-                              </v-card>
-                            </v-col>
-                            <v-col cols="6">
-                              <v-card
-                                class="device-count-card"
-                                color="error-lighten-1"
-                                variant="tonal"
-                              >
-                                <v-card-text class="pa-2 text-center">
-                                  <div class="text-h6 font-weight-bold">
-                                    {{ item.device_counts.inactive }}
-                                  </div>
-                                  <div class="text-caption">หยุดใช้งาน</div>
-                                </v-card-text>
-                              </v-card>
-                            </v-col>
-                          </v-row>
-                        </div>
-                        <div v-else class="text-caption text-medium-emphasis">
-                          ไม่มีข้อมูลอุปกรณ์
+                                    {{ getStatusLabel(item.status) }}
+                                  </v-chip>
+                                </div>
+                              </div>
+                            </v-card-text>
+                          </v-card>
                         </div>
                       </div>
                     </v-col>
@@ -354,10 +372,10 @@
                     class="d-flex justify-space-between text-caption text-medium-emphasis"
                   >
                     <span
-                      >สร้างเมื่อ: {{ formatDateTime(item.created_at) }}</span
+                      >สร้างเมื่อ: {{ formatDateTime(item.created_at || '') }}</span
                     >
                     <span
-                      >อัปเดตล่าสุด: {{ formatDateTime(item.updated_at) }}</span
+                      >อัปเดตล่าสุด: {{ formatDateTime(item.updated_at || '') }}</span
                     >
                   </div>
                 </div>
@@ -371,7 +389,7 @@
       <v-card-actions class="pa-4">
         <div class="d-flex justify-space-between align-center w-100">
           <div class="text-body-2 text-medium-emphasis">
-            แสดง {{ totalUsers }} รายการทั้งหมด
+            แสดง {{ totalEmployees }} รายการทั้งหมด
           </div>
           <div class="d-flex align-center ga-2">
             <v-btn
@@ -405,18 +423,18 @@
       </v-card-actions>
     </v-card>
 
-    <!-- Add Customer Dialog (Placeholder) -->
-    <v-dialog v-model="showAddCustomerDialog" max-width="600">
+    <!-- Add Employee Dialog (Placeholder) -->
+    <v-dialog v-model="showAddEmployeeDialog" max-width="600">
       <v-card>
         <v-card-title class="pa-6">
-          <h3 class="text-h5">เพิ่มลูกค้าใหม่</h3>
+          <h3 class="text-h5">เพิ่มพนักงานใหม่</h3>
         </v-card-title>
         <v-card-text>
           <p class="text-center py-8">ฟีเจอร์นี้อยู่ระหว่างการพัฒนา</p>
         </v-card-text>
         <v-card-actions class="pa-6 pt-0">
           <v-spacer />
-          <v-btn variant="outlined" @click="showAddCustomerDialog = false">
+          <v-btn variant="outlined" @click="showAddEmployeeDialog = false">
             ปิด
           </v-btn>
         </v-card-actions>
@@ -426,26 +444,26 @@
 </template>
 
 <script setup lang="ts">
-import type { EnumUserStatus } from "~/types";
-import type { SearchUsersRequest } from "~/services/apis/user-api.service";
-import { useUser } from "~/composables/useUser";
+import type { EnumEmpStatus } from "~/types";
+import type { SearchEmpsRequest } from "~/services/apis/emp-api.service";
+import { useEmployee } from "~/composables/useEmployee";
 
 // Composable
 const {
-  users,
+  employees,
   isLoading,
   isSearching,
-  searchUsers,
-  totalUsers,
+  searchEmployees,
+  totalEmployees,
   totalPages,
   currentSearchParams,
   nextPage,
   previousPage,
-} = useUser();
+} = useEmployee();
 
 // Local reactive state for filters
 const tempSearchQuery = ref("");
-const tempStatusFilter = ref<EnumUserStatus | null>(null);
+const tempStatusFilter = ref<EnumEmpStatus | null>(null);
 
 // Computed to check if filters have changed
 const hasFilterChanges = computed(() => {
@@ -454,7 +472,7 @@ const hasFilterChanges = computed(() => {
 
 // Apply filters function
 const applyFilters = async () => {
-  const searchParams: SearchUsersRequest = {
+  const searchParams: SearchEmpsRequest = {
     page: 1, // Reset to first page when applying filters
     query: {},
   };
@@ -467,18 +485,19 @@ const applyFilters = async () => {
     searchParams.query!.status = tempStatusFilter.value;
   }
 
-  await searchUsers(searchParams);
+  await searchEmployees(searchParams);
 };
 
 // Clear all filters
 const clearAllFilters = async () => {
   tempSearchQuery.value = "";
   tempStatusFilter.value = null;
-  await searchUsers({ page: 1 });
+  await searchEmployees({ page: 1 });
 };
 
 // Utility functions for formatting and display
 const formatDate = (dateString: string) => {
+  if (!dateString) return '-';
   return new Date(dateString).toLocaleDateString("th-TH", {
     year: "numeric",
     month: "short",
@@ -487,6 +506,7 @@ const formatDate = (dateString: string) => {
 };
 
 const formatDateTime = (dateString: string) => {
+  if (!dateString) return '-';
   return new Date(dateString).toLocaleString("th-TH", {
     year: "numeric",
     month: "short",
@@ -522,8 +542,10 @@ const getPermissionColor = (permission: string) => {
   switch (permission) {
     case "ADMIN":
       return "primary";
-    case "USER":
+    case "TECHNICIAN":
       return "info";
+    case "USER":
+      return "success";
     default:
       return "grey";
   }
@@ -533,6 +555,8 @@ const getPermissionLabel = (permission: string) => {
   switch (permission) {
     case "ADMIN":
       return "ผู้ดูแลระบบ";
+    case "TECHNICIAN":
+      return "ช่างเทคนิค";
     case "USER":
       return "ผู้ใช้ทั่วไป";
     default:
@@ -541,7 +565,7 @@ const getPermissionLabel = (permission: string) => {
 };
 
 // Select status filter function
-const selectStatusFilter = (status: EnumUserStatus) => {
+const selectStatusFilter = (status: EnumEmpStatus) => {
   tempStatusFilter.value = status;
 };
 
@@ -552,48 +576,48 @@ const clearStatusFilter = () => {
 
 // Initialize data on component mount
 onMounted(async () => {
-  await searchUsers();
+  await searchEmployees();
 });
 
 // Local state
-const showAddCustomerDialog = ref(false);
+const showAddEmployeeDialog = ref(false);
 
 // Filter options
-const statusOptions: EnumUserStatus[] = ["ACTIVE", "INACTIVE"];
+const statusOptions: EnumEmpStatus[] = ["ACTIVE", "INACTIVE"];
 
 // Table headers
-const customerHeaders = [
-  { title: "ชื่อลูกค้า", key: "fullname", sortable: true },
-  { title: "อีเมล", key: "email", sortable: true },
+const employeeHeaders = [
+  { title: "ชื่อพนักงาน", key: "name", sortable: true },
   { title: "เบอร์โทร", key: "phone", sortable: true },
+  { title: "LINE ID", key: "line", sortable: true },
   { title: "สถานะ", key: "status", sortable: true },
-  { title: "จำนวนอุปกรณ์", key: "device_counts", sortable: false },
+  { title: "สิทธิ์", key: "permission", sortable: true },
   { title: "วันที่สมัคร", key: "created_at", sortable: true },
   { title: "", key: "data-table-expand", sortable: false },
 ];
 </script>
 
 <style scoped>
-/* Customer details expandable row styles */
-.customer-details-card {
+/* Employee details expandable row styles */
+.employee-details-card {
   transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   background: rgba(var(--v-theme-surface-container-low), 1);
 }
 
-.customer-breakdown {
+.employee-breakdown {
   max-width: 100%;
 }
 
-.customer-details-grid {
+.employee-details-grid {
   gap: 0;
 }
 
-.customer-section {
+.employee-section {
   position: relative;
   min-height: 200px;
 }
 
-.customer-section:not(:last-child)::after {
+.employee-section:not(:last-child)::after {
   content: "";
   position: absolute;
   right: 0;
@@ -603,20 +627,19 @@ const customerHeaders = [
   background: rgba(var(--v-theme-outline), 0.2);
 }
 
-.customer-info-section,
-.device-info-section {
+.employee-info-section,
+.contact-info-section {
   height: 100%;
   display: flex;
   flex-direction: column;
 }
 
-.device-count-card {
+.contact-info-card {
   transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
   cursor: default;
-  min-height: 60px;
 }
 
-.device-count-card:hover {
+.contact-info-card:hover {
   transform: translateY(-2px);
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
 }
@@ -637,7 +660,7 @@ const customerHeaders = [
   }
 }
 
-/* Monospace font for customer ID */
+/* Monospace font for employee ID */
 .font-family-monospace {
   font-family: "Roboto Mono", "Monaco", "Consolas", monospace;
   font-size: 0.75rem;
@@ -646,39 +669,38 @@ const customerHeaders = [
 
 /* Better responsive behavior */
 @media (max-width: 960px) {
-  .customer-section:not(:last-child)::after {
+  .employee-section:not(:last-child)::after {
     display: none;
   }
 
-  .customer-section {
+  .employee-section {
     margin-bottom: 16px;
     min-height: auto;
   }
 
-  .customer-section:not(:last-child) {
+  .employee-section:not(:last-child) {
     border-bottom: 1px solid rgba(var(--v-theme-outline), 0.2);
     padding-bottom: 16px;
   }
 }
 
 /* Enhanced visual hierarchy */
-.customer-details-card :deep(.v-card-text) {
+.employee-details-card :deep(.v-card-text) {
   padding: 24px !important;
 }
 
-.customer-info-section .text-subtitle-2,
-.device-info-section .text-subtitle-2 {
+.employee-info-section .text-subtitle-2,
+.contact-info-section .text-subtitle-2 {
   color: rgba(var(--v-theme-on-surface), 0.87);
   font-weight: 600;
 }
 
-.device-count-card .text-h4,
-.device-count-card .text-h6 {
+.contact-info-card .text-body-2 {
   color: rgba(var(--v-theme-on-surface), 0.87);
   line-height: 1.2;
 }
 
-.device-count-card .text-caption {
+.contact-info-card .text-caption {
   color: rgba(var(--v-theme-on-surface), 0.6);
   font-weight: 500;
 }

@@ -242,6 +242,11 @@ const managementMenuItems = [
     icon: "mdi-account-tie",
     to: "/employee-management",
   },
+  {
+    title: "จัดการพนักงาน (Example)",
+    icon: "mdi-account-tie",
+    to: "/examples/ex-emp-mgmt",
+  },
 ];
 
 // Methods
