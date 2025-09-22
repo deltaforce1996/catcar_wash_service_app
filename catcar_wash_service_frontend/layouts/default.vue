@@ -228,6 +228,11 @@ const managementMenuItems = [
     to: "/customer-management",
   },
   {
+    title: "จัดการผู้ใช้งาน (Example)",
+    icon: "mdi-account-group",
+    to: "/examples/ex-user-mgmt",
+  },
+  {
     title: "จับคู่อุปกรณ์",
     icon: "mdi-link-variant",
     to: "/device-pairing",

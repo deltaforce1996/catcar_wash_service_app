@@ -7,7 +7,7 @@
           <div>
             <h1 class="text-h4 font-weight-bold mb-1">จัดการลูกค้า</h1>
             <v-chip variant="tonal" color="primary" class="mt-2">
-              {{ users.length }} ลูกค้าทั้งหมด
+              {{ totalUsers }} ลูกค้าทั้งหมด
             </v-chip>
           </div>
           <div class="d-flex align-center ga-3 flex-wrap">
@@ -26,109 +26,89 @@
 
     <!-- Customer Management Table -->
     <v-card elevation="2" rounded="lg" class="mt-8">
-      <v-card-title class="pa-6">
-        <div class="d-flex justify-space-between align-center">
-          <h2 class="text-h5 font-weight-bold">รายการลูกค้า</h2>
-          <v-chip variant="tonal" color="primary">
-            {{ users.length }} รายการ
-          </v-chip>
-        </div>
-      </v-card-title>
-
       <!-- Filter Section -->
       <v-card-text class="pb-2">
         <v-row>
           <!-- Search Bar -->
-          <v-col cols="12" md="4">
-            <v-text-field
-              v-model="tempSearchQuery"
-              prepend-inner-icon="mdi-magnify"
-              variant="outlined"
-              density="compact"
-              placeholder="ค้นหาด้วยชื่อ อีเมล หรือเบอร์โทร"
-              hide-details
-              clearable
-              aria-label="ค้นหาลูกค้า"
-              role="searchbox"
-            />
+          <v-col cols="12" md="6">
+            <div class="d-flex flex-column ga-2">
+              <div class="text-caption text-medium-emphasis">
+                <v-icon size="small" class="me-1">mdi-filter-variant</v-icon>
+                ค้นหา
+              </div>
+              <v-text-field
+                v-model="tempSearchQuery"
+                prepend-inner-icon="mdi-magnify"
+                variant="outlined"
+                density="compact"
+                placeholder="ค้นหาด้วยชื่อ อีเมล เบอร์โทร ที่อยู่และชื่อลูกค้า"
+                hide-details
+                clearable
+                aria-label="ค้นหาลูกค้า"
+                role="searchbox"
+              />
+            </div>
           </v-col>
 
           <!-- Status Filter -->
-          <v-col cols="12" md="4">
-            <v-combobox
-              v-model="tempStatusFilter"
-              :items="statusOptions"
-              label="กรองตามสถานะ"
-              prepend-inner-icon="mdi-filter-variant"
-              variant="outlined"
-              density="compact"
-              chips
-              clearable
-              closable-chips
-              multiple
-              hide-details
-            >
-              <template #chip="{ props, item }">
-                <v-chip
-                  v-bind="props"
-                  :color="getStatusColor(item.raw)"
+          <v-col cols="12" md="3">
+            <div class="d-flex flex-column ga-2">
+              <div class="text-caption text-medium-emphasis">
+                <v-icon size="small" class="me-1">mdi-filter-variant</v-icon>
+                กรองตามสถานะ
+              </div>
+              <v-btn-group variant="outlined" density="compact" divided>
+                <v-btn
+                  v-for="status in statusOptions"
+                  :key="status"
+                  :color="getStatusColor(status)"
+                  :variant="tempStatusFilter === status ? 'flat' : 'outlined'"
                   size="small"
-                  variant="tonal"
+                  class="text-none"
+                  @click="selectStatusFilter(status)"
                 >
-                  {{ getStatusLabel(item.raw) }}
-                </v-chip>
-              </template>
-            </v-combobox>
+                  {{ getStatusLabel(status) }}
+                </v-btn>
+                <v-btn
+                  color="primary"
+                  :variant="tempStatusFilter === null ? 'flat' : 'outlined'"
+                  size="small"
+                  class="text-none"
+                  @click="clearStatusFilter"
+                >
+                  <v-icon size="small">mdi-close</v-icon>
+                  ทั้งหมด
+                </v-btn>
+              </v-btn-group>
+            </div>
           </v-col>
 
-          <!-- Permission Filter -->
-          <v-col cols="12" md="4">
-            <v-combobox
-              v-model="tempPermissionFilter"
-              :items="permissionOptions"
-              label="กรองตามสิทธิ์"
-              prepend-inner-icon="mdi-account-key"
-              variant="outlined"
-              density="compact"
-              chips
-              clearable
-              closable-chips
-              multiple
-              hide-details
-            >
-              <template #chip="{ props, item }">
-                <v-chip
-                  v-bind="props"
-                  :color="getPermissionColor(item.raw)"
+          <!-- Filter Actions -->
+          <v-col cols="12" md="3">
+            <div class="d-flex flex-column ga-2">
+              <div class="text-caption text-medium-emphasis">
+                <v-icon size="small" class="me-1">mdi-cog</v-icon>
+                การดำเนินการ
+              </div>
+              <div class="d-flex ga-2">
+                <v-btn
+                  variant="outlined"
                   size="small"
-                  variant="tonal"
+                  prepend-icon="mdi-refresh"
+                  @click="clearAllFilters"
                 >
-                  {{ getPermissionLabel(item.raw) }}
-                </v-chip>
-              </template>
-            </v-combobox>
-          </v-col>
-        </v-row>
-
-        <!-- Filter Actions -->
-        <v-row class="mt-6">
-          <v-col cols="12" class="d-flex justify-end ga-2">
-            <v-btn
-              variant="outlined"
-              size="small"
-              prepend-icon="mdi-refresh"
-              @click="clearAllFilters"
-            >
-              ล้างตัวกรอง
-            </v-btn>
-            <v-btn
-              color="primary"
-              size="small"
-              prepend-icon="mdi-check"
-              @click="applyFilters"
-            >
-              ยืนยันตัวกรอง
-            </v-btn>
+                  ล้างตัวกรอง
+                </v-btn>
+                <v-btn
+                  color="primary"
+                  size="small"
+                  prepend-icon="mdi-check"
+                  @click="applyFilters"
+                >
+                  ยืนยันตัวกรอง
+                </v-btn>
+              </div>
+            </div>
           </v-col>
         </v-row>
 
@@ -154,11 +134,15 @@
         :headers="customerHeaders"
         :items="users"
         :loading="isSearching || isLoading"
-        :items-per-page="10"
+        :items-per-page="currentSearchParams.limit || 1"
+        :page="currentSearchParams.page || 1"
+        :items-length="totalUsers"
         class="elevation-0"
         hover
         show-expand
         expand-on-click
+        server-items-length
+        hide-default-footer
       >
         <!-- Name Column -->
         <template #[`item.fullname`]="{ item }">
@@ -382,6 +366,43 @@
           </td>
         </template>
       </v-data-table>
+
+      <!-- Custom Pagination Controls -->
+      <v-card-actions class="pa-4">
+        <div class="d-flex justify-space-between align-center w-100">
+          <div class="text-body-2 text-medium-emphasis">
+            แสดง {{ totalUsers }} รายการทั้งหมด
+          </div>
+          <div class="d-flex align-center ga-2">
+            <v-btn
+              variant="outlined"
+              size="small"
+              :disabled="(currentSearchParams.page || 1) <= 1"
+              @click="previousPage"
+            >
+              <v-icon>mdi-chevron-left</v-icon>
+              ก่อนหน้า
+            </v-btn>
+
+            <div class="d-flex align-center ga-1">
+              <span class="text-body-2">หน้า</span>
+              <v-chip variant="tonal" color="primary" size="small">
+                {{ currentSearchParams.page || 1 }} / {{ totalPages }}
+              </v-chip>
+            </div>
+
+            <v-btn
+              variant="outlined"
+              size="small"
+              :disabled="(currentSearchParams.page || 1) >= totalPages"
+              @click="nextPage"
+            >
+              ถัดไป
+              <v-icon>mdi-chevron-right</v-icon>
+            </v-btn>
+          </div>
+        </div>
+      </v-card-actions>
     </v-card>
 
     <!-- Add Customer Dialog (Placeholder) -->
@@ -405,7 +426,7 @@
 </template>
 
 <script setup lang="ts">
-import type { EnumUserStatus, EnumPermissionType } from "~/types";
+import type { EnumUserStatus } from "~/types";
 import type { SearchUsersRequest } from "~/services/apis/user-api.service";
 import { useUser } from "~/composables/useUser";
 
@@ -415,18 +436,20 @@ const {
   isLoading,
   isSearching,
   searchUsers,
+  totalUsers,
+  totalPages,
+  currentSearchParams,
+  nextPage,
+  previousPage,
 } = useUser();
 
 // Local reactive state for filters
 const tempSearchQuery = ref("");
-const tempStatusFilter = ref<EnumUserStatus[]>([]);
-const tempPermissionFilter = ref<string[]>([]);
+const tempStatusFilter = ref<EnumUserStatus | null>(null);
 
 // Computed to check if filters have changed
 const hasFilterChanges = computed(() => {
-  return tempSearchQuery.value !== "" || 
-         tempStatusFilter.value.length > 0 || 
-         tempPermissionFilter.value.length > 0;
+  return tempSearchQuery.value !== "" || tempStatusFilter.value !== null;
 });
 
 // Apply filters function
@@ -440,12 +463,8 @@ const applyFilters = async () => {
     searchParams.query!.search = tempSearchQuery.value;
   }
 
-  if (tempStatusFilter.value.length > 0) {
-    searchParams.query!.status = tempStatusFilter.value[0]; // API expects single status
-  }
-
-  if (tempPermissionFilter.value.length > 0) {
-    searchParams.query!.permission = tempPermissionFilter.value[0] as EnumPermissionType; // API expects single permission
+  if (tempStatusFilter.value !== null) {
+    searchParams.query!.status = tempStatusFilter.value;
   }
 
   await searchUsers(searchParams);
@@ -454,47 +473,46 @@ const applyFilters = async () => {
 // Clear all filters
 const clearAllFilters = async () => {
   tempSearchQuery.value = "";
-  tempStatusFilter.value = [];
-  tempPermissionFilter.value = [];
+  tempStatusFilter.value = null;
   await searchUsers({ page: 1 });
 };
 
 // Utility functions for formatting and display
 const formatDate = (dateString: string) => {
-  return new Date(dateString).toLocaleDateString('th-TH', {
-    year: 'numeric',
-    month: 'short',
-    day: 'numeric'
+  return new Date(dateString).toLocaleDateString("th-TH", {
+    year: "numeric",
+    month: "short",
+    day: "numeric",
   });
 };
 
 const formatDateTime = (dateString: string) => {
-  return new Date(dateString).toLocaleString('th-TH', {
-    year: 'numeric',
-    month: 'short',
-    day: 'numeric',
-    hour: '2-digit',
-    minute: '2-digit'
+  return new Date(dateString).toLocaleString("th-TH", {
+    year: "numeric",
+    month: "short",
+    day: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
   });
 };
 
 const getStatusColor = (status: string) => {
   switch (status) {
-    case 'ACTIVE':
-      return 'success';
-    case 'INACTIVE':
-      return 'error';
+    case "ACTIVE":
+      return "success";
+    case "INACTIVE":
+      return "error";
     default:
-      return 'grey';
+      return "grey";
   }
 };
 
 const getStatusLabel = (status: string) => {
   switch (status) {
-    case 'ACTIVE':
-      return 'ใช้งาน';
-    case 'INACTIVE':
-      return 'ไม่ใช้งาน';
+    case "ACTIVE":
+      return "ใช้งาน";
+    case "INACTIVE":
+      return "ไม่ใช้งาน";
     default:
       return status;
   }
@@ -502,24 +520,34 @@ const getStatusLabel = (status: string) => {
 
 const getPermissionColor = (permission: string) => {
   switch (permission) {
-    case 'ADMIN':
-      return 'primary';
-    case 'USER':
-      return 'info';
+    case "ADMIN":
+      return "primary";
+    case "USER":
+      return "info";
     default:
-      return 'grey';
+      return "grey";
   }
 };
 
 const getPermissionLabel = (permission: string) => {
   switch (permission) {
-    case 'ADMIN':
-      return 'ผู้ดูแลระบบ';
-    case 'USER':
-      return 'ผู้ใช้ทั่วไป';
+    case "ADMIN":
+      return "ผู้ดูแลระบบ";
+    case "USER":
+      return "ผู้ใช้ทั่วไป";
     default:
       return permission;
   }
+};
+
+// Select status filter function
+const selectStatusFilter = (status: EnumUserStatus) => {
+  tempStatusFilter.value = status;
+};
+
+// Clear status filter function
+const clearStatusFilter = () => {
+  tempStatusFilter.value = null;
 };
 
 // Initialize data on component mount
@@ -532,7 +560,6 @@ const showAddCustomerDialog = ref(false);
 
 // Filter options
 const statusOptions: EnumUserStatus[] = ["ACTIVE", "INACTIVE"];
-const permissionOptions = ["USER", "ADMIN"];
 
 // Table headers
 const customerHeaders = [

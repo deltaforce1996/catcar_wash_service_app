@@ -104,7 +104,7 @@ export class UserApiService extends BaseApiClient {
           limit: payload.limit,
           sort_by: payload.sort_by,
           sort_order: payload.sort_order,
-          exclude_device_counts: payload.exclude_device_counts,
+          exclude_device_counts: payload.exclude_device_counts ? true : undefined,
         },
       }
     );
