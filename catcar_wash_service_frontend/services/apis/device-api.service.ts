@@ -211,6 +211,14 @@ export interface SetDeviceStatePayload {
   status: EnumDeviceStatus;
 }
 
+export interface PaginatedDeviceResponse {
+  items: DeviceResponseApi[];
+  total: number;
+  page: number;
+  limit: number;
+  totalPages: number;
+}
+
 export class DeviceApiService extends BaseApiClient {
   private convertQueryToParams(query: SearchDevicesRequest["query"]): string {
     if (!query) return "";
@@ -229,8 +237,8 @@ export class DeviceApiService extends BaseApiClient {
   }
   async SearchDevices(
     payload: SearchDevicesRequest
-  ): Promise<ApiSuccessResponse<DeviceResponseApi[]>> {
-    const response = await this.get<ApiSuccessResponse<DeviceResponseApi[]>>(
+  ): Promise<ApiSuccessResponse<PaginatedDeviceResponse>> {
+    const response = await this.get<ApiSuccessResponse<PaginatedDeviceResponse>>(
       "api/v1/devices/search",
       {
         params: {

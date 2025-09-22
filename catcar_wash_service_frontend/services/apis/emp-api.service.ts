@@ -65,6 +65,15 @@ export interface UpdateEmpPayload {
   status?: EnumEmpStatus; // ACTIVE or INACTIVE
 }
 
+
+export interface PaginatedEmpResponse {
+  items: EmpResponseApi[];
+  total: number;
+  page: number;
+  limit: number;
+  totalPages: number;
+}
+
 export class EmpApiService extends BaseApiClient {
   private convertQueryToParams(query: SearchEmpsRequest["query"]): string {
     if (!query) return "";
@@ -82,8 +91,8 @@ export class EmpApiService extends BaseApiClient {
   }
   async SearchEmps(
     payload: SearchEmpsRequest
-  ): Promise<ApiSuccessResponse<EmpResponseApi[]>> {
-    const response = await this.get<ApiSuccessResponse<EmpResponseApi[]>>(
+  ): Promise<ApiSuccessResponse<PaginatedEmpResponse>> {
+    const response = await this.get<ApiSuccessResponse<PaginatedEmpResponse>>(
       "api/v1/emps/search",
       {
         params: {

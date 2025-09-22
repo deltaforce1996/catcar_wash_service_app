@@ -19,6 +19,14 @@ export interface UserResponseApi {
   permission: { id: string; name: string };
   device_counts?: { total: number; active: number; inactive: number };
 }
+export interface PaginatedUserResponse {
+  items: UserResponseApi[];
+  total: number;
+  page: number;
+  limit: number;
+  totalPages: number;
+}
+
 export interface SearchUsersRequest {
   query?: {
     search?: string; // search id, fullname, email, phone, and address fields
@@ -86,8 +94,8 @@ export class UserApiService extends BaseApiClient {
   }
   async SearchUsers(
     payload: SearchUsersRequest
-  ): Promise<ApiSuccessResponse<UserResponseApi[]>> {
-    const response = await this.get<ApiSuccessResponse<UserResponseApi[]>>(
+  ): Promise<ApiSuccessResponse<PaginatedUserResponse>> {
+    const response = await this.get<ApiSuccessResponse<PaginatedUserResponse>>(
       "api/v1/users/search",
       {
         params: {

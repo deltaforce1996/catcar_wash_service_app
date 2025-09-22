@@ -39,6 +39,14 @@ export interface DeviceEventLogResponseApi {
   };
 }
 
+export interface PaginatedDeviceEventLogsResponse {
+  items: DeviceEventLogResponseApi[];
+  total: number;
+  page: number;
+  limit: number;
+  totalPages: number;
+}
+
 export interface SearchDeviceEventLogsRequest {
   query?: {
     user_id?: string;
@@ -74,9 +82,9 @@ export class DeviceEventLogsApiService extends BaseApiClient {
   }
   async SearchDeviceEventLogs(
     payload: SearchDeviceEventLogsRequest
-  ): Promise<ApiSuccessResponse<DeviceEventLogResponseApi[]>> {
+  ): Promise<ApiSuccessResponse<PaginatedDeviceEventLogsResponse>> {
     const response = await this.get<
-      ApiSuccessResponse<DeviceEventLogResponseApi[]>
+      ApiSuccessResponse<PaginatedDeviceEventLogsResponse>
     >("api/v1/device-event-logs/search", {
       params: {
         query: this.convertQueryToParams(payload.query),
