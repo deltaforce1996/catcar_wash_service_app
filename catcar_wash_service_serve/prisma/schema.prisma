@@ -211,7 +211,7 @@ model tbl_reset_password_token {
 model tbl_payment_temps {
   id             String        @id @default(cuid())
   device_id      String
-  amount         Decimal
+  amount         Decimal @db.Decimal(10, 2)
   payment_method String
   reference_id   String
   status         PaymentApiStatus @default(PENDING)

@@ -34,7 +34,7 @@ export interface ChargeResult {
   };
   encodedImage?: {
     expiry: string;
-    imageBase64Encoded: string;
+    imageBase64Encoded?: string;
     rawData: string;
   };
 }
@@ -172,7 +172,10 @@ export class BeamCheckoutService {
         chargeId: response.data.chargeId,
         paymentMethodType: response.data.paymentMethodType,
         redirect: response.data.redirect,
-        encodedImage: response.data.encodedImage,
+        encodedImage: {
+          expiry: response.data.encodedImage?.expiry as string,
+          rawData: response.data.encodedImage?.rawData as string,
+        },
       };
     } catch (error: any) {
       throw new BadRequestException(

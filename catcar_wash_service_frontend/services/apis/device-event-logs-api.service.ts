@@ -12,10 +12,8 @@ export interface DeviceEventLogResponseApi {
   device_id: string;
   payload: {
     qr?: {
-      ref1?: string;
-      ref2?: string;
       net_amount?: number;
-      transaction_id?: string;
+      chargeId?: string;
     };
     bank?: Record<string, number>;
     coin?: Record<string, number>;

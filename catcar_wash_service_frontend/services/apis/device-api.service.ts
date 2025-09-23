@@ -7,7 +7,6 @@ import type {
 import { BaseApiClient } from "../bases/base-api-client";
 
 interface DeviceInformationResponseApi {
-  description: string;
   mac_address: string;
   chip_id: string;
   model: string;

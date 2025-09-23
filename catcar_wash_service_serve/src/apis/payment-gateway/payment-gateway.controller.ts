@@ -4,8 +4,8 @@ import { CreatePaymentDto, CreateRefundDto } from './dtos';
 import { AllExceptionFilter } from 'src/common';
 import { SuccessResponse } from 'src/types';
 // import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
-import { UserAuth } from '../auth/decorators';
-import type { AuthenticatedUser } from 'src/types/internal.type';
+// import { UserAuth } from '../auth/decorators';
+// import type { AuthenticatedUser } from 'src/types/internal.type';
 import { BeamWebhookSignatureGuard } from './guards/beam-webhook-signature.guard';
 import type { BeamWebhookPayloadUnion, BeamWebhookEventType } from 'src/types';
 
@@ -20,11 +20,8 @@ export class PaymentGatewayController {
    * POST /api/v1/payment-gateway/payments
    */
   @Post('payments')
-  async createPayment(
-    @Body() createPaymentDto: CreatePaymentDto,
-    @UserAuth() user: AuthenticatedUser,
-  ): Promise<SuccessResponse<any>> {
-    const result = await this.paymentGatewayService.createPayment(createPaymentDto, user);
+  async createPayment(@Body() createPaymentDto: CreatePaymentDto): Promise<SuccessResponse<any>> {
+    const result = await this.paymentGatewayService.createPayment(createPaymentDto);
     return {
       success: true,
       data: result,
@@ -52,11 +49,8 @@ export class PaymentGatewayController {
    * POST /api/v1/payment-gateway/refunds
    */
   @Post('refunds')
-  async createRefund(
-    @Body() createRefundDto: CreateRefundDto,
-    @UserAuth() user: AuthenticatedUser,
-  ): Promise<SuccessResponse<any>> {
-    const result = await this.paymentGatewayService.createRefund(createRefundDto, user);
+  async createRefund(@Body() createRefundDto: CreateRefundDto): Promise<SuccessResponse<any>> {
+    const result = await this.paymentGatewayService.createRefund(createRefundDto);
     return {
       success: true,
       data: result,

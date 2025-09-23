@@ -177,8 +177,8 @@ const generate = async () => {
   });
 
   const paymentInfo = {
-    merchant_id: 'merchant_id',
-    api_key: 'abcdefghijklmnopqrstuvwxyz',
+    merchant_id: 'catcarwash',
+    api_key: 'S1Isu8/kUiLX8N9PK21mppKZsKkC9wpW9anyiFI1H6s=',
     HMAC_key: 'abcdefghijklmnopqrstuvwxyz',
   };
 
@@ -282,7 +282,6 @@ const generate = async () => {
         register_by_id: technician.id,
         configs: washConfig.configs || {},
         information: {
-          description: 'เครื่องล้างรถอัตโนมัติสำหรับรถยนต์ขนาดเล็กและกลาง',
           mac_address: '00:1B:44:11:3A:B7',
           chip_id: 'ESP32-001',
           model: 'CarWash Pro v2.1',
@@ -298,7 +297,6 @@ const generate = async () => {
         register_by_id: technician.id,
         configs: dryingConfig.configs || {},
         information: {
-          description: 'เครื่องเป่าลมและทำความสะอาดภายในรถยนต์',
           mac_address: '00:1B:44:11:3A:B8',
           chip_id: 'ESP32-002',
           model: 'AirBlow Standard v1.5',
@@ -314,7 +312,6 @@ const generate = async () => {
         register_by_id: technician.id,
         configs: dryingConfig.configs || {},
         information: {
-          description: 'เครื่องเป่าลมและทำความสะอาดภายในรถยนต์ พร้อมระบบฆ่าเชื้อ',
           mac_address: '00:1B:44:11:3A:B9',
           chip_id: 'ESP32-003',
           model: 'AirBlow Pro v2.0',
@@ -335,7 +332,6 @@ const generate = async () => {
         register_by_id: technician.id,
         configs: washConfig.configs || {},
         information: {
-          description: 'เครื่องล้างรถอัตโนมัติสำหรับรถยนต์ขนาดใหญ่',
           mac_address: '00:1B:44:11:3A:BA',
           chip_id: 'ESP32-004',
           model: 'CarWash XL v2.0',
@@ -351,7 +347,6 @@ const generate = async () => {
         register_by_id: technician.id,
         configs: dryingConfig.configs || {},
         information: {
-          description: 'เครื่องเป่าลมและทำความสะอาดภายในรถยนต์ พร้อมระบบน้ำหอม',
           mac_address: '00:1B:44:11:3A:BB',
           chip_id: 'ESP32-005',
           model: 'AirBlow Premium v2.1',
@@ -367,7 +362,6 @@ const generate = async () => {
         register_by_id: technician.id,
         configs: washConfig.configs || {},
         information: {
-          description: 'เครื่องล้างรถอัตโนมัติพร้อมระบบขัดเงา',
           mac_address: '00:1B:44:11:3A:BC',
           chip_id: 'ESP32-006',
           model: 'CarWash Shine v2.2',
@@ -383,7 +377,6 @@ const generate = async () => {
         register_by_id: technician.id,
         configs: washConfig.configs || {},
         information: {
-          description: 'เครื่องล้างรถอัตโนมัติพร้อมระบบขัดยาง',
           mac_address: '00:1B:44:11:3A:BD',
           chip_id: 'ESP32-007',
           model: 'CarWash Tire v2.1',
@@ -496,18 +489,18 @@ const generateDeviceEvents = (deviceIds: string[], type: EventType, count: numbe
         timestamp: timestamp,
         coin: {
           1: randomInt(0, 10),
-          2: 0,
-          5: 0,
-          10: 0,
+          2: 0.0,
+          5: 0.0,
+          10: 0.0,
         },
         bank: {
-          20: 0,
-          50: 0,
-          300: 0,
-          500: 0,
-          1000: 0,
+          20: 0.0,
+          50: 0.0,
+          100: 0.0,
+          500: 0.0,
+          1000: 0.0,
         },
-        qr: { net_amount: 0, ref1: 'REF001', ref2: 'REF002', transaction_id: '1234567890' },
+        qr: { net_amount: 0.0, chargeId: 'ACB-1152-1152' },
       };
 
       const totalAmount =
