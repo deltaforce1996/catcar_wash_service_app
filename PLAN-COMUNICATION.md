@@ -50,7 +50,11 @@ x-signature: {CHECK_SUM_FROM_MAC_ADDRESS}
 ```json
 {
   "success": false,
-  "message": "Bad Request"
+  "errorCode": "errorCode",
+  "message": "message",
+  "statusCode": 400,
+  "timestamp": "2025-09-23T18:25:09.870Z",
+  "path": "path"
 }
 ```
 
