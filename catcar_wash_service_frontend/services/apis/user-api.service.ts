@@ -1,5 +1,6 @@
 import type {
   ApiSuccessResponse,
+  EnumPermissionType,
   EnumSortOrder,
   EnumUserStatus,
 } from "~/types";
@@ -18,8 +19,26 @@ export interface UserResponseApi {
   permission: { id: string; name: string };
   device_counts?: { total: number; active: number; inactive: number };
 }
+export interface PaginatedUserResponse {
+  items: UserResponseApi[];
+  total: number;
+  page: number;
+  limit: number;
+  totalPages: number;
+}
+
 export interface SearchUsersRequest {
-  query?: string;
+  query?: {
+    search?: string; // search id, fullname, email, phone, and address fields
+    status?: EnumUserStatus; // ACTIVE or INACTIVE
+    permission?: EnumPermissionType; // ADMIN or TECHNICIAN or USER
+    id?: string; // USER Page not implement id
+    email?: string; // USER Page not implement email
+    fullname?: string; // USER Page not implement fullname
+    phone?: string; // USER Page not implement phone
+    address?: string; // USER Page not implement address
+    custom_name?: string; // USER Page not implement custom_name   
+  };
   page?: number;
   limit?: number;
   sort_by?:
@@ -32,7 +51,7 @@ export interface SearchUsersRequest {
     | "status"
     | "permission";
   sort_order?: EnumSortOrder;
-  exclude_device_counts?: boolean;
+  exclude_device_counts?: boolean; // false if need full response true if need only user (For select user only)
 }
 
 export interface RegisterUserPayload {
@@ -63,14 +82,29 @@ export interface UpdateUserProfilePayload extends UpdateUserPayload {
 }
 
 export class UserApiService extends BaseApiClient {
+  private convertQueryToParams(query: SearchUsersRequest["query"]): string {
+    if (!query) return "";
+    const parts: string[] = [];
+    for (const [key, value] of Object.entries(query)) {
+      if (value != null && value !== "" && value.trim().toUpperCase() !== "ALL") {
+        parts.push(`${key}: {${value}}`);
+      }
+    }
+    return parts.join(" ");
+  }
   async SearchUsers(
     payload: SearchUsersRequest
-  ): Promise<ApiSuccessResponse<UserResponseApi[]>> {
-    const response = await this.get<ApiSuccessResponse<UserResponseApi[]>>(
+  ): Promise<ApiSuccessResponse<PaginatedUserResponse>> {
+    const response = await this.get<ApiSuccessResponse<PaginatedUserResponse>>(
       "api/v1/users/search",
       {
         params: {
-          ...payload,
+          query: this.convertQueryToParams(payload.query),
+          page: payload.page,
+          limit: payload.limit,
+          sort_by: payload.sort_by,
+          sort_order: payload.sort_order,
+          exclude_device_counts: payload.exclude_device_counts ? true : undefined,
         },
       }
     );

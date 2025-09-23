@@ -19,7 +19,7 @@ services:
     networks:
       - catcar_wash_network
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U catcar_wash_user -d catcar_wash_db"]
+      test: [ "CMD-SHELL", "pg_isready -U catcar_wash_user -d catcar_wash_db" ]
       interval: 30s
       timeout: 10s
       retries: 3
@@ -43,7 +43,6 @@ services:
     depends_on:
       postgres:
         condition: service_healthy
-
   # Redis for caching (optional but recommended for production apps)
   # redis:
   #   image: redis:7-alpine
@@ -57,14 +56,49 @@ services:
   #     - catcar_wash_network
   #   command: redis-server --appendonly yes
 
+  # Backend Service (NestJS + Prisma)
+  backend:
+    build:
+      context: ./catcar_wash_service_serve
+      dockerfile: Dockerfile
+    container_name: catcar_wash_backend
+    restart: unless-stopped
+    ports:
+      - "3000:3000"
+    environment:
+      # Application Configuration
+      - NODE_ENV=development
+      - PORT=3000
+      - API_PREFIX=api
+      - VERSION=1.0.0
+      - LOG_LEVEL=debug
+      
+      # Database Configuration
+      - DATABASE_URL=postgresql://catcar_wash_user:catcar_wash_password@postgres:5432/catcar_wash_db
+      
+      # JWT Configuration
+      - JWT_SECRET=your-super-secret-jwt-key-change-this-in-production
+      - JWT_EXPIRES_IN=24h
+      
+      # Beam Checkout Configuration
+      - BEAM_API_URL=https://playground.api.beamcheckout.com
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - catcar_wash_network
+
 volumes:
   postgres_data:
     driver: local
-  # pgadmin_data:
-  #   driver: local
+  pgadmin_data:
+    driver: local
   # redis_data:
   #   driver: local
 
 networks:
   catcar_wash_network:
     driver: bridge
+
+# HOW TO RUN
+# docker-compose -f docker-compose.develop.yml up --build

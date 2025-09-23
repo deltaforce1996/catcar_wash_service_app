@@ -1,10 +1,11 @@
-import { Controller, Post, Get, Body, Param, UseFilters, Request, UseGuards, Headers } from '@nestjs/common';
+import { Controller, Post, Get, Body, Param, UseFilters, UseGuards, Headers } from '@nestjs/common';
 import { PaymentGatewayService } from './payment-gateway.service';
 import { CreatePaymentDto, CreateRefundDto } from './dtos';
 import { AllExceptionFilter } from 'src/common';
 import { SuccessResponse } from 'src/types';
 // import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
-import { AuthenticatedUser } from 'src/types/internal.type';
+import { UserAuth } from '../auth/decorators';
+import type { AuthenticatedUser } from 'src/types/internal.type';
 import { BeamWebhookSignatureGuard } from './guards/beam-webhook-signature.guard';
 import type { BeamWebhookPayloadUnion, BeamWebhookEventType } from 'src/types';
 
@@ -21,9 +22,9 @@ export class PaymentGatewayController {
   @Post('payments')
   async createPayment(
     @Body() createPaymentDto: CreatePaymentDto,
-    @Request() req: Request & { user: AuthenticatedUser },
+    @UserAuth() user: AuthenticatedUser,
   ): Promise<SuccessResponse<any>> {
-    const result = await this.paymentGatewayService.createPayment(createPaymentDto, req.user);
+    const result = await this.paymentGatewayService.createPayment(createPaymentDto, user);
     return {
       success: true,
       data: result,
@@ -53,9 +54,9 @@ export class PaymentGatewayController {
   @Post('refunds')
   async createRefund(
     @Body() createRefundDto: CreateRefundDto,
-    @Request() req: Request & { user: AuthenticatedUser },
+    @UserAuth() user: AuthenticatedUser,
   ): Promise<SuccessResponse<any>> {
-    const result = await this.paymentGatewayService.createRefund(createRefundDto, req.user);
+    const result = await this.paymentGatewayService.createRefund(createRefundDto, user);
     return {
       success: true,
       data: result,

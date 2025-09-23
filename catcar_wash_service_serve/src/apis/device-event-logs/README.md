@@ -27,7 +27,8 @@ The `query` parameter supports the following searchable fields:
 - `type`: Event type - 'PAYMENT' or 'INFO'
 - `payload_timestamp`: Unix timestamp within payload JSON (format: single timestamp or start-end range)
 - `user_id`: User ID within payload JSON
-- `payment_status`: Payment status - 'SUCCESS', 'FAILED', or 'CANCELLED'
+- `payment_status`: Payment status - 'PENDING', 'SUCCEEDED', 'FAILED', or 'CANCELLED'
+- `device_type`: Device type - 'WASH' or 'DRYING'
 
 #### Example Queries
 
@@ -66,8 +67,11 @@ GET /api/v1/device-event-logs/search?query=payload_timestamp:1640995200000-16410
 # Query by user ID
 GET /api/v1/device-event-logs/search?query=user_id:user123
 
+# Query by device type
+GET /api/v1/device-event-logs/search?query=device_type:WASH
+
 # Complex query with multiple filters
-GET /api/v1/device-event-logs/search?query=device_id:abc123 type:PAYMENT payment_status:SUCCESS
+GET /api/v1/device-event-logs/search?query=device_id:abc123 type:PAYMENT payment_status:SUCCESS device_type:WASH
 
 # With pagination and sorting
 GET /api/v1/device-event-logs/search?search=WASH&page=1&limit=10&sort_by=created_at&sort_order=asc

@@ -6,12 +6,20 @@ import type {
 } from "~/types";
 import { BaseApiClient } from "../bases/base-api-client";
 
+interface DeviceInformationResponseApi {
+  description: string;
+  mac_address: string;
+  chip_id: string;
+  model: string;
+  firmware_version: string;
+}
+
 export interface DeviceResponseApi {
   id: string;
   name: string;
   type: EnumDeviceType;
   status: EnumDeviceStatus;
-  information?: unknown;
+  information?: DeviceInformationResponseApi;
   configs?: {
     sale?: {
       // WASH device sale configs
@@ -132,10 +140,24 @@ export interface DeviceResponseApi {
     name: string;
     email: string;
   };
+  last_state: {
+    state_data: {
+      rssi: number;
+      status: "NORMAL" | "ERROR" | "OFFLINE";
+      uptime: number;
+      timestamp: number;
+      datetime: string;
+    };
+  };
 }
 
 export interface SearchDevicesRequest {
-  query?: string;
+  query?: {
+    search?: string; // search device id, device name, and owner fullname fields
+    type?: EnumDeviceType; // WASH or DRYING
+    status?: EnumDeviceStatus; // DEPLOYED or DISABLED
+    owner?: string; // owner id
+  };
   page?: number;
   limit?: number;
   sort_by?:
@@ -146,7 +168,7 @@ export interface SearchDevicesRequest {
     | "status"
     | "register_at";
   sort_order?: EnumSortOrder;
-  exclude_all_ref_table?: boolean;
+  exclude_all_ref_table?: boolean; // true if need full response false if need only device (For select device only)
 }
 
 export interface CreateDevicePayload {
@@ -180,7 +202,7 @@ export interface UpdateDeviceConfigsPayload {
       };
     };
     sale?: {
-      [key: string]: number;
+      [config_name: string]: number;
     };
   };
 }
@@ -189,15 +211,43 @@ export interface SetDeviceStatePayload {
   status: EnumDeviceStatus;
 }
 
+export interface PaginatedDeviceResponse {
+  items: DeviceResponseApi[];
+  total: number;
+  page: number;
+  limit: number;
+  totalPages: number;
+}
+
 export class DeviceApiService extends BaseApiClient {
+  private convertQueryToParams(query: SearchDevicesRequest["query"]): string {
+    if (!query) return "";
+
+    const parts: string[] = [];
+    for (const [key, value] of Object.entries(query)) {
+      if (
+        value != null &&
+        value !== "" &&
+        value.trim().toUpperCase() !== "ALL"
+      ) {
+        parts.push(`${key}: {${value}}`);
+      }
+    }
+    return parts.join(" ");
+  }
   async SearchDevices(
     payload: SearchDevicesRequest
-  ): Promise<ApiSuccessResponse<DeviceResponseApi[]>> {
-    const response = await this.get<ApiSuccessResponse<DeviceResponseApi[]>>(
+  ): Promise<ApiSuccessResponse<PaginatedDeviceResponse>> {
+    const response = await this.get<ApiSuccessResponse<PaginatedDeviceResponse>>(
       "api/v1/devices/search",
       {
         params: {
-          ...payload,
+          query: this.convertQueryToParams(payload.query),
+          page: payload.page,
+          limit: payload.limit,
+          sort_by: payload.sort_by,
+          sort_order: payload.sort_order,
+          exclude_all_ref_table: payload.exclude_all_ref_table,
         },
       }
     );

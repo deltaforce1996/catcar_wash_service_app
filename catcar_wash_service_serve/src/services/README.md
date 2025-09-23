@@ -144,7 +144,52 @@ Error: Payment failed
 ---
 ```
 
-### 3. BcryptService
+### 3. SqlScriptService
+
+A simple service for executing SQL scripts and refreshing materialized views.
+
+#### Features
+- Refresh all materialized views
+- Execute custom SQL scripts
+- Simple error handling and logging
+
+#### Usage Example
+
+```typescript
+import { Injectable } from '@nestjs/common';
+import { SqlScriptService } from './services';
+
+@Injectable()
+export class DatabaseController {
+  constructor(private readonly sqlScriptService: SqlScriptService) {}
+
+  async refreshAllViews() {
+    // Refresh all materialized views
+    await this.sqlScriptService.refreshAllViews();
+    return { message: 'All materialized views refreshed successfully' };
+  }
+
+  async executeCustomQuery() {
+    // Execute a custom SQL query
+    const result = await this.sqlScriptService.runSqlScript(`
+      SELECT device_id, COUNT(*) as event_count
+      FROM tbl_devices_events 
+      WHERE created_at >= NOW() - INTERVAL '7 days'
+      GROUP BY device_id
+      ORDER BY event_count DESC
+    `);
+    
+    return result;
+  }
+}
+```
+
+#### Key Methods
+
+- `refreshAllViews()`: Refresh all materialized views (day, month, year, hour)
+- `runSqlScript(sql: string)`: Execute any SQL script and return results
+
+### 4. BcryptService
 
 A utility service for password hashing and verification using bcrypt.
 
@@ -198,7 +243,7 @@ export class AuthService {
 All services are automatically exported from the `index.ts` file and can be imported as:
 
 ```typescript
-import { BeamCheckoutService, ErrorLoggerService, BcryptService } from './services';
+import { BeamCheckoutService, ErrorLoggerService, BcryptService, SqlScriptService } from './services';
 ```
 
 ## Dependency Injection
@@ -207,7 +252,7 @@ To use these services in your controllers or other services, inject them through
 
 ```typescript
 import { Injectable } from '@nestjs/common';
-import { BeamCheckoutService, ErrorLoggerService, BcryptService } from './services';
+import { BeamCheckoutService, ErrorLoggerService, BcryptService, SqlScriptService } from './services';
 
 @Injectable()
 export class YourService {
@@ -215,6 +260,7 @@ export class YourService {
     private readonly beamCheckoutService: BeamCheckoutService,
     private readonly errorLoggerService: ErrorLoggerService,
     private readonly bcryptService: BcryptService,
+    private readonly sqlScriptService: SqlScriptService,
   ) {}
 }
 ```
@@ -225,15 +271,17 @@ All services include comprehensive error handling:
 
 - **BeamCheckoutService**: Throws `BadRequestException` for API errors and validation failures
 - **ErrorLoggerService**: Gracefully handles file system errors
+- **SqlScriptService**: Simple error handling with logging
 - **BcryptService**: Propagates bcrypt library errors
 
 ## Best Practices
 
 1. **Configuration**: Always set required environment variables before using BeamCheckoutService
 2. **Error Logging**: Use ErrorLoggerService in global exception filters for comprehensive error tracking
-3. **Password Security**: Never store plain text passwords; always use BcryptService for hashing
-4. **Payment Handling**: Always verify payment status before processing orders
-5. **QR Code Generation**: Use appropriate options for QR code generation based on your use case
+3. **SQL Scripts**: Use SqlScriptService for database operations and materialized view refreshes
+4. **Password Security**: Never store plain text passwords; always use BcryptService for hashing
+5. **Payment Handling**: Always verify payment status before processing orders
+6. **QR Code Generation**: Use appropriate options for QR code generation based on your use case
 
 ## Dependencies
 

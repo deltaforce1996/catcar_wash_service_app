@@ -1,6 +1,10 @@
-import type { ApiSuccessResponse, EnumEmpStatus, EnumSortOrder } from "~/types";
+import type {
+  ApiSuccessResponse,
+  EnumEmpStatus,
+  EnumPermissionType,
+  EnumSortOrder,
+} from "~/types";
 import { BaseApiClient } from "../bases/base-api-client";
-
 
 export interface EmpResponseApi {
   id: string;
@@ -16,7 +20,17 @@ export interface EmpResponseApi {
 }
 
 export interface SearchEmpsRequest {
-  query?: string;
+  query?: {
+    search?: string; // search id, name, email, line, address fields
+    status?: EnumEmpStatus; // ACTIVE or INACTIVE
+    permission?: EnumPermissionType; //  TECHNICIAN or USER
+    id?: string; // EMP Page not implement id
+    email?: string; // EMP Page not implement email
+    name?: string; // EMP Page not implement name
+    phone?: string; // EMP Page not implement phone
+    line?: string; // EMP Page not implement line
+    address?: string; // EMP Page not implement address
+  };
   page?: number;
   limit?: number;
   sort_by?:
@@ -38,7 +52,7 @@ export interface CreateEmpPayload {
   phone: string;
   line: string;
   address: string;
-  status: EnumEmpStatus;
+  status: EnumEmpStatus; // ACTIVE or INACTIVE
   permission_id: string;
 }
 
@@ -48,18 +62,45 @@ export interface UpdateEmpPayload {
   phone?: string;
   line?: string;
   address?: string;
-  status?: EnumEmpStatus;
+  status?: EnumEmpStatus; // ACTIVE or INACTIVE
+}
+
+
+export interface PaginatedEmpResponse {
+  items: EmpResponseApi[];
+  total: number;
+  page: number;
+  limit: number;
+  totalPages: number;
 }
 
 export class EmpApiService extends BaseApiClient {
+  private convertQueryToParams(query: SearchEmpsRequest["query"]): string {
+    if (!query) return "";
+    const parts: string[] = [];
+    for (const [key, value] of Object.entries(query)) {
+      if (
+        value != null &&
+        value !== "" &&
+        value.trim().toUpperCase() !== "ALL"
+      ) {
+        parts.push(`${key}: {${value}}`);
+      }
+    }
+    return parts.join(" ");
+  }
   async SearchEmps(
     payload: SearchEmpsRequest
-  ): Promise<ApiSuccessResponse<EmpResponseApi[]>> {
-    const response = await this.get<ApiSuccessResponse<EmpResponseApi[]>>(
+  ): Promise<ApiSuccessResponse<PaginatedEmpResponse>> {
+    const response = await this.get<ApiSuccessResponse<PaginatedEmpResponse>>(
       "api/v1/emps/search",
       {
         params: {
-          ...payload,
+          query: this.convertQueryToParams(payload.query),
+          page: payload.page,
+          limit: payload.limit,
+          sort_by: payload.sort_by,
+          sort_order: payload.sort_order,
         },
       }
     );

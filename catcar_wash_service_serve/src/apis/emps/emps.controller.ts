@@ -1,4 +1,4 @@
-import { Body, Controller, Get, Param, Post, Put, Query, UseFilters, UseGuards, Request } from '@nestjs/common';
+import { Body, Controller, Get, Param, Post, Put, Query, UseFilters, UseGuards } from '@nestjs/common';
 import { EmpRow, EmpsService } from './emps.service';
 import { AllExceptionFilter } from 'src/common';
 import { CreateEmpDto } from './dtos/create-emp.dto';
@@ -8,10 +8,8 @@ import { PaginatedResult } from 'src/types/internal.type';
 import { UpdateEmpDto } from './dtos/update-emp.dto';
 import { SuccessResponse } from 'src/types';
 import { RoleAuthGuard } from '../auth/guards/role-auth.guard';
-import { RoleAdmin, RoleAdminAndTechnician } from '../auth/decorators/roles.decorator';
+import { RoleAdmin, RoleAdminAndTechnician, SelfUpdate, UserAuth } from '../auth/decorators';
 import { EmpSelfUpdateGuard } from '../auth/guards/emp-self-update.guard';
-import { SelfUpdate } from '../auth/decorators/self-update.decorator';
-import { AuthenticatedUser } from 'src/types/internal.type';
 
 type EmpPublicResponse = PaginatedResult<EmpRow>;
 
@@ -60,11 +58,7 @@ export class EmpsController {
   @UseGuards(EmpSelfUpdateGuard)
   @SelfUpdate()
   @Put('update-profile')
-  async updateEmpProfile(
-    @Request() req: Request & { user: AuthenticatedUser },
-    @Body() data: UpdateEmpDto,
-  ): Promise<SuccessResponse<EmpRow>> {
-    const empId = req.user.id;
+  async updateEmpProfile(@UserAuth('id') empId: string, @Body() data: UpdateEmpDto): Promise<SuccessResponse<EmpRow>> {
     const result = await this.empsService.updateById(empId, data);
     return {
       success: true,

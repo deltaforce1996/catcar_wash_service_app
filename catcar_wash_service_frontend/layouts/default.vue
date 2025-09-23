@@ -103,7 +103,7 @@
                     <v-list-item
                       prepend-icon="mdi-logout"
                       title="ออกจากระบบ"
-                      @click="logout"
+                      @click="handleLogout"
                     />
                   </v-list>
                 </v-menu>
@@ -190,17 +190,19 @@
 <script setup lang="ts">
 import { ref } from "vue";
 import { useTheme } from "vuetify";
+import { useAuth } from "~/composables/useAuth";
 
 // Theme management
 const theme = useTheme();
+const { logout, user } = useAuth();
 
 // Navigation drawer state
 const drawer = ref(true);
 
 // Profile data (TODO: Replace with real user data)
 const profileData = {
-  name: "Admin User",
-  email: "admin@catcarwash.com",
+  name: user.value?.name || "คุณผู้ใช้งาน",
+  email: user.value?.email || "คุณผู้ใช้งาน@คุณผู้ใช้งาน.com",
   avatar: "/Character/character cat-02.png",
 };
 
@@ -226,6 +228,11 @@ const managementMenuItems = [
     to: "/customer-management",
   },
   {
+    title: "จัดการผู้ใช้งาน (Example)",
+    icon: "mdi-account-group",
+    to: "/examples/ex-user-mgmt",
+  },
+  {
     title: "จับคู่อุปกรณ์",
     icon: "mdi-link-variant",
     to: "/device-pairing",
@@ -234,6 +241,11 @@ const managementMenuItems = [
     title: "จัดการพนักงาน",
     icon: "mdi-account-tie",
     to: "/employee-management",
+  },
+  {
+    title: "จัดการพนักงาน (Example)",
+    icon: "mdi-account-tie",
+    to: "/examples/ex-emp-mgmt",
   },
 ];
 
@@ -252,10 +264,9 @@ const goToSettings = () => {
   navigateTo("/settings");
 };
 
-const logout = () => {
-  // TODO: Implement logout logic
-  console.log("Logout clicked");
-  // navigateTo('/login-page')
+const handleLogout = () => {
+  logout();
+  navigateTo("/login-page");
 };
 </script>
 

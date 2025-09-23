@@ -1,19 +1,46 @@
 <template>
-  <div class="d-flex flex-column align-center justify-center pa-4">
+  <div
+    class="d-flex flex-column align-center justify-center pa-4 login-container auth-page"
+  >
+    <!-- Loading Overlay -->
+    <div v-if="isLoading" class="loading-overlay">
+      <div class="loading-content">
+        <div class="loading-spinner">
+          <div class="spinner-ring" />
+          <div class="spinner-ring" />
+          <div class="spinner-ring" />
+        </div>
+        <p class="loading-text">กำลังเข้าสู่ระบบ...</p>
+      </div>
+    </div>
+
+    <!-- Success Animation Overlay -->
+    <div v-if="showSuccessAnimation" class="success-overlay">
+      <div class="success-content">
+        <div class="success-checkmark">
+          <div class="checkmark-circle">
+            <div class="checkmark-stem" />
+            <div class="checkmark-kick" />
+          </div>
+        </div>
+        <p class="success-text">เข้าสู่ระบบสำเร็จ!</p>
+        <p class="success-subtext">กำลังเปลี่ยนหน้า...</p>
+      </div>
+    </div>
+
     <!-- Welcome Section -->
-    <div class="text-center mb-6">
-      <v-avatar 
-        size="60" 
-        class="mb-4 gradient-avatar"
-        color="transparent"
-      >
+    <div
+      class="text-center mb-6 welcome-section"
+      :class="{ 'fade-out': isLoading }"
+    >
+      <v-avatar size="60" class="mb-4 gradient-avatar" color="transparent">
         <v-icon icon="mdi-paw" size="32" color="primary" />
       </v-avatar>
-      
+
       <h1 class="text-h4 font-weight-bold gradient-text mb-2">
         ยินดีต้อนรับกลับมา!
       </h1>
-      
+
       <p class="text-body-2 text-medium-emphasis">
         กรุณาลงชื่อเข้าใช้เพื่อเข้าสู่ระบบจัดการ Cat Car Wash
       </p>
@@ -21,16 +48,19 @@
 
     <!-- Vuetify Form Card -->
     <v-card
-      class="w-100 glass-card"
+      class="w-100 glass-card form-card"
       max-width="450"
       elevation="8"
       rounded="xl"
+      :class="{ 'fade-out': isLoading }"
     >
       <v-card-text class="pa-6">
         <v-form @submit.prevent="handleLogin">
           <!-- Email Field -->
           <div class="mb-4">
-            <v-label class="text-caption font-weight-medium text-uppercase mb-1">
+            <v-label
+              class="text-caption font-weight-medium text-uppercase mb-1"
+            >
               อีเมล
             </v-label>
             <v-text-field
@@ -49,7 +79,9 @@
 
           <!-- Password Field -->
           <div class="mb-4">
-            <v-label class="text-caption font-weight-medium text-uppercase mb-1">
+            <v-label
+              class="text-caption font-weight-medium text-uppercase mb-1"
+            >
               รหัสผ่าน
             </v-label>
             <v-text-field
@@ -68,11 +100,42 @@
             />
           </div>
 
+          <!-- Role Selection -->
+          <div class="mb-4">
+            <v-label
+              class="text-caption font-weight-medium text-uppercase mb-3 d-block"
+            >
+              ประเภทบัญชี
+            </v-label>
+            <v-btn-group variant="outlined" density="comfortable" divided>
+              <v-btn
+                :color="role === 'USER' ? 'primary' : 'default'"
+                :variant="role === 'USER' ? 'flat' : 'outlined'"
+                size="large"
+                class="text-none"
+                prepend-icon="mdi-account-outline"
+                @click="role = 'USER'"
+              >
+                ลูกค้า
+              </v-btn>
+              <v-btn
+                :color="role === 'EMP' ? 'primary' : 'default'"
+                :variant="role === 'EMP' ? 'flat' : 'outlined'"
+                size="large"
+                class="text-none"
+                prepend-icon="mdi-account-tie-outline"
+                @click="role = 'EMP'"
+              >
+                พนักงาน
+              </v-btn>
+            </v-btn-group>
+          </div>
+
           <!-- Forgot Password -->
           <div class="d-flex justify-end mb-4">
             <v-btn
               variant="text"
-              color="primary" 
+              color="primary"
               size="small"
               class="text-caption"
               @click="forgotPassword"
@@ -81,6 +144,37 @@
             </v-btn>
           </div>
 
+          <!-- Success Alert -->
+          <v-alert
+            v-if="successMessage"
+            type="success"
+            variant="tonal"
+            density="compact"
+            rounded="lg"
+            class="mb-4"
+            closable
+            @click:close="successMessage = null"
+          >
+            <template #prepend>
+              <v-icon icon="mdi-check-circle" size="16" />
+            </template>
+            {{ successMessage }}
+          </v-alert>
+
+          <!-- Error Alert -->
+          <v-alert
+            v-if="error"
+            type="error"
+            variant="tonal"
+            density="compact"
+            rounded="lg"
+            class="mb-4"
+            closable
+            @click:close="error = null"
+          >
+            {{ error }}
+          </v-alert>
+
           <!-- Login Button -->
           <v-btn
             type="submit"
@@ -88,8 +182,8 @@
             size="large"
             rounded="lg"
             class="gradient-btn text-none font-weight-bold mb-3"
-            :loading="loading"
-            :disabled="loading || !isFormValid"
+            :loading="isLoading"
+            :disabled="isLoading || !isFormValid"
             elevation="4"
           >
             <template #prepend>
@@ -100,83 +194,58 @@
         </v-form>
       </v-card-text>
     </v-card>
-
-    <!-- Security Notice -->
-    <v-alert
-      type="success"
-      variant="tonal"
-      density="compact"
-      rounded="lg"
-      class="mt-4"
-      max-width="450"
-    >
-      <template #prepend>
-        <v-icon icon="mdi-shield-check" size="16" />
-      </template>
-      <span class="text-caption">
-        การเชื่อมต่อของคุณได้รับการป้องกันด้วยระบบความปลอดภัยขั้นสูง
-      </span>
-    </v-alert>
   </div>
 </template>
 
 <script setup lang="ts">
 import { ref, computed } from "vue";
 import { emailRules, passwordRulesBasic } from "@/utils/validation-rules";
+import { useAuth } from "~/composables/useAuth";
 
-// Use auth layout
 definePageMeta({
   layout: "auth",
 });
 
-// Reactive data
+const { login, isLoading, error, successMessage } = useAuth();
+
 const email = ref("");
 const password = ref("");
 const showPassword = ref(false);
-// const rememberMe = ref(false)
-const loading = ref(false);
+const role = ref<"USER" | "EMP">("USER");
+const showSuccessAnimation = ref(false);
 
-// Validation rules imported from common
 const passwordRules = passwordRulesBasic;
 
-// Form validation
 const isFormValid = computed(() => {
-  return email.value.trim() !== "" && 
-         password.value.trim() !== "" && 
-         email.value.includes("@") && 
-         password.value.length >= 6;
+  return (
+    email.value.trim() !== "" &&
+    password.value.trim() !== "" &&
+    email.value.includes("@") &&
+    password.value.length >= 6
+  );
 });
 
-// Methods
-const handleLogin = () => {
-  loading.value = true;
+const handleLogin = async () => {
+  try {
+    await login(email.value, password.value, role.value);
 
-  // TODO: Implement login logic
-  console.log("Login attempt:", {
-    email: email.value,
-    password: password.value,
-  });
+    // Show success animation
+    showSuccessAnimation.value = true;
 
-  // Simulate API call
-  setTimeout(() => {
-    loading.value = false;
-    // TODO: Navigate to dashboard or home page
-    // navigateTo('/')
-    console.log("Login successful - navigate to dashboard");
-  }, 1500);
+    // Wait for success animation to complete, then navigate
+    setTimeout(async () => {
+      await navigateTo("/");
+    }, 2500);
+  } catch (err) {
+    console.error("Login failed:", err);
+  }
 };
 
 const forgotPassword = () => {
-  // Navigate to forgot password page
   navigateTo("/forgot-password");
 };
-
-// const goToSignUp = () => {
-//   // TODO: Navigate to sign up page
-//   console.log("Go to sign up");
-// };
 </script>
 
 <style scoped>
-@import '@/assets/css/auth-common.css';
+@import "@/assets/css/auth-common.css";
 </style>

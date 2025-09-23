@@ -58,6 +58,7 @@ export class EmpsService {
           { email: { contains: search, mode: 'insensitive' } },
           { line: { contains: search, mode: 'insensitive' } },
           { address: { contains: search, mode: 'insensitive' } },
+          { phone: { contains: search, mode: 'insensitive' } },
         ],
       });
     }

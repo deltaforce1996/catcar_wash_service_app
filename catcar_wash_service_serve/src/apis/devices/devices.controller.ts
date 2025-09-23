@@ -1,10 +1,12 @@
-import { Body, Controller, Get, Param, Post, Put, Query, UseFilters, UseGuards, Request } from '@nestjs/common';
+import { Body, Controller, Get, Param, Post, Put, Query, UseFilters, UseGuards } from '@nestjs/common';
 import { DeviceRow, DeviceWithoutRefRow, DevicesService } from './devices.service';
 import { AllExceptionFilter } from 'src/common';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
-import { AuthenticatedUser, PaginatedResult } from 'src/types/internal.type';
+import { PaginatedResult } from 'src/types/internal.type';
 import { SuccessResponse } from 'src/types';
 import { UpdateDeviceBasicDto, CreateDeviceDto, SearchDeviceDto, UpdateDeviceConfigsDto } from './dtos/index';
+import { UserAuth } from '../auth/decorators';
+import type { AuthenticatedUser } from 'src/types/internal.type';
 
 type DevicePublicResponse = PaginatedResult<DeviceRow | DeviceWithoutRefRow>;
 
@@ -17,10 +19,8 @@ export class DevicesController {
   @Get('search')
   async searchDevices(
     @Query() q: SearchDeviceDto,
-    @Request() req: Request & { user: AuthenticatedUser },
+    @UserAuth() user: AuthenticatedUser,
   ): Promise<SuccessResponse<DevicePublicResponse>> {
-    const user = req.user;
-    console.log(JSON.stringify(user, null, 2));
     const result = await this.devicesService.searchDevices(q, user);
     return {
       success: true,
@@ -32,9 +32,8 @@ export class DevicesController {
   @Get('find-by-id/:id')
   async getDeviceById(
     @Param('id') id: string,
-    @Request() req: Request & { user: AuthenticatedUser },
+    @UserAuth() user: AuthenticatedUser,
   ): Promise<SuccessResponse<DeviceRow>> {
-    const user = req.user;
     const result = await this.devicesService.findById(id, user);
     return {
       success: true,

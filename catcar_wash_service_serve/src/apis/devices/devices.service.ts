@@ -109,14 +109,10 @@ export class DevicesService {
           ands.push({ name: { contains: value, mode: 'insensitive' } });
           break;
         case 'owner':
-          if (!q.exclude_all_ref_table) {
-            ands.push({ owner: { fullname: { contains: value, mode: 'insensitive' } } });
-          }
+          ands.push({ owner: { id: value } });
           break;
         case 'register':
-          if (!q.exclude_all_ref_table) {
-            ands.push({ registered_by: { name: { contains: value, mode: 'insensitive' } } });
-          }
+          ands.push({ registered_by: { id: value } });
           break;
         case 'type': {
           const v = value.toUpperCase();
@@ -127,7 +123,6 @@ export class DevicesService {
         }
         case 'status': {
           const v = value.toUpperCase();
-          console.log(v);
           if (v === DeviceStatus.DEPLOYED || v === DeviceStatus.DISABLED) {
             ands.push({ status: v as DeviceStatus });
           }
