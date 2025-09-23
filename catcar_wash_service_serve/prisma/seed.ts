@@ -10,9 +10,9 @@ const prisma = new PrismaClient();
  * Generates realistic device state data based on device type
  */
 const generateDeviceState = (deviceType: DeviceType): any => {
+  void deviceType;
   const now = Date.now();
   const timestamp = now + randomInt(-300000, 300000); // ±5 minutes from now
-  console.log(`Device type: ${deviceType}`);
   // Return only base state data
   return {
     timestamp,
@@ -177,9 +177,9 @@ const generate = async () => {
   });
 
   const paymentInfo = {
-    merchant_id: 'catcarwash',
-    api_key: 'KPDPt2heeX8aNUfOpCD9s0C6L4E7qJnfpN+kt0YkptE=',
-    HMAC_key: 'k5E9ObcIDSGNu0Fa2itrjbs5kiy7nr9IAJwWXRDjr5U=',
+    merchant_id: 'merchant_id',
+    api_key: 'abcdefghijklmnopqrstuvwxyz',
+    HMAC_key: 'abcdefghijklmnopqrstuvwxyz',
   };
 
   const user = await prisma.tbl_users.upsert({
