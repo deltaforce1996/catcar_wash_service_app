@@ -1,12 +1,32 @@
-import { Body, Controller, Get, Param, Post, Put, Query, UseFilters, UseGuards } from '@nestjs/common';
+import {
+  Body,
+  Controller,
+  Get,
+  Param,
+  Post,
+  Put,
+  Query,
+  UseFilters,
+  UseGuards,
+  Sse,
+  MessageEvent,
+} from '@nestjs/common';
+import { Observable } from 'rxjs';
 import { DeviceRow, DeviceWithoutRefRow, DevicesService } from './devices.service';
 import { AllExceptionFilter } from 'src/common';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { PaginatedResult } from 'src/types/internal.type';
-import { SuccessResponse } from 'src/types';
-import { UpdateDeviceBasicDto, CreateDeviceDto, SearchDeviceDto, UpdateDeviceConfigsDto } from './dtos/index';
+import type { SuccessResponse } from 'src/types';
+import {
+  UpdateDeviceBasicDto,
+  CreateDeviceDto,
+  SearchDeviceDto,
+  UpdateDeviceConfigsDto,
+  DeviceNeedRegisterDto,
+} from './dtos/index';
 import { UserAuth } from '../auth/decorators';
 import type { AuthenticatedUser } from 'src/types/internal.type';
+import { DeviceRegistrationService, DeviceRegistrationEventAdapter } from '../../services';
 
 type DevicePublicResponse = PaginatedResult<DeviceRow | DeviceWithoutRefRow>;
 
@@ -14,7 +34,11 @@ type DevicePublicResponse = PaginatedResult<DeviceRow | DeviceWithoutRefRow>;
 @UseGuards(JwtAuthGuard)
 @Controller('api/v1/devices')
 export class DevicesController {
-  constructor(private readonly devicesService: DevicesService) {}
+  constructor(
+    private readonly devicesService: DevicesService,
+    private readonly deviceRegistrationService: DeviceRegistrationService,
+    private readonly deviceRegistrationEventAdapter: DeviceRegistrationEventAdapter,
+  ) {}
 
   @Get('search')
   async searchDevices(
@@ -76,5 +100,35 @@ export class DevicesController {
       data: result,
       message: 'Device configurations updated successfully',
     };
+  }
+
+  // Device Registration Endpoints (without JWT guard for device requests)
+  @Post('need-register')
+  @UseFilters(AllExceptionFilter)
+  deviceNeedRegister(@Body() data: DeviceNeedRegisterDto): SuccessResponse<{ pin: string; device_id: string }> {
+    const session = this.deviceRegistrationService.createRegistrationSession(
+      data.chip_id,
+      data.mac_address,
+      data.firmware_version,
+    );
+
+    // Generate a temporary device_id for tracking (will be replaced when actually registered)
+    const tempDeviceId = `temp-${data.chip_id}`;
+
+    return {
+      success: true,
+      data: {
+        pin: session.pin,
+        device_id: tempDeviceId,
+      },
+      message: 'Device registration session created successfully',
+    };
+  }
+
+  // SSE endpoint for device scanning
+  @Get('scan')
+  @Sse('device-scan')
+  deviceScan(): Observable<{ data: string }> {
+    return this.deviceRegistrationEventAdapter.createSSEStream();
   }
 }

@@ -304,4 +304,25 @@ export class DeviceApiService extends BaseApiClient {
     );
     return response;
   }
+
+}
+
+// Device Registration Types
+export interface DeviceRegistrationSession {
+  pin: string;
+  chip_id: string;
+  mac_address: string;
+  firmware_version: string;
+  device_id?: string;
+  created_at: string;
+  expires_at: string;
+}
+
+export interface DeviceRegistrationEvent {
+  pin: string;
+  chip_id: string;
+  mac_address: string;
+  firmware_version: string;
+  device_id?: string;
+  timestamp: string;
 }

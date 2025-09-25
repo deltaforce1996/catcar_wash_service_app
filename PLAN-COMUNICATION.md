@@ -16,7 +16,7 @@
 #### 📤 Request
 
 ```http
-POST /api/vi/device/need-register
+POST /api/v1/devices/need-register
 x-signature: {CHECK_SUM_FROM_MAC_ADDRESS}
 ```
 
