@@ -153,7 +153,7 @@ x-signature: {CHECK_SUM_FROM_MAC_ADDRESS_AND_PAYLOAD_STRING}
 ```json
 {
   "success": false,
-  "message": "Payment not found for this charge ID"
+  "error": false
 }
 ```
 
@@ -379,11 +379,7 @@ Content-Type: application/json
 - `FACTORY_RESET` - Factory reset device (ต้อง ACK)
 
 **⚡ Commands without ACK (Fire and Forget):**
-- `GET_STATUS` - Get device status (ไม่ต้อง ACK)
-- `PING` - Ping device (ไม่ต้อง ACK)
-- `LOG_LEVEL` - Change log level (ไม่ต้อง ACK)
-- `SYNC_TIME` - Sync device time (ไม่ต้อง ACK)
-- `CLEAR_CACHE` - Clear device cache (ไม่ต้อง ACK)
+- `GET_STATUS` (Example ยังคิดไม่ออก)- Get device status (ไม่ต้อง ACK)
 
 #### 📡 Device → Server: MQTT ACK Response
 
