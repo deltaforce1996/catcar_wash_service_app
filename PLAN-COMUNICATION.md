@@ -58,6 +58,54 @@ x-signature: {CHECK_SUM_FROM_MAC_ADDRESS}
 }
 ```
 
+
+
+---
+
+### 🔄 Sync Device Configs
+
+> **📝 Description:** ใช้ HTTP เพื่อ sync device configurations  
+> **🎯 Purpose:** Device ส่ง configs ปัจจุบันไปยัง server เพื่อ synchronize การตั้งค่า
+
+#### 📤 Request
+
+```http
+POST /api/v1/device/sync-configs/{device_id}
+x-signature: {CHECK_SUM_FROM_MAC_ADDRESS_AND_PAYLOAD_STRING}
+```
+
+**Body Payload:**
+
+```json
+{
+  ["key"]: "value"
+}
+```
+
+#### 📥 Response
+
+**✅ Success (200):**
+
+```json
+{
+  "success": true,
+  "message": "Device configs synced successfully"
+}
+```
+
+**❌ Failed (400):**
+
+```json
+{
+  "success": false,
+  "errorCode": "errorCode",
+  "message": "message",
+  "statusCode": 400,
+  "timestamp": "2025-09-25T10:30:00Z",
+  "path": "path"
+}
+```
+
 ---
 
 ### 💳 Device QR Code Payment
