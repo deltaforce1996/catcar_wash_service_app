@@ -23,10 +23,11 @@ x-signature: {CHECK_SUM_FROM_MAC_ADDRESS}
 **Body Payload:**
 
 ```json
+
 {
-  "chip_id": "string",
-  "mac_address": "string",
-  "firmware_version": "string"
+  "chip_id": "24AB3C91",
+  "mac_address": "24:6F:28:AB:3C:91",
+  "firmware_version": "car_wash_v1.00"
 }
 ```
 
@@ -57,8 +58,90 @@ x-signature: {CHECK_SUM_FROM_MAC_ADDRESS}
   "path": "path"
 }
 ```
+---
+### 🔄 Sync Device start up and shutdown
 
+> **📝 Description:** ใช้ HTTP เพื่อ sync device status and configurations  
+> **🎯 Purpose:** Device ส่ง configs ปัจจุบันไปยัง server เพื่อ synchronize การตั้งค่า
 
+```json
+**📝 CAR WASH startup Examples:**
+{
+  "topic_request" : "startup", // startup/shutdown
+  "device_id": "Device-001",
+  "device_status" : "NORMAL",
+  "payload": {
+    "configs": {
+      "machine":{
+        "ACTIVE": true,
+        "BANKNOTE": true,
+        "COIN": true,
+        "QR": true,
+        "ON_TIME": "8:00",
+        "OFF_TIME": "16:00",
+        "SAVE_STATE" : true
+      },
+      "function": {
+          "sec_per_baht": {
+            "HP_WATER": 10,
+            "FOAM": 10,
+            "AIR": 10,
+            "WATER": 10,
+            "VACUUM": 10,
+            "BLACK_TIRE": 10,
+            "WAX": 10,
+            "AIR_FRESHENER": 0,
+            "PARKING_FEE":600
+          }
+    }
+  }
+  },
+  "timestamp": 1758358335794
+}
+```
+```json
+**📝 Helmet dryer startup Examples:**
+{
+  "topic_request" : "startup", // startup/shutdown
+  "device_id": "Device-001",
+  "device_status" : "NORMAL",
+  "payload": {
+    "configs": {
+      "machine":{
+        "ACTIVE": true,
+        "BANKNOTE": true,
+        "COIN": true,
+        "QR": true,
+        "ON_TIME": "8:00",
+        "OFF_TIME": "16:00",
+        "SAVE_STATE" : true
+      },
+      "pricing": {
+          "BASE_FEE": 30,
+          "PROMOTION": 0,
+          "WORK_PERIOD" : 600
+        },
+      "function_start": {
+            "DUST_BLOW": 0,
+            "SANITIZE": 50,
+            "UV": 100,
+            "OZONE": 200,
+            "DRY_BLOW": 300,
+            "PERFUME": 400
+        },
+      "function_end": {
+            "DUST_BLOW": 50,
+            "SANITIZE": 100,
+            "UV": 200,
+            "OZONE": 300,
+            "DRY_BLOW": 400,
+            "PERFUME": 600
+        }
+    }
+  },
+  "timestamp": 1758358335794
+}
+```
 
 ---
 
@@ -380,12 +463,79 @@ Content-Type: application/json
 **MQTT Command Payload:**
 
 ```json
+**📝 CAR WASH Command Examples:**
 {
   "command_id": "cmd-cmfwv9cqw0001u20olfjb9nyx",
   "command": "APPLY_CONFIG",
   "require_ack": true,
   "payload": {
-    "configs": {}
+    "configs": {
+      "machine":{
+        "ACTIVE": true,
+        "BANKNOTE": true,
+        "COIN": true,
+        "QR": true,
+        "ON_TIME": "8:00",
+        "OFF_TIME": "16:00",
+        "SAVE_STATE" : true
+      },
+      "function": {
+          "sec_per_baht": {
+            "HP_WATER": 10,
+            "FOAM": 10,
+            "AIR": 10,
+            "WATER": 10,
+            "VACUUM": 10,
+            "BLACK_TIRE": 10,
+            "WAX": 10,
+            "AIR_FRESHENER": 0,
+            "PARKING_FEE":600
+          }
+    }
+  }
+  },
+  "timestamp": 1758358335794
+}
+```
+```json
+**📝 Helmet dryer Command Examples:**
+{
+  "command_id": "cmd-cmfwv9cqw0001u20olfjb9nyx",
+  "command": "APPLY_CONFIG",
+  "require_ack": true,
+  "payload": {
+    "configs": {
+      "machine":{
+        "ACTIVE": true,
+        "BANKNOTE": true,
+        "COIN": true,
+        "QR": true,
+        "ON_TIME": "8:00",
+        "OFF_TIME": "16:00",
+        "SAVE_STATE" : true
+      },
+      "pricing": {
+          "BASE_FEE": 30,
+          "PROMOTION": 0,
+          "WORK_PERIOD" : 600
+        },
+      "function_start": {
+            "DUST_BLOW": 0,
+            "SANITIZE": 50,
+            "UV": 100,
+            "OZONE": 200,
+            "DRY_BLOW": 300,
+            "PERFUME": 400
+        },
+      "function_end": {
+            "DUST_BLOW": 50,
+            "SANITIZE": 100,
+            "UV": 200,
+            "OZONE": 300,
+            "DRY_BLOW": 400,
+            "PERFUME": 600
+        }
+    }
   },
   "timestamp": 1758358335794
 }
@@ -405,6 +555,34 @@ Content-Type: application/json
   "timestamp": 1758358335794
 }
 ```
+```json
+{
+  "command_id": "cmd-update-001",
+  "command": "UPDATE_FIRMWARE",
+  "require_ack": true,
+  "payload": {
+    "url": "https://example.com/firmware/esp32-v1.2.3.bin",
+    "version": "1.2.3",
+    "sha256": "3f5a8f1b...<HEX 64 ตัว>...c9d1e0ab",   // ตรวจสอบกับไฟล์จริง
+    "size": 972800,                               // ไบต์ (ทราบได้ล่วงหน้า หรือปล่อยว่างกรณี chunked)
+    "reboot_after": true,                         // รีบูตหลังแฟลชสำเร็จ
+    "timeout_sec": 120,                           // กันค้าง
+  },
+  "timestamp": 1758358335794
+}
+
+```
+```json
+{
+  "command_id": "cmd-reset-001",
+  "command": "RESET_CONFIG",
+  "require_ack": true,
+  "payload": {
+    "delay_seconds": 30
+  },
+  "timestamp": 1758358335794
+}
+```
 
 **⚡ Command without ACK (Fire and Forget):**
 ```json
@@ -416,6 +594,17 @@ Content-Type: application/json
   "timestamp": 1758358335794
 }
 ```
+```json
+{
+  "command_id": "cmd-ping-001",
+  "command": "GET_STATUS",
+  "require_ack": false,
+  "payload": {
+    "status" : "NORMAL" // ERROR" | "OFFLINE" | "MACHINE_OFF"
+  },
+  "timestamp": 1758358335794
+}
+```
 
 **Command Types:**
 
@@ -424,9 +613,9 @@ Content-Type: application/json
 - `RESTART` - Restart device (ต้อง ACK)
 - `UPDATE_FIRMWARE` - Update firmware (ต้อง ACK)
 - `RESET_CONFIG` - Reset to default config (ต้อง ACK)
-- `FACTORY_RESET` - Factory reset device (ต้อง ACK)
 
 **⚡ Commands without ACK (Fire and Forget):**
+- `PING` - PING device (ไม่ต้อง ACK)
 - `GET_STATUS` (Example ยังคิดไม่ออก)- Get device status (ไม่ต้อง ACK)
 
 #### 📡 Device → Server: MQTT ACK Response
@@ -437,11 +626,23 @@ Content-Type: application/json
 **✅ MQTT Success ACK:**
 
 ```json
+**✅ MQTT Success ACK for APPLY_CONFIG / RESTART/ RESET_CONFIG :**
 {
   "command_id": "cmd-cmfwv9cqw0001u20olfjb9nyx",
   "device_id": "device-0001",
   "command": "APPLY_CONFIG",
   "status": "SUCCESS",
+  "timestamp": 1758358355794
+}
+```
+```json
+**✅ MQTT Success ACK for UPDATE_FIRMWARE :**
+{
+  "command_id": "cmd-cmfwv9cqw0001u20olfjb9nyx",
+  "device_id": "device-0001",
+  "command": "UPDATE_FIRMWARE",
+  "status": "ERROR / PROGRESS / SUCCESS",
+  "new_version" :"car_wash_v1.2.0",
   "timestamp": 1758358355794
 }
 ```
