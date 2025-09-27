@@ -394,7 +394,7 @@
                         บันทึกการใช้งาน
                       </h3>
                       <p class="text-body-2 text-grey-darken-1">
-                        ส่วนนี้จะแสดงประวัติการใช้งานอุปกรณ์<br />
+                        ส่วนนี้จะแสดงประวัติการใช้งานอุปกรณ์<br >
                         (อยู่ในระหว่างการพัฒนา)
                       </p>
                     </div>
@@ -408,7 +408,7 @@
                       </v-icon>
                       <h3 class="text-h6 text-grey-darken-1 mb-2">สถานะระบบ</h3>
                       <p class="text-body-2 text-grey-darken-1">
-                        ส่วนนี้จะแสดงสถานะการทำงานของอุปกรณ์แบบเรียลไทม์<br />
+                        ส่วนนี้จะแสดงสถานะการทำงานของอุปกรณ์แบบเรียลไทม์<br >
                         (อยู่ในระหว่างการพัฒนา)
                       </p>
                     </div>
@@ -441,7 +441,7 @@ const emit = defineEmits<Emits>();
 
 // Local state
 const isEditMode = ref(false);
-const currentTab = ref("setup");
+const currentTab = ref("logging");
 const editableConfigs = ref<Record<string, DeviceConfig>>({});
 const originalConfigs = ref<Record<string, DeviceConfig>>({});
 
