@@ -1,0 +1,402 @@
+[
+  {
+    "id": "cmf2icd8i000jzsp8cc39yr0w",
+    "device_id": "cmf2icd7z000bzsp86t6xiri2",
+    "payload": {
+      "qr": {
+        "ref1": null,
+        "ref2": null,
+        "net_amount": 0,
+        "transaction_id": "1234567890"
+      },
+      "bank": {
+        "20": 0,
+        "50": 0,
+        "300": 0,
+        "500": 0,
+        "1000": 0
+      },
+      "coin": {
+        "1": 3,
+        "2": 0,
+        "5": 0,
+        "10": 0
+      },
+      "type": "PAYMENT",
+      "status": "SUCCESS",
+      "timestemp": 1763389417447,
+      "total_amount": 3
+    },
+    "created_at": "2025-09-02 19:11:27",
+    "device": {
+      "id": "cmf2icd7z000bzsp86t6xiri2",
+      "name": "Device 1",
+      "type": "WASH",
+      "owner": {
+        "id": "cmf2icd7s0008zsp8i1eruapr",
+        "fullname": "User",
+        "email": "user@catcarwash.com"
+      }
+    }
+  },
+  {
+    "id": "cmf2icd8i000kzsp8eae9jxnv",
+    "device_id": "cmf2icd7z000bzsp86t6xiri2",
+    "payload": {
+      "qr": {
+        "ref1": null,
+        "ref2": null,
+        "net_amount": 0,
+        "transaction_id": "1234567890"
+      },
+      "bank": {
+        "20": 0,
+        "50": 0,
+        "300": 0,
+        "500": 0,
+        "1000": 0
+      },
+      "coin": {
+        "1": 2,
+        "2": 0,
+        "5": 0,
+        "10": 0
+      },
+      "type": "PAYMENT",
+      "status": "SUCCESS",
+      "timestemp": 1751544593928,
+      "total_amount": 2
+    },
+    "created_at": "2025-09-02 19:11:27",
+    "device": {
+      "id": "cmf2icd7z000bzsp86t6xiri2",
+      "name": "Device 1",
+      "type": "WASH",
+      "owner": {
+        "id": "cmf2icd7s0008zsp8i1eruapr",
+        "fullname": "User",
+        "email": "user@catcarwash.com"
+      }
+    }
+  },
+  {
+    "id": "cmf2icd8i000lzsp8o8bpjvx0",
+    "device_id": "cmf2icd7z000bzsp86t6xiri2",
+    "payload": {
+      "qr": {
+        "ref1": null,
+        "ref2": null,
+        "net_amount": 0,
+        "transaction_id": "1234567890"
+      },
+      "bank": {
+        "20": 0,
+        "50": 0,
+        "300": 0,
+        "500": 0,
+        "1000": 0
+      },
+      "coin": {
+        "1": 1,
+        "2": 0,
+        "5": 0,
+        "10": 0
+      },
+      "type": "PAYMENT",
+      "status": "SUCCESS",
+      "timestemp": 1756329591231,
+      "total_amount": 1
+    },
+    "created_at": "2025-09-02 19:11:27",
+    "device": {
+      "id": "cmf2icd7z000bzsp86t6xiri2",
+      "name": "Device 1",
+      "type": "WASH",
+      "owner": {
+        "id": "cmf2icd7s0008zsp8i1eruapr",
+        "fullname": "User",
+        "email": "user@catcarwash.com"
+      }
+    }
+  },
+  {
+    "id": "cmf2icd8j000mzsp8olw9iub0",
+    "device_id": "cmf2icd7z000bzsp86t6xiri2",
+    "payload": {
+      "qr": {
+        "ref1": null,
+        "ref2": null,
+        "net_amount": 0,
+        "transaction_id": "1234567890"
+      },
+      "bank": {
+        "20": 0,
+        "50": 0,
+        "300": 0,
+        "500": 0,
+        "1000": 0
+      },
+      "coin": {
+        "1": 4,
+        "2": 0,
+        "5": 0,
+        "10": 0
+      },
+      "type": "PAYMENT",
+      "status": "SUCCESS",
+      "timestemp": 1757325795839,
+      "total_amount": 4
+    },
+    "created_at": "2025-09-02 19:11:27",
+    "device": {
+      "id": "cmf2icd7z000bzsp86t6xiri2",
+      "name": "Device 1",
+      "type": "WASH",
+      "owner": {
+        "id": "cmf2icd7s0008zsp8i1eruapr",
+        "fullname": "User",
+        "email": "user@catcarwash.com"
+      }
+    }
+  },
+  {
+    "id": "cmf2icd8j000nzsp86x91l0uz",
+    "device_id": "cmf2icd7z000czsp8lfee15kl",
+    "payload": {
+      "qr": {
+        "ref1": null,
+        "ref2": null,
+        "net_amount": 0,
+        "transaction_id": "1234567890"
+      },
+      "bank": {
+        "20": 0,
+        "50": 0,
+        "300": 0,
+        "500": 0,
+        "1000": 0
+      },
+      "coin": {
+        "1": 5,
+        "2": 0,
+        "5": 0,
+        "10": 0
+      },
+      "type": "PAYMENT",
+      "status": "SUCCESS",
+      "timestemp": 1755836397582,
+      "total_amount": 5
+    },
+    "created_at": "2025-09-02 19:11:27",
+    "device": {
+      "id": "cmf2icd7z000czsp8lfee15kl",
+      "name": "Device 2",
+      "type": "DRYING",
+      "owner": {
+        "id": "cmf2icd7s0008zsp8i1eruapr",
+        "fullname": "User",
+        "email": "user@catcarwash.com"
+      }
+    }
+  },
+  {
+    "id": "cmf2icd8j000ozsp8ufp0tf8g",
+    "device_id": "cmf2icd7z000czsp8lfee15kl",
+    "payload": {
+      "qr": {
+        "ref1": null,
+        "ref2": null,
+        "net_amount": 0,
+        "transaction_id": "1234567890"
+      },
+      "bank": {
+        "20": 0,
+        "50": 0,
+        "300": 0,
+        "500": 0,
+        "1000": 0
+      },
+      "coin": {
+        "1": 4,
+        "2": 0,
+        "5": 0,
+        "10": 0
+      },
+      "type": "PAYMENT",
+      "status": "SUCCESS",
+      "timestemp": 1761237780831,
+      "total_amount": 4
+    },
+    "created_at": "2025-09-02 19:11:27",
+    "device": {
+      "id": "cmf2icd7z000czsp8lfee15kl",
+      "name": "Device 2",
+      "type": "DRYING",
+      "owner": {
+        "id": "cmf2icd7s0008zsp8i1eruapr",
+        "fullname": "User",
+        "email": "user@catcarwash.com"
+      }
+    }
+  },
+  {
+    "id": "cmf2icd8j000pzsp80th8h577",
+    "device_id": "cmf2icd7z000czsp8lfee15kl",
+    "payload": {
+      "qr": {
+        "ref1": null,
+        "ref2": null,
+        "net_amount": 0,
+        "transaction_id": "1234567890"
+      },
+      "bank": {
+        "20": 0,
+        "50": 0,
+        "300": 0,
+        "500": 0,
+        "1000": 0
+      },
+      "coin": {
+        "1": 6,
+        "2": 0,
+        "5": 0,
+        "10": 0
+      },
+      "type": "PAYMENT",
+      "status": "SUCCESS",
+      "timestemp": 1752169731221,
+      "total_amount": 6
+    },
+    "created_at": "2025-09-02 19:11:27",
+    "device": {
+      "id": "cmf2icd7z000czsp8lfee15kl",
+      "name": "Device 2",
+      "type": "DRYING",
+      "owner": {
+        "id": "cmf2icd7s0008zsp8i1eruapr",
+        "fullname": "User",
+        "email": "user@catcarwash.com"
+      }
+    }
+  },
+  {
+    "id": "cmf2icd8j000qzsp85g6r3ehg",
+    "device_id": "cmf2icd7z000czsp8lfee15kl",
+    "payload": {
+      "qr": {
+        "ref1": null,
+        "ref2": null,
+        "net_amount": 0,
+        "transaction_id": "1234567890"
+      },
+      "bank": {
+        "20": 0,
+        "50": 0,
+        "300": 0,
+        "500": 0,
+        "1000": 0
+      },
+      "coin": {
+        "1": 2,
+        "2": 0,
+        "5": 0,
+        "10": 0
+      },
+      "type": "PAYMENT",
+      "status": "SUCCESS",
+      "timestemp": 1754942018071,
+      "total_amount": 2
+    },
+    "created_at": "2025-09-02 19:11:27",
+    "device": {
+      "id": "cmf2icd7z000czsp8lfee15kl",
+      "name": "Device 2",
+      "type": "DRYING",
+      "owner": {
+        "id": "cmf2icd7s0008zsp8i1eruapr",
+        "fullname": "User",
+        "email": "user@catcarwash.com"
+      }
+    }
+  },
+  {
+    "id": "cmf2icd8j000rzsp8g8lzkhog",
+    "device_id": "cmf2icd7z000czsp8lfee15kl",
+    "payload": {
+      "qr": {
+        "ref1": null,
+        "ref2": null,
+        "net_amount": 0,
+        "transaction_id": "1234567890"
+      },
+      "bank": {
+        "20": 0,
+        "50": 0,
+        "300": 0,
+        "500": 0,
+        "1000": 0
+      },
+      "coin": {
+        "1": 7,
+        "2": 0,
+        "5": 0,
+        "10": 0
+      },
+      "type": "PAYMENT",
+      "status": "SUCCESS",
+      "timestemp": 1760964342380,
+      "total_amount": 7
+    },
+    "created_at": "2025-09-02 19:11:27",
+    "device": {
+      "id": "cmf2icd7z000czsp8lfee15kl",
+      "name": "Device 2",
+      "type": "DRYING",
+      "owner": {
+        "id": "cmf2icd7s0008zsp8i1eruapr",
+        "fullname": "User",
+        "email": "user@catcarwash.com"
+      }
+    }
+  },
+  {
+    "id": "cmf2icd8i000izsp8uu6q36lb",
+    "device_id": "cmf2icd7z000bzsp86t6xiri2",
+    "payload": {
+      "qr": {
+        "ref1": null,
+        "ref2": null,
+        "net_amount": 0,
+        "transaction_id": "1234567890"
+      },
+      "bank": {
+        "20": 0,
+        "50": 0,
+        "300": 0,
+        "500": 0,
+        "1000": 0
+      },
+      "coin": {
+        "1": 9,
+        "2": 0,
+        "5": 0,
+        "10": 0
+      },
+      "type": "PAYMENT",
+      "status": "SUCCESS",
+      "timestemp": 1764521312920,
+      "total_amount": 9
+    },
+    "created_at": "2025-09-02 19:11:27",
+    "device": {
+      "id": "cmf2icd7z000bzsp86t6xiri2",
+      "name": "Device 1",
+      "type": "WASH",
+      "owner": {
+        "id": "cmf2icd7s0008zsp8i1eruapr",
+        "fullname": "User",
+        "email": "user@catcarwash.com"
+      }
+    }
+  }
+]
