@@ -300,19 +300,155 @@
       </template>
     </EnhancedDataTable>
 
-    <!-- Add Customer Dialog (Placeholder) -->
-    <v-dialog v-model="showAddCustomerDialog" max-width="600">
+    <!-- Add Customer Dialog -->
+    <v-dialog v-model="showAddCustomerDialog" max-width="800" persistent>
       <v-card>
         <v-card-title class="pa-6">
           <h3 class="text-h5">เพิ่มลูกค้าใหม่</h3>
         </v-card-title>
-        <v-card-text>
-          <p class="text-center py-8">ฟีเจอร์นี้อยู่ระหว่างการพัฒนา</p>
+
+        <v-card-text class="pa-6">
+          <v-form v-model="formValid" @submit.prevent="registerUser">
+            <v-row>
+              <!-- Full Name -->
+              <v-col cols="12" md="6">
+                <v-text-field
+                  v-model="registrationForm.fullname"
+                  label="ชื่อ-นามสกุล"
+                  variant="outlined"
+                  density="compact"
+                  :rules="requiredRules"
+                  required
+                />
+              </v-col>
+
+              <!-- Custom Name -->
+              <v-col cols="12" md="6">
+                <v-text-field
+                  v-model="registrationForm.custom_name"
+                  label="ชื่อเรียก/ชื่อร้าน"
+                  variant="outlined"
+                  density="compact"
+                  :rules="requiredRules"
+                  required
+                />
+              </v-col>
+
+              <!-- Email -->
+              <v-col cols="12" md="6">
+                <v-text-field
+                  v-model="registrationForm.email"
+                  label="อีเมล"
+                  type="email"
+                  variant="outlined"
+                  density="compact"
+                  :rules="emailRules"
+                  required
+                />
+              </v-col>
+
+              <!-- Phone -->
+              <v-col cols="12" md="6">
+                <v-text-field
+                  v-model="registrationForm.phone"
+                  label="เบอร์โทรศัพท์"
+                  variant="outlined"
+                  density="compact"
+                  :rules="phoneRules"
+                  required
+                />
+              </v-col>
+
+              <!-- Address -->
+              <v-col cols="12">
+                <v-textarea
+                  v-model="registrationForm.address"
+                  label="ที่อยู่"
+                  variant="outlined"
+                  density="compact"
+                  rows="3"
+                  :rules="requiredRules"
+                  required
+                />
+              </v-col>
+
+              <!-- Status -->
+              <v-col cols="12" md="6">
+                <v-select
+                  v-model="registrationForm.status"
+                  label="สถานะ"
+                  variant="outlined"
+                  density="compact"
+                  :items="[
+                    { value: 'ACTIVE', title: 'ใช้งาน' },
+                    { value: 'INACTIVE', title: 'ไม่ใช้งาน' }
+                  ]"
+                  item-value="value"
+                  item-title="title"
+                  :rules="requiredRules"
+                  required
+                />
+              </v-col>
+
+              <!-- Permission -->
+              <v-col cols="12" md="6">
+                <v-select
+                  v-model="registrationForm.permission_id"
+                  label="สิทธิ์การใช้งาน"
+                  variant="outlined"
+                  density="compact"
+                  :items="permissionOptions"
+                  item-value="value"
+                  item-title="label"
+                  :rules="requiredRules"
+                  required
+                >
+                  <template #item="{ props, item }">
+                    <v-list-item v-bind="props" :title="item.raw.label">
+                      <template #prepend>
+                        <v-chip
+                          :color="item.raw.color"
+                          size="small"
+                          variant="tonal"
+                          class="me-2"
+                        >
+                          {{ item.raw.label }}
+                        </v-chip>
+                      </template>
+                    </v-list-item>
+                  </template>
+                  <template #selection="{ item }">
+                    <v-chip
+                      :color="item.raw.color"
+                      size="small"
+                      variant="tonal"
+                    >
+                      {{ item.raw.label }}
+                    </v-chip>
+                  </template>
+                </v-select>
+              </v-col>
+            </v-row>
+          </v-form>
         </v-card-text>
+
         <v-card-actions class="pa-6 pt-0">
           <v-spacer />
-          <v-btn variant="outlined" @click="showAddCustomerDialog = false">
-            ปิด
+          <v-btn
+            variant="outlined"
+            :disabled="isRegistering"
+            @click="closeDialog"
+          >
+            ยกเลิก
+          </v-btn>
+          <v-btn
+            color="primary"
+            variant="flat"
+            :loading="isRegistering"
+            :disabled="!formValid"
+            @click="registerUser"
+          >
+            เพิ่มลูกค้า
           </v-btn>
         </v-card-actions>
       </v-card>
@@ -323,8 +459,9 @@
 <script setup lang="ts">
 import type { EnumUserStatus } from "~/types";
 
-import type { SearchUsersRequest } from "~/services/apis/user-api.service";
+import type { SearchUsersRequest, RegisterUserPayload } from "~/services/apis/user-api.service";
 import { useUser } from "~/composables/useUser";
+import { UserApiService } from "~/services/apis/user-api.service";
 import EnhancedDataTable from "~/components/common/EnhancedDataTable.vue";
 
 // Composable
@@ -437,6 +574,8 @@ const getPermissionColor = (permission: string) => {
   switch (permission) {
     case "ADMIN":
       return "primary";
+    case "TECHNICIAN":
+      return "warning";
     case "USER":
       return "info";
     default:
@@ -448,11 +587,79 @@ const getPermissionLabel = (permission: string) => {
   switch (permission) {
     case "ADMIN":
       return "ผู้ดูแลระบบ";
+    case "TECHNICIAN":
+      return "ช่างเทคนิค";
     case "USER":
       return "ผู้ใช้ทั่วไป";
     default:
       return permission;
   }
+};
+
+// Permission options for registration
+const permissionOptions = [
+  { value: "USER", label: "ผู้ใช้ทั่วไป", color: "info" },
+  { value: "TECHNICIAN", label: "ช่างเทคนิค", color: "warning" },
+  { value: "ADMIN", label: "ผู้ดูแลระบบ", color: "primary" }
+];
+
+// Registration function
+const registerUser = async () => {
+  if (!formValid.value) {
+    return;
+  }
+
+  isRegistering.value = true;
+
+  try {
+    // Find the selected permission to get its ID
+    const selectedPermission = permissionOptions.find(p => p.value === registrationForm.value.permission_id);
+    if (!selectedPermission) {
+      throw new Error("กรุณาเลือกสิทธิ์การใช้งาน");
+    }
+
+    // Create the payload (permission_id should be the actual permission ID, for now using the value)
+    const payload: RegisterUserPayload = {
+      ...registrationForm.value,
+      permission_id: registrationForm.value.permission_id // In real scenario, this might need to be mapped to actual permission ID
+    };
+
+    await userApiService.RegisterUser(payload);
+
+    // Success - close dialog and refresh data
+    showAddCustomerDialog.value = false;
+    resetForm();
+    await searchUsers({ page: 1 }); // Refresh the user list
+
+    // You might want to add a success notification here
+    console.log("ลงทะเบียนลูกค้าใหม่สำเร็จ");
+
+  } catch (error) {
+    console.error("เกิดข้อผิดพลาดในการลงทะเบียน:", error);
+    // You might want to add error notification here
+  } finally {
+    isRegistering.value = false;
+  }
+};
+
+// Reset form function
+const resetForm = () => {
+  registrationForm.value = {
+    email: "",
+    fullname: "",
+    phone: "",
+    address: "",
+    custom_name: "",
+    status: "ACTIVE" as EnumUserStatus,
+    permission_id: ""
+  };
+  formValid.value = false;
+};
+
+// Close dialog function
+const closeDialog = () => {
+  showAddCustomerDialog.value = false;
+  resetForm();
 };
 
 // Select status filter function
@@ -472,6 +679,35 @@ onMounted(async () => {
 
 // Local state
 const showAddCustomerDialog = ref(false);
+const isRegistering = ref(false);
+
+// Registration form data
+const registrationForm = ref<RegisterUserPayload>({
+  email: "",
+  fullname: "",
+  phone: "",
+  address: "",
+  custom_name: "",
+  status: "ACTIVE" as EnumUserStatus,
+  permission_id: ""
+});
+
+// Form validation
+const formValid = ref(false);
+const emailRules = [
+  (v: string) => !!v || "กรุณากรอกอีเมล",
+  (v: string) => /.+@.+\..+/.test(v) || "รูปแบบอีเมลไม่ถูกต้อง"
+];
+const phoneRules = [
+  (v: string) => !!v || "กรุณากรอกเบอร์โทรศัพท์",
+  (v: string) => /^[0-9]{10}$/.test(v) || "เบอร์โทรศัพท์ต้องเป็นตัวเลข 10 หลัก"
+];
+const requiredRules = [
+  (v: string) => !!v || "กรุณากรอกข้อมูล"
+];
+
+// API service instance
+const userApiService = new UserApiService();
 
 // Filter options
 const statusOptions: EnumUserStatus[] = ["ACTIVE", "INACTIVE"];
