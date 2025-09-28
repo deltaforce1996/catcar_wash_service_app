@@ -6,9 +6,6 @@
         <div class="d-flex justify-space-between align-center flex-wrap">
           <div>
             <h3 class="font-weight-bold mb-1">จัดการพนักงาน</h3>
-            <v-chip variant="tonal" color="primary" class="mt-2">
-              {{ totalEmployees }} พนักงานทั้งหมด
-            </v-chip>
           </div>
           <div class="d-flex align-center ga-3 flex-wrap">
             <v-btn
@@ -24,13 +21,29 @@
       </v-col>
     </v-row>
 
-    <!-- Employee Management Table -->
-    <v-card elevation="2" rounded="lg" class="mt-8">
+    <!-- Enhanced Data Table -->
+    <EnhancedDataTable
+      title="จัดการพนักงาน"
+      :items="employees"
+      :headers="employeeHeaders"
+      :loading="isSearching || isLoading"
+      :has-filter-changes="hasFilterChanges"
+      :server-side="true"
+      :page="currentSearchParams.page || 1"
+      :items-per-page="currentSearchParams.limit || 10"
+      :total-items="totalEmployees"
+      :total-pages="totalPages"
+      expandable
+      class="mt-8"
+      @apply-filters="applyFilters"
+      @clear-filters="clearAllFilters"
+      @update:page="goToPage"
+    >
       <!-- Filter Section -->
-      <v-card-text class="pb-2">
+      <template #filters>
         <v-row>
           <!-- Search Bar -->
-          <v-col cols="12" md="6">
+          <v-col cols="12" md="9">
             <div class="d-flex flex-column ga-2">
               <div class="text-caption text-medium-emphasis">
                 <v-icon size="small" class="me-1">mdi-filter-variant</v-icon>
@@ -51,377 +64,258 @@
           </v-col>
 
           <!-- Status Filter -->
-          <v-col cols="12" md="3">
-            <div class="d-flex flex-column ga-2">
-              <div class="text-caption text-medium-emphasis">
-                <v-icon size="small" class="me-1">mdi-filter-variant</v-icon>
-                กรองตามสถานะ
+          <v-col cols="12" md="3" class="d-flex flex-column ga-2">
+            <div class="text-caption text-medium-emphasis">
+              <v-icon size="small" class="me-1">mdi-filter-variant</v-icon>
+              กรองตามสถานะ
+            </div>
+            <v-btn-group variant="outlined" density="compact" divided>
+              <v-btn
+                v-for="status in statusOptions"
+                :key="status"
+                :color="getStatusColor(status)"
+                :variant="tempStatusFilter === status ? 'flat' : 'outlined'"
+                size="small"
+                class="text-none"
+                @click="selectStatusFilter(status)"
+              >
+                {{ getStatusLabel(status) }}
+              </v-btn>
+              <v-btn
+                color="primary"
+                :variant="tempStatusFilter === null ? 'flat' : 'outlined'"
+                size="small"
+                class="text-none"
+                @click="clearStatusFilter"
+              >
+                <v-icon size="small">mdi-close</v-icon>
+                ทั้งหมด
+              </v-btn>
+            </v-btn-group>
+          </v-col>
+        </v-row>
+      </template>
+      <!-- Name Column -->
+      <template #[`item.name`]="{ item }">
+        <div>
+          <div class="text-body-2 font-weight-medium">
+            {{ item.name }}
+          </div>
+          <div class="text-caption text-medium-emphasis">
+            {{ item.email }}
+          </div>
+        </div>
+      </template>
+
+      <!-- Phone Column -->
+      <template #[`item.phone`]="{ item }">
+        <div class="text-body-2">
+          {{ item.phone || '-' }}
+        </div>
+      </template>
+
+      <!-- Line Column -->
+      <template #[`item.line`]="{ item }">
+        <div class="text-body-2">
+          {{ item.line || '-' }}
+        </div>
+      </template>
+
+      <!-- Status Column -->
+      <template #[`item.status`]="{ item }">
+        <v-chip
+          :color="getStatusColor(item.status)"
+          size="small"
+          variant="tonal"
+        >
+          {{ getStatusLabel(item.status) }}
+        </v-chip>
+      </template>
+
+      <!-- Permission Column -->
+      <template #[`item.permission`]="{ item }">
+        <v-chip
+          :color="getPermissionColor(item.permission.name)"
+          size="small"
+          variant="tonal"
+        >
+          {{ getPermissionLabel(item.permission.name) }}
+        </v-chip>
+      </template>
+
+      <!-- Registration Date Column -->
+      <template #[`item.created_at`]="{ item }">
+        <div class="text-body-2">
+          {{ formatDate(item.created_at || '') }}
+        </div>
+      </template>
+
+      <!-- Expandable Row Content -->
+      <template #expanded-row="{ item }">
+        <!-- Header with employee summary -->
+        <h3 class="text-subtitle-1 font-weight-bold mb-4">
+          รายละเอียดพนักงาน
+        </h3>
+
+        <!-- Employee details grid for desktop -->
+        <v-row no-gutters class="employee-details-grid">
+          <!-- Personal Information Section -->
+          <v-col cols="12" md="6" class="employee-section">
+            <div class="employee-info-section pa-3">
+              <div class="d-flex align-center mb-3">
+                <v-icon color="primary" size="small" class="me-2">
+                  mdi-account-circle
+                </v-icon>
+                <span class="text-subtitle-2 font-weight-medium">
+                  ข้อมูลส่วนตัว
+                </span>
               </div>
-              <v-btn-group variant="outlined" density="compact" divided>
-                <v-btn
-                  v-for="status in statusOptions"
-                  :key="status"
-                  :color="getStatusColor(status)"
-                  :variant="tempStatusFilter === status ? 'flat' : 'outlined'"
-                  size="small"
-                  class="text-none"
-                  @click="selectStatusFilter(status)"
-                >
-                  {{ getStatusLabel(status) }}
-                </v-btn>
-                <v-btn
-                  color="primary"
-                  :variant="tempStatusFilter === null ? 'flat' : 'outlined'"
-                  size="small"
-                  class="text-none"
-                  @click="clearStatusFilter"
-                >
-                  <v-icon size="small">mdi-close</v-icon>
-                  ทั้งหมด
-                </v-btn>
-              </v-btn-group>
+
+              <div class="employee-info-grid">
+                <v-card class="mb-2" color="primary" variant="tonal">
+                  <v-card-text class="pa-3">
+                    <div class="text-caption text-medium-emphasis">
+                      รหัสพนักงาน
+                    </div>
+                    <div class="text-body-2 font-family-monospace">
+                      {{ item.id.slice(-8) }}
+                    </div>
+                  </v-card-text>
+                </v-card>
+
+                <v-card class="mb-2" color="info" variant="tonal">
+                  <v-card-text class="pa-3">
+                    <div class="text-caption text-medium-emphasis">
+                      ที่อยู่
+                    </div>
+                    <div class="text-body-2">
+                      {{ item.address || 'ไม่ระบุ' }}
+                    </div>
+                  </v-card-text>
+                </v-card>
+
+                <v-card class="mb-2" color="success" variant="tonal">
+                  <v-card-text class="pa-3">
+                    <div class="text-caption text-medium-emphasis">
+                      LINE ID
+                    </div>
+                    <div class="text-body-2">
+                      {{ item.line || 'ไม่ระบุ' }}
+                    </div>
+                  </v-card-text>
+                </v-card>
+
+                <v-card color="secondary" variant="tonal">
+                  <v-card-text class="pa-3">
+                    <div class="text-caption text-medium-emphasis">
+                      สิทธิ์การใช้งาน
+                    </div>
+                    <v-chip
+                      :color="getPermissionColor(item.permission.name)"
+                      size="small"
+                      variant="tonal"
+                      class="mt-1"
+                    >
+                      {{ getPermissionLabel(item.permission.name) }}
+                    </v-chip>
+                  </v-card-text>
+                </v-card>
+              </div>
             </div>
           </v-col>
 
-          <!-- Filter Actions -->
-          <v-col cols="12" md="3">
-            <div class="d-flex flex-column ga-2">
-              <div class="text-caption text-medium-emphasis">
-                <v-icon size="small" class="me-1">mdi-cog</v-icon>
-                การดำเนินการ
+          <!-- Contact Information Section -->
+          <v-col cols="12" md="6" class="employee-section">
+            <div class="contact-info-section pa-3">
+              <div class="d-flex align-center mb-3">
+                <v-icon color="success" size="small" class="me-2">
+                  mdi-contacts
+                </v-icon>
+                <span class="text-subtitle-2 font-weight-medium">
+                  ข้อมูลการติดต่อ
+                </span>
               </div>
-              <div class="d-flex ga-2">
-                <v-btn
-                  variant="outlined"
-                  size="small"
-                  prepend-icon="mdi-refresh"
-                  @click="clearAllFilters"
+
+              <div class="contact-info-grid">
+                <v-card
+                  class="mb-3 contact-info-card"
+                  color="primary-lighten-1"
+                  variant="tonal"
                 >
-                  ล้างตัวกรอง
-                </v-btn>
-                <v-btn
-                  color="primary"
-                  size="small"
-                  prepend-icon="mdi-check"
-                  @click="applyFilters"
+                  <v-card-text class="pa-3">
+                    <div class="d-flex align-center">
+                      <v-icon color="primary" class="me-2">mdi-email</v-icon>
+                      <div>
+                        <div class="text-caption text-medium-emphasis">
+                          อีเมล
+                        </div>
+                        <div class="text-body-2 font-weight-medium">
+                          {{ item.email }}
+                        </div>
+                      </div>
+                    </div>
+                  </v-card-text>
+                </v-card>
+
+                <v-card
+                  class="mb-3 contact-info-card"
+                  color="success-lighten-1"
+                  variant="tonal"
                 >
-                  ยืนยันตัวกรอง
-                </v-btn>
+                  <v-card-text class="pa-3">
+                    <div class="d-flex align-center">
+                      <v-icon color="success" class="me-2">mdi-phone</v-icon>
+                      <div>
+                        <div class="text-caption text-medium-emphasis">
+                          เบอร์โทร
+                        </div>
+                        <div class="text-body-2 font-weight-medium">
+                          {{ item.phone || 'ไม่ระบุ' }}
+                        </div>
+                      </div>
+                    </div>
+                  </v-card-text>
+                </v-card>
+
+                <v-card
+                  class="contact-info-card"
+                  color="warning-lighten-1"
+                  variant="tonal"
+                >
+                  <v-card-text class="pa-3">
+                    <div class="d-flex align-center">
+                      <v-icon color="warning" class="me-2">mdi-account-group</v-icon>
+                      <div>
+                        <div class="text-caption text-medium-emphasis">
+                          สถานะ
+                        </div>
+                        <v-chip
+                          :color="getStatusColor(item.status)"
+                          size="small"
+                          variant="tonal"
+                          class="mt-1"
+                        >
+                          {{ getStatusLabel(item.status) }}
+                        </v-chip>
+                      </div>
+                    </div>
+                  </v-card-text>
+                </v-card>
               </div>
             </div>
           </v-col>
         </v-row>
 
-        <!-- Filter Change Alert -->
-        <v-alert
-          v-if="hasFilterChanges"
-          border
-          density="compact"
-          type="warning"
-          variant="tonal"
-          class="my-2"
+        <!-- Timestamp Information -->
+        <v-divider class="my-4" />
+        <div
+          class="d-flex justify-space-between text-caption text-medium-emphasis"
         >
-          <template #prepend>
-            <v-icon>mdi-information</v-icon>
-          </template>
-          <strong>เตือน:</strong> คุณได้เปลี่ยนแปลงตัวกรองแล้ว กรุณากดปุ่ม
-          "ยืนยันตัวกรอง" เพื่อใช้งานตัวกรองใหม่
-        </v-alert>
-      </v-card-text>
-
-      <!-- Data Table -->
-      <v-data-table
-        :headers="employeeHeaders"
-        :items="employees"
-        :loading="isSearching || isLoading"
-        :items-per-page="currentSearchParams.limit || 10"
-        :page="currentSearchParams.page || 1"
-        :items-length="totalEmployees"
-        class="elevation-0"
-        hover
-        show-expand
-        expand-on-click
-        server-items-length
-        hide-default-footer
-      >
-        <!-- Name Column -->
-        <template #[`item.name`]="{ item }">
-          <div>
-            <div class="text-body-2 font-weight-medium">
-              {{ item.name }}
-            </div>
-            <div class="text-caption text-medium-emphasis">
-              {{ item.email }}
-            </div>
-          </div>
-        </template>
-
-        <!-- Phone Column -->
-        <template #[`item.phone`]="{ item }">
-          <div class="text-body-2">
-            {{ item.phone || '-' }}
-          </div>
-        </template>
-
-        <!-- Line Column -->
-        <template #[`item.line`]="{ item }">
-          <div class="text-body-2">
-            {{ item.line || '-' }}
-          </div>
-        </template>
-
-        <!-- Status Column -->
-        <template #[`item.status`]="{ item }">
-          <v-chip
-            :color="getStatusColor(item.status)"
-            size="small"
-            variant="tonal"
-          >
-            {{ getStatusLabel(item.status) }}
-          </v-chip>
-        </template>
-
-        <!-- Permission Column -->
-        <template #[`item.permission`]="{ item }">
-          <v-chip
-            :color="getPermissionColor(item.permission.name)"
-            size="small"
-            variant="tonal"
-          >
-            {{ getPermissionLabel(item.permission.name) }}
-          </v-chip>
-        </template>
-
-        <!-- Registration Date Column -->
-        <template #[`item.created_at`]="{ item }">
-          <div class="text-body-2">
-            {{ formatDate(item.created_at || '') }}
-          </div>
-        </template>
-
-        <!-- Expandable row content -->
-        <template #expanded-row="{ columns, item }">
-          <td :colspan="columns.length" class="pa-0">
-            <v-card
-              class="ma-2 employee-details-card"
-              color="surface-container"
-              elevation="1"
-              rounded="lg"
-            >
-              <v-card-text class="pa-4">
-                <div class="employee-breakdown">
-                  <!-- Header with employee summary -->
-                  <h3 class="text-subtitle-1 font-weight-bold mb-4">
-                    รายละเอียดพนักงาน
-                  </h3>
-
-                  <!-- Employee details grid for desktop -->
-                  <v-row no-gutters class="employee-details-grid">
-                    <!-- Personal Information Section -->
-                    <v-col cols="12" md="6" class="employee-section">
-                      <div class="employee-info-section pa-3">
-                        <div class="d-flex align-center mb-3">
-                          <v-icon color="primary" size="small" class="me-2">
-                            mdi-account-circle
-                          </v-icon>
-                          <span class="text-subtitle-2 font-weight-medium">
-                            ข้อมูลส่วนตัว
-                          </span>
-                        </div>
-
-                        <div class="employee-info-grid">
-                          <v-card class="mb-2" color="primary" variant="tonal">
-                            <v-card-text class="pa-3">
-                              <div class="text-caption text-medium-emphasis">
-                                รหัสพนักงาน
-                              </div>
-                              <div class="text-body-2 font-family-monospace">
-                                {{ item.id.slice(-8) }}
-                              </div>
-                            </v-card-text>
-                          </v-card>
-
-                          <v-card class="mb-2" color="info" variant="tonal">
-                            <v-card-text class="pa-3">
-                              <div class="text-caption text-medium-emphasis">
-                                ที่อยู่
-                              </div>
-                              <div class="text-body-2">
-                                {{ item.address || 'ไม่ระบุ' }}
-                              </div>
-                            </v-card-text>
-                          </v-card>
-
-                          <v-card class="mb-2" color="success" variant="tonal">
-                            <v-card-text class="pa-3">
-                              <div class="text-caption text-medium-emphasis">
-                                LINE ID
-                              </div>
-                              <div class="text-body-2">
-                                {{ item.line || 'ไม่ระบุ' }}
-                              </div>
-                            </v-card-text>
-                          </v-card>
-
-                          <v-card color="secondary" variant="tonal">
-                            <v-card-text class="pa-3">
-                              <div class="text-caption text-medium-emphasis">
-                                สิทธิ์การใช้งาน
-                              </div>
-                              <v-chip
-                                :color="
-                                  getPermissionColor(item.permission.name)
-                                "
-                                size="small"
-                                variant="tonal"
-                                class="mt-1"
-                              >
-                                {{ getPermissionLabel(item.permission.name) }}
-                              </v-chip>
-                            </v-card-text>
-                          </v-card>
-                        </div>
-                      </div>
-                    </v-col>
-
-                    <!-- Contact Information Section -->
-                    <v-col cols="12" md="6" class="employee-section">
-                      <div class="contact-info-section pa-3">
-                        <div class="d-flex align-center mb-3">
-                          <v-icon color="success" size="small" class="me-2">
-                            mdi-contacts
-                          </v-icon>
-                          <span class="text-subtitle-2 font-weight-medium">
-                            ข้อมูลการติดต่อ
-                          </span>
-                        </div>
-
-                        <div class="contact-info-grid">
-                          <v-card
-                            class="mb-3 contact-info-card"
-                            color="primary-lighten-1"
-                            variant="tonal"
-                          >
-                            <v-card-text class="pa-3">
-                              <div class="d-flex align-center">
-                                <v-icon color="primary" class="me-2">mdi-email</v-icon>
-                                <div>
-                                  <div class="text-caption text-medium-emphasis">
-                                    อีเมล
-                                  </div>
-                                  <div class="text-body-2 font-weight-medium">
-                                    {{ item.email }}
-                                  </div>
-                                </div>
-                              </div>
-                            </v-card-text>
-                          </v-card>
-
-                          <v-card
-                            class="mb-3 contact-info-card"
-                            color="success-lighten-1"
-                            variant="tonal"
-                          >
-                            <v-card-text class="pa-3">
-                              <div class="d-flex align-center">
-                                <v-icon color="success" class="me-2">mdi-phone</v-icon>
-                                <div>
-                                  <div class="text-caption text-medium-emphasis">
-                                    เบอร์โทร
-                                  </div>
-                                  <div class="text-body-2 font-weight-medium">
-                                    {{ item.phone || 'ไม่ระบุ' }}
-                                  </div>
-                                </div>
-                              </div>
-                            </v-card-text>
-                          </v-card>
-
-                          <v-card
-                            class="contact-info-card"
-                            color="warning-lighten-1"
-                            variant="tonal"
-                          >
-                            <v-card-text class="pa-3">
-                              <div class="d-flex align-center">
-                                <v-icon color="warning" class="me-2">mdi-account-group</v-icon>
-                                <div>
-                                  <div class="text-caption text-medium-emphasis">
-                                    สถานะ
-                                  </div>
-                                  <v-chip
-                                    :color="getStatusColor(item.status)"
-                                    size="small"
-                                    variant="tonal"
-                                    class="mt-1"
-                                  >
-                                    {{ getStatusLabel(item.status) }}
-                                  </v-chip>
-                                </div>
-                              </div>
-                            </v-card-text>
-                          </v-card>
-                        </div>
-                      </div>
-                    </v-col>
-                  </v-row>
-
-                  <!-- Timestamp Information -->
-                  <v-divider class="my-4" />
-                  <div
-                    class="d-flex justify-space-between text-caption text-medium-emphasis"
-                  >
-                    <span
-                      >สร้างเมื่อ: {{ formatDateTime(item.created_at || '') }}</span
-                    >
-                    <span
-                      >อัปเดตล่าสุด: {{ formatDateTime(item.updated_at || '') }}</span
-                    >
-                  </div>
-                </div>
-              </v-card-text>
-            </v-card>
-          </td>
-        </template>
-      </v-data-table>
-
-      <!-- Custom Pagination Controls -->
-      <v-card-actions class="pa-4">
-        <div class="d-flex justify-space-between align-center w-100">
-          <div class="text-body-2 text-medium-emphasis">
-            แสดง {{ totalEmployees }} รายการทั้งหมด
-          </div>
-          <div class="d-flex align-center ga-2">
-            <v-btn
-              variant="outlined"
-              size="small"
-              :disabled="(currentSearchParams.page || 1) <= 1"
-              @click="previousPage"
-            >
-              <v-icon>mdi-chevron-left</v-icon>
-              ก่อนหน้า
-            </v-btn>
-
-            <div class="d-flex align-center ga-1">
-              <span class="text-body-2">หน้า</span>
-              <v-chip variant="tonal" color="primary" size="small">
-                {{ currentSearchParams.page || 1 }} / {{ totalPages }}
-              </v-chip>
-            </div>
-
-            <v-btn
-              variant="outlined"
-              size="small"
-              :disabled="(currentSearchParams.page || 1) >= totalPages"
-              @click="nextPage"
-            >
-              ถัดไป
-              <v-icon>mdi-chevron-right</v-icon>
-            </v-btn>
-          </div>
+          <span>สร้างเมื่อ: {{ formatDateTime(item.created_at || '') }}</span>
+          <span>อัปเดตล่าสุด: {{ formatDateTime(item.updated_at || '') }}</span>
         </div>
-      </v-card-actions>
-    </v-card>
+      </template>
+    </EnhancedDataTable>
 
     <!-- Add Employee Dialog (Placeholder) -->
     <v-dialog v-model="showAddEmployeeDialog" max-width="600">
@@ -447,6 +341,7 @@
 import type { EnumEmpStatus } from "~/types";
 import type { SearchEmpsRequest } from "~/services/apis/emp-api.service";
 import { useEmployee } from "~/composables/useEmployee";
+import EnhancedDataTable from "~/components/common/EnhancedDataTable.vue";
 
 // Composable
 const {
@@ -457,17 +352,23 @@ const {
   totalEmployees,
   totalPages,
   currentSearchParams,
-  nextPage,
-  previousPage,
+  goToPage,
 } = useEmployee();
 
 // Local reactive state for filters
 const tempSearchQuery = ref("");
 const tempStatusFilter = ref<EnumEmpStatus | null>(null);
 
+// Applied filter state (actual filters being used)
+const appliedSearchQuery = ref("");
+const appliedStatusFilter = ref<EnumEmpStatus | null>(null);
+
 // Computed to check if filters have changed
 const hasFilterChanges = computed(() => {
-  return tempSearchQuery.value !== "" || tempStatusFilter.value !== null;
+  return (
+    tempSearchQuery.value !== appliedSearchQuery.value ||
+    tempStatusFilter.value !== appliedStatusFilter.value
+  );
 });
 
 // Apply filters function
@@ -485,13 +386,25 @@ const applyFilters = async () => {
     searchParams.query!.status = tempStatusFilter.value;
   }
 
-  await searchEmployees(searchParams);
+  // Update applied filter state immediately to hide warning
+  // This should happen regardless of API success/failure
+  appliedSearchQuery.value = tempSearchQuery.value;
+  appliedStatusFilter.value = tempStatusFilter.value;
+
+  try {
+    await searchEmployees(searchParams);
+  } catch (error) {
+    // API call failed, but filter state has been applied for UX
+    console.warn("Failed to apply filters to server:", error);
+  }
 };
 
 // Clear all filters
 const clearAllFilters = async () => {
   tempSearchQuery.value = "";
   tempStatusFilter.value = null;
+  appliedSearchQuery.value = "";
+  appliedStatusFilter.value = null;
   await searchEmployees({ page: 1 });
 };
 
@@ -599,15 +512,6 @@ const employeeHeaders = [
 
 <style scoped>
 /* Employee details expandable row styles */
-.employee-details-card {
-  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-  background: rgba(var(--v-theme-surface-container-low), 1);
-}
-
-.employee-breakdown {
-  max-width: 100%;
-}
-
 .employee-details-grid {
   gap: 0;
 }
@@ -644,22 +548,6 @@ const employeeHeaders = [
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
 }
 
-/* Expand/collapse animation */
-:deep(.v-data-table__expanded-row) {
-  animation: slideDown 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-}
-
-@keyframes slideDown {
-  from {
-    opacity: 0;
-    transform: translateY(-10px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
-}
-
 /* Monospace font for employee ID */
 .font-family-monospace {
   font-family: "Roboto Mono", "Monaco", "Consolas", monospace;
@@ -685,10 +573,6 @@ const employeeHeaders = [
 }
 
 /* Enhanced visual hierarchy */
-.employee-details-card :deep(.v-card-text) {
-  padding: 24px !important;
-}
-
 .employee-info-section .text-subtitle-2,
 .contact-info-section .text-subtitle-2 {
   color: rgba(var(--v-theme-on-surface), 0.87);
