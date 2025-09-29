@@ -32,34 +32,24 @@
       </v-alert>
 
       <!-- Filter Actions Row (matching ex-user-mgmt.vue layout) -->
-      <v-row v-if="showFilterActions" class="my-0">
-        <v-col cols="12" md="3" offset-md="9">
-          <!-- <div class="d-flex flex-column ga-2"> -->
-          <!-- <div class="text-caption text-medium-emphasis">
-              <v-icon size="small" class="me-1">mdi-cog</v-icon>
-              การดำเนินการ
-            </div> -->
-          <div class="d-flex ga-2">
-            <v-btn
-              variant="outlined"
-              size="small"
-              prepend-icon="mdi-refresh"
-              @click="handleClearFilters"
-            >
-              ล้างตัวกรอง
-            </v-btn>
-            <v-btn
-              color="primary"
-              size="small"
-              prepend-icon="mdi-check"
-              @click="handleApplyFilters"
-            >
-              ยืนยันตัวกรอง
-            </v-btn>
-          </div>
-          <!-- </div> -->
-        </v-col>
-      </v-row>
+      <div v-if="showFilterActions" class="d-flex ga-2 mt-3">
+        <v-btn
+          color="primary"
+          size="small"
+          prepend-icon="mdi-check"
+          @click="handleApplyFilters"
+        >
+          ยืนยันตัวกรอง
+        </v-btn>
+        <v-btn
+          variant="outlined"
+          size="small"
+          prepend-icon="mdi-refresh"
+          @click="handleClearFilters"
+        >
+          ล้างตัวกรอง
+        </v-btn>
+      </div>
     </v-card-text>
 
     <!-- Data Table -->
