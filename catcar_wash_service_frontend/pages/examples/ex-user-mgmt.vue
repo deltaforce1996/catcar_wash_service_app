@@ -30,7 +30,7 @@
       :has-filter-changes="hasFilterChanges"
       :server-side="true"
       :page="currentSearchParams.page || 1"
-      :items-per-page="currentSearchParams.limit || 1"
+      :items-per-page="currentSearchParams.limit || 10"
       :total-items="totalUsers"
       :total-pages="totalPages"
       expandable
@@ -333,16 +333,9 @@ const {
 const tempSearchQuery = ref("");
 const tempStatusFilter = ref<EnumUserStatus | null>(null);
 
-// Applied filter state (actual filters being used)
-const appliedSearchQuery = ref("");
-const appliedStatusFilter = ref<EnumUserStatus | null>(null);
-
 // Computed to check if filters have changed
 const hasFilterChanges = computed(() => {
-  return (
-    tempSearchQuery.value !== appliedSearchQuery.value ||
-    tempStatusFilter.value !== appliedStatusFilter.value
-  );
+  return tempSearchQuery.value !== "" || tempStatusFilter.value !== null;
 });
 
 // Apply filters function
@@ -360,25 +353,13 @@ const applyFilters = async () => {
     searchParams.query!.status = tempStatusFilter.value;
   }
 
-  // Update applied filter state immediately to hide warning
-  // This should happen regardless of API success/failure
-  appliedSearchQuery.value = tempSearchQuery.value;
-  appliedStatusFilter.value = tempStatusFilter.value;
-
-  try {
-    await searchUsers(searchParams);
-  } catch (error) {
-    // API call failed, but filter state has been applied for UX
-    console.warn("Failed to apply filters to server:", error);
-  }
+  await searchUsers(searchParams);
 };
 
 // Clear all filters
 const clearAllFilters = async () => {
   tempSearchQuery.value = "";
   tempStatusFilter.value = null;
-  appliedSearchQuery.value = "";
-  appliedStatusFilter.value = null;
   await searchUsers({ page: 1 });
 };
 

@@ -73,18 +73,6 @@
       @update:items-per-page="handleItemsPerPageUpdate"
       @update:selected="handleSelectionUpdate"
     >
-      <!-- Custom column slots -->
-      <template
-        v-for="header in headers"
-        :key="`item.${header.key}`"
-        #[`item.${header.key}`]="{ item }"
-      >
-        <slot :name="`item.${header.key}`" :item="item">
-          <!-- Default rendering for non-custom columns -->
-          {{ getNestedValue(item, header.key) }}
-        </slot>
-      </template>
-
       <!-- Expandable row content (styled like ex-user-mgmt.vue) -->
       <template v-if="expandable" #expanded-row="{ columns, item }">
         <td :colspan="columns.length" class="pa-0">
@@ -285,20 +273,8 @@ const handleNextPage = () => {
   }
 };
 
-const getNestedValue = (
-  obj: Record<string, unknown>,
-  path: string
-): unknown => {
-  return path.split(".").reduce((current, key) => current?.[key], obj);
-};
-
 const isCustomSlot = (name: string): boolean => {
-  return [
-    "filters",
-    "expanded-row",
-    "actions",
-    ...props.headers.map((h) => `item.${h.key}`),
-  ].includes(name);
+  return ["filters", "expanded-row", "actions"].includes(name);
 };
 </script>
 
