@@ -1,4 +1,4 @@
-import { GlobalSetup } from 'src/types/internal.type';
+import { GlobalSetup, ParameterPricing } from 'src/types/internal.type';
 
 /**
  * Abstract base class for dynamic device configurations in the car wash service system.
@@ -38,6 +38,7 @@ export abstract class DeviceConfigBase<T> {
   public configs: {
     system: GlobalSetup;
     sale: T;
+    pricing: Record<string, ParameterPricing>;
   } | null = null;
 
   /**
@@ -49,16 +50,13 @@ export abstract class DeviceConfigBase<T> {
    */
   constructor(
     protected readonly payload: {
-      /** Operating start time (e.g., "06:00") */
-      on_time: string;
-      /** Operating end time (e.g., "22:00") */
-      off_time: string;
-      /** Whether coin payment is accepted */
-      coin: boolean;
-      /** Whether PromptPay payment is accepted */
-      promptpay: boolean;
-      /** Whether bank note payment is accepted */
-      bank_note: boolean;
+      ACTIVE: boolean;
+      BANKNOTE: boolean;
+      COIN: boolean;
+      QR: boolean;
+      ON_TIME: string;
+      OFF_TIME: string;
+      SAVE_STATE: boolean;
     } & Record<string, any>, // Additional device-specific fields
   ) {
     // Automatically parse the payload upon construction
@@ -75,6 +73,7 @@ export abstract class DeviceConfigBase<T> {
     this.configs = {
       system: this.parseSystemConfig(),
       sale: this.parseSaleConfig(),
+      pricing: this.parsePricingConfig(),
     };
   }
 
@@ -87,16 +86,16 @@ export abstract class DeviceConfigBase<T> {
    */
   private parseSystemConfig(): GlobalSetup {
     return {
-      on_time: this.payload.on_time,
-      off_time: this.payload.off_time,
+      on_time: this.payload.ON_TIME ?? '00:00',
+      off_time: this.payload.OFF_TIME ?? '23:59',
+      save_state: this.payload.SAVE_STATE ?? false,
       payment_method: {
-        coin: this.payload.coin,
-        promptpay: this.payload.promptpay,
-        bank_note: this.payload.bank_note,
+        coin: this.payload.COIN ?? false,
+        promptpay: this.payload.QR ?? false,
+        bank_note: this.payload.BANKNOTE ?? false,
       },
     };
   }
-
   /**
    * Abstract method that must be implemented by concrete device classes.
    * Each device type should parse its specific service configurations here.
@@ -120,4 +119,5 @@ export abstract class DeviceConfigBase<T> {
    * ```
    */
   protected abstract parseSaleConfig(): T;
+  protected abstract parsePricingConfig(): Record<string, ParameterPricing>;
 }

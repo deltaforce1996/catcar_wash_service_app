@@ -1,0 +1,110 @@
+{
+  "success": true,
+  "data": {
+    "items": [
+      {
+        "id": "device-0005",
+        "name": "เครื่องล้างรถหมายเลข 5",
+        "type": "WASH",
+        "status": "DEPLOYED",
+        "information": {
+          "chip_id": "24AB3C95",
+          "mac_address": "24:6F:28:AB:3C:95",
+          "firmware_version": "car_wash_v1.00"
+        },
+        "configs": {
+          "sale": {
+            "air": {
+              "unit": "วินาที",
+              "value": 10,
+              "description": "ลม"
+            },
+            "wax": {
+              "unit": "วินาที",
+              "value": 10,
+              "description": "ลง wax"
+            },
+            "foam": {
+              "unit": "วินาที",
+              "value": 10,
+              "description": "โฟม"
+            },
+            "water": {
+              "unit": "วินาที",
+              "value": 10,
+              "description": "น้ำยาปรับอากาศ"
+            },
+            "vacuum": {
+              "unit": "วินาที",
+              "value": 10,
+              "description": "ดูดฝุ่น"
+            },
+            "hp_water": {
+              "unit": "วินาที",
+              "value": 10,
+              "description": "ปริมาณน้ำ"
+            },
+            "black_tire": {
+              "unit": "วินาที",
+              "value": 10,
+              "description": "ล้างล้อ"
+            },
+            "parking_fee": {
+              "unit": "วินาที",
+              "value": 10,
+              "description": "ค่าปรับที่จอดรถ"
+            },
+            "air_conditioner": {
+              "unit": "วินาที",
+              "value": 10,
+              "description": "ปรับอากาศ"
+            }
+          },
+          "system": {
+            "on_time": "00:00",
+            "off_time": "23:59",
+            "save_state": true,
+            "payment_method": {
+              "coin": true,
+              "bank_note": true,
+              "promptpay": true
+            }
+          },
+          "pricing": {
+            "promotion": {
+              "unit": "(%) เปอร์เซ็นต์",
+              "value": 0,
+              "description": "โปรโมชั่น"
+            }
+          }
+        },
+        "created_at": "2025-10-01 20:00:19",
+        "updated_at": "2025-10-01 20:00:19",
+        "owner": {
+          "id": "user-0002",
+          "fullname": "นางสาวสมหญิง รักดี",
+          "email": "user2@catcarwash.com"
+        },
+        "registered_by": {
+          "id": "technician-0001",
+          "name": "นายสมคิด ช่างเทคนิค",
+          "email": "technician@catcarwash.com"
+        },
+        "last_state": {
+          "state_data": {
+            "rssi": -75,
+            "status": "normal",
+            "uptime": 18507,
+            "timestamp": 1759323471412,
+            "datetime": "2025-10-01 19:57:51"
+          }
+        }
+      }
+    ],
+    "total": 1,
+    "page": 1,
+    "limit": 20,
+    "totalPages": 1
+  },
+  "message": "Devices searched successfully"
+}

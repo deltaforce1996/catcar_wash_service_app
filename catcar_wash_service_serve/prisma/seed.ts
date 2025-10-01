@@ -238,37 +238,68 @@ const generate = async () => {
   });
 
   const washConfig = new DeviceWashConfig({
-    hp_water: 10,
-    foam: 10,
-    air: 10,
-    water: 10,
-    vacuum: 10,
-    black_tire: 10,
-    wax: 10,
-    air_conditioner: 10,
-    parking_fee: 10,
-    promotion: 10,
-    on_time: '00:00',
-    off_time: '23:59',
-    coin: true,
-    promptpay: true,
-    bank_note: true,
+    configs: {
+      machine: {
+        ON_TIME: '00:00',
+        OFF_TIME: '23:59',
+        SAVE_STATE: true,
+        ACTIVE: true,
+        BANKNOTE: true,
+        COIN: true,
+        QR: true,
+      },
+      pricing: {
+        PROMOTION: 0,
+      },
+      function: {
+        sec_per_baht: {
+          HP_WATER: 10,
+          FOAM: 10,
+          AIR: 10,
+          WATER: 10,
+          VACUUM: 10,
+          BLACK_TIRE: 10,
+          WAX: 10,
+          AIR_FRESHENER: 10,
+          PARKING_FEE: 10,
+        },
+      },
+    },
   });
 
   const dryingConfig = new DeviceDryingConfig({
-    blow_dust: 10,
-    sterilize: 10,
-    uv: 10,
-    ozone: 10,
-    drying: 10,
-    perfume: 10,
-    start_service_fee: 10,
-    promotion: 10,
-    on_time: '00:00',
-    off_time: '23:59',
-    coin: true,
-    promptpay: true,
-    bank_note: true,
+    configs: {
+      machine: {
+        ON_TIME: '00:00',
+        OFF_TIME: '23:59',
+        SAVE_STATE: true,
+        ACTIVE: true,
+        BANKNOTE: true,
+        COIN: true,
+        QR: true,
+      },
+      pricing: {
+        BASE_FEE: 10,
+        PROMOTION: 0,
+        WORK_PERIOD: 600,
+      },
+      function_start: {
+        DUST_BLOW: 0,
+        SANITIZE: 100,
+        UV: 200,
+        OZONE: 300,
+        DRY_BLOW: 400,
+        PERFUME: 500,
+      },
+      function_end: {
+        DUST_BLOW: 100,
+        SANITIZE: 200,
+        UV: 300,
+        OZONE: 400,
+        DRY_BLOW: 500,
+        PERFUME: 600,
+      },
+    },
   });
 
   const devicesUser = await prisma.tbl_devices.createMany({
@@ -282,10 +313,9 @@ const generate = async () => {
         register_by_id: technician.id,
         configs: washConfig.configs || {},
         information: {
-          mac_address: '00:1B:44:11:3A:B7',
-          chip_id: 'ESP32-001',
-          model: 'CarWash Pro v2.1',
-          firmware_version: '2.1.3',
+          chip_id: '24AB3C90',
+          mac_address: '24:6F:28:AB:3C:91',
+          firmware_version: 'car_wash_v1.00',
         },
       },
       {
@@ -297,10 +327,9 @@ const generate = async () => {
         register_by_id: technician.id,
         configs: dryingConfig.configs || {},
         information: {
-          mac_address: '00:1B:44:11:3A:B8',
-          chip_id: 'ESP32-002',
-          model: 'AirBlow Standard v1.5',
-          firmware_version: '1.5.2',
+          chip_id: '24AB3C91',
+          mac_address: '24:6F:28:AB:3C:90',
+          firmware_version: 'car_drying_v1.00',
         },
       },
       {
@@ -312,10 +341,9 @@ const generate = async () => {
         register_by_id: technician.id,
         configs: dryingConfig.configs || {},
         information: {
-          mac_address: '00:1B:44:11:3A:B9',
-          chip_id: 'ESP32-003',
-          model: 'AirBlow Pro v2.0',
-          firmware_version: '1.0.0',
+          chip_id: '24AB3C92',
+          mac_address: '24:6F:28:AB:3C:92',
+          firmware_version: 'car_drying_v1.00',
         },
       },
     ],
@@ -332,10 +360,9 @@ const generate = async () => {
         register_by_id: technician.id,
         configs: washConfig.configs || {},
         information: {
-          mac_address: '00:1B:44:11:3A:BA',
-          chip_id: 'ESP32-004',
-          model: 'CarWash XL v2.0',
-          firmware_version: '2.0.1',
+          mac_address: '24:6F:28:AB:3C:93',
+          chip_id: '24AB3C93',
+          firmware_version: 'car_wash_v1.00',
         },
       },
       {
@@ -347,10 +374,9 @@ const generate = async () => {
         register_by_id: technician.id,
         configs: dryingConfig.configs || {},
         information: {
-          mac_address: '00:1B:44:11:3A:BB',
-          chip_id: 'ESP32-005',
-          model: 'AirBlow Premium v2.1',
-          firmware_version: '2.1.0',
+          mac_address: '24:6F:28:AB:3C:94',
+          chip_id: '24AB3C94',
+          firmware_version: 'car_drying_v1.00',
         },
       },
       {
@@ -362,10 +388,9 @@ const generate = async () => {
         register_by_id: technician.id,
         configs: washConfig.configs || {},
         information: {
-          mac_address: '00:1B:44:11:3A:BC',
-          chip_id: 'ESP32-006',
-          model: 'CarWash Shine v2.2',
-          firmware_version: '2.2.1',
+          mac_address: '24:6F:28:AB:3C:95',
+          chip_id: '24AB3C95',
+          firmware_version: 'car_wash_v1.00',
         },
       },
       {
@@ -377,10 +402,9 @@ const generate = async () => {
         register_by_id: technician.id,
         configs: washConfig.configs || {},
         information: {
-          mac_address: '00:1B:44:11:3A:BD',
-          chip_id: 'ESP32-007',
-          model: 'CarWash Tire v2.1',
-          firmware_version: '2.1.2',
+          mac_address: '24:6F:28:AB:3C:96',
+          chip_id: '24AB3C96',
+          firmware_version: 'car_wash_v1.00',
         },
       },
     ],

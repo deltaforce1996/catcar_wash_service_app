@@ -9,7 +9,6 @@ import { BaseApiClient } from "../bases/base-api-client";
 interface DeviceInformationResponseApi {
   mac_address: string;
   chip_id: string;
-  model: string;
   firmware_version: string;
 }
 
@@ -21,109 +20,34 @@ export interface DeviceResponseApi {
   information?: DeviceInformationResponseApi;
   configs?: {
     sale?: {
-      // WASH device sale configs
-      air?: {
-        unit: string;
-        value: number;
-        description: string;
-      };
-      wax?: {
-        unit: string;
-        value: number;
-        description: string;
-      };
-      foam?: {
-        unit: string;
-        value: number;
-        description: string;
-      };
-      water?: {
-        unit: string;
-        value: number;
-        description: string;
-      };
-      vacuum?: {
-        unit: string;
-        value: number;
-        description: string;
-      };
-      hp_water?: {
-        unit: string;
-        value: number;
-        description: string;
-      };
-      black_tire?: {
-        unit: string;
-        value: number;
-        description: string;
-      };
-      parking_fee?: {
-        unit: string;
-        value: number;
-        description: string;
-      };
-      air_conditioner?: {
-        unit: string;
-        value: number;
-        description: string;
-      };
-      // DRYING device sale configs
-      uv?: {
-        unit: string;
-        value: number;
-        description: string;
-      };
-      ozone?: {
-        unit: string;
-        value: number;
-        description: string;
-      };
-      drying?: {
-        unit: string;
-        value: number;
-        description: string;
-      };
-      perfume?: {
-        unit: string;
-        value: number;
-        description: string;
-      };
-      blow_dust?: {
-        unit: string;
-        value: number;
-        description: string;
-      };
-      sterilize?: {
-        unit: string;
-        value: number;
-        description: string;
-      };
-      start_service_fee?: {
-        unit: string;
-        value: number;
-        description: string;
-      };
-      // Common sale configs
-      promotion?: {
-        unit: string;
-        value: number;
-        description: string;
-      };
       [key: string]:
         | {
             unit: string;
             value: number;
             description: string;
           }
-        | undefined;
+        | {
+            end: number;
+            unit: string;
+            start: number;
+            description: string;
+          };
     };
     system?: {
       on_time?: string;
       off_time?: string;
+      save_state?: boolean;
       payment_method?: {
         coin?: boolean;
         bank_note?: boolean;
         promptpay?: boolean;
+      };
+    };
+    pricing?: {
+      [key: string]: {
+        unit: string;
+        value: number;
+        description: string;
       };
     };
   };
@@ -237,19 +161,18 @@ export class DeviceApiService extends BaseApiClient {
   async SearchDevices(
     payload: SearchDevicesRequest
   ): Promise<ApiSuccessResponse<PaginatedDeviceResponse>> {
-    const response = await this.get<ApiSuccessResponse<PaginatedDeviceResponse>>(
-      "api/v1/devices/search",
-      {
-        params: {
-          query: this.convertQueryToParams(payload.query),
-          page: payload.page,
-          limit: payload.limit,
-          sort_by: payload.sort_by,
-          sort_order: payload.sort_order,
-          exclude_all_ref_table: payload.exclude_all_ref_table,
-        },
-      }
-    );
+    const response = await this.get<
+      ApiSuccessResponse<PaginatedDeviceResponse>
+    >("api/v1/devices/search", {
+      params: {
+        query: this.convertQueryToParams(payload.query),
+        page: payload.page,
+        limit: payload.limit,
+        sort_by: payload.sort_by,
+        sort_order: payload.sort_order,
+        exclude_all_ref_table: payload.exclude_all_ref_table,
+      },
+    });
     return response;
   }
 
@@ -304,7 +227,6 @@ export class DeviceApiService extends BaseApiClient {
     );
     return response;
   }
-
 }
 
 // Device Registration Types

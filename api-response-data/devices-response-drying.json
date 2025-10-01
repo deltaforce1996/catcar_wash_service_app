@@ -1,0 +1,111 @@
+{
+  "success": true,
+  "data": {
+    "items": [
+      {
+        "id": "device-0004",
+        "name": "เครื่องเป่าลมหมายเลข 4",
+        "type": "DRYING",
+        "status": "DEPLOYED",
+        "information": {
+          "chip_id": "24AB3C94",
+          "mac_address": "24:6F:28:AB:3C:94",
+          "firmware_version": "car_drying_v1.00"
+        },
+        "configs": {
+          "sale": {
+            "uv": {
+              "end": 300,
+              "unit": "วินาที",
+              "start": 200,
+              "description": "UV"
+            },
+            "ozone": {
+              "end": 400,
+              "unit": "วินาที",
+              "start": 300,
+              "description": "Ozone"
+            },
+            "drying": {
+              "end": 500,
+              "unit": "วินาที",
+              "start": 400,
+              "description": "เป่าแห้ง"
+            },
+            "perfume": {
+              "end": 600,
+              "unit": "วินาที",
+              "start": 500,
+              "description": "น้ำหอม"
+            },
+            "blow_dust": {
+              "end": 100,
+              "unit": "วินาที",
+              "start": 0,
+              "description": "เป่าแห้ง"
+            },
+            "sterilize": {
+              "end": 200,
+              "unit": "วินาที",
+              "start": 100,
+              "description": "ฆ่าเชื้อ"
+            }
+          },
+          "system": {
+            "on_time": "00:00",
+            "off_time": "23:59",
+            "save_state": true,
+            "payment_method": {
+              "coin": true,
+              "bank_note": true,
+              "promptpay": true
+            }
+          },
+          "pricing": {
+            "base_fee": {
+              "unit": "บาท",
+              "value": 10,
+              "description": "ค่าบริการเริ่มต้น"
+            },
+            "promotion": {
+              "unit": "(%) เปอร์เซ็นต์",
+              "value": 0,
+              "description": "โปรโมชั่น"
+            },
+            "work_period": {
+              "unit": "วินาที",
+              "value": 600,
+              "description": "ระยะเวลาการทำงาน"
+            }
+          }
+        },
+        "created_at": "2025-10-01 20:00:19",
+        "updated_at": "2025-10-01 20:00:19",
+        "owner": {
+          "id": "user-0002",
+          "fullname": "นางสาวสมหญิง รักดี",
+          "email": "user2@catcarwash.com"
+        },
+        "registered_by": {
+          "id": "technician-0001",
+          "name": "นายสมคิด ช่างเทคนิค",
+          "email": "technician@catcarwash.com"
+        },
+        "last_state": {
+          "state_data": {
+            "rssi": -75,
+            "status": "normal",
+            "uptime": 23599,
+            "timestamp": 1759323674690,
+            "datetime": "2025-10-01 20:01:14"
+          }
+        }
+      }
+    ],
+    "total": 1,
+    "page": 1,
+    "limit": 20,
+    "totalPages": 1
+  },
+  "message": "Devices searched successfully"
+}
