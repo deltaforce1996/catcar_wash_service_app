@@ -25,7 +25,6 @@
       :headers="employeeHeaders"
       :loading="isSearching || loading"
       :has-filter-changes="hasFilterChanges"
-      :server-side="true"
       :page="currentSearchParams.page || 1"
       :items-per-page="currentSearchParams.limit || 1"
       :total-items="totalEmployees"

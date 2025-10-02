@@ -60,14 +60,14 @@
       :items-per-page="computedItemsPerPage"
       :page="computedPage"
       :items-length="computedTotalItems"
+      :server-items-length="computedTotalItems"
+      :hide-default-footer="true"
       class="elevation-0"
       hover
       :show-expand="expandable"
       :expand-on-click="expandable"
       :show-select="selectable"
       :select-strategy="selectStrategy"
-      :server-items-length="serverSide ? computedTotalItems : undefined"
-      :hide-default-footer="serverSide"
       v-bind="$attrs"
       @update:page="handlePageUpdate"
       @update:items-per-page="handleItemsPerPageUpdate"
@@ -111,7 +111,7 @@
     </v-data-table>
 
     <!-- Custom Pagination Controls (matching ex-user-mgmt.vue style) -->
-    <v-card-actions v-if="serverSide" class="pa-4">
+    <v-card-actions class="pa-4">
       <div class="d-flex justify-space-between align-center w-100">
         <div class="text-body-2 text-medium-emphasis">
           แสดง {{ displayItemCount }} รายการทั้งหมด
@@ -158,6 +158,7 @@ interface Header {
   [key: string]: unknown;
 }
 
+
 interface Props {
   // Data
   title: string;
@@ -170,12 +171,11 @@ interface Props {
   showFilterActions?: boolean;
   showFilters?: boolean;
 
-  // Server-side support
-  serverSide?: boolean;
+  // Server-side pagination
   itemsPerPage?: number;
   page?: number;
-  totalItems?: number;
-  totalPages?: number;
+  totalItems: number;
+  totalPages: number;
 
   // Features
   expandable?: boolean;
@@ -190,11 +190,8 @@ const props = withDefaults(defineProps<Props>(), {
   loading: false,
   showFilterActions: true,
   showFilters: true,
-  serverSide: false,
   itemsPerPage: 10,
   page: 1,
-  totalItems: 0,
-  totalPages: 1,
   expandable: true,
   selectable: false,
   selectStrategy: "page",
@@ -213,28 +210,15 @@ interface Emits {
 const emit = defineEmits<Emits>();
 
 // Computed Properties
-const displayItemCount = computed(() => {
-  return props.serverSide ? props.totalItems : props.items.length;
-});
+const displayItemCount = computed(() => props.totalItems);
 
-const computedItemsPerPage = computed(() => {
-  return props.serverSide ? props.itemsPerPage : props.itemsPerPage;
-});
+const computedTotalItems = computed(() => props.totalItems);
 
-const computedPage = computed(() => {
-  return props.serverSide ? props.page : 1;
-});
+const computedItemsPerPage = computed(() => props.itemsPerPage);
 
-const computedTotalItems = computed(() => {
-  return props.serverSide ? props.totalItems : props.items.length;
-});
+const computedPage = computed(() => props.page);
 
-const computedTotalPages = computed(() => {
-  if (props.serverSide) {
-    return props.totalPages;
-  }
-  return Math.ceil(props.items.length / props.itemsPerPage);
-});
+const computedTotalPages = computed(() => props.totalPages);
 
 // Methods
 const handleApplyFilters = () => {
@@ -246,15 +230,11 @@ const handleClearFilters = () => {
 };
 
 const handlePageUpdate = (newPage: number) => {
-  if (props.serverSide) {
-    emit("update:page", newPage);
-  }
+  emit("update:page", newPage);
 };
 
 const handleItemsPerPageUpdate = (newLimit: number) => {
-  if (props.serverSide) {
-    emit("update:items-per-page", newLimit);
-  }
+  emit("update:items-per-page", newLimit);
 };
 
 const handleSelectionUpdate = (selectedItems: Record<string, unknown>[]) => {
