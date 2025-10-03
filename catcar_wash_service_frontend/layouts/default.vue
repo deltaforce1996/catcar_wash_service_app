@@ -213,7 +213,7 @@ const profileData = computed(() => {
     };
   }
 
-  if ('fullname' in user.value) {
+  if ("fullname" in user.value) {
     return {
       name: user.value.fullname,
       email: user.value.email,
