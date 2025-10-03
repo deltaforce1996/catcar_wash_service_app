@@ -1,0 +1,695 @@
+<template>
+  <v-app>
+    <v-navigation-drawer
+      v-model="drawer"
+      :permanent="$vuetify.display.lgAndUp"
+      :temporary="$vuetify.display.mdAndDown"
+      class="modern-navigation-drawer"
+      width="300"
+      elevation="0"
+    >
+      <!-- Modern Logo Section -->
+      <div class="modern-logo-section">
+        <div class="logo-container">
+          <div class="logo-icon">
+            <img
+              src="/Logo/Asset 33@2x.png"
+              alt="CAT CARWASH Logo Icon"
+              class="nav-logo-icon"
+            >
+          </div>
+          <div class="logo-text">
+            <img
+              v-if="!theme.global.current.value.dark"
+              src="/Logo/Asset gray text.png"
+              alt="CAT CARWASH Logo"
+              class="nav-logo-text"
+            >
+            <img
+              v-else
+              src="/Logo/Asset 1@3x.png"
+              alt="CAT CARWASH Logo"
+              class="nav-logo-text"
+            >
+          </div>
+        </div>
+      </div>
+
+      <!-- Navigation Menu -->
+      <div class="nav-content">
+        <v-list class="modern-nav-list pa-0" nav>
+          <!-- Main Section -->
+          <div class="nav-section mb-4">
+            <div class="nav-section-header pa-3 mb-2">
+              <v-icon icon="mdi-view-dashboard-variant" size="18" />
+              <span>หลัก</span>
+            </div>
+            
+            <div class="d-flex flex-column ga-1">
+              <v-list-item
+                v-for="item in mainMenuItems"
+                :key="item.title"
+                :to="item.to"
+                :prepend-icon="item.icon"
+                :title="item.title"
+                class="modern-nav-item"
+                color="primary"
+                :ripple="false"
+              />
+            </div>
+          </div>
+
+          <!-- Divider -->
+          <v-divider class="nav-divider mx-2 my-6" />
+
+          <!-- Management Section -->
+          <div class="nav-section mb-4">
+            <div class="nav-section-header pa-3 mb-2">
+              <v-icon icon="mdi-cog-outline" size="18" />
+              <span>จัดการ</span>
+            </div>
+            
+            <div class="d-flex flex-column ga-1">
+              <v-list-item
+                v-for="item in managementMenuItems"
+                :key="item.title"
+                :to="item.to"
+                :prepend-icon="item.icon"
+                :title="item.title"
+                class="modern-nav-item"
+                color="primary"
+                :ripple="false"
+              />
+            </div>
+          </div>
+
+          <!-- Divider -->
+          <v-divider class="nav-divider mx-2 my-6" />
+
+          <!-- Theme Toggle -->
+          <div class="nav-section mb-4">
+            <div class="d-flex flex-column ga-1">
+              <v-list-item
+                prepend-icon="mdi-brightness-6"
+                title="สลับธีม"
+                class="modern-nav-item theme-toggle"
+                :ripple="false"
+                @click="toggleTheme"
+              >
+                <template #append>
+                  <v-chip
+                    :color="theme.global.current.value.dark ? 'primary' : 'grey'"
+                    size="x-small"
+                    variant="tonal"
+                  >
+                    {{ theme.global.current.value.dark ? 'มืด' : 'สว่าง' }}
+                  </v-chip>
+                </template>
+              </v-list-item>
+            </div>
+          </div>
+        </v-list>
+      </div>
+
+      <!-- Modern Profile Section at Bottom -->
+      <template #append>
+        <div class="modern-profile-section pa-4">
+          <v-card class="profile-card pa-4" rounded="xl" elevation="1">
+            <div class="d-flex align-center justify-space-between">
+              <div class="d-flex align-center ga-3">
+                <v-avatar size="44" class="profile-avatar">
+                  <v-img :src="profileData.avatar" />
+                </v-avatar>
+                <div class="profile-details">
+                  <div class="profile-name text-body-2 font-weight-bold">{{ profileData.name }}</div>
+                  <div class="profile-email text-caption text-medium-emphasis">{{ profileData.email }}</div>
+                </div>
+              </div>
+              
+              <v-menu location="top" :close-on-content-click="false">
+                <template #activator="{ props }">
+                  <v-btn
+                    v-bind="props"
+                    icon="mdi-dots-vertical"
+                    variant="text"
+                    size="small"
+                    class="profile-menu-btn"
+                  />
+                </template>
+                
+                <v-card class="profile-menu-card" min-width="200" rounded="lg" elevation="8">
+                  <v-list class="pa-2">
+                    <v-list-item
+                      prepend-icon="mdi-account-outline"
+                      title="โปรไฟล์"
+                      class="profile-menu-item rounded-lg"
+                      @click="goToProfile"
+                    />
+                    <v-list-item
+                      prepend-icon="mdi-cog-outline"
+                      title="ตั้งค่า"
+                      class="profile-menu-item rounded-lg"
+                      @click="goToSettings"
+                    />
+                    <v-divider class="my-2" />
+                    <v-list-item
+                      prepend-icon="mdi-logout"
+                      title="ออกจากระบบ"
+                      class="profile-menu-item logout-item rounded-lg"
+                      @click="logout"
+                    />
+                  </v-list>
+                </v-card>
+              </v-menu>
+            </div>
+          </v-card>
+        </div>
+      </template>
+    </v-navigation-drawer>
+
+    <!-- Mobile App Bar -->
+    <v-app-bar
+      v-if="$vuetify.display.mdAndDown"
+      color="surface"
+      elevation="1"
+      height="64"
+    >
+      <v-app-bar-nav-icon @click="drawer = !drawer" />
+
+      <v-spacer />
+
+      <!-- Mobile Logo -->
+      <div class="d-flex align-center ga-3">
+        <img
+          src="/Logo/Asset 33@2x.png"
+          alt="CAT CARWASH Logo"
+          class="mobile-logo"
+        >
+        <img
+          v-if="!theme.global.current.value.dark"
+          src="/Logo/Asset gray text.png"
+          alt="CAT CARWASH Logo gray text"
+          class="mobile-logo-text"
+        >
+        <img
+          v-else
+          src="/Logo/Asset 1@3x.png"
+          alt="CAT CARWASH Logo white text"
+          class="mobile-logo-text"
+        >
+      </div>
+
+      <v-spacer />
+
+      <!-- Profile Menu -->
+      <v-menu>
+        <template #activator="{ props }">
+          <v-btn v-bind="props" icon size="large">
+            <v-avatar size="32">
+              <v-img :src="profileData.avatar" />
+            </v-avatar>
+          </v-btn>
+        </template>
+        <v-list density="compact">
+          <v-list-item
+            prepend-icon="mdi-account-outline"
+            title="โปรไฟล์"
+            @click="goToProfile"
+          />
+          <v-list-item
+            prepend-icon="mdi-cog-outline"
+            title="ตั้งค่า"
+            @click="goToSettings"
+          />
+          <v-divider />
+          <v-list-item
+            prepend-icon="mdi-logout"
+            title="ออกจากระบบ"
+            @click="logout"
+          />
+        </v-list>
+      </v-menu>
+    </v-app-bar>
+
+    <!-- Main Content -->
+    <v-main class="main-content">
+      <v-container fluid class="pa-6">
+        <slot />
+      </v-container>
+    </v-main>
+  </v-app>
+</template>
+
+<script setup lang="ts">
+import { ref } from "vue";
+import { useTheme } from "vuetify";
+
+// Theme management
+const theme = useTheme();
+
+// Navigation drawer state
+const drawer = ref(true);
+
+// Profile data (TODO: Replace with real user data)
+const profileData = {
+  name: "Admin User",
+  email: "admin@catcarwash.com",
+  avatar: "/Character/character cat-02.png",
+};
+
+// Main menu items
+const mainMenuItems = [
+  {
+    title: "แดชบอร์ดยอดขาย",
+    icon: "mdi-view-dashboard",
+    to: "/dashboard",
+  },
+  {
+    title: "จัดการอุปกรณ์",
+    icon: "mdi-hammer-wrench",
+    to: "/device-management",
+  },
+];
+
+// Management menu items
+const managementMenuItems = [
+  {
+    title: "จัดการลูกค้า",
+    icon: "mdi-account-group",
+    to: "/customer-management",
+  },
+  {
+    title: "จับคู่อุปกรณ์",
+    icon: "mdi-link-variant",
+    to: "/device-pairing",
+  },
+  {
+    title: "จัดการพนักงาน",
+    icon: "mdi-account-tie",
+    to: "/employee-management",
+  },
+];
+
+// Methods
+const toggleTheme = () => {
+  theme.global.name.value = theme.global.current.value.dark ? "light" : "dark";
+};
+
+const goToProfile = () => {
+  // Navigate to profile page
+  navigateTo("/profile");
+};
+
+const goToSettings = () => {
+  // Navigate to settings page
+  navigateTo("/settings");
+};
+
+const logout = () => {
+  // TODO: Implement logout logic
+  console.log("Logout clicked");
+  // navigateTo('/login-page')
+};
+</script>
+
+<style scoped>
+/* Modern Navigation Drawer */
+.modern-navigation-drawer {
+  background: rgba(var(--v-theme-surface), 0.95) !important;
+  backdrop-filter: blur(20px);
+  border-right: 1px solid rgba(var(--v-theme-outline), 0.1);
+  box-shadow: 4px 0 20px -8px rgba(0, 0, 0, 0.1);
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* Modern Logo Section */
+.modern-logo-section {
+  padding: 2rem 1.5rem;
+  text-align: center;
+  border-bottom: 1px solid rgba(var(--v-theme-outline), 0.08);
+  background: linear-gradient(135deg, 
+    rgba(245, 127, 42, 0.05) 0%, 
+    rgba(255, 152, 0, 0.05) 100%);
+  position: relative;
+}
+
+.modern-logo-section::before {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  left: 20%;
+  right: 20%;
+  height: 1px;
+  background: linear-gradient(90deg, 
+    transparent 0%, 
+    rgba(245, 127, 42, 0.3) 50%, 
+    transparent 100%);
+}
+
+.logo-container {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 1rem;
+  animation: fadeInUp 0.8s ease-out;
+}
+
+.logo-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 48px;
+  height: 48px;
+  background: linear-gradient(135deg, 
+    rgba(245, 127, 42, 0.1) 0%, 
+    rgba(255, 152, 0, 0.1) 100%);
+  border-radius: 12px;
+  border: 1px solid rgba(245, 127, 42, 0.2);
+}
+
+.nav-logo-icon {
+  height: 32px;
+  width: auto;
+  filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.1));
+}
+
+.nav-logo-text {
+  height: 36px;
+  width: auto;
+  filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.1));
+}
+
+/* Navigation Content */
+.nav-content {
+  flex: 1;
+  padding: 1rem;
+  overflow-y: auto;
+}
+
+.modern-nav-list {
+  padding: 0;
+}
+
+/* Navigation Section Headers */
+.nav-section-header {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  font-weight: 600;
+  color: rgba(var(--v-theme-on-surface), 0.7);
+  font-size: 0.8125rem;
+  letter-spacing: 0.075em;
+  text-transform: uppercase;
+  background: rgba(var(--v-theme-surface-variant), 0.3);
+  border-radius: 12px;
+  border: 1px solid rgba(var(--v-theme-outline), 0.05);
+}
+
+/* Modern Navigation Items */
+.modern-nav-item {
+  margin: 0 !important;
+  border-radius: 12px !important;
+  min-height: 48px !important;
+  font-weight: 500 !important;
+  color: rgba(var(--v-theme-on-surface), 0.85) !important;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1) !important;
+  position: relative;
+  overflow: hidden;
+  border: 1px solid transparent;
+}
+
+.modern-nav-item::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(90deg, 
+    transparent, 
+    rgba(255, 152, 0, 0.05), 
+    transparent);
+  transition: left 0.5s ease;
+}
+
+.modern-nav-item:hover::before {
+  left: 100%;
+}
+
+.modern-nav-item:hover {
+  background: rgba(var(--v-theme-surface-variant), 0.4) !important;
+  border-color: rgba(245, 127, 42, 0.1);
+  transform: translateX(4px);
+  box-shadow: 0 4px 12px -4px rgba(245, 127, 42, 0.2);
+}
+
+.modern-nav-item.v-list-item--active {
+  background: linear-gradient(135deg, 
+    rgba(245, 127, 42, 0.15) 0%, 
+    rgba(255, 152, 0, 0.15) 100%) !important;
+  color: #f57f2a !important;
+  border-color: rgba(245, 127, 42, 0.3);
+  font-weight: 600 !important;
+  transform: translateX(4px);
+  box-shadow: 
+    0 8px 16px -4px rgba(245, 127, 42, 0.3),
+    0 0 0 1px rgba(245, 127, 42, 0.1);
+}
+
+.modern-nav-item.v-list-item--active::after {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 3px;
+  height: 24px;
+  background: linear-gradient(180deg, #f57f2a 0%, #ff9800 100%);
+  border-radius: 0 2px 2px 0;
+}
+
+.modern-nav-item :deep(.v-list-item__prepend) {
+  margin-right: 12px !important;
+}
+
+.modern-nav-item :deep(.v-icon) {
+  opacity: 0.8;
+  transition: all 0.3s ease;
+}
+
+.modern-nav-item:hover :deep(.v-icon) {
+  opacity: 1;
+  transform: scale(1.1);
+}
+
+.modern-nav-item.v-list-item--active :deep(.v-icon) {
+  opacity: 1;
+  color: #f57f2a !important;
+}
+
+/* Theme Toggle Special Styling */
+.theme-toggle {
+  background: rgba(var(--v-theme-primary), 0.05) !important;
+  border-color: rgba(var(--v-theme-primary), 0.1);
+}
+
+.theme-toggle:hover {
+  background: rgba(var(--v-theme-primary), 0.1) !important;
+}
+
+/* Navigation Divider */
+.nav-divider {
+  background: linear-gradient(90deg, 
+    transparent 0%, 
+    rgba(var(--v-theme-outline), 0.2) 20%,
+    rgba(var(--v-theme-outline), 0.2) 80%, 
+    transparent 100%);
+}
+
+/* Modern Profile Section */
+.modern-profile-section {
+  border-top: 1px solid rgba(var(--v-theme-outline), 0.08);
+  background: linear-gradient(135deg, 
+    rgba(var(--v-theme-surface-container), 0.5) 0%, 
+    rgba(var(--v-theme-surface-container-low), 0.8) 100%);
+  backdrop-filter: blur(8px);
+}
+
+.profile-card {
+  background: rgba(var(--v-theme-surface), 0.7) !important;
+  border: 1px solid rgba(var(--v-theme-outline), 0.1) !important;
+  transition: all 0.3s ease;
+}
+
+.profile-card:hover {
+  background: rgba(var(--v-theme-surface), 0.9) !important;
+  box-shadow: 0 8px 20px -4px rgba(0, 0, 0, 0.15) !important;
+  border-color: rgba(245, 127, 42, 0.2) !important;
+}
+
+.profile-avatar {
+  border: 2px solid rgba(245, 127, 42, 0.2);
+  transition: all 0.3s ease;
+}
+
+.profile-card:hover .profile-avatar {
+  border-color: rgba(245, 127, 42, 0.4);
+  transform: scale(1.05);
+}
+
+.profile-details {
+  flex: 1;
+  min-width: 0;
+}
+
+.profile-name,
+.profile-email {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.profile-menu-btn {
+  opacity: 0.6;
+  transition: all 0.3s ease;
+}
+
+.profile-card:hover .profile-menu-btn {
+  opacity: 1;
+}
+
+/* Profile Menu */
+.profile-menu-card {
+  border: 1px solid rgba(var(--v-theme-outline), 0.1);
+  backdrop-filter: blur(20px);
+}
+
+.profile-menu-item {
+  min-height: 40px !important;
+  transition: all 0.2s ease;
+}
+
+.profile-menu-item:hover {
+  background: rgba(var(--v-theme-surface-variant), 0.8) !important;
+}
+
+.logout-item {
+  color: rgba(var(--v-theme-error), 0.8) !important;
+}
+
+.logout-item:hover {
+  background: rgba(var(--v-theme-error), 0.1) !important;
+  color: var(--v-theme-error) !important;
+}
+
+/* Main Content */
+.main-content {
+  background: linear-gradient(135deg, 
+    rgb(var(--v-theme-surface-container-lowest)) 0%, 
+    rgba(var(--v-theme-surface-container-low), 0.5) 100%);
+  min-height: 100vh;
+}
+
+/* Mobile Logo Styling */
+.mobile-logo {
+  width: auto;
+  filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.1));
+}
+
+.mobile-logo-text {
+  width: auto;
+  filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.1));
+}
+
+/* Dark Theme Enhancements */
+.v-theme--dark .modern-navigation-drawer {
+  background: rgba(var(--v-theme-surface), 0.9) !important;
+  box-shadow: 4px 0 20px -8px rgba(0, 0, 0, 0.3);
+}
+
+.v-theme--dark .modern-logo-section {
+  background: linear-gradient(135deg, 
+    rgba(245, 127, 42, 0.08) 0%, 
+    rgba(255, 152, 0, 0.08) 100%);
+}
+
+.v-theme--dark .profile-card {
+  background: rgba(var(--v-theme-surface-container), 0.8);
+}
+
+.v-theme--dark .profile-menu-card {
+  background: rgba(var(--v-theme-surface-container), 0.95) !important;
+}
+
+/* Animations */
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Responsive Design - Using CSS clamp() for fluid scaling */
+.modern-navigation-drawer {
+  width: clamp(280px, 25vw, 300px);
+}
+
+.modern-logo-section {
+  padding: clamp(1rem, 3vw, 2rem) clamp(1rem, 2vw, 1.5rem);
+}
+
+.logo-container {
+  gap: clamp(0.75rem, 2vw, 1rem);
+}
+
+.nav-logo-icon {
+  height: clamp(28px, 4vw, 32px);
+}
+
+.nav-logo-text {
+  height: clamp(32px, 4.5vw, 36px);
+}
+
+.nav-content {
+  padding: clamp(0.75rem, 2vw, 1rem);
+}
+
+.modern-profile-section {
+  padding: clamp(1rem, 2.5vw, 1.5rem);
+}
+
+.mobile-logo {
+  height: clamp(28px, 5vw, 36px);
+}
+
+.mobile-logo-text {
+  height: clamp(20px, 4vw, 28px);
+}
+
+/* Performance Optimizations */
+.modern-nav-item,
+.profile-card,
+.logo-container {
+  will-change: transform;
+}
+
+/* Smooth Scrolling */
+.nav-content {
+  scroll-behavior: smooth;
+}
+
+/* Focus States for Accessibility */
+.modern-nav-item:focus-visible {
+  outline: 2px solid rgba(245, 127, 42, 0.5);
+  outline-offset: 2px;
+}
+
+.profile-menu-btn:focus-visible {
+  outline: 2px solid rgba(245, 127, 42, 0.5);
+  outline-offset: 2px;
+}
+</style>

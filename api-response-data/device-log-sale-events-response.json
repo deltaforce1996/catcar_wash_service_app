@@ -1,0 +1,312 @@
+{
+  "success": true,
+  "message": "Device event logs fetched successfully",
+  "data": {
+    "items": [
+      {
+        "id": "cmfdx1e9d001gzs30ijk7bmej",
+        "device_id": "cmfdx1e8x000hzs30xn9dkbv4",
+        "payload": {
+          "qr": {
+            "ref1": "REF001",
+            "ref2": "REF002",
+            "net_amount": 0,
+            "transaction_id": "1234567890"
+          },
+          "bank": { "20": 0, "50": 0, "300": 0, "500": 0, "1000": 0 },
+          "coin": { "1": 1, "2": 0, "5": 0, "10": 0 },
+          "type": "PAYMENT",
+          "status": "SUCCESS",
+          "timestemp": 1757354959749,
+          "total_amount": 1,
+          "event_at": "2025-09-09 01:09:19"
+        },
+        "created_at": "2025-09-10 18:48:17",
+        "device": {
+          "id": "cmfdx1e8x000hzs30xn9dkbv4",
+          "name": "เครื่องล้างรถหมายเลข 4",
+          "type": "WASH",
+          "owner": {
+            "id": "cmfdx1e8l000azs30mrb4cmdh",
+            "fullname": "นางสาวสมหญิง รักดี",
+            "email": "user2@catcarwash.com"
+          }
+        }
+      },
+      {
+        "id": "cmfdx1e9d001fzs304vfkxq0e",
+        "device_id": "cmfdx1e8x000hzs30xn9dkbv4",
+        "payload": {
+          "qr": {
+            "ref1": "REF001",
+            "ref2": "REF002",
+            "net_amount": 0,
+            "transaction_id": "1234567890"
+          },
+          "bank": { "20": 0, "50": 0, "300": 0, "500": 0, "1000": 0 },
+          "coin": { "1": 5, "2": 0, "5": 0, "10": 0 },
+          "type": "PAYMENT",
+          "status": "SUCCESS",
+          "timestemp": 1764082787942,
+          "total_amount": 5,
+          "event_at": "2025-11-25 21:59:47"
+        },
+        "created_at": "2025-09-10 18:48:17",
+        "device": {
+          "id": "cmfdx1e8x000hzs30xn9dkbv4",
+          "name": "เครื่องล้างรถหมายเลข 4",
+          "type": "WASH",
+          "owner": {
+            "id": "cmfdx1e8l000azs30mrb4cmdh",
+            "fullname": "นางสาวสมหญิง รักดี",
+            "email": "user2@catcarwash.com"
+          }
+        }
+      },
+      {
+        "id": "cmfdx1e9d001ezs30kzq6w269",
+        "device_id": "cmfdx1e8x000hzs30xn9dkbv4",
+        "payload": {
+          "qr": {
+            "ref1": "REF001",
+            "ref2": "REF002",
+            "net_amount": 0,
+            "transaction_id": "1234567890"
+          },
+          "bank": { "20": 0, "50": 0, "300": 0, "500": 0, "1000": 0 },
+          "coin": { "1": 9, "2": 0, "5": 0, "10": 0 },
+          "type": "PAYMENT",
+          "status": "SUCCESS",
+          "timestemp": 1755400623195,
+          "total_amount": 9,
+          "event_at": "2025-08-17 10:17:03"
+        },
+        "created_at": "2025-09-10 18:48:17",
+        "device": {
+          "id": "cmfdx1e8x000hzs30xn9dkbv4",
+          "name": "เครื่องล้างรถหมายเลข 4",
+          "type": "WASH",
+          "owner": {
+            "id": "cmfdx1e8l000azs30mrb4cmdh",
+            "fullname": "นางสาวสมหญิง รักดี",
+            "email": "user2@catcarwash.com"
+          }
+        }
+      },
+      {
+        "id": "cmfdx1e9d001dzs30s6uizj7i",
+        "device_id": "cmfdx1e8x000hzs30xn9dkbv4",
+        "payload": {
+          "qr": {
+            "ref1": "REF001",
+            "ref2": "REF002",
+            "net_amount": 0,
+            "transaction_id": "1234567890"
+          },
+          "bank": { "20": 0, "50": 0, "300": 0, "500": 0, "1000": 0 },
+          "coin": { "1": 2, "2": 0, "5": 0, "10": 0 },
+          "type": "PAYMENT",
+          "status": "SUCCESS",
+          "timestemp": 1750823619109,
+          "total_amount": 2,
+          "event_at": "2025-06-25 10:53:39"
+        },
+        "created_at": "2025-09-10 18:48:17",
+        "device": {
+          "id": "cmfdx1e8x000hzs30xn9dkbv4",
+          "name": "เครื่องล้างรถหมายเลข 4",
+          "type": "WASH",
+          "owner": {
+            "id": "cmfdx1e8l000azs30mrb4cmdh",
+            "fullname": "นางสาวสมหญิง รักดี",
+            "email": "user2@catcarwash.com"
+          }
+        }
+      },
+      {
+        "id": "cmfdx1e9d001czs3068ni542h",
+        "device_id": "cmfdx1e8x000hzs30xn9dkbv4",
+        "payload": {
+          "qr": {
+            "ref1": "REF001",
+            "ref2": "REF002",
+            "net_amount": 0,
+            "transaction_id": "1234567890"
+          },
+          "bank": { "20": 0, "50": 0, "300": 0, "500": 0, "1000": 0 },
+          "coin": { "1": 9, "2": 0, "5": 0, "10": 0 },
+          "type": "PAYMENT",
+          "status": "SUCCESS",
+          "timestemp": 1764467193293,
+          "total_amount": 9,
+          "event_at": "2025-11-30 08:46:33"
+        },
+        "created_at": "2025-09-10 18:48:17",
+        "device": {
+          "id": "cmfdx1e8x000hzs30xn9dkbv4",
+          "name": "เครื่องล้างรถหมายเลข 4",
+          "type": "WASH",
+          "owner": {
+            "id": "cmfdx1e8l000azs30mrb4cmdh",
+            "fullname": "นางสาวสมหญิง รักดี",
+            "email": "user2@catcarwash.com"
+          }
+        }
+      },
+      {
+        "id": "cmfdx1e9d001bzs30az1uqioh",
+        "device_id": "cmfdx1e8x000gzs301bfhvp3d",
+        "payload": {
+          "qr": {
+            "ref1": "REF001",
+            "ref2": "REF002",
+            "net_amount": 0,
+            "transaction_id": "1234567890"
+          },
+          "bank": { "20": 0, "50": 0, "300": 0, "500": 0, "1000": 0 },
+          "coin": { "1": 4, "2": 0, "5": 0, "10": 0 },
+          "type": "PAYMENT",
+          "status": "SUCCESS",
+          "timestemp": 1756771259381,
+          "total_amount": 4,
+          "event_at": "2025-09-02 07:00:59"
+        },
+        "created_at": "2025-09-10 18:48:17",
+        "device": {
+          "id": "cmfdx1e8x000gzs301bfhvp3d",
+          "name": "เครื่องล้างรถหมายเลข 3",
+          "type": "WASH",
+          "owner": {
+            "id": "cmfdx1e8l000azs30mrb4cmdh",
+            "fullname": "นางสาวสมหญิง รักดี",
+            "email": "user2@catcarwash.com"
+          }
+        }
+      },
+      {
+        "id": "cmfdx1e9d001azs309pp9z6h1",
+        "device_id": "cmfdx1e8x000gzs301bfhvp3d",
+        "payload": {
+          "qr": {
+            "ref1": "REF001",
+            "ref2": "REF002",
+            "net_amount": 0,
+            "transaction_id": "1234567890"
+          },
+          "bank": { "20": 0, "50": 0, "300": 0, "500": 0, "1000": 0 },
+          "coin": { "1": 9, "2": 0, "5": 0, "10": 0 },
+          "type": "PAYMENT",
+          "status": "SUCCESS",
+          "timestemp": 1752773287547,
+          "total_amount": 9,
+          "event_at": "2025-07-18 00:28:07"
+        },
+        "created_at": "2025-09-10 18:48:17",
+        "device": {
+          "id": "cmfdx1e8x000gzs301bfhvp3d",
+          "name": "เครื่องล้างรถหมายเลข 3",
+          "type": "WASH",
+          "owner": {
+            "id": "cmfdx1e8l000azs30mrb4cmdh",
+            "fullname": "นางสาวสมหญิง รักดี",
+            "email": "user2@catcarwash.com"
+          }
+        }
+      },
+      {
+        "id": "cmfdx1e9d0019zs30jpmavuz5",
+        "device_id": "cmfdx1e8x000gzs301bfhvp3d",
+        "payload": {
+          "qr": {
+            "ref1": "REF001",
+            "ref2": "REF002",
+            "net_amount": 0,
+            "transaction_id": "1234567890"
+          },
+          "bank": { "20": 0, "50": 0, "300": 0, "500": 0, "1000": 0 },
+          "coin": { "1": 5, "2": 0, "5": 0, "10": 0 },
+          "type": "PAYMENT",
+          "status": "SUCCESS",
+          "timestemp": 1755617964345,
+          "total_amount": 5,
+          "event_at": "2025-08-19 22:39:24"
+        },
+        "created_at": "2025-09-10 18:48:17",
+        "device": {
+          "id": "cmfdx1e8x000gzs301bfhvp3d",
+          "name": "เครื่องล้างรถหมายเลข 3",
+          "type": "WASH",
+          "owner": {
+            "id": "cmfdx1e8l000azs30mrb4cmdh",
+            "fullname": "นางสาวสมหญิง รักดี",
+            "email": "user2@catcarwash.com"
+          }
+        }
+      },
+      {
+        "id": "cmfdx1e9d0018zs30sxluhoyk",
+        "device_id": "cmfdx1e8x000gzs301bfhvp3d",
+        "payload": {
+          "qr": {
+            "ref1": "REF001",
+            "ref2": "REF002",
+            "net_amount": 0,
+            "transaction_id": "1234567890"
+          },
+          "bank": { "20": 0, "50": 0, "300": 0, "500": 0, "1000": 0 },
+          "coin": { "1": 6, "2": 0, "5": 0, "10": 0 },
+          "type": "PAYMENT",
+          "status": "SUCCESS",
+          "timestemp": 1757371344414,
+          "total_amount": 6,
+          "event_at": "2025-09-09 05:42:24"
+        },
+        "created_at": "2025-09-10 18:48:17",
+        "device": {
+          "id": "cmfdx1e8x000gzs301bfhvp3d",
+          "name": "เครื่องล้างรถหมายเลข 3",
+          "type": "WASH",
+          "owner": {
+            "id": "cmfdx1e8l000azs30mrb4cmdh",
+            "fullname": "นางสาวสมหญิง รักดี",
+            "email": "user2@catcarwash.com"
+          }
+        }
+      },
+      {
+        "id": "cmfdx1e9d0017zs30g8hcx6ik",
+        "device_id": "cmfdx1e8x000gzs301bfhvp3d",
+        "payload": {
+          "qr": {
+            "ref1": "REF001",
+            "ref2": "REF002",
+            "net_amount": 0,
+            "transaction_id": "1234567890"
+          },
+          "bank": { "20": 0, "50": 0, "300": 0, "500": 0, "1000": 0 },
+          "coin": { "1": 4, "2": 0, "5": 0, "10": 0 },
+          "type": "PAYMENT",
+          "status": "SUCCESS",
+          "timestemp": 1761082311555,
+          "total_amount": 4,
+          "event_at": "2025-10-22 04:31:51"
+        },
+        "created_at": "2025-09-10 18:48:17",
+        "device": {
+          "id": "cmfdx1e8x000gzs301bfhvp3d",
+          "name": "เครื่องล้างรถหมายเลข 3",
+          "type": "WASH",
+          "owner": {
+            "id": "cmfdx1e8l000azs30mrb4cmdh",
+            "fullname": "นางสาวสมหญิง รักดี",
+            "email": "user2@catcarwash.com"
+          }
+        }
+      }
+    ],
+    "total": 35,
+    "page": 1,
+    "limit": 10,
+    "totalPages": 4
+  }
+}

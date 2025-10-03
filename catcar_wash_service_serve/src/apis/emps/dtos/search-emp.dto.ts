@@ -1,0 +1,27 @@
+import { IsIn, IsNumber, IsOptional, IsString } from 'class-validator';
+
+export class SearchEmpDto {
+  @IsString()
+  @IsOptional()
+  query?: string;
+
+  @IsNumber()
+  @IsOptional()
+  page?: number = 1;
+
+  @IsNumber()
+  @IsOptional()
+  limit?: number = 20;
+
+  @IsString()
+  @IsOptional()
+  @IsIn(['created_at', 'updated_at', 'name', 'email', 'phone', 'line', 'address', 'status', 'permission'], {
+    message: 'sort_by must be one of: created_at, updated_at, name, email, phone, line, address, status, permission',
+  })
+  sort_by?: 'created_at' | 'updated_at' | 'name' | 'email' | 'phone' | 'line' | 'address' | 'status' | 'permission';
+
+  @IsString()
+  @IsOptional()
+  @IsIn(['asc', 'desc'], { message: 'sort_order must be either "asc" or "desc"' })
+  sort_order?: 'asc' | 'desc';
+}

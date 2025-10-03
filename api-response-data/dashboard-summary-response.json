@@ -1,0 +1,92 @@
+{
+  "success": true,
+  "data": {
+    "monthly": {
+      "revenue": 128,
+      "change": 100,
+      "data": [
+        { "month": "01", "amount": 0 },
+        { "month": "02", "amount": 0 },
+        { "month": "03", "amount": 0 },
+        { "month": "04", "amount": 0 },
+        { "month": "05", "amount": 0 },
+        { "month": "06", "amount": 13 },
+        { "month": "07", "amount": 27 },
+        { "month": "08", "amount": 23 },
+        { "month": "09", "amount": 13 },
+        { "month": "10", "amount": 27 },
+        { "month": "11", "amount": 21 },
+        { "month": "12", "amount": 4 }
+      ]
+    },
+    "daily": {
+      "revenue": 27,
+      "change": 107.6923076923077,
+      "data": [
+        { "day": "01", "amount": 0 },
+        { "day": "02", "amount": 0 },
+        { "day": "03", "amount": 0 },
+        { "day": "04", "amount": 0 },
+        { "day": "05", "amount": 0 },
+        { "day": "06", "amount": 0 },
+        { "day": "07", "amount": 5 },
+        { "day": "08", "amount": 0 },
+        { "day": "09", "amount": 0 },
+        { "day": "10", "amount": 0 },
+        { "day": "11", "amount": 0 },
+        { "day": "12", "amount": 0 },
+        { "day": "13", "amount": 2 },
+        { "day": "14", "amount": 0 },
+        { "day": "15", "amount": 0 },
+        { "day": "16", "amount": 0 },
+        { "day": "17", "amount": 9 },
+        { "day": "18", "amount": 9 },
+        { "day": "19", "amount": 0 },
+        { "day": "20", "amount": 0 },
+        { "day": "21", "amount": 0 },
+        { "day": "22", "amount": 0 },
+        { "day": "23", "amount": 0 },
+        { "day": "24", "amount": 0 },
+        { "day": "25", "amount": 0 },
+        { "day": "26", "amount": 0 },
+        { "day": "27", "amount": 1 },
+        { "day": "28", "amount": 1 },
+        { "day": "29", "amount": 0 },
+        { "day": "30", "amount": 0 },
+        { "day": "31", "amount": 0 }
+      ]
+    },
+    "hourly": {
+      "revenue": 0,
+      "change": 0,
+      "data": [
+        { "hour": "00", "amount": 0 },
+        { "hour": "01", "amount": 0 },
+        { "hour": "02", "amount": 0 },
+        { "hour": "03", "amount": 0 },
+        { "hour": "04", "amount": 0 },
+        { "hour": "05", "amount": 0 },
+        { "hour": "06", "amount": 0 },
+        { "hour": "07", "amount": 0 },
+        { "hour": "08", "amount": 0 },
+        { "hour": "09", "amount": 0 },
+        { "hour": "10", "amount": 0 },
+        { "hour": "11", "amount": 0 },
+        { "hour": "12", "amount": 0 },
+        { "hour": "13", "amount": 0 },
+        { "hour": "14", "amount": 0 },
+        { "hour": "15", "amount": 0 },
+        { "hour": "16", "amount": 0 },
+        { "hour": "17", "amount": 0 },
+        { "hour": "18", "amount": 0 },
+        { "hour": "19", "amount": 0 },
+        { "hour": "20", "amount": 0 },
+        { "hour": "21", "amount": 0 },
+        { "hour": "22", "amount": 0 },
+        { "hour": "23", "amount": 0 }
+      ]
+    },
+    "payment_status": "SUCCESS"
+  },
+  "message": "Dashboard summary retrieved successfully"
+}

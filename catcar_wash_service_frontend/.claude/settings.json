@@ -1,0 +1,7 @@
+{
+  "permissions": {
+    "allow": ["Edit", "Write", "MultiEdit", "mcp__playwright", "mcp__context7"],
+    "deny": [],
+    "ask": []
+  }
+}

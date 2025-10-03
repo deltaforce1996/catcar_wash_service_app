@@ -1,0 +1,287 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+  // output   = "../generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum UserStatus {
+  ACTIVE
+  INACTIVE
+}
+
+enum EmpStatus {
+  ACTIVE
+  INACTIVE
+}
+
+enum PermissionType {
+  ADMIN
+  TECHNICIAN
+  USER
+}
+
+enum DeviceType {
+  WASH
+  DRYING
+}
+
+enum DeviceStatus {
+  DEPLOYED
+  DISABLED
+}
+
+enum EventType {
+ PAYMENT
+ INFO
+}
+
+enum TokenState {
+  ACTIVATED
+  DISABLED
+}
+
+enum PaymentApiStatus {
+  PENDING
+  SUCCEEDED
+  FAILED
+  CANCELLED
+}
+
+model tbl_permissions {
+  id         String         @id @default(cuid())
+  name       PermissionType @unique
+  created_at DateTime       @default(now()) @db.Timestamptz(3)
+  updated_at DateTime       @updatedAt @db.Timestamptz(3)
+
+  // Relations
+  users      tbl_users[]
+  employees  tbl_emps[]
+
+  @@map("tbl_permissions")
+}
+
+model tbl_users {
+  id            String     @id @default(cuid())
+  fullname      String
+  email         String     @unique
+  status        UserStatus @default(ACTIVE)
+  phone         String?
+  address       String?
+  password      String
+  custom_name   String?
+  permission_id String?
+  created_at    DateTime   @default(now()) @db.Timestamptz(3)
+  updated_at    DateTime   @updatedAt @db.Timestamptz(3)
+  payment_info  Json?
+
+  // Relations
+  permission   tbl_permissions?            @relation(fields: [permission_id], references: [id], onDelete: SetNull)
+  devices      tbl_devices[]
+  reset_tokens tbl_reset_password_token[]  @relation("UserResetTokens")
+
+  @@map("tbl_users")
+}
+
+model tbl_emps {
+  id            String    @id @default(cuid())
+  name          String
+  email         String    @unique
+  phone         String?
+  line          String?
+  password      String
+  address       String?
+  permission_id String?
+  status        EmpStatus @default(ACTIVE)
+  created_at    DateTime  @default(now()) @db.Timestamptz(3)
+  updated_at    DateTime  @updatedAt @db.Timestamptz(3)
+
+  // Relations
+  permission          tbl_permissions?           @relation(fields: [permission_id], references: [id], onDelete: SetNull)
+  registered_devices  tbl_devices[]
+  reset_tokens        tbl_reset_password_token[] @relation("EmpResetTokens")
+
+  @@map("tbl_emps")
+}
+
+model tbl_devices {
+  id           String       @id @default(cuid())
+  name         String
+  type         DeviceType
+  status       DeviceStatus @default(DISABLED)
+  information  Json?
+  configs      Json?
+  owner_id     String
+  register_by_id  String
+  created_at   DateTime     @default(now()) @db.Timestamptz(3)
+  updated_at   DateTime     @updatedAt @db.Timestamptz(3)
+
+  // Relations
+  owner         tbl_users @relation(fields: [owner_id], references: [id], onDelete: Cascade)
+  registered_by tbl_emps  @relation(fields: [register_by_id], references: [id], onDelete: Cascade)
+  device_states tbl_devices_state[]
+  device_events tbl_devices_events[]
+  last_state    tbl_devices_last_state?
+  payment_temps tbl_payment_temps[]
+
+  @@map("tbl_devices")
+  @@index([owner_id])
+  @@index([register_by_id])
+  @@index([status])
+  @@index([type])
+}
+
+// Note: This table should be partitioned by 60 days in PostgreSQL
+// Partitioning needs to be set up manually in the database after migration
+model tbl_devices_state {
+  id         String   @id @default(cuid())
+  device_id  String
+  state_data Json?
+  hash_state String?
+  created_at DateTime @default(now()) @db.Timestamptz(3)
+
+  // Relations
+  device     tbl_devices @relation(fields: [device_id], references: [id], onDelete: Cascade)
+
+  @@map("tbl_devices_state")
+  @@index([device_id, created_at])
+}
+
+model tbl_devices_last_state {
+  id         String   @id @default(cuid())
+  device_id  String   @unique
+  state_data Json?
+  hash_state String?
+  updated_at DateTime @updatedAt @db.Timestamptz(3)
+  created_at DateTime @default(now()) @db.Timestamptz(3)
+  // Relations
+  device     tbl_devices @relation(fields: [device_id], references: [id], onDelete: Cascade)
+
+  @@map("tbl_devices_last_state")
+  @@index([device_id])
+}
+
+// Note: This table should be partitioned by 30 days in PostgreSQL
+// Partitioning needs to be set up manually in the database after migration
+model tbl_devices_events {
+  id         String    @default(cuid())
+  device_id  String
+  payload    Json?
+  created_at DateTime  @default(now()) @db.Timestamptz(3)
+
+  // Relations
+  device     tbl_devices @relation(fields: [device_id], references: [id], onDelete: Cascade)
+
+  @@id([id, created_at])
+  @@map("tbl_devices_events")
+  @@index([device_id, created_at])
+}
+
+// แก้ polymorphic owner_id → แยกเป็น 2 คอลัมน์ และตั้งชื่อ relation ชัดเจน
+model tbl_reset_password_token {
+  id           String     @id @default(cuid())
+  email        String
+  token        String     @unique
+  state        TokenState @default(ACTIVATED)
+  expire_date  DateTime
+  created_at   DateTime   @default(now()) @db.Timestamptz(3)
+  updated_at   DateTime   @updatedAt @db.Timestamptz(3)
+
+  // เลือกอย่างใดอย่างหนึ่งเท่านั้น (บังคับด้วย CHECK ใน migration SQL)
+  owner_user_id String?
+  owner_emp_id  String?
+
+  // Relations
+  user     tbl_users? @relation("UserResetTokens", fields: [owner_user_id], references: [id], onDelete: Cascade)
+  employee tbl_emps?  @relation("EmpResetTokens",  fields: [owner_emp_id],  references: [id], onDelete: Cascade)
+
+  @@map("tbl_reset_password_token")
+  @@index([email, state])
+  @@index([token, state])
+  @@index([owner_user_id])
+  @@index([owner_emp_id])
+}
+
+model tbl_payment_temps {
+  id             String        @id @default(cuid())
+  device_id      String
+  amount         Decimal
+  payment_method String
+  reference_id   String
+  status         PaymentApiStatus @default(PENDING)
+  payment_results Json?
+  created_at     DateTime      @default(now()) @db.Timestamptz(3)
+  updated_at     DateTime      @updatedAt @db.Timestamptz(3)
+
+  // Relations
+  device         tbl_devices   @relation(fields: [device_id], references: [id], onDelete: Cascade)
+
+  @@map("tbl_payment_temps")
+  @@index([device_id])
+  @@index([status])
+  @@index([reference_id])
+}
+
+model mv_device_payments_hour {
+  device_id    String
+  hour_start   DateTime
+  status       String?
+  total_amount Decimal
+  coin_sum     Decimal?
+  bank_sum     Decimal?
+  qr_net_sum   Decimal?
+
+  @@id([device_id, hour_start, status])
+  @@map("mv_device_payments_hour")
+  @@ignore // กัน Prisma Migrate ไปสร้าง table; ยังใช้ $queryRaw อ่านได้
+}
+
+model mv_device_payments_day {
+  device_id    String
+  day          DateTime
+  status       String?
+  total_amount Decimal
+  coin_sum     Decimal?
+  bank_sum     Decimal?
+  qr_net_sum   Decimal?
+
+  @@id([device_id, day, status]) // Prisma ต้องการ PK → ใช้ composite id ตาม unique index
+  @@map("mv_device_payments_day")
+  @@ignore // บอก Prisma ว่าไม่ต้องสร้าง/แก้ไขใน migration แต่ยัง query ได้
+}
+
+model mv_device_payments_month {
+  device_id    String
+  month_start  DateTime
+  status       String?
+  total_amount Decimal
+  coin_sum     Decimal?
+  bank_sum     Decimal?
+  qr_net_sum   Decimal?
+
+  @@id([device_id, month_start, status])
+  @@map("mv_device_payments_month")
+  @@ignore // บอก Prisma ว่าไม่ต้องสร้าง/แก้ไขใน migration แต่ยัง query ได้
+}
+
+model mv_device_payments_year {
+  device_id    String
+  year_start   DateTime
+  status       String?
+  total_amount Decimal
+  coin_sum     Decimal?
+  bank_sum     Decimal?
+  qr_net_sum   Decimal?
+
+  @@id([device_id, year_start, status])
+  @@map("mv_device_payments_year")
+  @@ignore // บอก Prisma ว่าไม่ต้องสร้าง/แก้ไขใน migration แต่ยัง query ได้
+}
+
+

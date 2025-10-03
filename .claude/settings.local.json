@@ -1,0 +1,38 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(pnpm lint:fix:*)",
+      "Bash(pnpm lint:*)",
+      "Bash(pnpm run:*)",
+      "mcp__playwright__browser_navigate",
+      "mcp__playwright__browser_take_screenshot",
+      "mcp__playwright__browser_click",
+      "mcp__playwright__browser_close",
+      "mcp__playwright__browser_snapshot",
+      "Bash(pnpm dev:*)",
+      "WebFetch(domain:vuetifyjs.com)",
+      "mcp__ide__getDiagnostics",
+      "Bash(npm run lint)",
+      "Bash(npm run build:*)",
+      "Bash(git add:*)",
+      "Read(C:\\Users\\Ken\\Pictures\\Screenshots/**)",
+      "Read(C:\\Users\\Ken\\Pictures\\Screenshots/**)",
+      "Read(C:\\Users\\Ken\\Pictures\\Screenshots/**)",
+      "Read(C:\\Users\\Ken\\Pictures\\Screenshots/**)",
+      "Bash(pnpm format:*)",
+      "Bash(cp:*)",
+      "Bash(mv:*)",
+      "Bash(mkdir:*)",
+      "WebFetch(domain:m3.material.io)",
+      "Read(//c/Users/Ken/Pictures/Screenshots/**)",
+      "Read(//Users/ken/Desktop/**)",
+      "Bash(docker-compose:*)",
+      "Bash(cat:*)"
+    ],
+    "deny": [],
+    "ask": [],
+    "additionalDirectories": [
+      "C:\\Users\\Ken\\Desktop\\projects\\catcar_wash_service_app-worktree"
+    ]
+  }
+}
