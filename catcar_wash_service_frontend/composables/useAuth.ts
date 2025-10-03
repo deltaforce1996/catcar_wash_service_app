@@ -16,7 +16,7 @@ const authApi = new AuthApiService();
 // Computed
 const isAuthenticated = computed(() => !!user.value);
 const isUser = computed(() => user.value?.permission.name === "USER");
-const isEmployee = computed(() => user.value?.permission.name === "EMP");
+const isEmployee = computed(() => user.value?.permission.name === "TECHNICIAN");
 const isAdmin = computed(() => user.value?.permission.name === "ADMIN");
 
 /**

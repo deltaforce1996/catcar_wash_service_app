@@ -1,15 +1,34 @@
 import type { ApiSuccessResponse } from "~/types";
 import { BaseApiClient } from "../bases/base-api-client";
 
-export interface AuthenticatedUser {
+// AuthenticatedUser จะเป็น union type ของ UserResponseApi และ EmpResponseApi
+export type AuthenticatedUser = UserResponseApi | EmpResponseApi;
+
+export interface UserResponseApi {
   id: string;
+  fullname: string;
   email: string;
-  name: string;
-  permission: {
-    id: string;
-    name: string;
-  };
+  phone: string;
+  address: string;
+  custom_name: string;
   status: 'ACTIVE' | 'INACTIVE';
+  created_at: string;
+  updated_at: string;
+  permission: { id: string; name: string };
+  device_counts: { total: number; active: number; inactive: number };
+}
+
+export interface EmpResponseApi {
+  id: string;
+  name: string;
+  email: string;
+  phone: string;
+  line: string;
+  address: string;
+  status: 'ACTIVE' | 'INACTIVE';
+  created_at: string;
+  updated_at: string;
+  permission: { id: string; name: string };
 }
 
 export interface LoginPayload {
@@ -38,7 +57,7 @@ export class AuthApiService extends BaseApiClient {
 
   /**
    * Get current authenticated user information
-   * @returns Promise with authenticated user data
+   * @returns Promise with authenticated user data (UserResponseApi or EmpResponseApi based on permission)
    */
   async getCurrentUser(): Promise<ApiSuccessResponse<AuthenticatedUser>> {
     const response = await this.post<ApiSuccessResponse<AuthenticatedUser>>(
