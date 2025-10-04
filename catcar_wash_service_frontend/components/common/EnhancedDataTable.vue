@@ -60,7 +60,7 @@
       :items-per-page="computedItemsPerPage"
       :page="computedPage"
       :items-length="computedTotalItems"
-      :server-items-length="computedTotalItems"
+      server-items-length
       :hide-default-footer="true"
       class="elevation-0"
       hover
@@ -69,8 +69,6 @@
       :show-select="selectable"
       :select-strategy="selectStrategy"
       v-bind="$attrs"
-      @update:page="handlePageUpdate"
-      @update:items-per-page="handleItemsPerPageUpdate"
       @update:selected="handleSelectionUpdate"
     >
       <!-- Expandable row content (styled like ex-user-mgmt.vue) -->
