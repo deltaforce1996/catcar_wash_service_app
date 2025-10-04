@@ -275,4 +275,11 @@ export class DashboardService {
 
     return ((currentTotal - previousTotal) / previousTotal) * 100;
   }
+
+  public async syncMaterializedViews() {
+    await this.prisma.$executeRaw`REFRESH MATERIALIZED VIEW CONCURRENTLY mv_device_payments_day`;
+    await this.prisma.$executeRaw`REFRESH MATERIALIZED VIEW CONCURRENTLY mv_device_payments_month`;
+    await this.prisma.$executeRaw`REFRESH MATERIALIZED VIEW CONCURRENTLY mv_device_payments_year`;
+    await this.prisma.$executeRaw`REFRESH MATERIALIZED VIEW CONCURRENTLY mv_device_payments_hour`;
+  }
 }
