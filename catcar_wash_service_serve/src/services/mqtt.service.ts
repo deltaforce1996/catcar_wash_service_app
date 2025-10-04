@@ -340,6 +340,20 @@ export class MqttService extends EventEmitter implements OnModuleInit, OnModuleD
   }
 
   /**
+   * Subscribe to device streaming topics
+   */
+  async subscribeToDeviceStreaming(): Promise<void> {
+    try {
+      // Subscribe to all device streaming topics using wildcard
+      await this.subscribe('server/+/streaming', 1);
+      this.logger.log('Subscribed to device streaming topics: server/+/streaming');
+    } catch (error) {
+      this.logger.error('Failed to subscribe to device streaming topics:', error);
+      throw error;
+    }
+  }
+
+  /**
    * Unsubscribe from multiple topics at once
    */
   async unsubscribeMultiple(topics: string[]): Promise<void> {

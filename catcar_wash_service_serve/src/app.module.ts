@@ -12,6 +12,7 @@ import { UsersModule } from './apis/users/users.module';
 import { DevicesModule } from './apis/devices/devices.module';
 import { DeviceEventLogsModule } from './apis/device-event-logs/device-event-logs.module';
 import { DeviceStatesModule } from './apis/device-states/device-states.module';
+import { DeviceStateProcessorModule } from './modules/device-state-processor.module';
 import { DashboardModule } from './apis/dashboard/dashboard.module';
 import { PaymentGatewayModule } from './apis/payment-gateway/payment-gateway.module';
 import { DateTimeService } from './services';
@@ -31,6 +32,7 @@ import { DateTimeService } from './services';
     DevicesModule,
     DeviceEventLogsModule,
     DeviceStatesModule,
+    DeviceStateProcessorModule,
     DashboardModule,
     PaymentGatewayModule,
   ],
