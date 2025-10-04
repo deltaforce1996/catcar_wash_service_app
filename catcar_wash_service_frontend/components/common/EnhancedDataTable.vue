@@ -82,7 +82,7 @@
           >
             <v-card-text class="pa-4">
               <div class="enhanced-breakdown">
-                <slot name="expanded-row" :item="item" :columns="columns">
+                <slot name="expanded-content" :item="item" :columns="columns">
                   <!-- Default expanded content -->
                   <h3 class="text-subtitle-1 font-weight-bold mb-4">
                     รายละเอียด

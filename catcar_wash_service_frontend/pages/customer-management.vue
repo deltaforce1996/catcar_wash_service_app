@@ -147,154 +147,141 @@
       </template>
 
       <!-- Expandable Row Content -->
-      <template #expanded-row="{ item }">
-        <v-card
-          class="ma-2 customer-details-card"
-          color="surface-container"
-          elevation="1"
-          rounded="lg"
-        >
-          <v-card-text class="pa-4">
-            <div class="customer-breakdown">
-              <!-- Header with customer summary -->
-              <h3 class="text-subtitle-1 font-weight-bold mb-4">
-                รายละเอียดลูกค้า
-              </h3>
+      <template #expanded-content="{ item }">
+        <!-- Header with customer summary -->
+        <h3 class="text-subtitle-1 font-weight-bold mb-4">
+          รายละเอียดลูกค้า
+        </h3>
 
-              <!-- Customer details grid for desktop -->
-              <v-row no-gutters class="customer-details-grid">
-                <!-- Personal Information Section -->
-                <v-col cols="12" md="6" class="customer-section">
-                  <div class="customer-info-section pa-3">
-                    <div class="d-flex align-center mb-3">
-                      <v-icon color="primary" size="small" class="me-2">
-                        mdi-account-circle
-                      </v-icon>
-                      <span class="text-subtitle-2 font-weight-medium">
-                        ข้อมูลส่วนตัว
-                      </span>
+        <!-- Customer details grid for desktop -->
+        <v-row no-gutters class="customer-details-grid">
+          <!-- Personal Information Section -->
+          <v-col cols="12" md="6" class="customer-section">
+            <div class="customer-info-section pa-3">
+              <div class="d-flex align-center mb-3">
+                <v-icon color="primary" size="small" class="me-2">
+                  mdi-account-circle
+                </v-icon>
+                <span class="text-subtitle-2 font-weight-medium">
+                  ข้อมูลส่วนตัว
+                </span>
+              </div>
+
+              <div class="customer-info-grid">
+                <v-card class="mb-2" color="primary" variant="tonal">
+                  <v-card-text class="pa-3">
+                    <div class="text-caption text-medium-emphasis">
+                      รหัสลูกค้า
                     </div>
-
-                    <div class="customer-info-grid">
-                      <v-card class="mb-2" color="primary" variant="tonal">
-                        <v-card-text class="pa-3">
-                          <div class="text-caption text-medium-emphasis">
-                            รหัสลูกค้า
-                          </div>
-                          <div class="text-body-2 font-family-monospace">
-                            {{ item.id.slice(-8) }}
-                          </div>
-                        </v-card-text>
-                      </v-card>
-
-                      <v-card class="mb-2" color="info" variant="tonal">
-                        <v-card-text class="pa-3">
-                          <div class="text-caption text-medium-emphasis">
-                            ที่อยู่
-                          </div>
-                          <div class="text-body-2">
-                            {{ item.address }}
-                          </div>
-                        </v-card-text>
-                      </v-card>
-
-                      <v-card color="secondary" variant="tonal">
-                        <v-card-text class="pa-3">
-                          <div class="text-caption text-medium-emphasis">
-                            สิทธิ์การใช้งาน
-                          </div>
-                          <v-chip
-                            :color="getPermissionColor(item.permission.name)"
-                            size="small"
-                            variant="tonal"
-                            class="mt-1"
-                          >
-                            {{ getPermissionLabel(item.permission.name) }}
-                          </v-chip>
-                        </v-card-text>
-                      </v-card>
+                    <div class="text-body-2 font-family-monospace">
+                      {{ item.id.slice(-8) }}
                     </div>
-                  </div>
-                </v-col>
+                  </v-card-text>
+                </v-card>
 
-                <!-- Device Information Section -->
-                <v-col cols="12" md="6" class="customer-section">
-                  <div class="device-info-section pa-3">
-                    <div class="d-flex align-center mb-3">
-                      <v-icon color="success" size="small" class="me-2">
-                        mdi-devices
-                      </v-icon>
-                      <span class="text-subtitle-2 font-weight-medium">
-                        ข้อมูลอุปกรณ์
-                      </span>
+                <v-card class="mb-2" color="info" variant="tonal">
+                  <v-card-text class="pa-3">
+                    <div class="text-caption text-medium-emphasis">
+                      ที่อยู่
                     </div>
+                    <div class="text-body-2">
+                      {{ item.address }}
+                    </div>
+                  </v-card-text>
+                </v-card>
 
-                    <div v-if="item.device_counts">
-                      <v-row dense>
-                        <v-col cols="12">
-                          <v-card
-                            class="device-count-card"
-                            color="success-lighten-1"
-                            variant="tonal"
-                          >
-                            <v-card-text class="pa-3 text-center">
-                              <div
-                                class="text-h4 font-weight-bold text-success"
-                              >
-                                {{ item.device_counts.total }}
-                              </div>
-                              <div class="text-caption">อุปกรณ์ทั้งหมด</div>
-                            </v-card-text>
-                          </v-card>
-                        </v-col>
-                        <v-col cols="6">
-                          <v-card
-                            class="device-count-card"
-                            color="primary-lighten-1"
-                            variant="tonal"
-                          >
-                            <v-card-text class="pa-2 text-center">
-                              <div class="text-h6 font-weight-bold">
-                                {{ item.device_counts.active }}
-                              </div>
-                              <div class="text-caption">ใช้งาน</div>
-                            </v-card-text>
-                          </v-card>
-                        </v-col>
-                        <v-col cols="6">
-                          <v-card
-                            class="device-count-card"
-                            color="error-lighten-1"
-                            variant="tonal"
-                          >
-                            <v-card-text class="pa-2 text-center">
-                              <div class="text-h6 font-weight-bold">
-                                {{ item.device_counts.inactive }}
-                              </div>
-                              <div class="text-caption">หยุดใช้งาน</div>
-                            </v-card-text>
-                          </v-card>
-                        </v-col>
-                      </v-row>
+                <v-card color="secondary" variant="tonal">
+                  <v-card-text class="pa-3">
+                    <div class="text-caption text-medium-emphasis">
+                      สิทธิ์การใช้งาน
                     </div>
-                    <div v-else class="text-caption text-medium-emphasis">
-                      ไม่มีข้อมูลอุปกรณ์
-                    </div>
-                  </div>
-                </v-col>
-              </v-row>
-
-              <!-- Timestamp Information -->
-              <v-divider class="my-4" />
-              <div
-                class="d-flex justify-space-between text-caption text-medium-emphasis"
-              >
-                <span>สร้างเมื่อ: {{ formatDateTime(item.created_at) }}</span>
-                <span>อัปเดตล่าสุด: {{ formatDateTime(item.updated_at) }}</span>
+                    <v-chip
+                      :color="getPermissionColor(item.permission.name)"
+                      size="small"
+                      variant="tonal"
+                      class="mt-1"
+                    >
+                      {{ getPermissionLabel(item.permission.name) }}
+                    </v-chip>
+                  </v-card-text>
+                </v-card>
               </div>
             </div>
-          </v-card-text>
-        </v-card>
+          </v-col>
+
+          <!-- Device Information Section -->
+          <v-col cols="12" md="6" class="customer-section">
+            <div class="device-info-section pa-3">
+              <div class="d-flex align-center mb-3">
+                <v-icon color="success" size="small" class="me-2">
+                  mdi-devices
+                </v-icon>
+                <span class="text-subtitle-2 font-weight-medium">
+                  ข้อมูลอุปกรณ์
+                </span>
+              </div>
+
+              <div v-if="item.device_counts">
+                <v-row dense>
+                  <v-col cols="12">
+                    <v-card
+                      class="device-count-card"
+                      color="success-lighten-1"
+                      variant="tonal"
+                    >
+                      <v-card-text class="pa-3 text-center">
+                        <div class="text-h4 font-weight-bold text-success">
+                          {{ item.device_counts.total }}
+                        </div>
+                        <div class="text-caption">อุปกรณ์ทั้งหมด</div>
+                      </v-card-text>
+                    </v-card>
+                  </v-col>
+                  <v-col cols="6">
+                    <v-card
+                      class="device-count-card"
+                      color="primary-lighten-1"
+                      variant="tonal"
+                    >
+                      <v-card-text class="pa-2 text-center">
+                        <div class="text-h6 font-weight-bold">
+                          {{ item.device_counts.active }}
+                        </div>
+                        <div class="text-caption">ใช้งาน</div>
+                      </v-card-text>
+                    </v-card>
+                  </v-col>
+                  <v-col cols="6">
+                    <v-card
+                      class="device-count-card"
+                      color="error-lighten-1"
+                      variant="tonal"
+                    >
+                      <v-card-text class="pa-2 text-center">
+                        <div class="text-h6 font-weight-bold">
+                          {{ item.device_counts.inactive }}
+                        </div>
+                        <div class="text-caption">หยุดใช้งาน</div>
+                      </v-card-text>
+                    </v-card>
+                  </v-col>
+                </v-row>
+              </div>
+              <div v-else class="text-caption text-medium-emphasis">
+                ไม่มีข้อมูลอุปกรณ์
+              </div>
+            </div>
+          </v-col>
+        </v-row>
+
+        <!-- Timestamp Information -->
+        <v-divider class="my-4" />
+        <div
+          class="d-flex justify-space-between text-caption text-medium-emphasis"
+        >
+          <span>สร้างเมื่อ: {{ formatDateTime(item.created_at) }}</span>
+          <span>อัปเดตล่าสุด: {{ formatDateTime(item.updated_at) }}</span>
+        </div>
       </template>
     </EnhancedDataTable>
 
@@ -485,12 +472,12 @@ const customerHeaders = [
 
 <style scoped>
 /* Customer details expandable row styles */
-.customer-details-card {
+:deep(.enhanced-details-card) {
   transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   background: rgba(var(--v-theme-surface-container-low), 1);
 }
 
-.customer-breakdown {
+:deep(.enhanced-breakdown) {
   max-width: 100%;
 }
 
@@ -572,7 +559,7 @@ const customerHeaders = [
 }
 
 /* Enhanced visual hierarchy */
-.customer-details-card :deep(.v-card-text) {
+:deep(.enhanced-details-card .v-card-text) {
   padding: 24px !important;
 }
 
