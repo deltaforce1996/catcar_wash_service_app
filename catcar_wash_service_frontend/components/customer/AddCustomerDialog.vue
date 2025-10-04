@@ -31,8 +31,6 @@
                 label="ชื่อเรียก/ชื่อร้าน"
                 variant="outlined"
                 density="compact"
-                :rules="requiredRules"
-                required
               />
             </v-col>
 
@@ -56,8 +54,7 @@
                 label="เบอร์โทรศัพท์"
                 variant="outlined"
                 density="compact"
-                :rules="phoneRules"
-                required
+                :rules="optionalPhoneRules"
               />
             </v-col>
 
@@ -69,57 +66,7 @@
                 variant="outlined"
                 density="compact"
                 rows="3"
-                :rules="requiredRules"
-                required
               />
-            </v-col>
-
-            <!-- Status -->
-            <v-col cols="12" md="6">
-              <v-select
-                v-model="form.status"
-                label="สถานะ"
-                variant="outlined"
-                density="compact"
-                :items="statusOptions"
-                item-value="value"
-                item-title="title"
-                :rules="requiredRules"
-                placeholder="เลือกสถานะ"
-                required
-              />
-            </v-col>
-
-            <!-- Permission -->
-            <v-col cols="12" md="6">
-              <v-select
-                v-model="form.permission_id"
-                label="สิทธิ์การใช้งาน"
-                variant="outlined"
-                density="compact"
-                :items="permissionOptions"
-                item-value="value"
-                item-title="label"
-                :rules="requiredRules"
-                required
-              >
-                <template #item="{ props: itemProps, item }">
-                  <v-list-item v-bind="itemProps" :title="''">
-                    <v-chip
-                      :color="item.raw.color"
-                      size="small"
-                      variant="tonal"
-                    >
-                      {{ item.raw.label }}
-                    </v-chip>
-                  </v-list-item>
-                </template>
-                <template #selection="{ item }">
-                  <v-chip :color="item.raw.color" size="small" variant="tonal">
-                    {{ item.raw.label }}
-                  </v-chip>
-                </template>
-              </v-select>
             </v-col>
           </v-row>
         </v-form>
@@ -135,20 +82,20 @@
         >
           <div class="text-subtitle-2 mb-2">กรุณาแก้ไขข้อผิดพลาดต่อไปนี้:</div>
           <ul class="text-body-2">
-            <li v-for="error in formErrors" :key="error">{{ error }}</li>
+            <li v-for="errMsg in formErrors" :key="errMsg">{{ errMsg }}</li>
           </ul>
         </v-alert>
       </v-card-text>
 
       <v-card-actions class="pa-6 pt-0">
         <v-spacer />
-        <v-btn variant="outlined" :disabled="isSubmitting" @click="handleClose">
+        <v-btn variant="outlined" :disabled="isCreating" @click="handleClose">
           ยกเลิก
         </v-btn>
         <v-btn
           color="primary"
           variant="flat"
-          :loading="isSubmitting"
+          :loading="isCreating"
           @click="handleRegisterClick"
         >
           เพิ่มลูกค้า
@@ -159,9 +106,7 @@
 </template>
 
 <script setup lang="ts">
-import type { EnumUserStatus, EnumPermissionType } from "~/types";
-import type { RegisterUserPayload } from "~/services/apis/user-api.service";
-import { UserApiService } from "~/services/apis/user-api.service";
+import { useUser } from "~/composables/useUser";
 
 // Props
 interface Props {
@@ -176,6 +121,9 @@ const emit = defineEmits<{
   success: [];
 }>();
 
+// Composable
+const { registerUser, isCreating, error } = useUser();
+
 // Computed for v-model
 const isOpen = computed({
   get: () => props.modelValue,
@@ -185,43 +133,24 @@ const isOpen = computed({
 // Local state
 const formRef = ref();
 const formValid = ref(false);
-const isSubmitting = ref(false);
 const formErrors = ref<string[]>([]);
 
-// Form data with proper initial state
-const form = ref<RegisterUserPayload>({
-  email: "",
+// Form data matching backend RegisterUserDto
+interface CustomerForm {
+  fullname: string;
+  email: string;
+  phone: string;
+  address: string;
+  custom_name: string;
+}
+
+const form = ref<CustomerForm>({
   fullname: "",
+  email: "",
   phone: "",
   address: "",
   custom_name: "",
-  status: "ACTIVE",
-  permission_id: "",
 });
-
-// Status options
-interface StatusOption {
-  value: EnumUserStatus;
-  title: string;
-}
-
-const statusOptions: StatusOption[] = [
-  { value: "ACTIVE", title: "ใช้งาน" },
-  { value: "INACTIVE", title: "ไม่ใช้งาน" },
-];
-
-// Permission options
-interface PermissionOption {
-  value: EnumPermissionType;
-  label: string;
-  color: string;
-}
-
-const permissionOptions: PermissionOption[] = [
-  { value: "USER", label: "ผู้ใช้ทั่วไป", color: "info" },
-  { value: "TECHNICIAN", label: "ช่างเทคนิค", color: "warning" },
-  { value: "ADMIN", label: "ผู้ดูแลระบบ", color: "primary" },
-];
 
 // Validation rules
 const emailRules = [
@@ -229,15 +158,11 @@ const emailRules = [
   (v: string) => /.+@.+\..+/.test(v) || "รูปแบบอีเมลไม่ถูกต้อง",
 ];
 
-const phoneRules = [
-  (v: string) => !!v || "กรุณากรอกเบอร์โทรศัพท์",
-  (v: string) => /^[0-9]{10}$/.test(v) || "เบอร์โทรศัพท์ต้องเป็นตัวเลข 10 หลัก",
+const optionalPhoneRules = [
+  (v: string) => !v || /^[0-9]{10}$/.test(v) || "เบอร์โทรศัพท์ต้องเป็นตัวเลข 10 หลัก",
 ];
 
 const requiredRules = [(v: string) => !!v || "กรุณากรอกข้อมูล"];
-
-// API service
-const userApiService = new UserApiService();
 
 // Handle register button click with validation
 const handleRegisterClick = async () => {
@@ -255,45 +180,40 @@ const handleRegisterClick = async () => {
 
 // Submit handler
 const handleSubmit = async () => {
-  isSubmitting.value = true;
-
   try {
-    const selectedPermission = permissionOptions.find(
-      (p) => p.value === form.value.permission_id
-    );
-
-    if (!selectedPermission) {
-      throw new Error("กรุณาเลือกสิทธิ์การใช้งาน");
-    }
-
-    const payload: RegisterUserPayload = {
-      ...form.value,
-      permission_id: form.value.permission_id,
+    // Send only the fields that backend RegisterUserDto accepts
+    // Backend will automatically set status=ACTIVE and permission=USER
+    const payload = {
+      fullname: form.value.fullname,
+      email: form.value.email,
+      phone: form.value.phone,
+      address: form.value.address,
+      custom_name: form.value.custom_name,
     };
 
-    await userApiService.RegisterUser(payload);
+    await registerUser(payload);
 
     // Success - emit success event and close dialog
     emit("success");
     handleClose();
-  } catch (error) {
-    console.error("เกิดข้อผิดพลาดในการลงทะเบียน:", error);
-    formErrors.value = ["เกิดข้อผิดพลาดในการลงทะเบียน กรุณาลองใหม่อีกครั้ง"];
-  } finally {
-    isSubmitting.value = false;
+  } catch (err) {
+    console.error("เกิดข้อผิดพลาดในการลงทะเบียน:", err);
+    if (error.value) {
+      formErrors.value = [error.value];
+    } else {
+      formErrors.value = ["เกิดข้อผิดพลาดในการลงทะเบียน กรุณาลองใหม่อีกครั้ง"];
+    }
   }
 };
 
 // Reset form
 const resetForm = () => {
   form.value = {
-    email: "",
     fullname: "",
+    email: "",
     phone: "",
     address: "",
     custom_name: "",
-    status: "ACTIVE",
-    permission_id: "",
   };
   formValid.value = false;
   formErrors.value = [];

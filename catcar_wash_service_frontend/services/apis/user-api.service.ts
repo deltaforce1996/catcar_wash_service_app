@@ -55,13 +55,11 @@ export interface SearchUsersRequest {
 }
 
 export interface RegisterUserPayload {
-  email: string;
   fullname: string;
-  phone: string;
-  address: string;
-  custom_name: string;
-  status: EnumUserStatus;
-  permission_id: string;
+  email: string;
+  phone?: string;
+  address?: string;
+  custom_name?: string;
 }
 
 export interface UpdateUserPayload {
