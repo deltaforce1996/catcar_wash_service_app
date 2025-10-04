@@ -81,10 +81,7 @@
                 label="สถานะ"
                 variant="outlined"
                 density="compact"
-                :items="[
-                  { value: 'ACTIVE', title: 'ใช้งาน' },
-                  { value: 'INACTIVE', title: 'ไม่ใช้งาน' },
-                ]"
+                :items="statusOptions"
                 item-value="value"
                 item-title="title"
                 :rules="requiredRules"
@@ -106,8 +103,8 @@
                 :rules="requiredRules"
                 required
               >
-                <template #item="{ props, item }">
-                  <v-list-item v-bind="props" :title="''">
+                <template #item="{ props: itemProps, item }">
+                  <v-list-item v-bind="itemProps" :title="''">
                     <v-chip
                       :color="item.raw.color"
                       size="small"
@@ -118,11 +115,7 @@
                   </v-list-item>
                 </template>
                 <template #selection="{ item }">
-                  <v-chip
-                    :color="item.raw.color"
-                    size="small"
-                    variant="tonal"
-                  >
+                  <v-chip :color="item.raw.color" size="small" variant="tonal">
                     {{ item.raw.label }}
                   </v-chip>
                 </template>
@@ -140,9 +133,7 @@
           closable
           @click:close="formErrors = []"
         >
-          <div class="text-subtitle-2 mb-2">
-            กรุณาแก้ไขข้อผิดพลาดต่อไปนี้:
-          </div>
+          <div class="text-subtitle-2 mb-2">กรุณาแก้ไขข้อผิดพลาดต่อไปนี้:</div>
           <ul class="text-body-2">
             <li v-for="error in formErrors" :key="error">{{ error }}</li>
           </ul>
@@ -168,6 +159,7 @@
 </template>
 
 <script setup lang="ts">
+import type { EnumUserStatus, EnumPermissionType } from "~/types";
 import type { RegisterUserPayload } from "~/services/apis/user-api.service";
 import { UserApiService } from "~/services/apis/user-api.service";
 
@@ -196,19 +188,36 @@ const formValid = ref(false);
 const isSubmitting = ref(false);
 const formErrors = ref<string[]>([]);
 
-// Form data
+// Form data with proper initial state
 const form = ref<RegisterUserPayload>({
   email: "",
   fullname: "",
   phone: "",
   address: "",
   custom_name: "",
-  status: "" as any,
+  status: "ACTIVE",
   permission_id: "",
 });
 
+// Status options
+interface StatusOption {
+  value: EnumUserStatus;
+  title: string;
+}
+
+const statusOptions: StatusOption[] = [
+  { value: "ACTIVE", title: "ใช้งาน" },
+  { value: "INACTIVE", title: "ไม่ใช้งาน" },
+];
+
 // Permission options
-const permissionOptions = [
+interface PermissionOption {
+  value: EnumPermissionType;
+  label: string;
+  color: string;
+}
+
+const permissionOptions: PermissionOption[] = [
   { value: "USER", label: "ผู้ใช้ทั่วไป", color: "info" },
   { value: "TECHNICIAN", label: "ช่างเทคนิค", color: "warning" },
   { value: "ADMIN", label: "ผู้ดูแลระบบ", color: "primary" },
@@ -283,7 +292,7 @@ const resetForm = () => {
     phone: "",
     address: "",
     custom_name: "",
-    status: "" as any,
+    status: "ACTIVE",
     permission_id: "",
   };
   formValid.value = false;
