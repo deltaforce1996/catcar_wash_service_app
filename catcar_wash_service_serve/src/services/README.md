@@ -189,7 +189,139 @@ export class DatabaseController {
 - `refreshAllViews()`: Refresh all materialized views (day, month, year, hour)
 - `runSqlScript(sql: string)`: Execute any SQL script and return results
 
-### 4. BcryptService
+### 4. MqttService
+
+A comprehensive MQTT client service for publishing and subscribing to MQTT topics with automatic connection management and event handling.
+
+#### Features
+- Automatic connection management with reconnection support
+- Publish messages to MQTT topics with configurable QoS
+- Subscribe to multiple topics with automatic re-subscription on reconnect
+- Event-driven architecture with custom event emitters
+- Connection status monitoring and health checks
+- JSON message publishing for structured data
+- Configurable connection parameters via environment variables
+
+#### Configuration
+Set the following environment variables:
+```env
+MQTT_BROKER_URL=mqtt://localhost:1883
+MQTT_CLIENT_ID=catcar-wash-service
+MQTT_USERNAME=your_username
+MQTT_PASSWORD=your_password
+MQTT_KEEPALIVE=60
+MQTT_CONNECT_TIMEOUT=30000
+MQTT_RECONNECT_PERIOD=5000
+MQTT_CLEAN=true
+MQTT_QOS=1
+```
+
+#### Usage Example
+
+```typescript
+import { Injectable, OnModuleInit } from '@nestjs/common';
+import { MqttService } from './services';
+
+@Injectable()
+export class DeviceController implements OnModuleInit {
+  constructor(private readonly mqttService: MqttService) {}
+
+  async onModuleInit() {
+    // Listen for messages on specific topics
+    this.mqttService.on('message:device/+/status', (message) => {
+      console.log(`Device status update: ${message.topic}`, message.payload.toString());
+    });
+
+    this.mqttService.on('message:device/+/sensor', (message) => {
+      console.log(`Sensor data: ${message.topic}`, message.payload.toString());
+    });
+
+    // Subscribe to device topics
+    await this.mqttService.subscribe('device/+/status', 1);
+    await this.mqttService.subscribe('device/+/sensor', 1);
+  }
+
+  async sendDeviceCommand(deviceId: string, command: any) {
+    const topic = `device/${deviceId}/command`;
+    await this.mqttService.publishJson(topic, command, { qos: 1 });
+  }
+
+  async broadcastSystemStatus(status: any) {
+    await this.mqttService.publishJson('system/status', status, { 
+      qos: 1, 
+      retain: true 
+    });
+  }
+
+  async getConnectionStatus() {
+    return this.mqttService.getConnectionStatus();
+  }
+
+  async getActiveSubscriptions() {
+    return this.mqttService.getSubscriptions();
+  }
+}
+```
+
+#### Event Handling
+
+The MQTT service emits various events for monitoring and handling:
+
+```typescript
+// Connection events
+this.mqttService.on('connected', () => {
+  console.log('MQTT client connected');
+});
+
+this.mqttService.on('disconnected', () => {
+  console.log('MQTT client disconnected');
+});
+
+this.mqttService.on('reconnecting', () => {
+  console.log('MQTT client reconnecting...');
+});
+
+// Message events
+this.mqttService.on('message', (message) => {
+  console.log('Message received:', message.topic, message.payload.toString());
+});
+
+// Topic-specific events
+this.mqttService.on('message:device/123/status', (message) => {
+  // Handle specific device status updates
+});
+
+// Subscription events
+this.mqttService.on('subscribed', (subscription) => {
+  console.log(`Subscribed to: ${subscription.topic}`);
+});
+
+this.mqttService.on('unsubscribed', (topic) => {
+  console.log(`Unsubscribed from: ${topic}`);
+});
+
+// Error handling
+this.mqttService.on('error', (error) => {
+  console.error('MQTT error:', error);
+});
+```
+
+#### Key Methods
+
+- `connect()`: Connect to MQTT broker
+- `disconnect()`: Disconnect from MQTT broker
+- `publish(topic, payload, options?)`: Publish message to topic
+- `publishJson(topic, data, options?)`: Publish JSON data to topic
+- `subscribe(topic, qos?)`: Subscribe to a topic
+- `unsubscribe(topic)`: Unsubscribe from a topic
+- `subscribeMultiple(subscriptions)`: Subscribe to multiple topics
+- `unsubscribeMultiple(topics)`: Unsubscribe from multiple topics
+- `getConnectionStatus()`: Get current connection status
+- `getSubscriptions()`: Get list of active subscriptions
+- `isConnected()`: Check if client is connected
+- `reconnect()`: Manually reconnect to broker
+
+### 5. BcryptService
 
 A utility service for password hashing and verification using bcrypt.
 
@@ -243,7 +375,7 @@ export class AuthService {
 All services are automatically exported from the `index.ts` file and can be imported as:
 
 ```typescript
-import { BeamCheckoutService, ErrorLoggerService, BcryptService, SqlScriptService } from './services';
+import { BeamCheckoutService, ErrorLoggerService, BcryptService, SqlScriptService, MqttService } from './services';
 ```
 
 ## Dependency Injection
@@ -252,7 +384,7 @@ To use these services in your controllers or other services, inject them through
 
 ```typescript
 import { Injectable } from '@nestjs/common';
-import { BeamCheckoutService, ErrorLoggerService, BcryptService, SqlScriptService } from './services';
+import { BeamCheckoutService, ErrorLoggerService, BcryptService, SqlScriptService, MqttService } from './services';
 
 @Injectable()
 export class YourService {
@@ -261,6 +393,7 @@ export class YourService {
     private readonly errorLoggerService: ErrorLoggerService,
     private readonly bcryptService: BcryptService,
     private readonly sqlScriptService: SqlScriptService,
+    private readonly mqttService: MqttService,
   ) {}
 }
 ```
@@ -273,15 +406,17 @@ All services include comprehensive error handling:
 - **ErrorLoggerService**: Gracefully handles file system errors
 - **SqlScriptService**: Simple error handling with logging
 - **BcryptService**: Propagates bcrypt library errors
+- **MqttService**: Comprehensive error handling with automatic reconnection and event emission
 
 ## Best Practices
 
-1. **Configuration**: Always set required environment variables before using BeamCheckoutService
+1. **Configuration**: Always set required environment variables before using BeamCheckoutService and MqttService
 2. **Error Logging**: Use ErrorLoggerService in global exception filters for comprehensive error tracking
 3. **SQL Scripts**: Use SqlScriptService for database operations and materialized view refreshes
 4. **Password Security**: Never store plain text passwords; always use BcryptService for hashing
 5. **Payment Handling**: Always verify payment status before processing orders
 6. **QR Code Generation**: Use appropriate options for QR code generation based on your use case
+7. **MQTT Communication**: Use MqttService for IoT device communication with proper error handling and event listeners
 
 ## Dependencies
 
@@ -290,5 +425,6 @@ All services include comprehensive error handling:
 - `axios`: HTTP client for API calls
 - `qrcode`: QR code generation
 - `bcrypt`: Password hashing
+- `mqtt`: MQTT client for IoT communication
 - `fs`: File system operations (Node.js built-in)
 - `path`: Path utilities (Node.js built-in)

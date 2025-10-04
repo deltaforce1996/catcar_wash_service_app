@@ -6,3 +6,4 @@ export * from './sql-script.service';
 export * from './device-registration.service';
 export * from './event-manager.service';
 export * from './device-registration-event.adapter';
+export * from './mqtt.service';
