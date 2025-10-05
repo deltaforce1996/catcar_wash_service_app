@@ -1,4 +1,4 @@
-import { WashSetup } from 'src/types/internal.type';
+import { ParameterPricing, WashSetup } from 'src/types/internal.type';
 import { DeviceConfigBase } from './device-config-base';
 
 /**
@@ -11,21 +11,33 @@ import { DeviceConfigBase } from './device-config-base';
  * ```typescript
  * // Example usage with raw device payload
  * const rawWashData = {
- *   hp_water: 30,        // 30 seconds of high-pressure water
- *   foam: 15,            // 15 seconds of foam application
- *   air: 20,             // 20 seconds of air drying
- *   water: 25,           // 25 seconds of regular water
- *   vacuum: 60,          // 60 seconds of vacuum service
- *   black_tire: 10,      // 10 seconds of tire cleaning
- *   wax: 5,              // 5 seconds of wax application
- *   air_conditioner: 15, // 15 seconds of air freshener
- *   parking_fee: 0,      // No parking fee penalty
- *   promotion: 10,       // 10% discount promotion
- *   on_time: "06:00",    // Opens at 6 AM
- *   off_time: "22:00",   // Closes at 10 PM
- *   coin: true,          // Accepts coins
- *   promptpay: true,     // Accepts PromptPay
- *   bank_note: false     // Does not accept bank notes
+ *   configs: {
+ *     machine: {
+ *       ACTIVE: true,           // Device is active
+ *       BANKNOTE: false,        // Does not accept bank notes
+ *       COIN: true,             // Accepts coins
+ *       QR: true,               // Accepts QR payment
+ *       ON_TIME: "06:00",       // Opens at 6 AM
+ *       OFF_TIME: "22:00",      // Closes at 10 PM
+ *       SAVE_STATE: true        // Saves device state
+ *     },
+ *     pricing: {
+ *       PROMOTION: 10           // 10% discount promotion
+ *     },
+ *     function: {
+ *       sec_per_baht: {
+ *         HP_WATER: 30,         // 30 seconds of high-pressure water per baht
+ *         FOAM: 15,             // 15 seconds of foam application per baht
+ *         AIR: 20,              // 20 seconds of air drying per baht
+ *         WATER: 25,            // 25 seconds of regular water per baht
+ *         VACUUM: 60,           // 60 seconds of vacuum service per baht
+ *         BLACK_TIRE: 10,       // 10 seconds of tire cleaning per baht
+ *         WAX: 5,               // 5 seconds of wax application per baht
+ *         AIR_FRESHENER: 15,    // 15 seconds of air freshener per baht
+ *         PARKING_FEE: 0        // No parking fee penalty
+ *       }
+ *     }
+ *   }
  * };
  *
  * const washConfig = new DeviceWashConfig(rawWashData);
@@ -64,23 +76,36 @@ export class DeviceWashConfig extends DeviceConfigBase<WashSetup> {
    *   - System settings (operating hours, payment methods)
    */
   constructor(payload: {
-    hp_water: number;
-    foam: number;
-    air: number;
-    water: number;
-    vacuum: number;
-    black_tire: number;
-    wax: number;
-    air_conditioner: number;
-    parking_fee: number;
-    promotion: number;
-    on_time: string;
-    off_time: string;
-    coin: boolean;
-    promptpay: boolean;
-    bank_note: boolean;
+    configs: {
+      machine: {
+        ACTIVE: boolean;
+        BANKNOTE: boolean;
+        COIN: boolean;
+        QR: boolean;
+        ON_TIME: string;
+        OFF_TIME: string;
+        SAVE_STATE: boolean;
+      };
+      pricing: {
+        PROMOTION: number;
+      };
+      function: {
+        sec_per_baht: {
+          HP_WATER: number;
+          FOAM: number;
+          AIR: number;
+          WATER: number;
+          VACUUM: number;
+          BLACK_TIRE: number;
+          WAX: number;
+          AIR_FRESHENER: number;
+          PARKING_FEE: number;
+        };
+      };
+    };
   }) {
-    super(payload);
+    // Spread machine config at root level and include the entire configs structure
+    super({ ...payload.configs.machine, configs: payload.configs });
   }
 
   /**
@@ -97,52 +122,57 @@ export class DeviceWashConfig extends DeviceConfigBase<WashSetup> {
   protected parseSaleConfig(): WashSetup {
     return {
       hp_water: {
-        value: this.payload.hp_water,
+        value: this.payload.configs.function.sec_per_baht.HP_WATER,
         unit: 'วินาที',
         description: 'ปริมาณน้ำ',
       },
       foam: {
-        value: this.payload.foam,
+        value: this.payload.configs.function.sec_per_baht.FOAM,
         unit: 'วินาที',
         description: 'โฟม',
       },
       air: {
-        value: this.payload.air,
+        value: this.payload.configs.function.sec_per_baht.AIR,
         unit: 'วินาที',
         description: 'ลม',
       },
       water: {
-        value: this.payload.water,
+        value: this.payload.configs.function.sec_per_baht.WATER,
         unit: 'วินาที',
         description: 'น้ำยาปรับอากาศ',
       },
       vacuum: {
-        value: this.payload.vacuum,
+        value: this.payload.configs.function.sec_per_baht.VACUUM,
         unit: 'วินาที',
         description: 'ดูดฝุ่น',
       },
       black_tire: {
-        value: this.payload.black_tire,
+        value: this.payload.configs.function.sec_per_baht.BLACK_TIRE,
         unit: 'วินาที',
         description: 'ล้างล้อ',
       },
       wax: {
-        value: this.payload.wax,
+        value: this.payload.configs.function.sec_per_baht.WAX,
         unit: 'วินาที',
         description: 'ลง wax',
       },
       air_conditioner: {
-        value: this.payload.air_conditioner,
+        value: this.payload.configs.function.sec_per_baht.AIR_FRESHENER,
         unit: 'วินาที',
         description: 'ปรับอากาศ',
       },
       parking_fee: {
-        value: this.payload.parking_fee,
+        value: this.payload.configs.function.sec_per_baht.PARKING_FEE,
         unit: 'วินาที',
         description: 'ค่าปรับที่จอดรถ',
       },
+    };
+  }
+
+  protected parsePricingConfig(): Record<string, ParameterPricing> {
+    return {
       promotion: {
-        value: this.payload.promotion,
+        value: this.payload.configs.pricing.PROMOTION,
         unit: '(%) เปอร์เซ็นต์',
         description: 'โปรโมชั่น',
       },

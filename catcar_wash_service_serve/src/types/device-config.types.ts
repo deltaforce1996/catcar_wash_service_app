@@ -3,6 +3,8 @@
  * This file contains all device configuration interfaces that can be reused across DTOs
  */
 
+import { ParameterPricing } from './internal.type';
+
 // System configuration that's common to all device types
 export interface SystemConfig {
   on_time?: string;
@@ -44,12 +46,14 @@ export interface DryingSaleConfig {
 export interface WashConfig {
   system?: SystemConfig;
   sale?: WashSaleConfig;
+  pricing?: Record<string, ParameterPricing>;
 }
 
 // Complete DRYING device configuration
 export interface DryingConfig {
   system?: SystemConfig;
   sale?: DryingSaleConfig;
+  pricing?: Record<string, ParameterPricing>;
 }
 
 // Union type for all device configurations

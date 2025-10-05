@@ -8,7 +8,6 @@ import {
   RefundResult,
 } from 'src/services/beam-checkout.service';
 import { CreatePaymentDto, CreateRefundDto } from './dtos';
-import { AuthenticatedUser } from 'src/types/internal.type';
 import { PaymentApiStatus, Prisma, tbl_payment_temps } from '@prisma/client';
 import { PrismaService } from 'src/database/prisma/prisma.service';
 import { BadRequestException, ItemNotFoundException } from 'src/errors';
@@ -72,11 +71,10 @@ export class PaymentGatewayService {
    */
   private async createPaymentWithTimeout(
     createPaymentDto: CreatePaymentDto,
-    user?: AuthenticatedUser,
     timeoutMs: number = 30000, // 30 seconds default timeout
   ): Promise<any> {
     return Promise.race([
-      this.createPayment(createPaymentDto, user),
+      this.createPayment(createPaymentDto),
       new Promise((_, reject) => {
         setTimeout(() => {
           reject(new Error('Payment creation timeout'));
@@ -128,9 +126,7 @@ export class PaymentGatewayService {
    * TODO: เพิ่มการตรวจสอบ device และ user permissions
    * TODO: เพิ่มการ validate ข้อมูลก่อนสร้าง charge
    */
-  async createPayment(createPaymentDto: CreatePaymentDto, _user?: AuthenticatedUser): Promise<tbl_payment_temps> {
-    void _user; // TODO: ใช้ user parameter เมื่อเพิ่ม permission checking
-
+  async createPayment(createPaymentDto: CreatePaymentDto): Promise<tbl_payment_temps> {
     let chargeResult: ChargeResult | null = null;
 
     try {
@@ -165,7 +161,7 @@ export class PaymentGatewayService {
           const paymentTemp: tbl_payment_temps = await tx.tbl_payment_temps.create({
             data: {
               device_id: createPaymentDto.device_id,
-              amount: Number(createPaymentDto.amount / 100).toFixed(2),
+              amount: Number(createPaymentDto.amount / 100),
               payment_method: createPaymentDto.payment_method || 'QR_PROMPT_PAY',
               reference_id: referenceId,
               status: 'PENDING',
@@ -306,8 +302,6 @@ export class PaymentGatewayService {
   async getPaymentStatus(chargeId: string): Promise<{
     chargeId: string;
     status: string;
-    updated_at: string;
-    created_at: string;
   }> {
     this.logger.log(`Performing manual status check for charge: ${chargeId}`);
 
@@ -364,8 +358,6 @@ export class PaymentGatewayService {
     return {
       chargeId: chargeId,
       status: this.mapBeamStatusToPayment(chargeStatus.status),
-      updated_at: chargeStatus.updatedAt ?? new Date().toISOString(),
-      created_at: chargeStatus.createdAt ?? null,
     };
   }
 
@@ -390,8 +382,7 @@ export class PaymentGatewayService {
   /**
    * Create a refund for a successful payment and return the complete refund status
    */
-  async createRefund(createRefundDto: CreateRefundDto, _user?: AuthenticatedUser): Promise<RefundResult> {
-    void _user; // TODO: ใช้ user parameter เมื่อเพิ่ม permission checking
+  async createRefund(createRefundDto: CreateRefundDto): Promise<RefundResult> {
     this.logger.log(`Creating refund for charge: ${createRefundDto.chargeId}`);
 
     try {

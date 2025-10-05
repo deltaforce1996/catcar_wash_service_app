@@ -1,22 +1,46 @@
-import { Body, Controller, Get, Param, Post, Put, Query, UseFilters, UseGuards } from '@nestjs/common';
+import {
+  Body,
+  Controller,
+  Get,
+  Param,
+  Post,
+  Put,
+  Query,
+  UseFilters,
+  UseGuards,
+  Sse,
+  MessageEvent,
+} from '@nestjs/common';
+import { Observable } from 'rxjs';
 import { DeviceRow, DeviceWithoutRefRow, DevicesService } from './devices.service';
 import { AllExceptionFilter } from 'src/common';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { PaginatedResult } from 'src/types/internal.type';
-import { SuccessResponse } from 'src/types';
-import { UpdateDeviceBasicDto, CreateDeviceDto, SearchDeviceDto, UpdateDeviceConfigsDto } from './dtos/index';
+import type { SuccessResponse } from 'src/types';
+import {
+  UpdateDeviceBasicDto,
+  CreateDeviceDto,
+  SearchDeviceDto,
+  UpdateDeviceConfigsDto,
+  DeviceNeedRegisterDto,
+} from './dtos/index';
 import { UserAuth } from '../auth/decorators';
 import type { AuthenticatedUser } from 'src/types/internal.type';
+import { DeviceRegistrationService, DeviceRegistrationEventAdapter } from '../../services';
 
 type DevicePublicResponse = PaginatedResult<DeviceRow | DeviceWithoutRefRow>;
 
 @UseFilters(AllExceptionFilter)
-@UseGuards(JwtAuthGuard)
 @Controller('api/v1/devices')
 export class DevicesController {
-  constructor(private readonly devicesService: DevicesService) {}
+  constructor(
+    private readonly devicesService: DevicesService,
+    private readonly deviceRegistrationService: DeviceRegistrationService,
+    private readonly deviceRegistrationEventAdapter: DeviceRegistrationEventAdapter,
+  ) {}
 
   @Get('search')
+  @UseGuards(JwtAuthGuard)
   async searchDevices(
     @Query() q: SearchDeviceDto,
     @UserAuth() user: AuthenticatedUser,
@@ -30,6 +54,7 @@ export class DevicesController {
   }
 
   @Get('find-by-id/:id')
+  @UseGuards(JwtAuthGuard)
   async getDeviceById(
     @Param('id') id: string,
     @UserAuth() user: AuthenticatedUser,
@@ -43,6 +68,7 @@ export class DevicesController {
   }
 
   @Post('create')
+  @UseGuards(JwtAuthGuard)
   async createDevice(@Body() data: CreateDeviceDto): Promise<SuccessResponse<DeviceRow>> {
     const result = await this.devicesService.createDevice(data);
     return {
@@ -53,6 +79,7 @@ export class DevicesController {
   }
 
   @Put('update-by-id-basic/:id')
+  @UseGuards(JwtAuthGuard)
   async updateDeviceBasicById(
     @Param('id') id: string,
     @Body() data: UpdateDeviceBasicDto,
@@ -66,6 +93,7 @@ export class DevicesController {
   }
 
   @Put('update-configs/:id')
+  @UseGuards(JwtAuthGuard)
   async updateDeviceConfigsById(
     @Param('id') id: string,
     @Body() data: UpdateDeviceConfigsDto,
@@ -76,5 +104,37 @@ export class DevicesController {
       data: result,
       message: 'Device configurations updated successfully',
     };
+  }
+
+  // Device Registration Endpoints (without JWT guard for device requests)
+  @Post('need-register')
+  @UseFilters(AllExceptionFilter)
+  deviceNeedRegister(@Body() data: DeviceNeedRegisterDto): SuccessResponse<{ pin: string; device_id: string }> {
+    // Generate a temporary device_id for tracking (will be replaced when actually registered)
+    const tempDeviceId = `temp-${data.chip_id}`;
+    const session = this.deviceRegistrationService.createRegistrationSession(
+      data.chip_id,
+      data.mac_address,
+      data.firmware_version,
+      tempDeviceId,
+    );
+
+    return {
+      success: true,
+      data: {
+        pin: session.pin,
+        device_id: tempDeviceId,
+      },
+      message: 'Device registration session created successfully',
+    };
+  }
+
+  // SSE endpoint for device scanning
+
+  // @UseGuards(JwtAuthGuard)
+  @Get('scan')
+  @Sse('device-scan')
+  deviceScan(): Observable<{ data: string }> {
+    return this.deviceRegistrationEventAdapter.createSSEStream();
   }
 }

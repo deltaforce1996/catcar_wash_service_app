@@ -1,11 +1,24 @@
 import { Module } from '@nestjs/common';
 import { DevicesService } from './devices.service';
 import { DevicesController } from './devices.controller';
-import { ErrorLoggerService } from 'src/services';
+import {
+  ErrorLoggerService,
+  DeviceRegistrationService,
+  EventManagerService,
+  DeviceRegistrationEventAdapter,
+} from 'src/services';
+import { EventEmitterModule } from '@nestjs/event-emitter';
 
 @Module({
-  providers: [DevicesService, ErrorLoggerService],
+  imports: [EventEmitterModule],
+  providers: [
+    DevicesService,
+    ErrorLoggerService,
+    DeviceRegistrationService,
+    EventManagerService,
+    DeviceRegistrationEventAdapter,
+  ],
   controllers: [DevicesController],
-  exports: [DevicesService],
+  exports: [DevicesService, DeviceRegistrationService, EventManagerService, DeviceRegistrationEventAdapter],
 })
 export class DevicesModule {}

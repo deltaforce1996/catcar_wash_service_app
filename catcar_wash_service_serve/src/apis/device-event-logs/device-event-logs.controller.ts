@@ -1,7 +1,8 @@
-import { Controller, Get, Query, UseFilters, UseGuards } from '@nestjs/common';
+import { Controller, Get, Post, Query, Body, UseFilters, UseGuards } from '@nestjs/common';
 import { PaginatedResult } from 'src/types/internal.type';
 import { DeviceEventLogsService, DeviceEventLogRow } from './device-event-logs.service';
 import { SearchDeviceEventLogsDto } from './dtos/search-devcie-event.dto';
+import { UploadLogsDto } from './dtos/upload-logs.dto';
 import { SuccessResponse } from 'src/types/success-response.type';
 import { AllExceptionFilter } from 'src/common';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
@@ -25,6 +26,18 @@ export class DeviceEventLogsController {
     return {
       success: true,
       message: 'Device event logs fetched successfully',
+      data: result,
+    };
+  }
+
+  @Post('upload')
+  async uploadDeviceEventLogs(
+    @Body() uploadLogsDto: UploadLogsDto,
+  ): Promise<SuccessResponse<{ created_count: number }>> {
+    const result = await this.deviceEventLogsService.uploadDeviceEventLogs(uploadLogsDto);
+    return {
+      success: true,
+      message: 'Device event logs uploaded successfully',
       data: result,
     };
   }

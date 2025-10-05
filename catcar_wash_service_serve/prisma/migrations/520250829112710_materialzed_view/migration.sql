@@ -14,21 +14,21 @@ SELECT
   p.device_id,
   p.day,
   p.payload->>'status' AS status,
-  SUM((p.payload->>'total_amount')::numeric) AS total_amount,
-  SUM(COALESCE(c.coin_sum, 0))              AS coin_sum,
-  SUM(COALESCE(b.bank_sum, 0))              AS bank_sum,
-  SUM(COALESCE(q.qr_net_sum, 0))            AS qr_net_sum
+  SUM((p.payload->>'total_amount')::numeric(10,2)) AS total_amount,
+  SUM(COALESCE(c.coin_sum, 0))::numeric(10,2)              AS coin_sum,
+  SUM(COALESCE(b.bank_sum, 0))::numeric(10,2)              AS bank_sum,
+  SUM(COALESCE(q.qr_net_sum, 0))::numeric(10,2)            AS qr_net_sum
 FROM payments p
 LEFT JOIN LATERAL (
-  SELECT SUM((kv.key)::numeric * (kv.value)::numeric) AS coin_sum
+  SELECT SUM((kv.key)::numeric(10,2) * (kv.value)::numeric(10,2)) AS coin_sum
   FROM jsonb_each_text(p.payload->'coin') kv
 ) c ON TRUE
 LEFT JOIN LATERAL (
-  SELECT SUM((kv.key)::numeric * (kv.value)::numeric) AS bank_sum
+  SELECT SUM((kv.key)::numeric(10,2) * (kv.value)::numeric(10,2)) AS bank_sum
   FROM jsonb_each_text(p.payload->'bank') kv
 ) b ON TRUE
 LEFT JOIN LATERAL (
-  SELECT (p.payload->'qr'->>'net_amount')::numeric AS qr_net_sum
+  SELECT (p.payload->'qr'->>'net_amount')::numeric(10,2) AS qr_net_sum
 ) q ON TRUE
 GROUP BY p.device_id, p.day, p.payload->>'status';
 
@@ -56,21 +56,21 @@ SELECT
   p.device_id,
   p.month_start,
   p.payload->>'status' AS status,
-  SUM((p.payload->>'total_amount')::numeric) AS total_amount,
-  SUM(COALESCE(c.coin_sum, 0))              AS coin_sum,
-  SUM(COALESCE(b.bank_sum, 0))              AS bank_sum,
-  SUM(COALESCE(q.qr_net_sum, 0))            AS qr_net_sum
+  SUM((p.payload->>'total_amount')::numeric(10,2)) AS total_amount,
+  SUM(COALESCE(c.coin_sum, 0))::numeric(10,2)              AS coin_sum,
+  SUM(COALESCE(b.bank_sum, 0))::numeric(10,2)              AS bank_sum,
+  SUM(COALESCE(q.qr_net_sum, 0))::numeric(10,2)            AS qr_net_sum
 FROM payments p
 LEFT JOIN LATERAL (
-  SELECT SUM((kv.key)::numeric * (kv.value)::numeric) AS coin_sum
+  SELECT SUM((kv.key)::numeric(10,2) * (kv.value)::numeric(10,2)) AS coin_sum
   FROM jsonb_each_text(p.payload->'coin') kv
 ) c ON TRUE
 LEFT JOIN LATERAL (
-  SELECT SUM((kv.key)::numeric * (kv.value)::numeric) AS bank_sum
+  SELECT SUM((kv.key)::numeric(10,2) * (kv.value)::numeric(10,2)) AS bank_sum
   FROM jsonb_each_text(p.payload->'bank') kv
 ) b ON TRUE
 LEFT JOIN LATERAL (
-  SELECT (p.payload->'qr'->>'net_amount')::numeric AS qr_net_sum
+  SELECT (p.payload->'qr'->>'net_amount')::numeric(10,2) AS qr_net_sum
 ) q ON TRUE
 GROUP BY p.device_id, p.month_start, p.payload->>'status';
 
@@ -99,21 +99,21 @@ SELECT
   p.device_id,
   p.year_start,
   p.payload->>'status' AS status,
-  SUM((p.payload->>'total_amount')::numeric) AS total_amount,
-  SUM(COALESCE(c.coin_sum, 0))              AS coin_sum,
-  SUM(COALESCE(b.bank_sum, 0))              AS bank_sum,
-  SUM(COALESCE(q.qr_net_sum, 0))            AS qr_net_sum
+  SUM((p.payload->>'total_amount')::numeric(10,2)) AS total_amount,
+  SUM(COALESCE(c.coin_sum, 0))::numeric(10,2)              AS coin_sum,
+  SUM(COALESCE(b.bank_sum, 0))::numeric(10,2)              AS bank_sum,
+  SUM(COALESCE(q.qr_net_sum, 0))::numeric(10,2)            AS qr_net_sum
 FROM payments p
 LEFT JOIN LATERAL (
-  SELECT SUM((kv.key)::numeric * (kv.value)::numeric) AS coin_sum
+  SELECT SUM((kv.key)::numeric(10,2) * (kv.value)::numeric(10,2)) AS coin_sum
   FROM jsonb_each_text(p.payload->'coin') kv
 ) c ON TRUE
 LEFT JOIN LATERAL (
-  SELECT SUM((kv.key)::numeric * (kv.value)::numeric) AS bank_sum
+  SELECT SUM((kv.key)::numeric(10,2) * (kv.value)::numeric(10,2)) AS bank_sum
   FROM jsonb_each_text(p.payload->'bank') kv
 ) b ON TRUE
 LEFT JOIN LATERAL (
-  SELECT (p.payload->'qr'->>'net_amount')::numeric AS qr_net_sum
+  SELECT (p.payload->'qr'->>'net_amount')::numeric(10,2) AS qr_net_sum
 ) q ON TRUE
 GROUP BY p.device_id, p.year_start, p.payload->>'status';
 
@@ -144,21 +144,21 @@ SELECT
   p.device_id,
   p.hour_start,
   p.payload->>'status' AS status,
-  SUM((p.payload->>'total_amount')::numeric) AS total_amount,
-  SUM(COALESCE(c.coin_sum, 0))              AS coin_sum,
-  SUM(COALESCE(b.bank_sum, 0))              AS bank_sum,
-  SUM(COALESCE(q.qr_net_sum, 0))            AS qr_net_sum
+  SUM((p.payload->>'total_amount')::numeric(10,2)) AS total_amount,
+  SUM(COALESCE(c.coin_sum, 0))::numeric(10,2)              AS coin_sum,
+  SUM(COALESCE(b.bank_sum, 0))::numeric(10,2)              AS bank_sum,
+  SUM(COALESCE(q.qr_net_sum, 0))::numeric(10,2)            AS qr_net_sum
 FROM payments p
 LEFT JOIN LATERAL (
-  SELECT SUM((kv.key)::numeric * (kv.value)::numeric) AS coin_sum
+  SELECT SUM((kv.key)::numeric(10,2) * (kv.value)::numeric(10,2)) AS coin_sum
   FROM jsonb_each_text(p.payload->'coin') kv
 ) c ON TRUE
 LEFT JOIN LATERAL (
-  SELECT SUM((kv.key)::numeric * (kv.value)::numeric) AS bank_sum
+  SELECT SUM((kv.key)::numeric(10,2) * (kv.value)::numeric(10,2)) AS bank_sum
   FROM jsonb_each_text(p.payload->'bank') kv
 ) b ON TRUE
 LEFT JOIN LATERAL (
-  SELECT (p.payload->'qr'->>'net_amount')::numeric AS qr_net_sum
+  SELECT (p.payload->'qr'->>'net_amount')::numeric(10,2) AS qr_net_sum
 ) q ON TRUE
 GROUP BY p.device_id, p.hour_start, p.payload->>'status';
 

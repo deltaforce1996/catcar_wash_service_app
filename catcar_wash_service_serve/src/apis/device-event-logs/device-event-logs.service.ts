@@ -5,6 +5,7 @@ import { PrismaService } from 'src/database/prisma/prisma.service';
 import { parseKeyValueOnly } from 'src/shared/kv-parser';
 import { AuthenticatedUser, PaginatedResult } from 'src/types/internal.type';
 import { SearchDeviceEventLogsDto } from './dtos/search-devcie-event.dto';
+import { UploadLogsDto } from './dtos/upload-logs.dto';
 
 export const deviceEventLogsPublicSelect = Prisma.validator<Prisma.tbl_devices_eventsSelect>()({
   id: true,
@@ -210,6 +211,50 @@ export class DeviceEventLogsService {
       page: safePage,
       limit: safeLimit,
       totalPages: Math.max(1, Math.ceil(total / safeLimit)),
+    };
+  }
+
+  async uploadDeviceEventLogs(uploadLogsDto: UploadLogsDto): Promise<{ created_count: number }> {
+    this.logger.log(`Uploading device event logs for device: ${uploadLogsDto.device_id}`);
+
+    // Verify that the device exists
+    const device = await this.prisma.tbl_devices.findUnique({
+      where: { id: uploadLogsDto.device_id },
+      select: { id: true },
+    });
+
+    if (!device) {
+      throw new BadRequestException('Device not found');
+    }
+
+    // Create device event logs for each item
+    const createdEvents = await Promise.all(
+      uploadLogsDto.items.map(async (item) => {
+        const payload = {
+          type: item.type,
+          status: item.status,
+          timestamp: item.timestamp,
+          total_amount: item.total_amount,
+          qr: item.qr,
+          bank: item.bank,
+          coin: item.coin,
+        };
+
+        return this.prisma.tbl_devices_events.create({
+          data: {
+            device_id: uploadLogsDto.device_id,
+            payload: payload as any,
+          },
+        });
+      }),
+    );
+
+    this.logger.log(
+      `Successfully created ${createdEvents.length} device event logs for device: ${uploadLogsDto.device_id}`,
+    );
+
+    return {
+      created_count: createdEvents.length,
     };
   }
 }

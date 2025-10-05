@@ -291,6 +291,32 @@ export class DevicesService {
           }
         });
       }
+
+      // Update pricing configs
+      if (data.configs.pricing) {
+        updatedConfigs = {
+          ...updatedConfigs,
+          pricing: { ...updatedConfigs?.pricing },
+        };
+
+        // Update only the value for each parameter
+        Object.keys(data.configs.pricing).forEach((key) => {
+          if (data.configs?.pricing?.[key] !== undefined) {
+            // Check if the parameter exists in the current config
+            if (updatedConfigs.pricing[key]) {
+              updatedConfigs.pricing[key] = {
+                ...updatedConfigs.pricing[key],
+                value: data.configs.pricing[key],
+              };
+            } else {
+              // If parameter doesn't exist, log a warning but don't add it
+              throw new ItemNotFoundException(
+                `Parameter '${key}' not found in device type '${existingDevice.type}' pricing configuration`,
+              );
+            }
+          }
+        });
+      }
     }
 
     const device: DeviceRowBase = await this.prisma.tbl_devices.update({

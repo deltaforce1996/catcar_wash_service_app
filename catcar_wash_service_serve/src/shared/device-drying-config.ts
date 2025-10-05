@@ -1,4 +1,4 @@
-import { DryingSetup } from 'src/types/internal.type';
+import { DryingSetup, ParameterPricing } from 'src/types/internal.type';
 import { DeviceConfigBase } from './device-config-base';
 
 /**
@@ -11,28 +11,49 @@ import { DeviceConfigBase } from './device-config-base';
  * ```typescript
  * // Example usage with raw device payload
  * const rawDryingData = {
- *   blow_dust: 20,           // 20 seconds of dust blowing
- *   sterilize: 30,           // 30 seconds of sterilization
- *   uv: 15,                  // 15 seconds of UV treatment
- *   ozone: 10,               // 10 seconds of ozone cleaning
- *   drying: 45,              // 45 seconds of air drying
- *   perfume: 5,              // 5 seconds of perfume application
- *   start_service_fee: 20,   // 20 baht starting service fee
- *   promotion: 15,           // 15% discount promotion
- *   on_time: "07:00",        // Opens at 7 AM
- *   off_time: "21:00",       // Closes at 9 PM
- *   coin: true,              // Accepts coins
- *   promptpay: true,         // Accepts PromptPay
- *   bank_note: true          // Accepts bank notes
+ *   configs: {
+ *     machine: {
+ *       ACTIVE: true,              // Device is active
+ *       BANKNOTE: true,            // Accepts bank notes
+ *       COIN: true,                // Accepts coins
+ *       QR: true,                  // Accepts QR payment (PromptPay)
+ *       ON_TIME: "07:00",          // Opens at 7 AM
+ *       OFF_TIME: "21:00",         // Closes at 9 PM
+ *       SAVE_STATE: true           // Save device state
+ *     },
+ *     pricing: {
+ *       BASE_FEE: 20,              // 20 baht base service fee
+ *       PROMOTION: 15,             // 15% discount promotion
+ *       WORK_PERIOD: 120           // 120 seconds work period
+ *     },
+ *     function_start: {
+ *       DUST_BLOW: 5,              // 5 seconds dust blowing at start
+ *       SANITIZE: 10,              // 10 seconds sanitization at start
+ *       UV: 8,                     // 8 seconds UV treatment at start
+ *       OZONE: 7,                  // 7 seconds ozone cleaning at start
+ *       DRY_BLOW: 15,              // 15 seconds air drying at start
+ *       PERFUME: 3                 // 3 seconds perfume at start
+ *     },
+ *     function_end: {
+ *       DUST_BLOW: 10,             // 10 seconds dust blowing at end
+ *       SANITIZE: 15,              // 15 seconds sanitization at end
+ *       UV: 12,                    // 12 seconds UV treatment at end
+ *       OZONE: 10,                 // 10 seconds ozone cleaning at end
+ *       DRY_BLOW: 20,              // 20 seconds air drying at end
+ *       PERFUME: 5                 // 5 seconds perfume at end
+ *     }
+ *   }
  * };
  *
  * const dryingConfig = new DeviceDryingConfig(rawDryingData);
  *
  * // Access structured configuration
- * console.log('Service Fee:', dryingConfig.configs?.sale.start_service_fee.value,
- *             dryingConfig.configs?.sale.start_service_fee.unit);
+ * console.log('Base Fee:', dryingConfig.configs?.sale.base_fee.value,
+ *             dryingConfig.configs?.sale.base_fee.unit);
  * console.log('UV Treatment:', dryingConfig.configs?.sale.uv.description,
- *             dryingConfig.configs?.sale.uv.value, dryingConfig.configs?.sale.uv.unit);
+ *             'Start:', dryingConfig.configs?.sale.uv.start,
+ *             'End:', dryingConfig.configs?.sale.uv.end,
+ *             dryingConfig.configs?.sale.uv.unit);
  * ```
  *
  * @example
@@ -65,21 +86,41 @@ export class DeviceDryingConfig extends DeviceConfigBase<DryingSetup> {
    *   - System settings (operating hours, payment methods)
    */
   constructor(payload: {
-    blow_dust: number;
-    sterilize: number;
-    uv: number;
-    ozone: number;
-    drying: number;
-    perfume: number;
-    start_service_fee: number;
-    promotion: number;
-    on_time: string;
-    off_time: string;
-    coin: boolean;
-    promptpay: boolean;
-    bank_note: boolean;
+    configs: {
+      machine: {
+        ACTIVE: boolean;
+        BANKNOTE: boolean;
+        COIN: boolean;
+        QR: boolean;
+        ON_TIME: string;
+        OFF_TIME: string;
+        SAVE_STATE: boolean;
+      };
+      pricing: {
+        BASE_FEE: number;
+        PROMOTION: number;
+        WORK_PERIOD: number;
+      };
+      function_start: {
+        DUST_BLOW: number;
+        SANITIZE: number;
+        UV: number;
+        OZONE: number;
+        DRY_BLOW: number;
+        PERFUME: number;
+      };
+      function_end: {
+        DUST_BLOW: number;
+        SANITIZE: number;
+        UV: number;
+        OZONE: number;
+        DRY_BLOW: number;
+        PERFUME: number;
+      };
+    };
   }) {
-    super(payload);
+    // Spread machine config at root level and include the entire configs structure
+    super({ ...payload.configs.machine, configs: payload.configs });
   }
 
   /**
@@ -98,44 +139,60 @@ export class DeviceDryingConfig extends DeviceConfigBase<DryingSetup> {
   protected parseSaleConfig(): DryingSetup {
     return {
       blow_dust: {
-        value: this.payload.blow_dust,
+        start: this.payload.configs.function_start.DUST_BLOW,
+        end: this.payload.configs.function_end.DUST_BLOW,
         unit: 'วินาที',
-        description: 'เป่าฝุ่น',
+        description: 'เป่าแห้ง',
       },
       sterilize: {
-        value: this.payload.sterilize,
+        start: this.payload.configs.function_start.SANITIZE,
+        end: this.payload.configs.function_end.SANITIZE,
         unit: 'วินาที',
         description: 'ฆ่าเชื้อ',
       },
       uv: {
-        value: this.payload.uv,
+        start: this.payload.configs.function_start.UV,
+        end: this.payload.configs.function_end.UV,
         unit: 'วินาที',
         description: 'UV',
       },
       ozone: {
-        value: this.payload.ozone,
+        start: this.payload.configs.function_start.OZONE,
+        end: this.payload.configs.function_end.OZONE,
         unit: 'วินาที',
         description: 'Ozone',
       },
       drying: {
-        value: this.payload.drying,
+        start: this.payload.configs.function_start.DRY_BLOW,
+        end: this.payload.configs.function_end.DRY_BLOW,
         unit: 'วินาที',
         description: 'เป่าแห้ง',
       },
       perfume: {
-        value: this.payload.perfume,
+        start: this.payload.configs.function_start.PERFUME,
+        end: this.payload.configs.function_end.PERFUME,
         unit: 'วินาที',
         description: 'น้ำหอม',
       },
-      start_service_fee: {
-        value: this.payload.start_service_fee,
+    };
+  }
+
+  protected parsePricingConfig(): Record<string, ParameterPricing> {
+    return {
+      promotion: {
+        value: this.payload.configs.pricing.PROMOTION,
+        unit: '(%) เปอร์เซ็นต์',
+        description: 'โปรโมชั่น',
+      },
+      base_fee: {
+        value: this.payload.configs.pricing.BASE_FEE,
         unit: 'บาท',
         description: 'ค่าบริการเริ่มต้น',
       },
-      promotion: {
-        value: this.payload.promotion,
-        unit: '(%) เปอร์เซ็นต์',
-        description: 'โปรโมชั่น',
+      work_period: {
+        value: this.payload.configs.pricing.WORK_PERIOD,
+        unit: 'วินาที',
+        description: 'ระยะเวลาการทำงาน',
       },
     };
   }

@@ -22,35 +22,35 @@ export interface PaginatedResult<T> {
   totalPages: number;
 }
 
-export type Parameter = { value: number; unit: string; description: string };
+export type ParameterPricing = { value: number; unit: string; description: string };
+export type ParameterWash = { value: number; unit: string; description: string };
+export type ParametersDrying = { start: number; end: number; unit: string; description: string };
 
 export type WashSetup = {
-  hp_water: Parameter;
-  foam: Parameter;
-  air: Parameter;
-  water: Parameter;
-  vacuum: Parameter;
-  black_tire: Parameter;
-  wax: Parameter;
-  air_conditioner: Parameter;
-  parking_fee: Parameter;
-  promotion: Parameter;
-};
+  hp_water: ParameterWash;
+  foam: ParameterWash;
+  air: ParameterWash;
+  water: ParameterWash;
+  vacuum: ParameterWash;
+  black_tire: ParameterWash;
+  wax: ParameterWash;
+  air_conditioner: ParameterWash;
+  parking_fee: ParameterWash;
+} & Record<string, ParameterWash>;
 
 export type DryingSetup = {
-  blow_dust: Parameter;
-  sterilize: Parameter;
-  uv: Parameter;
-  ozone: Parameter;
-  drying: Parameter;
-  perfume: Parameter;
-  start_service_fee: Parameter;
-  promotion: Parameter;
-};
+  blow_dust: ParametersDrying;
+  sterilize: ParametersDrying;
+  uv: ParametersDrying;
+  ozone: ParametersDrying;
+  drying: ParametersDrying;
+  perfume: ParametersDrying;
+} & Record<string, ParametersDrying>;
 
 export type GlobalSetup = {
   on_time: string;
   off_time: string;
+  save_state: boolean;
   payment_method: {
     coin: boolean;
     promptpay: boolean;

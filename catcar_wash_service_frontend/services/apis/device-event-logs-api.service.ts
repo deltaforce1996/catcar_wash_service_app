@@ -12,10 +12,8 @@ export interface DeviceEventLogResponseApi {
   device_id: string;
   payload: {
     qr?: {
-      ref1?: string;
-      ref2?: string;
       net_amount?: number;
-      transaction_id?: string;
+      chargeId?: string;
     };
     bank?: Record<string, number>;
     coin?: Record<string, number>;
@@ -23,7 +21,7 @@ export interface DeviceEventLogResponseApi {
     status?: EnumPaymentStatus;
     timestamp?: number;
     total_amount?: number;
-    event_at?: string;
+    datetime?: string;
     [key: string]: unknown;
   } | null;
   created_at: string;

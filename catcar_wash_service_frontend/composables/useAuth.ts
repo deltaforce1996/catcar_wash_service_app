@@ -2,6 +2,8 @@
 import { ref, computed } from "vue";
 import type { AuthenticatedUser } from "~/services/apis/auth-api.service";
 import { AuthApiService } from "~/services/apis/auth-api.service";
+import { UserApiService, type UpdateUserProfilePayload } from "~/services/apis/user-api.service";
+import { EmpApiService, type UpdateEmpPayload } from "~/services/apis/emp-api.service";
 import type { ApiErrorResponse } from "~/types";
 import { authTokenManager } from "~/utils/auth-token-manager";
 
@@ -12,11 +14,13 @@ const error = ref<string | null>(null);
 const successMessage = ref<string | null>(null);
 
 const authApi = new AuthApiService();
+const userApi = new UserApiService();
+const empApi = new EmpApiService();
 
 // Computed
 const isAuthenticated = computed(() => !!user.value);
 const isUser = computed(() => user.value?.permission.name === "USER");
-const isEmployee = computed(() => user.value?.permission.name === "EMP");
+const isEmployee = computed(() => user.value?.permission.name === "TECHNICIAN");
 const isAdmin = computed(() => user.value?.permission.name === "ADMIN");
 
 /**
@@ -75,6 +79,48 @@ export const useAuth = () => {
   // Check permission
   const hasRole = (role: string) => user.value?.permission.name === role;
 
+  // Update profile based on current user data
+  const updateProfile = async (profileData: UpdateUserProfilePayload | UpdateEmpPayload) => {
+    try {
+      isLoading.value = true;
+      error.value = null;
+      successMessage.value = null;
+
+      if (!user.value || !profileData) {
+        throw new Error("User not authenticated or profile data not available");
+      }
+
+      let response;
+      
+      // Update profile based on user permission using current profileData
+      if (user.value.permission.name === "USER") {
+        // For regular users, use UserApiService
+        response = await userApi.UpdateUserProfile(profileData);
+      } else if (user.value.permission.name === "TECHNICIAN") {
+        // For employees/technicians, use EmpApiService
+        response = await empApi.UpdateEmpProfile(profileData);
+      } else {
+        throw new Error("Invalid permission for profile update");
+      }
+
+      if (response.success && response.data) {
+        // Update the global user state with new data
+        // Cast to AuthenticatedUser to handle type compatibility
+        user.value = response.data as AuthenticatedUser;
+        authTokenManager.setUser(response.data as AuthenticatedUser);
+        successMessage.value = "อัปเดตโปรไฟล์สำเร็จ!";
+        return response.data;
+      }
+    } catch (err: unknown) {
+      const errorAxios = err as ApiErrorResponse;
+      console.error("Profile update failed:", errorAxios);
+      error.value = errorAxios.message || "Profile update failed";
+      throw err;
+    } finally {
+      isLoading.value = false;
+    }
+  };
+
   // Initialize on app start
   const init = async () => {
     if (authTokenManager.hasToken()) {
@@ -105,6 +151,7 @@ export const useAuth = () => {
     login,
     logout,
     hasRole,
+    updateProfile,
     init,
   };
 };

@@ -194,17 +194,39 @@ import { useAuth } from "~/composables/useAuth";
 
 // Theme management
 const theme = useTheme();
-const { logout, user } = useAuth();
+const { logout, user, init } = useAuth();
+
+onMounted(async () => {
+  await init();
+});
 
 // Navigation drawer state
 const drawer = ref(true);
 
-// Profile data (TODO: Replace with real user data)
-const profileData = {
-  name: user.value?.name || "คุณผู้ใช้งาน",
-  email: user.value?.email || "คุณผู้ใช้งาน@คุณผู้ใช้งาน.com",
-  avatar: "/Character/character cat-02.png",
-};
+// Profile data computed from user data
+const profileData = computed(() => {
+  if (!user.value) {
+    return {
+      name: "คุณผู้ใช้งาน",
+      email: "คุณผู้ใช้งาน@คุณผู้ใช้งาน.com",
+      avatar: "/Character/character cat-02.png",
+    };
+  }
+
+  if ("fullname" in user.value) {
+    return {
+      name: user.value.fullname,
+      email: user.value.email,
+      avatar: "/Character/character cat-02.png",
+    };
+  } else {
+    return {
+      name: user.value.name,
+      email: user.value.email,
+      avatar: "/Character/character cat-02.png",
+    };
+  }
+});
 
 // Main menu items
 const mainMenuItems = [
@@ -247,6 +269,16 @@ const managementMenuItems = [
     icon: "mdi-account-tie",
     to: "/examples/ex-emp-mgmt",
   },
+  {
+    title: "โปรไฟล์ (Example)",
+    icon: "mdi-account-group",
+    to: "/examples/ex-profile",
+  },
+  {
+    title: "จับคู่อุปกรณ์ (Example)",
+    icon: "mdi-bluetooth-connect",
+    to: "/examples/ex-pairing-page",
+  },
 ];
 
 // Methods
@@ -255,12 +287,10 @@ const toggleTheme = () => {
 };
 
 const goToProfile = () => {
-  // Navigate to profile page
   navigateTo("/profile");
 };
 
 const goToSettings = () => {
-  // Navigate to settings page
   navigateTo("/settings");
 };
 

@@ -25,4 +25,14 @@ export class DashboardController {
       message: 'Dashboard summary retrieved successfully',
     };
   }
+
+  @Get('sync-materialized-views')
+  async syncMaterializedViews(): Promise<SuccessResponse<any>> {
+    await this.dashboardService.syncMaterializedViews();
+    return {
+      success: true,
+      data: null,
+      message: 'Materialized views refreshed successfully',
+    };
+  }
 }
