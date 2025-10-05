@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-dynamic-delete */
 export interface SSEEventCallback<T = any> {
   (data: T): void;
 }
@@ -116,10 +117,13 @@ export class SSEClient {
 
     this.eventSource.onmessage = (event) => {
       try {
+        console.log('SSE Raw message:', event.data);
         const data = JSON.parse(event.data);
+        console.log('SSE Parsed data:', data);
         
         // Handle specific event types
         if (data.type && this.callbacks[data.type]) {
+          console.log(`Calling callback for event type: ${data.type}`, data);
           this.callbacks[data.type]!(data);
         }
         
@@ -127,6 +131,7 @@ export class SSEClient {
         this.callbacks.onMessage?.(event);
       } catch (error) {
         console.error('Error parsing SSE message:', error);
+        console.error('Raw message that failed to parse:', event.data);
       }
     };
 

@@ -1,22 +1,22 @@
 import { TypedSSEClient } from './bases/sse-client';
-import type { DeviceRegistrationSession, DeviceRegistrationEvent } from './apis/device-api.service';
+import type { DeviceRegistrationSession } from './apis/device-api.service';
 
 // Define event map for device registration SSE
 interface DeviceRegistrationEventMap {
-  initial: { sessions: DeviceRegistrationSession[] };
-  registration_requested: DeviceRegistrationEvent;
-  registration_completed: DeviceRegistrationEvent;
-  registration_cancelled: { pin: string; timestamp: string };
-  registration_expired: { pin: string; timestamp: string };
-  heartbeat: { timestamp: string };
+  initial: { type: string; data: { sessions: DeviceRegistrationSession[] } };
+  registration_requested: { type: string; data: DeviceRegistrationSession };
+  registration_completed: { type: string; data: DeviceRegistrationSession };
+  registration_cancelled: { type: string; data: DeviceRegistrationSession };
+  registration_expired: { type: string; data: DeviceRegistrationSession };
+  heartbeat: { type: string; data: { timestamp: string } };
 }
 
 export interface DeviceRegistrationSSECallbacks {
   onInitial?: (sessions: DeviceRegistrationSession[]) => void;
-  onRegistrationRequested?: (data: DeviceRegistrationEvent) => void;
-  onRegistrationCompleted?: (data: DeviceRegistrationEvent) => void;
-  onRegistrationCancelled?: (data: { pin: string; timestamp: string }) => void;
-  onRegistrationExpired?: (data: { pin: string; timestamp: string }) => void;
+  onRegistrationRequested?: (data: DeviceRegistrationSession) => void;
+  onRegistrationCompleted?: (data: DeviceRegistrationSession) => void;
+  onRegistrationCancelled?: (data: DeviceRegistrationSession) => void;
+  onRegistrationExpired?: (data: DeviceRegistrationSession) => void;
   onHeartbeat?: (data: { timestamp: string }) => void;
   onOpen?: () => void;
   onError?: (error: Event) => void;
@@ -27,7 +27,7 @@ export class DeviceRegistrationSSEService extends TypedSSEClient<DeviceRegistrat
   constructor(baseURL: string) {
     super({
       url: `${baseURL}/api/v1/devices/scan`,
-      withCredentials: true,
+      withCredentials: false,
       reconnectInterval: 3000,
       maxReconnectAttempts: 5,
     });
@@ -39,27 +39,46 @@ export class DeviceRegistrationSSEService extends TypedSSEClient<DeviceRegistrat
   startScanning(callbacks: DeviceRegistrationSSECallbacks): void {
     // Set up event listeners
     if (callbacks.onInitial) {
-      this.on('initial', (data) => callbacks.onInitial!(data.sessions));
+      this.on('initial', (data) => {
+        console.log('Initial event received:', data);
+        console.log('Sessions data:', data.data?.sessions);
+        callbacks.onInitial!(data.data?.sessions || []);
+      });
     }
     
     if (callbacks.onRegistrationRequested) {
-      this.on('registration_requested', callbacks.onRegistrationRequested);
+      this.on('registration_requested', (data) => {
+        console.log('Registration requested event:', data);
+        callbacks.onRegistrationRequested!(data.data || data);
+      });
     }
     
     if (callbacks.onRegistrationCompleted) {
-      this.on('registration_completed', callbacks.onRegistrationCompleted);
+      this.on('registration_completed', (data) => {
+        console.log('Registration completed event:', data);
+        callbacks.onRegistrationCompleted!(data.data || data);
+      });
     }
     
     if (callbacks.onRegistrationCancelled) {
-      this.on('registration_cancelled', callbacks.onRegistrationCancelled);
+      this.on('registration_cancelled', (data) => {
+        console.log('Registration cancelled event:', data);
+        callbacks.onRegistrationCancelled!(data.data || data);
+      });
     }
     
     if (callbacks.onRegistrationExpired) {
-      this.on('registration_expired', callbacks.onRegistrationExpired);
+      this.on('registration_expired', (data) => {
+        console.log('Registration expired event:', data);
+        callbacks.onRegistrationExpired!(data.data || data);
+      });
     }
     
     if (callbacks.onHeartbeat) {
-      this.on('heartbeat', callbacks.onHeartbeat);
+      this.on('heartbeat', (data) => {
+        console.log('Heartbeat event:', data);
+        callbacks.onHeartbeat!(data.data || data);
+      });
     }
 
     // Set general callbacks

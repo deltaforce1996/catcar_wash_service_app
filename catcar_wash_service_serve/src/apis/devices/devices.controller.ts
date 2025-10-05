@@ -31,7 +31,6 @@ import { DeviceRegistrationService, DeviceRegistrationEventAdapter } from '../..
 type DevicePublicResponse = PaginatedResult<DeviceRow | DeviceWithoutRefRow>;
 
 @UseFilters(AllExceptionFilter)
-@UseGuards(JwtAuthGuard)
 @Controller('api/v1/devices')
 export class DevicesController {
   constructor(
@@ -41,6 +40,7 @@ export class DevicesController {
   ) {}
 
   @Get('search')
+  @UseGuards(JwtAuthGuard)
   async searchDevices(
     @Query() q: SearchDeviceDto,
     @UserAuth() user: AuthenticatedUser,
@@ -54,6 +54,7 @@ export class DevicesController {
   }
 
   @Get('find-by-id/:id')
+  @UseGuards(JwtAuthGuard)
   async getDeviceById(
     @Param('id') id: string,
     @UserAuth() user: AuthenticatedUser,
@@ -67,6 +68,7 @@ export class DevicesController {
   }
 
   @Post('create')
+  @UseGuards(JwtAuthGuard)
   async createDevice(@Body() data: CreateDeviceDto): Promise<SuccessResponse<DeviceRow>> {
     const result = await this.devicesService.createDevice(data);
     return {
@@ -77,6 +79,7 @@ export class DevicesController {
   }
 
   @Put('update-by-id-basic/:id')
+  @UseGuards(JwtAuthGuard)
   async updateDeviceBasicById(
     @Param('id') id: string,
     @Body() data: UpdateDeviceBasicDto,
@@ -90,6 +93,7 @@ export class DevicesController {
   }
 
   @Put('update-configs/:id')
+  @UseGuards(JwtAuthGuard)
   async updateDeviceConfigsById(
     @Param('id') id: string,
     @Body() data: UpdateDeviceConfigsDto,
@@ -106,14 +110,14 @@ export class DevicesController {
   @Post('need-register')
   @UseFilters(AllExceptionFilter)
   deviceNeedRegister(@Body() data: DeviceNeedRegisterDto): SuccessResponse<{ pin: string; device_id: string }> {
+    // Generate a temporary device_id for tracking (will be replaced when actually registered)
+    const tempDeviceId = `temp-${data.chip_id}`;
     const session = this.deviceRegistrationService.createRegistrationSession(
       data.chip_id,
       data.mac_address,
       data.firmware_version,
+      tempDeviceId,
     );
-
-    // Generate a temporary device_id for tracking (will be replaced when actually registered)
-    const tempDeviceId = `temp-${data.chip_id}`;
 
     return {
       success: true,
@@ -126,6 +130,8 @@ export class DevicesController {
   }
 
   // SSE endpoint for device scanning
+
+  // @UseGuards(JwtAuthGuard)
   @Get('scan')
   @Sse('device-scan')
   deviceScan(): Observable<{ data: string }> {

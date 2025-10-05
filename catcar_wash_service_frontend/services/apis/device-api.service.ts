@@ -239,12 +239,3 @@ export interface DeviceRegistrationSession {
   created_at: string;
   expires_at: string;
 }
-
-export interface DeviceRegistrationEvent {
-  pin: string;
-  chip_id: string;
-  mac_address: string;
-  firmware_version: string;
-  device_id?: string;
-  timestamp: string;
-}

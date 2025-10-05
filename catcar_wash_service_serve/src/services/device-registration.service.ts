@@ -40,7 +40,12 @@ export class DeviceRegistrationService {
   /**
    * Create a new device registration session
    */
-  createRegistrationSession(chip_id: string, mac_address: string, firmware_version: string): DeviceRegistrationSession {
+  createRegistrationSession(
+    chip_id: string,
+    mac_address: string,
+    firmware_version: string,
+    device_id: string,
+  ): DeviceRegistrationSession {
     const pin = this.generatePin();
     const now = new Date();
     const expiresAt = new Date(now.getTime() + this.SESSION_DURATION);
@@ -50,6 +55,7 @@ export class DeviceRegistrationService {
       chip_id,
       mac_address,
       firmware_version,
+      device_id,
       created_at: now,
       expires_at: expiresAt,
     };
