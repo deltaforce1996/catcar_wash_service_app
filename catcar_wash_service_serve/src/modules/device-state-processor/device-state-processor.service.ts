@@ -1,6 +1,6 @@
 import { Injectable, Logger, OnModuleInit } from '@nestjs/common';
 import { PrismaService } from 'src/database/prisma/prisma.service';
-import { MqttService, MqttMessage } from 'src/services/mqtt.service';
+import { MqttService, type MqttMessage } from '../mqtt';
 import { createHash } from 'crypto';
 
 export interface DeviceStreamingPayload {
@@ -533,8 +533,6 @@ export class DeviceStateProcessorService implements OnModuleInit {
     return hash.digest('hex');
   }
 
-
-
   /**
    * รับสถิติปัจจุบัน
    */
@@ -547,5 +545,4 @@ export class DeviceStateProcessorService implements OnModuleInit {
       trackedDevicesCount: this.deviceLastSeen.size,
     };
   }
-
 }
