@@ -2,11 +2,22 @@
   <v-dialog v-model="isOpen" max-width="800" persistent>
     <v-card>
       <v-card-title class="pa-6">
-        <h3 class="text-h5">เพิ่มลูกค้าใหม่</h3>
+        <h3 class="text-h5">แก้ไขข้อมูลลูกค้า</h3>
       </v-card-title>
 
       <v-card-text class="pa-6">
+        <!-- Loading Skeleton -->
+        <div v-if="isLoadingData">
+          <v-row>
+            <v-col v-for="i in 5" :key="i" cols="12" md="6">
+              <v-skeleton-loader type="text" />
+            </v-col>
+          </v-row>
+        </div>
+
+        <!-- Form -->
         <v-form
+          v-else
           ref="formRef"
           v-model="formValid"
           @submit.prevent="handleSubmit"
@@ -25,8 +36,8 @@
               >
                 <template #append-inner>
                   <v-tooltip location="top">
-                    <template #activator="{ props }">
-                      <v-icon v-bind="props" size="small" color="grey">
+                    <template #activator="{ props: tooltipProps }">
+                      <v-icon v-bind="tooltipProps" size="small" color="grey">
                         mdi-information
                       </v-icon>
                     </template>
@@ -47,8 +58,8 @@
               >
                 <template #append-inner>
                   <v-tooltip location="top">
-                    <template #activator="{ props }">
-                      <v-icon v-bind="props" size="small" color="grey">
+                    <template #activator="{ props: tooltipProps }">
+                      <v-icon v-bind="tooltipProps" size="small" color="grey">
                         mdi-information
                       </v-icon>
                     </template>
@@ -74,8 +85,8 @@
               >
                 <template #append-inner>
                   <v-tooltip location="top">
-                    <template #activator="{ props }">
-                      <v-icon v-bind="props" size="small" color="grey">
+                    <template #activator="{ props: tooltipProps }">
+                      <v-icon v-bind="tooltipProps" size="small" color="grey">
                         mdi-information
                       </v-icon>
                     </template>
@@ -97,8 +108,8 @@
               >
                 <template #append-inner>
                   <v-tooltip location="top">
-                    <template #activator="{ props }">
-                      <v-icon v-bind="props" size="small" color="grey">
+                    <template #activator="{ props: tooltipProps }">
+                      <v-icon v-bind="tooltipProps" size="small" color="grey">
                         mdi-information
                       </v-icon>
                     </template>
@@ -106,6 +117,31 @@
                   </v-tooltip>
                 </template>
               </v-text-field>
+            </v-col>
+
+            <!-- Status -->
+            <v-col cols="12" md="6">
+              <v-select
+                v-model="form.status"
+                label="สถานะ"
+                variant="outlined"
+                density="compact"
+                :items="statusOptions"
+                :rules="requiredRules"
+                required
+                prepend-inner-icon="mdi-check-circle"
+              >
+                <template #append-inner>
+                  <v-tooltip location="top">
+                    <template #activator="{ props: tooltipProps }">
+                      <v-icon v-bind="tooltipProps" size="small" color="grey">
+                        mdi-information
+                      </v-icon>
+                    </template>
+                    <span>สถานะการใช้งานของลูกค้า</span>
+                  </v-tooltip>
+                </template>
+              </v-select>
             </v-col>
 
             <!-- Address -->
@@ -120,8 +156,8 @@
               >
                 <template #append-inner>
                   <v-tooltip location="top">
-                    <template #activator="{ props }">
-                      <v-icon v-bind="props" size="small" color="grey">
+                    <template #activator="{ props: tooltipProps }">
+                      <v-icon v-bind="tooltipProps" size="small" color="grey">
                         mdi-information
                       </v-icon>
                     </template>
@@ -151,16 +187,21 @@
 
       <v-card-actions class="pa-6 pt-0">
         <v-spacer />
-        <v-btn variant="outlined" :disabled="isCreating" @click="handleClose">
+        <v-btn
+          variant="outlined"
+          :disabled="isLoadingData || isUpdatingData"
+          @click="handleClose"
+        >
           ยกเลิก
         </v-btn>
         <v-btn
           color="primary"
           variant="flat"
-          :loading="isCreating"
-          @click="handleRegisterClick"
+          :loading="isUpdatingData"
+          :disabled="isLoadingData"
+          @click="handleUpdateClick"
         >
-          เพิ่มลูกค้า
+          บันทึกการแก้ไข
         </v-btn>
       </v-card-actions>
     </v-card>
@@ -169,10 +210,12 @@
 
 <script setup lang="ts">
 import { useUser } from "~/composables/useUser";
+import type { EnumUserStatus } from "~/types";
 
 // Props
 interface Props {
   modelValue: boolean;
+  userId: string;
 }
 
 const props = defineProps<Props>();
@@ -184,7 +227,7 @@ const emit = defineEmits<{
 }>();
 
 // Composable
-const { registerUser, isCreating, error } = useUser();
+const { getUserById, updateUserById, isLoading, isUpdating, error } = useUser();
 
 // Computed for v-model
 const isOpen = computed({
@@ -192,18 +235,23 @@ const isOpen = computed({
   set: (value) => emit("update:modelValue", value),
 });
 
+// Loading states
+const isLoadingData = computed(() => isLoading.value);
+const isUpdatingData = computed(() => isUpdating.value);
+
 // Local state
 const formRef = ref();
 const formValid = ref(false);
 const formErrors = ref<string[]>([]);
 
-// Form data matching backend RegisterUserDto
+// Form data matching UpdateUserPayload
 interface CustomerForm {
   fullname: string;
   email: string;
   phone: string;
   address: string;
   custom_name: string;
+  status: EnumUserStatus;
 }
 
 const form = ref<CustomerForm>({
@@ -212,6 +260,7 @@ const form = ref<CustomerForm>({
   phone: "",
   address: "",
   custom_name: "",
+  status: "ACTIVE",
 });
 
 // Validation rules
@@ -229,8 +278,47 @@ const optionalPhoneRules = [
 
 const requiredRules = [(v: string) => !!v || "กรุณากรอกข้อมูล"];
 
-// Handle register button click with validation
-const handleRegisterClick = async () => {
+// Status options
+const statusOptions = [
+  { title: "ใช้งาน", value: "ACTIVE" },
+  { title: "ไม่ใช้งาน", value: "INACTIVE" },
+];
+
+// Fetch user data when dialog opens
+const fetchUserData = async () => {
+  if (!props.userId) return;
+
+  try {
+    formErrors.value = [];
+    const userData = await getUserById(props.userId);
+
+    if (userData) {
+      form.value = {
+        fullname: userData.fullname || "",
+        email: userData.email || "",
+        phone: userData.phone || "",
+        address: userData.address || "",
+        custom_name: userData.custom_name || "",
+        status: userData.status || "ACTIVE",
+      };
+
+      // Reset validation after loading data
+      if (formRef.value) {
+        formRef.value.resetValidation();
+      }
+    }
+  } catch (err) {
+    console.error("เกิดข้อผิดพลาดในการดึงข้อมูลผู้ใช้:", err);
+    if (error.value) {
+      formErrors.value = [error.value];
+    } else {
+      formErrors.value = ["เกิดข้อผิดพลาดในการดึงข้อมูลผู้ใช้ กรุณาลองใหม่อีกครั้ง"];
+    }
+  }
+};
+
+// Handle update button click with validation
+const handleUpdateClick = async () => {
   formErrors.value = [];
 
   const { valid } = await formRef.value.validate();
@@ -246,27 +334,26 @@ const handleRegisterClick = async () => {
 // Submit handler
 const handleSubmit = async () => {
   try {
-    // Send only the fields that backend RegisterUserDto accepts
-    // Backend will automatically set status=ACTIVE and permission=USER
     const payload = {
       fullname: form.value.fullname,
       email: form.value.email,
       phone: form.value.phone,
       address: form.value.address,
       custom_name: form.value.custom_name,
+      status: form.value.status,
     };
 
-    await registerUser(payload);
+    await updateUserById(props.userId, payload);
 
     // Success - emit success event and close dialog
     emit("success");
     handleClose();
   } catch (err) {
-    console.error("เกิดข้อผิดพลาดในการลงทะเบียน:", err);
+    console.error("เกิดข้อผิดพลาดในการอัปเดตข้อมูล:", err);
     if (error.value) {
       formErrors.value = [error.value];
     } else {
-      formErrors.value = ["เกิดข้อผิดพลาดในการลงทะเบียน กรุณาลองใหม่อีกครั้ง"];
+      formErrors.value = ["เกิดข้อผิดพลาดในการอัปเดตข้อมูล กรุณาลองใหม่อีกครั้ง"];
     }
   }
 };
@@ -279,6 +366,7 @@ const resetForm = () => {
     phone: "",
     address: "",
     custom_name: "",
+    status: "ACTIVE",
   };
   formValid.value = false;
   formErrors.value = [];
@@ -295,10 +383,27 @@ const handleClose = () => {
   isOpen.value = false;
 };
 
-// Watch for dialog close to reset form
-watch(isOpen, (newValue) => {
-  if (!newValue) {
-    resetForm();
-  }
-});
+// Watch for dialog open to fetch user data
+watch(
+  () => props.modelValue,
+  (newValue) => {
+    if (newValue && props.userId) {
+      fetchUserData();
+    } else if (!newValue) {
+      resetForm();
+    }
+  },
+  { immediate: true },
+);
+
+// Watch for userId changes while dialog is open
+watch(
+  () => props.userId,
+  (newUserId) => {
+    if (newUserId && props.modelValue) {
+      fetchUserData();
+    }
+  },
+  { immediate: true },
+);
 </script>

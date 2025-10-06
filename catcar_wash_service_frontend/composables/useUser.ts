@@ -15,7 +15,7 @@ export const useUser = () => {
   const currentUser = ref<UserResponseApi | null>(null);
   const currentSearchParams = ref<SearchUsersRequest>({
     page: 1,
-    limit: 1,
+    limit: 10,
     sort_by: "created_at",
     sort_order: "desc",
     exclude_device_counts: false,
@@ -167,7 +167,7 @@ export const useUser = () => {
   const clearFiltersAndSearch = async () => {
     currentSearchParams.value = {
       page: 1,
-      limit: 1,
+      limit: 10,
       sort_by: "created_at",
       sort_order: "desc",
       exclude_device_counts: false,

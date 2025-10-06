@@ -148,11 +148,22 @@
 
       <!-- Expandable Row Content -->
       <template #expanded-content="{ item }">
-        <!-- Header with customer summary -->
-        <h3 class="text-subtitle-1 font-weight-bold mb-4">
-          รายละเอียดลูกค้า
-        </h3>
+        <div class="d-flex justify-space-between align-center mb-4">
+          <!-- Header with customer summary -->
+          <h3 class="text-subtitle-1 font-weight-bold mb-4">
+            รายละเอียดลูกค้า
+          </h3>
 
+          <v-btn
+            color="primary"
+            variant="outlined"
+            prepend-icon="mdi-pencil"
+            class="text-none"
+            @click="handleEditCustomer(item.id)"
+          >
+            แก้ไขข้อมูล
+          </v-btn>
+        </div>
         <!-- Customer details grid for desktop -->
         <v-row no-gutters class="customer-details-grid">
           <!-- Personal Information Section -->
@@ -181,9 +192,7 @@
 
                 <v-card class="mb-2" color="info" variant="tonal">
                   <v-card-text class="pa-3">
-                    <div class="text-caption text-medium-emphasis">
-                      ที่อยู่
-                    </div>
+                    <div class="text-caption text-medium-emphasis">ที่อยู่</div>
                     <div class="text-body-2">
                       {{ item.address }}
                     </div>
@@ -290,6 +299,14 @@
       v-model="showAddCustomerDialog"
       @success="handleCustomerAdded"
     />
+
+    <!-- Edit Customer Dialog -->
+    <EditCustomerDialog
+      v-if="selectedUserId"
+      v-model="showEditCustomerDialog"
+      :user-id="selectedUserId"
+      @success="handleCustomerUpdated"
+    />
   </div>
 </template>
 
@@ -299,6 +316,7 @@ import type { SearchUsersRequest } from "~/services/apis/user-api.service";
 import { useUser } from "~/composables/useUser";
 import EnhancedDataTable from "~/components/common/EnhancedDataTable.vue";
 import AddCustomerDialog from "~/components/customer/AddCustomerDialog.vue";
+import EditCustomerDialog from "~/components/customer/EditCustomerDialog.vue";
 
 // Composable
 const {
@@ -437,6 +455,17 @@ const handleCustomerAdded = async () => {
   await searchUsers({ page: 1 });
 };
 
+// Handle edit customer click
+const handleEditCustomer = (userId: string) => {
+  selectedUserId.value = userId;
+  showEditCustomerDialog.value = true;
+};
+
+// Handle customer updated successfully
+const handleCustomerUpdated = async () => {
+  await searchUsers({});
+};
+
 // Select status filter function
 const selectStatusFilter = (status: EnumUserStatus) => {
   tempStatusFilter.value = status;
@@ -454,6 +483,8 @@ onMounted(async () => {
 
 // Local state
 const showAddCustomerDialog = ref(false);
+const showEditCustomerDialog = ref(false);
+const selectedUserId = ref<string | null>(null);
 
 // Filter options
 const statusOptions: EnumUserStatus[] = ["ACTIVE", "INACTIVE"];
