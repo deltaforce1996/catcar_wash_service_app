@@ -21,7 +21,19 @@
                 density="compact"
                 :rules="requiredRules"
                 required
-              />
+                prepend-inner-icon="mdi-account"
+              >
+                <template #append-inner>
+                  <v-tooltip location="top">
+                    <template #activator="{ props }">
+                      <v-icon v-bind="props" size="small" color="grey">
+                        mdi-information
+                      </v-icon>
+                    </template>
+                    <span>กรอกชื่อและนามสกุลจริงของลูกค้า</span>
+                  </v-tooltip>
+                </template>
+              </v-text-field>
             </v-col>
 
             <!-- Custom Name -->
@@ -31,7 +43,21 @@
                 label="ชื่อเรียก/ชื่อร้าน"
                 variant="outlined"
                 density="compact"
-              />
+                prepend-inner-icon="mdi-store"
+              >
+                <template #append-inner>
+                  <v-tooltip location="top">
+                    <template #activator="{ props }">
+                      <v-icon v-bind="props" size="small" color="grey">
+                        mdi-information
+                      </v-icon>
+                    </template>
+                    <span
+                      >ชื่อเรียกหรือชื่อร้านที่ใช้ติดต่อกับลูกค้า (ถ้ามี)</span
+                    >
+                  </v-tooltip>
+                </template>
+              </v-text-field>
             </v-col>
 
             <!-- Email -->
@@ -44,7 +70,19 @@
                 density="compact"
                 :rules="emailRules"
                 required
-              />
+                prepend-inner-icon="mdi-email"
+              >
+                <template #append-inner>
+                  <v-tooltip location="top">
+                    <template #activator="{ props }">
+                      <v-icon v-bind="props" size="small" color="grey">
+                        mdi-information
+                      </v-icon>
+                    </template>
+                    <span>อีเมลสำหรับติดต่อและเข้าสู่ระบบ</span>
+                  </v-tooltip>
+                </template>
+              </v-text-field>
             </v-col>
 
             <!-- Phone -->
@@ -55,7 +93,19 @@
                 variant="outlined"
                 density="compact"
                 :rules="optionalPhoneRules"
-              />
+                prepend-inner-icon="mdi-phone"
+              >
+                <template #append-inner>
+                  <v-tooltip location="top">
+                    <template #activator="{ props }">
+                      <v-icon v-bind="props" size="small" color="grey">
+                        mdi-information
+                      </v-icon>
+                    </template>
+                    <span>เบอร์โทรศัพท์ 10 หลัก (ตัวเลขเท่านั้น)</span>
+                  </v-tooltip>
+                </template>
+              </v-text-field>
             </v-col>
 
             <!-- Address -->
@@ -66,7 +116,19 @@
                 variant="outlined"
                 density="compact"
                 rows="3"
-              />
+                prepend-inner-icon="mdi-map-marker"
+              >
+                <template #append-inner>
+                  <v-tooltip location="top">
+                    <template #activator="{ props }">
+                      <v-icon v-bind="props" size="small" color="grey">
+                        mdi-information
+                      </v-icon>
+                    </template>
+                    <span>ที่อยู่สำหรับจัดส่งเอกสารและติดต่อ</span>
+                  </v-tooltip>
+                </template>
+              </v-textarea>
             </v-col>
           </v-row>
         </v-form>
@@ -159,7 +221,8 @@ const emailRules = [
 ];
 
 const optionalPhoneRules = [
-  (v: string) => !v || /^[0-9]{10}$/.test(v) || "เบอร์โทรศัพท์ต้องเป็นตัวเลข 10 หลัก",
+  (v: string) =>
+    !v || /^[0-9]{10}$/.test(v) || "เบอร์โทรศัพท์ต้องเป็นตัวเลข 10 หลัก",
 ];
 
 const requiredRules = [(v: string) => !!v || "กรุณากรอกข้อมูล"];
