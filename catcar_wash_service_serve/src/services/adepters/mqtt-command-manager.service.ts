@@ -1,47 +1,48 @@
 import { Injectable, Logger, OnModuleInit, OnModuleDestroy } from '@nestjs/common';
-import { EventEmitter } from 'events';
-import { MqttService } from '../mqtt/mqtt.service';
+import { MqttService, type MqttMessage } from '../../modules/mqtt/mqtt.service';
 import {
   MqttCommandPayload,
   MqttCommandAckResponse,
-  MqttCommandResult,
   MqttCommandType,
-  MqttCommandOptions,
   ActiveCommand,
-  ApplyConfigPayload,
-  RestartPayload,
-  UpdateFirmwarePayload,
-  ResetConfigPayload,
   CommandConfig,
-} from './types/mqtt-command-manager.types';
+  FirmwarePayload,
+} from '../../types/mqtt-command-manager.types';
+import { IMqttCommandEventAdapter } from './mqtt-command-event-adepter';
 
 @Injectable()
-export class MqttCommandManagerService extends EventEmitter implements OnModuleInit, OnModuleDestroy {
+export class MqttCommandManagerService implements OnModuleInit, OnModuleDestroy {
   private readonly logger = new Logger(MqttCommandManagerService.name);
   private readonly activeCommands = new Map<string, ActiveCommand>();
-  private readonly defaultTimeout = 30000; // 30 seconds
-  private readonly defaultRetryAttempts = 3;
-  private readonly defaultRetryDelay = 1000; // 1 second
+  private ackMessageHandler: ((message: MqttMessage) => void) | null = null;
+  private eventAdapter: IMqttCommandEventAdapter;
 
-  constructor(private readonly mqttService: MqttService) {
-    super();
-  }
+  private readonly defaultTimeout = 30000; // 30 seconds
+  private readonly defaultRetryAttempts = 3; // 3 attempts
+  private readonly defaultRetryDelay = 1000; // 1 second between retries
+
+  constructor(private readonly mqttService: MqttService) {}
 
   async onModuleInit() {
     // Subscribe to all ACK responses from devices
     await this.mqttService.subscribe('server/+/ack', 1);
 
-    // Listen for ACK messages
-    this.mqttService.on('message', (message: any) => {
-      if (typeof message.topic === 'string' && message.topic.startsWith('server/') && message.topic.endsWith('/ack')) {
-        this.handleAckResponse(String(message.payload));
-      }
-    });
+    // Register callback for ACK messages
+    this.ackMessageHandler = (message: MqttMessage) => {
+      this.handleAckResponse(message);
+    };
+    this.mqttService.onMessage('server/+/ack', this.ackMessageHandler);
 
     this.logger.log('MQTT Command Manager Service initialized');
   }
 
   onModuleDestroy() {
+    // Unregister callback handler
+    if (this.ackMessageHandler) {
+      this.mqttService.offMessage('server/+/ack', this.ackMessageHandler);
+      this.ackMessageHandler = null;
+    }
+
     // Clean up all active commands
     for (const [, activeCommand] of this.activeCommands) {
       clearTimeout(activeCommand.timeout);
@@ -54,31 +55,24 @@ export class MqttCommandManagerService extends EventEmitter implements OnModuleI
   /**
    * Send APPLY_CONFIG command to device
    */
-  async applyConfig(
-    deviceId: string,
-    configs: CommandConfig,
-    options: MqttCommandOptions = {},
-  ): Promise<MqttCommandResult> {
-    const payload: ApplyConfigPayload = { configs };
-    return this.sendCommand(deviceId, 'APPLY_CONFIG', payload, {
+  async applyConfig(deviceId: string, configs: CommandConfig): Promise<MqttCommandAckResponse<CommandConfig>> {
+    return this.sendCommand(deviceId, 'APPLY_CONFIG', configs, {
       require_ack: true,
-      ...options,
     });
   }
 
   /**
    * Send RESTART command to device
    */
-  async restartDevice(
-    deviceId: string,
-    delaySeconds: number = 5,
-    options: MqttCommandOptions = {},
-  ): Promise<MqttCommandResult> {
-    const payload: RestartPayload = { delay_seconds: delaySeconds };
-    return this.sendCommand(deviceId, 'RESTART', payload, {
-      require_ack: true,
-      ...options,
-    });
+  async restartDevice(deviceId: string, delaySeconds: number = 5): Promise<MqttCommandAckResponse<any>> {
+    return this.sendCommand(
+      deviceId,
+      'RESTART',
+      { delay_seconds: delaySeconds },
+      {
+        require_ack: true,
+      },
+    );
   }
 
   /**
@@ -86,27 +80,19 @@ export class MqttCommandManagerService extends EventEmitter implements OnModuleI
    */
   async updateFirmware(
     deviceId: string,
-    firmwareInfo: UpdateFirmwarePayload,
-    options: MqttCommandOptions = {},
-  ): Promise<MqttCommandResult> {
+    firmwareInfo: FirmwarePayload,
+  ): Promise<MqttCommandAckResponse<FirmwarePayload>> {
     return this.sendCommand(deviceId, 'UPDATE_FIRMWARE', firmwareInfo, {
       require_ack: true,
-      ...options,
     });
   }
 
   /**
    * Send RESET_CONFIG command to device
    */
-  async resetConfig(
-    deviceId: string,
-    delaySeconds: number = 30,
-    options: MqttCommandOptions = {},
-  ): Promise<MqttCommandResult> {
-    const payload: ResetConfigPayload = { delay_seconds: delaySeconds };
-    return this.sendCommand(deviceId, 'RESET_CONFIG', payload, {
+  async resetConfig(deviceId: string, configs: CommandConfig): Promise<MqttCommandAckResponse<CommandConfig>> {
+    return this.sendCommand(deviceId, 'RESET_CONFIG', configs, {
       require_ack: true,
-      ...options,
     });
   }
 
@@ -118,33 +104,28 @@ export class MqttCommandManagerService extends EventEmitter implements OnModuleI
     command: string,
     payload: any,
     requireAck: boolean = true,
-    options: MqttCommandOptions = {},
-  ): Promise<MqttCommandResult> {
+  ): Promise<MqttCommandAckResponse<any>> {
     return this.sendCommand(deviceId, command as MqttCommandType, payload, {
       require_ack: requireAck,
-      ...options,
     });
   }
 
   /**
    * Core method to send MQTT command
    */
-  private async sendCommand(
+  private async sendCommand<T, R>(
     deviceId: string,
     command: MqttCommandType,
-    payload: any,
+    payload: T,
     options: {
       require_ack: boolean;
-      timeout_ms?: number;
-      retry_attempts?: number;
-      retry_delay_ms?: number;
     },
-  ): Promise<MqttCommandResult> {
+  ): Promise<MqttCommandAckResponse<R>> {
     const commandId = this.generateCommandId();
     const topic = `device/${deviceId}/command`;
     const timestamp = Date.now();
 
-    const mqttPayload: MqttCommandPayload = {
+    const mqttPayload: MqttCommandPayload<T> = {
       command_id: commandId,
       command,
       require_ack: options.require_ack,
@@ -152,42 +133,40 @@ export class MqttCommandManagerService extends EventEmitter implements OnModuleI
       timestamp,
     };
 
-    const sentAt = new Date();
-
     try {
       // Send MQTT message
       await this.mqttService.publishJson(topic, mqttPayload, { qos: 1 });
 
       this.logger.log(`Command sent: ${commandId} (${command}) to device: ${deviceId}`);
 
-      const result: MqttCommandResult = {
+      const result: MqttCommandAckResponse<R> = {
         command_id: commandId,
         device_id: deviceId,
         command,
         status: 'SENT',
-        sent_at: sentAt,
+        timestamp: timestamp,
       };
 
       // For fire-and-forget commands, return immediately
       if (!options.require_ack) {
-        this.emit('command-sent', result);
+        this.eventAdapter?.emitCommandSent(result);
         return result;
       }
 
       // For ACK commands, set up timeout and wait for response
-      return new Promise<MqttCommandResult>((resolve, reject) => {
-        const timeout = options.timeout_ms || this.defaultTimeout;
+      return new Promise<MqttCommandAckResponse<R>>((resolve, reject) => {
+        const timeout = this.defaultTimeout;
         const timeoutHandle = setTimeout(() => {
           this.activeCommands.delete(commandId);
-          const timeoutResult: MqttCommandResult = {
+          const timeoutResult: MqttCommandAckResponse<R> = {
             ...result,
             status: 'TIMEOUT',
             error: 'Device did not respond within timeout period',
-            timeout_at: new Date(),
+            timestamp: timestamp,
           };
 
           this.logger.warn(`Command timeout: ${commandId} (${command}) to device: ${deviceId}`);
-          this.emit('command-timeout', timeoutResult);
+          this.eventAdapter?.emitCommandTimeout(timeoutResult);
           resolve(timeoutResult);
         }, timeout);
 
@@ -199,23 +178,23 @@ export class MqttCommandManagerService extends EventEmitter implements OnModuleI
           timeout: timeoutHandle,
           resolve,
           reject,
-          sent_at: sentAt,
+          sent_at: timestamp,
         });
 
-        this.emit('command-sent', result);
+        this.eventAdapter?.emitCommandSent(result);
       });
     } catch (error) {
-      const errorResult: MqttCommandResult = {
+      const errorResult: MqttCommandAckResponse<R> = {
         command_id: commandId,
         device_id: deviceId,
         command,
         status: 'ERROR',
         error: error.message,
-        sent_at: sentAt,
+        timestamp: Date.now(),
       };
 
       this.logger.error(`Failed to send command: ${commandId} (${command}) to device: ${deviceId}`, error);
-      this.emit('command-error', errorResult);
+      this.eventAdapter?.emitCommandError(errorResult);
       return errorResult;
     }
   }
@@ -223,48 +202,71 @@ export class MqttCommandManagerService extends EventEmitter implements OnModuleI
   /**
    * Handle ACK response from device
    */
-  private handleAckResponse(payload: string): void {
+  private handleAckResponse(message: MqttMessage): void {
     try {
-      const ackResponse: MqttCommandAckResponse = JSON.parse(payload);
-      const { command_id, device_id, command, status, error } = ackResponse;
+      const payloadStr = String(message.payload);
+      const ackResponse: any = JSON.parse(payloadStr);
 
-      this.logger.log(`ACK received: ${command_id} (${command}) from device: ${device_id} - Status: ${status}`);
+      if (!ackResponse.command_id) {
+        this.logger.warn(`Invalid ACK response: ${payloadStr}`);
+        return;
+      }
 
-      const activeCommand = this.activeCommands.get(command_id);
+      const { command_id, device_id, command, status, error }: any = ackResponse;
+
+      this.logger.log(
+        `ACK received: ${String(command_id)} (${String(command)}) from device: ${String(device_id)} - Status: ${String(status)}`,
+      );
+
+      const activeCommand = this.activeCommands.get(String(command_id));
+
       if (!activeCommand) {
-        this.logger.warn(`Received ACK for unknown command: ${command_id}`);
+        this.logger.warn(`Received ACK for unknown command: ${String(command_id)}`);
         return;
       }
 
       // Clear timeout
       clearTimeout(activeCommand.timeout);
-      this.activeCommands.delete(command_id);
+      this.activeCommands.delete(String(command_id));
 
       // Create result
-      const result: MqttCommandResult = {
+      const result: MqttCommandAckResponse<any> = {
         command_id,
         device_id,
         command,
-        status: status === 'SUCCESS' ? 'SUCCESS' : 'FAILED',
+        status: status,
         error: status !== 'SUCCESS' ? error || `Command failed with status: ${status}` : undefined,
-        ack_response: ackResponse,
-        sent_at: activeCommand.sent_at,
-        ack_received_at: new Date(),
+        results: ackResponse,
+        timestamp: Date.now(),
       };
 
       // Emit events
       if (status === 'SUCCESS') {
-        this.emit('command-success', result);
+        this.eventAdapter?.emitCommandSuccess(result);
       } else {
-        this.emit('command-failed', result);
+        this.eventAdapter?.emitCommandFailed(result);
       }
 
       // Resolve promise
       activeCommand.resolve(result);
     } catch (error) {
       this.logger.error('Failed to parse ACK response:', error);
-      this.emit('command-error', { error: error.message });
+      this.eventAdapter?.emitCommandError({
+        command_id: 'unknown',
+        device_id: 'unknown',
+        command: 'UNKNOWN' as MqttCommandType,
+        status: 'ERROR',
+        error: error.message,
+        timestamp: Date.now(),
+      });
     }
+  }
+
+  /**
+   * Set event adapter for this service
+   */
+  setAdapter(adapter: IMqttCommandEventAdapter): void {
+    this.eventAdapter = adapter;
   }
 
   /**
