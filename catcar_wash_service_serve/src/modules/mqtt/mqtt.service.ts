@@ -1,6 +1,6 @@
 import { Injectable, Logger, OnModuleInit, OnModuleDestroy } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
-import { EventEmitter } from 'events';
+import { EventEmitter2 } from '@nestjs/event-emitter';
 import { connect } from 'mqtt';
 import { MqttLoggerService } from '../../services/mqtt-logger.service';
 
@@ -18,7 +18,7 @@ export interface MqttConfig {
 
 export interface MqttMessage {
   topic: string;
-  payload: Buffer | string;
+  payload: any;
   qos?: 0 | 1 | 2;
   retain?: boolean;
   dup?: boolean;
@@ -29,6 +29,8 @@ export interface MqttSubscription {
   qos?: 0 | 1 | 2;
 }
 
+export type MqttMessageHandler = (message: MqttMessage) => void;
+
 export interface MqttConnectionStatus {
   connected: boolean;
   clientId: string;
@@ -38,21 +40,22 @@ export interface MqttConnectionStatus {
 }
 
 @Injectable()
-export class MqttService extends EventEmitter implements OnModuleInit, OnModuleDestroy {
+export class MqttService implements OnModuleInit, OnModuleDestroy {
   private readonly logger = new Logger(MqttService.name);
   private client: any = null;
   private config: MqttConfig;
   private connectionStatus: MqttConnectionStatus;
   private subscriptions: Map<string, MqttSubscription> = new Map();
+  private messageHandlers: Map<string, MqttMessageHandler[]> = new Map();
   private maxReconnectAttempts: number = 5;
   private reconnectAttempts: number = 0;
+  private processEventListeners: Array<{ event: string; handler: (...args: any[]) => void }> = [];
 
   constructor(
     private readonly configService: ConfigService,
     private readonly mqttLoggerService: MqttLoggerService,
+    private readonly eventEmitter: EventEmitter2,
   ) {
-    super();
-
     // Set up global error handling to prevent app crashes
     this.setupGlobalErrorHandling();
 
@@ -94,7 +97,22 @@ export class MqttService extends EventEmitter implements OnModuleInit, OnModuleD
   }
 
   async onModuleDestroy() {
+    // Clean up process event listeners
+    for (const { event, handler } of this.processEventListeners) {
+      process.off(event, handler);
+    }
+    this.processEventListeners = [];
+
+    // Clean up message handlers
+    this.messageHandlers.clear();
+
+    // Clean up subscriptions
+    this.subscriptions.clear();
+
+    // Disconnect from MQTT broker
     await this.disconnect();
+
+    this.logger.log('MQTT Service destroyed and cleaned up');
   }
 
   /**
@@ -164,7 +182,7 @@ export class MqttService extends EventEmitter implements OnModuleInit, OnModuleD
         this.logger.log('MQTT client disconnected');
         this.connectionStatus.connected = false;
         this.connectionStatus.lastDisconnected = new Date();
-        this.emit('disconnected');
+        this.eventEmitter.emit('mqtt.disconnected');
         resolve();
       });
     });
@@ -208,7 +226,7 @@ export class MqttService extends EventEmitter implements OnModuleInit, OnModuleD
           resolve();
         } else {
           this.logger.debug(`Message published to topic: ${topic}`);
-          this.emit('messagePublished', { topic, payload, options: messageOptions });
+          this.eventEmitter.emit('mqtt.messagePublished', { topic, payload, options: messageOptions });
           resolve();
         }
       });
@@ -245,7 +263,7 @@ export class MqttService extends EventEmitter implements OnModuleInit, OnModuleD
         } else {
           this.subscriptions.set(topic, subscription);
           this.logger.log(`Subscribed to topic: ${topic} (QoS: ${subscription.qos})`);
-          this.emit('subscribed', subscription);
+          this.eventEmitter.emit('mqtt.subscribed', subscription);
           resolve();
         }
       });
@@ -277,7 +295,7 @@ export class MqttService extends EventEmitter implements OnModuleInit, OnModuleD
         } else {
           this.subscriptions.delete(topic);
           this.logger.log(`Unsubscribed from topic: ${topic}`);
-          this.emit('unsubscribed', topic);
+          this.eventEmitter.emit('mqtt.unsubscribed', topic);
           resolve();
         }
       });
@@ -346,7 +364,7 @@ export class MqttService extends EventEmitter implements OnModuleInit, OnModuleD
    */
   private setupGlobalErrorHandling(): void {
     // Handle unhandled promise rejections related to MQTT
-    process.on('unhandledRejection', (reason) => {
+    const unhandledRejectionHandler = (reason: any) => {
       if (reason && typeof reason === 'object' && 'message' in reason) {
         const error = reason as Error;
         if (error.message.includes('MQTT') || error.message.includes('ECONNREFUSED')) {
@@ -359,10 +377,10 @@ export class MqttService extends EventEmitter implements OnModuleInit, OnModuleD
           return; // Don't let it crash the app
         }
       }
-    });
+    };
 
     // Handle uncaught exceptions related to MQTT
-    process.on('uncaughtException', (error) => {
+    const uncaughtExceptionHandler = (error: Error) => {
       if (error.message.includes('MQTT') || error.message.includes('ECONNREFUSED')) {
         this.logger.warn('Uncaught MQTT exception (suppressed):', error.message);
         this.mqttLoggerService.logConnectionError(
@@ -372,7 +390,17 @@ export class MqttService extends EventEmitter implements OnModuleInit, OnModuleD
         );
         return; // Don't let it crash the app
       }
-    });
+    };
+
+    // Store handlers for cleanup
+    this.processEventListeners.push(
+      { event: 'unhandledRejection', handler: unhandledRejectionHandler },
+      { event: 'uncaughtException', handler: uncaughtExceptionHandler },
+    );
+
+    // Register handlers
+    process.on('unhandledRejection', unhandledRejectionHandler);
+    process.on('uncaughtException', uncaughtExceptionHandler);
   }
 
   /**
@@ -394,6 +422,7 @@ export class MqttService extends EventEmitter implements OnModuleInit, OnModuleD
 
     // Add global error handler to prevent unhandled errors
     const originalEmit = this.client.emit;
+
     this.client.emit = function (event: string, ...args: any[]): boolean {
       if (event === 'error' && this.listenerCount('error') === 0) {
         // If no error listeners, just log and don't emit
@@ -409,7 +438,7 @@ export class MqttService extends EventEmitter implements OnModuleInit, OnModuleD
       this.connectionStatus.lastConnected = new Date();
       this.connectionStatus.reconnectAttempts = 0;
       this.reconnectAttempts = 0; // Reset reconnect attempts on successful connection
-      this.emit('connected');
+      this.eventEmitter.emit('mqtt.connected');
     });
 
     this.client.on('disconnect', () => {
@@ -417,7 +446,7 @@ export class MqttService extends EventEmitter implements OnModuleInit, OnModuleD
       this.mqttLoggerService.logConnectionError('MQTT client disconnected', this.config.clientId);
       this.connectionStatus.connected = false;
       this.connectionStatus.lastDisconnected = new Date();
-      this.emit('disconnected');
+      this.eventEmitter.emit('mqtt.disconnected');
     });
 
     this.client.on('reconnect', () => {
@@ -426,7 +455,7 @@ export class MqttService extends EventEmitter implements OnModuleInit, OnModuleD
 
       if (this.reconnectAttempts <= this.maxReconnectAttempts) {
         this.logger.log(`MQTT client reconnecting... (attempt ${this.reconnectAttempts}/${this.maxReconnectAttempts})`);
-        this.emit('reconnecting');
+        this.eventEmitter.emit('mqtt.reconnecting');
       } else {
         this.logger.warn(
           `MQTT reconnection attempts exceeded maximum (${this.maxReconnectAttempts}). Stopping reconnection.`,
@@ -442,7 +471,7 @@ export class MqttService extends EventEmitter implements OnModuleInit, OnModuleD
       }
     });
 
-    this.client.on('message', (topic, payload, packet) => {
+    this.client.on('message', (topic: string, payload: any, packet: any) => {
       this.logger.debug(`Message received on topic: ${topic}`);
 
       const message: MqttMessage = {
@@ -453,21 +482,35 @@ export class MqttService extends EventEmitter implements OnModuleInit, OnModuleD
         dup: packet.dup,
       };
 
-      this.emit('message', message);
-      this.emit(`message:${topic}`, message);
+      // Call registered callbacks
+      for (const [pattern, handlers] of this.messageHandlers.entries()) {
+        if (this.topicMatches(String(topic), pattern)) {
+          handlers.forEach((handler) => {
+            try {
+              handler(message);
+            } catch (error) {
+              this.logger.error(`Error in message handler for pattern ${pattern}:`, error);
+            }
+          });
+        }
+      }
+
+      // Emit events for backward compatibility
+      this.eventEmitter.emit('mqtt.message', message);
+      this.eventEmitter.emit(`mqtt.message:${topic}`, message);
     });
 
     this.client.on('offline', () => {
       this.logger.warn('MQTT client is offline');
       this.mqttLoggerService.logConnectionError('MQTT client is offline', this.config.clientId);
       this.connectionStatus.connected = false;
-      this.emit('offline');
+      this.eventEmitter.emit('mqtt.offline');
     });
 
     this.client.on('end', () => {
       this.logger.log('MQTT client connection ended');
       this.connectionStatus.connected = false;
-      this.emit('end');
+      this.eventEmitter.emit('mqtt.end');
     });
   }
 
@@ -518,6 +561,43 @@ export class MqttService extends EventEmitter implements OnModuleInit, OnModuleD
       );
       // Don't throw error, let the app continue
     }
+  }
+
+  /**
+   * Register a callback handler for specific topic pattern
+   */
+  onMessage(topicPattern: string, handler: MqttMessageHandler): void {
+    if (!this.messageHandlers.has(topicPattern)) {
+      this.messageHandlers.set(topicPattern, []);
+    }
+    this.messageHandlers.get(topicPattern)!.push(handler);
+    this.logger.debug(`Registered message handler for pattern: ${topicPattern}`);
+  }
+
+  /**
+   * Unregister a callback handler for specific topic pattern
+   */
+  offMessage(topicPattern: string, handler: MqttMessageHandler): void {
+    const handlers = this.messageHandlers.get(topicPattern);
+    if (handlers) {
+      const index = handlers.indexOf(handler);
+      if (index > -1) {
+        handlers.splice(index, 1);
+        this.logger.debug(`Unregistered message handler for pattern: ${topicPattern}`);
+      }
+    }
+  }
+
+  /**
+   * Check if topic matches pattern (supports wildcards)
+   */
+  private topicMatches(topic: string, pattern: string): boolean {
+    // Convert MQTT wildcard pattern to regex
+    const regexPattern = pattern
+      .replace(/\+/g, '[^/]+') // + matches any single level
+      .replace(/#/g, '.*'); // # matches multiple levels
+    const regex = new RegExp(`^${regexPattern}$`);
+    return regex.test(topic);
   }
 
   /**

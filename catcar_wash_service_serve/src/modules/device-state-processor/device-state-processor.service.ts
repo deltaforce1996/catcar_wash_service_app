@@ -75,10 +75,10 @@ export class DeviceStateProcessorService implements OnModuleInit {
   async initializeSubscriptions(): Promise<void> {
     try {
       // Subscribe to device streaming topics
-      await this.mqttService.subscribe('server/+/streaming', 1);
+      await this.mqttService.subscribeToDeviceStreaming();
 
-      // Listen for device streaming messages
-      this.mqttService.on('message:server/+/streaming', (message: MqttMessage) => {
+      // Register callback for device streaming messages
+      this.mqttService.onMessage('server/+/streaming', (message: MqttMessage) => {
         this.handleDeviceStreamingMessage(message);
       });
 
