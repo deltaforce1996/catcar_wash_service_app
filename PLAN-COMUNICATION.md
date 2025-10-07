@@ -269,22 +269,16 @@ x-signature: {CHECK_SUM_FROM_MAC_ADDRESS_AND_PAYLOAD_STRING}
 
 **✅ MQTT Success:**
 
-```json
+```sh
 {
-  "success": true,
-  "data": {
+  "command_id": "cmd-payment-001",
+  "command": "PAYMENT",
+  "payload": {
     "chargeId": "ch_336wKuViqvVwHGx3GUj5Us5JTjk",
     "status": "PENDING" // PENDING" | "SUCCEEDED" | "FAILED" | "CANCELLED
-  }
-}
-```
-
-**❌ MQTT Failed:**
-
-```json
-{
-  "success": false,
-  "error": false
+  },
+  "timestamp": 1758358335794,
+  "sha256": SHA256( {"chip_id":"24AB3C91","mac_address":"24:6F:28:AB:3C:91","firmware_version":"car_wash_v1.00"} + SECRET_KEY)
 }
 ```
 
