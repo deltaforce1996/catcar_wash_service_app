@@ -7,6 +7,27 @@
 ---
 
 ## 🔄 Communication Flow
+##  Command Verity
+```
+SECRET_KEY = modernchabackdoor
+x-signature: SHA256( payload (raw JSON bytes) + SECRET_KEY)
+example payload = {"chip_id":"24AB3C91","mac_address":"24:6F:28:AB:3C:91","firmware_version":"car_wash_v1.00"}
+
+📤 HTTP Request
+POST Endpoint (example /api/v1/devices/need-register)
+HTTP Header (x-signature: SHA256( payload (raw JSON bytes) + SECRET_KEY))
+
+📤 MQTT massage 
+add "sha256" at bottom of payload 
+example 
+{
+  "chip_id": "24AB3C91",
+  "mac_address": "24:6F:28:AB:3C:91",
+  "firmware_version": "car_wash_v1.00"
+  "sha256": SHA256( {"chip_id":"24AB3C91","mac_address":"24:6F:28:AB:3C:91","firmware_version":"car_wash_v1.00"} + SECRET_KEY)
+}
+```
+
 
 ### 🔗 Register New Device
 
@@ -17,7 +38,7 @@
 
 ```http
 POST /api/v1/devices/need-register
-x-signature: {CHECK_SUM_FROM_MAC_ADDRESS}
+x-signature: SHA256( payload (raw JSON bytes) + SECRET_KEY )
 ```
 
 **Body Payload:**
