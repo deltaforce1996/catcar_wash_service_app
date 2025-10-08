@@ -146,9 +146,20 @@
       <!-- Expandable Row Content -->
       <template #expanded-content="{ item }">
         <!-- Header with employee summary -->
-        <h3 class="text-subtitle-1 font-weight-bold mb-4">
-          รายละเอียดพนักงาน
-        </h3>
+        <div class="d-flex justify-space-between align-center mb-4">
+          <h3 class="text-subtitle-1 font-weight-bold mb-4">
+            รายละเอียดพนักงาน
+          </h3>
+          <v-btn
+            color="primary"
+            variant="outlined"
+            prepend-icon="mdi-pencil"
+            class="text-none"
+            @click="handleEditEmployee(item.id)"
+          >
+            แก้ไขข้อมูล
+          </v-btn>
+        </div>
 
         <!-- Employee details grid for desktop -->
         <v-row no-gutters class="employee-details-grid">
@@ -315,6 +326,14 @@
       v-model="showAddEmployeeDialog"
       @success="handleEmployeeAdded"
     />
+
+    <!-- Edit Employee Dialog -->
+    <EditEmployeeDialog
+      v-if="selectedEmployeeId"
+      v-model="showEditEmployeeDialog"
+      :employee-id="selectedEmployeeId"
+      @success="handleEmployeeUpdated"
+    />
   </div>
 </template>
 
@@ -324,6 +343,7 @@ import type { SearchEmpsRequest } from "~/services/apis/emp-api.service";
 import { useEmployee } from "~/composables/useEmployee";
 import EnhancedDataTable from "~/components/common/EnhancedDataTable.vue";
 import AddEmployeeDialog from "~/components/employee/AddEmployeeDialog.vue";
+import EditEmployeeDialog from "~/components/employee/EditEmployeeDialog.vue";
 
 // Composable
 const {
@@ -484,6 +504,17 @@ const handleEmployeeAdded = async () => {
   await searchEmployees({ page: 1 });
 };
 
+// Handle edit employee button click
+const handleEditEmployee = (employeeId: string) => {
+  selectedEmployeeId.value = employeeId;
+  showEditEmployeeDialog.value = true;
+};
+
+// Handle employee updated successfully
+const handleEmployeeUpdated = async () => {
+  await searchEmployees({});
+};
+
 // Initialize data on component mount
 onMounted(async () => {
   await searchEmployees();
@@ -491,6 +522,8 @@ onMounted(async () => {
 
 // Local state
 const showAddEmployeeDialog = ref(false);
+const showEditEmployeeDialog = ref(false);
+const selectedEmployeeId = ref<string | null>(null);
 
 // Filter options
 const statusOptions: EnumUserStatus[] = ["ACTIVE", "INACTIVE"];
