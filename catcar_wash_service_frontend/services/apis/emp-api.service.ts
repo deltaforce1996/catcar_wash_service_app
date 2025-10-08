@@ -47,13 +47,11 @@ export interface SearchEmpsRequest {
 }
 
 export interface CreateEmpPayload {
-  email: string;
   name: string;
-  phone: string;
-  line: string;
-  address: string;
-  status: EnumEmpStatus; // ACTIVE or INACTIVE
-  permission_id: string;
+  email: string;
+  phone?: string;
+  line?: string;
+  address?: string;
 }
 
 export interface UpdateEmpPayload {

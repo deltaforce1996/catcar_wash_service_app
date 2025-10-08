@@ -15,7 +15,7 @@ export const useEmployee = () => {
   const currentEmployee = ref<EmpResponseApi | null>(null);
   const currentSearchParams = ref<SearchEmpsRequest>({
     page: 1,
-    limit: 1,
+    limit: 10,
     sort_by: "created_at",
     sort_order: "desc",
   });
