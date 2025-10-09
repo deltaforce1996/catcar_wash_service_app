@@ -260,11 +260,6 @@ const managementMenuItems = [
     to: "/employee-management",
   },
   {
-    title: "จัดการพนักงาน (Example)",
-    icon: "mdi-account-tie",
-    to: "/examples/ex-emp-mgmt",
-  },
-  {
     title: "โปรไฟล์ (Example)",
     icon: "mdi-account-group",
     to: "/examples/ex-profile",
