@@ -60,16 +60,16 @@ WORKDIR /app
 # Copy package files to install production dependencies
 COPY package.json pnpm-lock.yaml ./
 
-# Install production dependencies plus ts-node for seeding
-# ts-node is needed for running the seed script
-RUN pnpm install --frozen-lockfile --prod && \
-    pnpm add ts-node --save-dev
-
 # Copy Prisma schema and source files needed for seeding
 # The schema and all source modules are needed for database operations and seeding
 COPY --from=base /app/prisma ./prisma
 COPY --from=base /app/src ./src
 COPY --from=base /app/tsconfig.json ./tsconfig.json
+
+# Install production dependencies plus ts-node for seeding
+# ts-node is needed for running the seed script
+RUN pnpm install --frozen-lockfile --prod && \
+    pnpm add ts-node --save-dev
 
 # Generate Prisma client for production
 # This creates the Prisma client needed at runtime
@@ -102,9 +102,9 @@ RUN addgroup -g 1001 -S nodejs
 # This user will have limited privileges
 RUN adduser -S nestjs -u 1001
 
-# Change ownership of the application directory to the nestjs user
-# This ensures the application can read/write to its own files
-RUN chown -R nestjs:nodejs /app
+# Change ownership of essential directories only to avoid memory issues
+# Only change ownership of directories that need write access
+RUN chown -R nestjs:nodejs /app/prisma /app/dist /app/start.sh
 
 # Switch to the non-root user for running the application
 USER nestjs

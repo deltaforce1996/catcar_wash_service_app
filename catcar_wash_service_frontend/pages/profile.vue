@@ -72,257 +72,123 @@
     </v-card>
 
     <!-- Information Cards -->
-    <v-row>
-      <v-col cols="12" lg="8">
-        <!-- Personal Information Card -->
-        <v-card
-          color="surface-container"
-          elevation="2"
-          rounded="xl"
-          class="mb-6"
-        >
-          <v-card-title class="pa-6">
-            <div class="d-flex align-center">
-              <v-icon color="primary" class="me-3">mdi-account-circle</v-icon>
-              <span class="text-h5 font-weight-bold">ข้อมูลส่วนตัว</span>
+    <!-- Personal Information Card -->
+    <v-card color="surface-container" elevation="2" rounded="xl" class="mb-6">
+      <v-card-title class="pa-6">
+        <div class="d-flex align-center">
+          <v-icon color="primary" class="me-3">mdi-account-circle</v-icon>
+          <span class="text-h5 font-weight-bold">ข้อมูลส่วนตัว</span>
+        </div>
+      </v-card-title>
+      <v-card-text class="pa-6 pt-0">
+        <v-row>
+          <v-col cols="12" sm="6">
+            <div class="mb-4">
+              <div class="text-caption text-medium-emphasis mb-1">
+                ชื่อ-นามสกุล
+              </div>
+              <div class="text-body-1 font-weight-medium">
+                {{ profileData.fullname }}
+              </div>
             </div>
-          </v-card-title>
-          <v-card-text class="pa-6 pt-0">
-            <v-row>
-              <v-col cols="12" sm="6">
-                <div class="mb-4">
-                  <div class="text-caption text-medium-emphasis mb-1">
-                    ชื่อ-นามสกุล
-                  </div>
-                  <div class="text-body-1 font-weight-medium">
-                    {{ profileData.fullname }}
-                  </div>
-                </div>
-                <div class="mb-4">
-                  <div class="text-caption text-medium-emphasis mb-1">
-                    อีเมล
-                  </div>
-                  <div class="text-body-1 font-weight-medium">
-                    {{ profileData.email }}
-                  </div>
-                </div>
-                <div class="mb-4">
-                  <div class="text-caption text-medium-emphasis mb-1">
-                    เบอร์โทรศัพท์
-                  </div>
-                  <div class="text-body-1 font-weight-medium">
-                    {{ formatPhoneNumber(profileData.phone) }}
-                  </div>
-                </div>
-              </v-col>
-              <v-col cols="12" sm="6">
-                <div class="mb-4">
-                  <div class="text-caption text-medium-emphasis mb-1">
-                    ชื่อเรียก/ชื่อร้าน
-                  </div>
-                  <div class="text-body-1 font-weight-medium">
-                    {{ profileData.custom_name }}
-                  </div>
-                </div>
-                <!-- <div class="mb-4">
+            <div class="mb-4">
+              <div class="text-caption text-medium-emphasis mb-1">อีเมล</div>
+              <div class="text-body-1 font-weight-medium">
+                {{ profileData.email }}
+              </div>
+            </div>
+            <div class="mb-4">
+              <div class="text-caption text-medium-emphasis mb-1">
+                เบอร์โทรศัพท์
+              </div>
+              <div class="text-body-1 font-weight-medium">
+                {{ formatPhoneNumber(profileData.phone) }}
+              </div>
+            </div>
+          </v-col>
+          <v-col cols="12" sm="6">
+            <div class="mb-4">
+              <div class="text-caption text-medium-emphasis mb-1">
+                ชื่อเรียก/ชื่อร้าน
+              </div>
+              <div class="text-body-1 font-weight-medium">
+                {{ profileData.custom_name }}
+              </div>
+            </div>
+            <!-- <div class="mb-4">
                   <div class="text-caption text-medium-emphasis mb-1">รหัสลูกค้า</div>
                   <div class="text-body-1 font-weight-medium font-mono">{{ formatCustomerId(profileData.id) }}</div>
                 </div> -->
-              </v-col>
-              <v-col cols="12">
-                <div class="mb-4">
-                  <div class="text-caption text-medium-emphasis mb-1">
-                    ที่อยู่
-                  </div>
-                  <div class="text-body-1 font-weight-medium">
-                    {{ profileData.address }}
-                  </div>
-                </div>
-              </v-col>
-            </v-row>
-          </v-card-text>
-        </v-card>
-
-        <!-- Account Status Card -->
-        <v-card color="surface-container" elevation="2" rounded="xl">
-          <v-card-title class="pa-6">
-            <div class="d-flex align-center">
-              <v-icon color="secondary" class="me-3">mdi-shield-check</v-icon>
-              <span class="text-h5 font-weight-bold">สถานะบัญชี</span>
-            </div>
-          </v-card-title>
-          <v-card-text class="pa-6 pt-0">
-            <v-row>
-              <v-col cols="12" sm="6">
-                <div class="mb-4">
-                  <div class="text-caption text-medium-emphasis mb-1">
-                    สิทธิ์การใช้งาน
-                  </div>
-                  <v-chip
-                    :color="getPermissionColor(profileData.permission.name)"
-                    variant="tonal"
-                    size="small"
-                  >
-                    {{ getPermissionLabel(profileData.permission.name) }}
-                  </v-chip>
-                </div>
-                <div class="mb-4">
-                  <div class="text-caption text-medium-emphasis mb-1">
-                    วันที่สมัครสมาชิก
-                  </div>
-                  <div class="text-body-1 font-weight-medium">
-                    {{ formatDate(profileData.created_at) }}
-                  </div>
-                </div>
-              </v-col>
-              <v-col cols="12" sm="6">
-                <div class="mb-4">
-                  <div class="text-caption text-medium-emphasis mb-1">
-                    สถานะบัญชี
-                  </div>
-                  <v-chip
-                    :color="getStatusColor(profileData.status)"
-                    variant="tonal"
-                    size="small"
-                  >
-                    {{ getStatusLabel(profileData.status) }}
-                  </v-chip>
-                </div>
-                <div class="mb-4">
-                  <div class="text-caption text-medium-emphasis mb-1">
-                    อัปเดตล่าสุด
-                  </div>
-                  <div class="text-body-1 font-weight-medium">
-                    {{ formatDate(profileData.updated_at) }}
-                  </div>
-                </div>
-              </v-col>
-            </v-row>
-          </v-card-text>
-        </v-card>
-      </v-col>
-
-      <v-col cols="12" lg="4">
-        <!-- Device Statistics Card -->
-        <v-card
-          color="surface-container"
-          elevation="2"
-          rounded="xl"
-          class="mb-6"
-        >
-          <v-card-title class="pa-6">
-            <div class="d-flex align-center">
-              <v-icon color="info" class="me-3">mdi-chart-donut</v-icon>
-              <span class="text-h5 font-weight-bold">สถิติอุปกรณ์</span>
-            </div>
-          </v-card-title>
-          <v-card-text class="pa-6 pt-0">
-            <!-- Device Stats Visual -->
-            <div class="text-center mb-6">
-              <div class="text-h2 font-weight-bold text-primary mb-2">
-                {{ profileData.device_counts.total }}
-              </div>
-              <div class="text-body-2 text-medium-emphasis">อุปกรณ์ทั้งหมด</div>
-            </div>
-
-            <!-- Device Breakdown -->
+          </v-col>
+          <v-col cols="12">
             <div class="mb-4">
-              <div class="d-flex justify-space-between align-center mb-2">
-                <div class="d-flex align-center">
-                  <div class="device-status-dot bg-success me-2"></div>
-                  <span class="text-body-2">ใช้งานอยู่</span>
-                </div>
-                <span class="text-body-2 font-weight-bold">{{
-                  profileData.device_counts.active
-                }}</span>
+              <div class="text-caption text-medium-emphasis mb-1">ที่อยู่</div>
+              <div class="text-body-1 font-weight-medium">
+                {{ profileData.address }}
               </div>
-              <v-progress-linear
-                :model-value="
-                  (profileData.device_counts.active /
-                    profileData.device_counts.total) *
-                  100
-                "
-                color="success"
-                height="8"
-                rounded
-                class="mb-3"
-              />
             </div>
+          </v-col>
+        </v-row>
+      </v-card-text>
+    </v-card>
 
+    <!-- Account Status Card -->
+    <v-card color="surface-container" elevation="2" rounded="xl">
+      <v-card-title class="pa-6">
+        <div class="d-flex align-center">
+          <v-icon color="secondary" class="me-3">mdi-shield-check</v-icon>
+          <span class="text-h5 font-weight-bold">สถานะบัญชี</span>
+        </div>
+      </v-card-title>
+      <v-card-text class="pa-6 pt-0">
+        <v-row>
+          <v-col cols="12" sm="6">
             <div class="mb-4">
-              <div class="d-flex justify-space-between align-center mb-2">
-                <div class="d-flex align-center">
-                  <div class="device-status-dot bg-error me-2"></div>
-                  <span class="text-body-2">หยุดใช้งาน</span>
-                </div>
-                <span class="text-body-2 font-weight-bold">{{
-                  profileData.device_counts.inactive
-                }}</span>
+              <div class="text-caption text-medium-emphasis mb-1">
+                สิทธิ์การใช้งาน
               </div>
-              <v-progress-linear
-                :model-value="
-                  (profileData.device_counts.inactive /
-                    profileData.device_counts.total) *
-                  100
-                "
-                color="error"
-                height="8"
-                rounded
-              />
+              <v-chip
+                :color="getPermissionColor(profileData.permission.name)"
+                variant="tonal"
+                size="small"
+              >
+                {{ getPermissionLabel(profileData.permission.name) }}
+              </v-chip>
             </div>
-          </v-card-text>
-        </v-card>
-
-        <!-- Quick Actions Card -->
-        <v-card color="surface-container" elevation="2" rounded="xl">
-          <v-card-title class="pa-6">
-            <div class="d-flex align-center">
-              <v-icon color="warning" class="me-3">mdi-lightning-bolt</v-icon>
-              <span class="text-h5 font-weight-bold">การดำเนินการ</span>
+            <div class="mb-4">
+              <div class="text-caption text-medium-emphasis mb-1">
+                วันที่สมัครสมาชิก
+              </div>
+              <div class="text-body-1 font-weight-medium">
+                {{ formatDate(profileData.created_at) }}
+              </div>
             </div>
-          </v-card-title>
-          <v-card-text class="pa-6 pt-0">
-            <div class="d-flex flex-column ga-3">
-              <v-btn
-                variant="outlined"
-                prepend-icon="mdi-pencil"
-                block
-                class="text-none"
+          </v-col>
+          <v-col cols="12" sm="6">
+            <div class="mb-4">
+              <div class="text-caption text-medium-emphasis mb-1">
+                สถานะบัญชี
+              </div>
+              <v-chip
+                :color="getStatusColor(profileData.status)"
+                variant="tonal"
+                size="small"
               >
-                แก้ไขโปรไฟล์
-              </v-btn>
-              <v-btn
-                variant="outlined"
-                prepend-icon="mdi-lock"
-                block
-                class="text-none"
-              >
-                เปลี่ยนรหัสผ่าน
-              </v-btn>
-              <v-btn
-                variant="outlined"
-                prepend-icon="mdi-cog"
-                block
-                class="text-none"
-              >
-                ตั้งค่าบัญชี
-              </v-btn>
-              <v-divider class="my-2" />
-              <v-btn
-                variant="outlined"
-                prepend-icon="mdi-logout"
-                color="error"
-                block
-                class="text-none"
-                @click="handleLogout"
-              >
-                ออกจากระบบ
-              </v-btn>
+                {{ getStatusLabel(profileData.status) }}
+              </v-chip>
             </div>
-          </v-card-text>
-        </v-card>
-      </v-col>
-    </v-row>
+            <div class="mb-4">
+              <div class="text-caption text-medium-emphasis mb-1">
+                อัปเดตล่าสุด
+              </div>
+              <div class="text-body-1 font-weight-medium">
+                {{ formatDate(profileData.updated_at) }}
+              </div>
+            </div>
+          </v-col>
+        </v-row>
+      </v-card-text>
+    </v-card>
   </div>
 </template>
 
