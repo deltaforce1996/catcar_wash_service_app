@@ -91,13 +91,13 @@ export const useAuth = () => {
       }
 
       let response;
-      
+
       // Update profile based on user permission using current profileData
       if (user.value.permission.name === "USER") {
         // For regular users, use UserApiService
         response = await userApi.UpdateUserProfile(profileData);
-      } else if (user.value.permission.name === "TECHNICIAN") {
-        // For employees/technicians, use EmpApiService
+      } else if (user.value.permission.name === "TECHNICIAN" || user.value.permission.name === "ADMIN") {
+        // For employees/technicians/admins, use EmpApiService
         response = await empApi.UpdateEmpProfile(profileData);
       } else {
         throw new Error("Invalid permission for profile update");
