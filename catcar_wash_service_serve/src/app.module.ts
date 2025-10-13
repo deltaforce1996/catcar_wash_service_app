@@ -16,7 +16,7 @@ import { DeviceStateProcessorModule } from './modules/device-state-processor';
 import { MqttModule } from './modules/mqtt';
 import { DashboardModule } from './apis/dashboard/dashboard.module';
 import { PaymentGatewayModule } from './apis/payment-gateway/payment-gateway.module';
-import { DateTimeService } from './services';
+import { DateTimeService, EventManagerService, MqttCommandManagerService, MqttCommandEventAdapter } from './services';
 
 @Module({
   imports: [
@@ -39,6 +39,6 @@ import { DateTimeService } from './services';
     PaymentGatewayModule,
   ],
   controllers: [AppController],
-  providers: [AppService, DateTimeService],
+  providers: [AppService, DateTimeService, EventManagerService, MqttCommandManagerService, MqttCommandEventAdapter],
 })
 export class AppModule {}

@@ -1,6 +1,6 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, Logger } from '@nestjs/common';
 import { Observable } from 'rxjs';
-import { EventManagerService, SSEEventHandler } from './event-manager.service';
+import { EventManagerService, SSEEventHandler } from '../event-manager.service';
 import { DeviceRegistrationService, DeviceRegistrationSession } from './device-registration.service';
 
 // Define event types for device registration domain
@@ -11,8 +11,16 @@ export interface DeviceRegistrationEventMap {
   expired: { pin: string; timestamp: Date };
 }
 
+export interface IDeviceRegistrationEventAdapter {
+  emitRegistrationRequested(session: DeviceRegistrationSession): void;
+  emitRegistrationCompleted(session: DeviceRegistrationSession): void;
+  emitRegistrationCancelled(pin: string): void;
+  emitRegistrationExpired(pin: string): void;
+}
+
 @Injectable()
-export class DeviceRegistrationEventAdapter {
+export class DeviceRegistrationEventAdapter implements IDeviceRegistrationEventAdapter {
+  private readonly logger = new Logger(DeviceRegistrationEventAdapter.name);
   private domainEmitter;
 
   constructor(
@@ -24,6 +32,9 @@ export class DeviceRegistrationEventAdapter {
 
     // Set this adapter as the event emitter for the service
     this.deviceRegistrationService.setAdapter(this);
+
+    // Set up event listeners
+    this.setupEventListeners();
   }
 
   /**
@@ -131,16 +142,7 @@ export class DeviceRegistrationEventAdapter {
    * Set up event listeners for device registration service
    */
   setupEventListeners(): void {
-    // This would be called in the service to set up automatic event emission
-    this.domainEmitter.on('requested', (data) => {
-      void data;
-      // Additional processing if needed
-    });
-
-    this.domainEmitter.on('completed', (data) => {
-      void data;
-      // Additional processing if needed
-    });
+    // TODO: Add event listeners for device registration service events
   }
 
   /**
@@ -161,6 +163,34 @@ export class DeviceRegistrationEventAdapter {
     return {
       totalListeners: Object.values(registrationStats).reduce((sum, count) => sum + count, 0),
       eventBreakdown: registrationStats,
+    };
+  }
+
+  /**
+   * Health check for device registration events
+   */
+  healthCheck() {
+    const stats = this.getStats();
+    const eventSystemHealth = this.eventManager.healthCheck();
+    const activeSessions = this.deviceRegistrationService.getActiveSessions();
+
+    return {
+      status: eventSystemHealth.status === 'healthy' ? 'healthy' : 'unhealthy',
+      event_system: eventSystemHealth,
+      registration_stats: stats,
+      active_sessions: {
+        count: activeSessions.length,
+        sessions: activeSessions.map((session) => ({
+          pin: session.pin,
+          chip_id: session.chip_id,
+          mac_address: session.mac_address,
+          device_id: session.device_id,
+          created_at: session.created_at,
+          expires_at: session.expires_at,
+          is_expired: new Date() > session.expires_at,
+        })),
+      },
+      timestamp: new Date(),
     };
   }
 }

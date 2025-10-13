@@ -1,4 +1,5 @@
 import { Injectable, Logger } from '@nestjs/common';
+import { IDeviceRegistrationEventAdapter } from './device-registration-event.adapter';
 
 export interface DeviceRegistrationSession {
   pin: string;
@@ -17,7 +18,7 @@ export class DeviceRegistrationService {
   private readonly pinToDeviceMap = new Map<string, string>(); // pin -> device_id mapping
   private readonly SESSION_DURATION = 5 * 60 * 1000; // 5 minutes in milliseconds
 
-  private adapter: any; // Will be injected later to avoid circular dependency
+  private adapter: IDeviceRegistrationEventAdapter | null = null;
 
   constructor() {
     // Clean up expired sessions every minute
@@ -174,7 +175,7 @@ export class DeviceRegistrationService {
   /**
    * Set adapter reference (called by adapter to avoid circular dependency)
    */
-  setAdapter(adapter: any): void {
+  setAdapter(adapter: IDeviceRegistrationEventAdapter): void {
     this.adapter = adapter;
   }
 }
