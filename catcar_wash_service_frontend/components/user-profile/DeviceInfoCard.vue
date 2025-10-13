@@ -16,7 +16,7 @@
     <v-divider />
     <v-card-text class="pa-6 flex-grow-1 d-flex align-center">
       <div
-        class="d-flex flex-wrap justify-space-around ga-6 w-100"
+        class="d-flex flex-wrap justify-space-around ga-4 w-100"
         role="list"
         aria-label="สถิติการใช้งานอุปกรณ์"
       >

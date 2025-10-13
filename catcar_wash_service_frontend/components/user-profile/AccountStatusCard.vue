@@ -1,10 +1,5 @@
 <template>
-  <v-card
-    color="surface-container"
-    class="h-100"
-    rounded="lg"
-    elevation="2"
-  >
+  <v-card color="surface-container" class="h-100" rounded="lg" elevation="2">
     <v-card-title class="pa-6">
       <div class="d-flex align-center">
         <v-icon color="secondary" size="24" class="me-3" aria-hidden="true">
@@ -15,7 +10,7 @@
     </v-card-title>
     <v-divider />
     <v-card-text class="pa-6">
-      <div class="d-flex flex-column ga-5">
+      <div class="d-flex flex-column ga-4">
         <div>
           <div class="text-caption text-medium-emphasis mb-2">สถานะบัญชี</div>
           <v-chip

@@ -1,143 +1,132 @@
 <template>
   <v-card color="surface-container" class="h-100" rounded="lg" elevation="2">
     <v-card-title class="pa-6">
-      <div class="d-flex align-center justify-space-between">
-        <div class="d-flex align-center">
-          <v-icon color="primary" size="24" class="me-3" aria-hidden="true">
-            mdi-account-circle
-          </v-icon>
-          <span class="text-h6 font-weight-bold">ข้อมูลส่วนตัว</span>
-        </div>
-        <div v-if="showEditButton" class="d-flex ga-2">
-          <template v-if="!isEditing">
-            <v-btn
-              color="primary"
-              variant="tonal"
-              size="small"
-              prepend-icon="mdi-pencil"
-              class="text-none"
-              aria-label="แก้ไขโปรไฟล์"
-              @click="startEdit"
-            >
-              แก้ไข
-            </v-btn>
-          </template>
-          <template v-else>
-            <v-btn
-              color="success"
-              variant="tonal"
-              size="small"
-              prepend-icon="mdi-check"
-              class="text-none"
-              aria-label="บันทึก"
-              :loading="isSaving"
-              @click="confirmEdit"
-            >
-              บันทึก
-            </v-btn>
-            <v-btn
-              color="error"
-              variant="tonal"
-              size="small"
-              prepend-icon="mdi-close"
-              class="text-none"
-              aria-label="ยกเลิก"
-              :disabled="isSaving"
-              @click="cancelEdit"
-            >
-              ยกเลิก
-            </v-btn>
-          </template>
-        </div>
+      <div class="d-flex align-center">
+        <v-icon color="primary" size="24" class="me-3" aria-hidden="true">
+          mdi-account-circle
+        </v-icon>
+        <span class="text-h6 font-weight-bold">ข้อมูลส่วนตัว</span>
       </div>
     </v-card-title>
     <v-divider />
     <v-card-text class="pa-6">
-      <v-form ref="formRef" @submit.prevent="confirmEdit">
-        <div class="d-flex flex-column ga-5">
-          <div>
-            <div class="text-caption text-medium-emphasis mb-2">ชื่อ-นามสกุล</div>
-            <v-text-field
-              v-if="isEditing"
-              v-model="editForm.name"
-              density="compact"
-              variant="outlined"
-              hide-details
-              :rules="[rules.required]"
-            />
-            <div v-else class="text-body-1 font-weight-medium">
-              {{ name || "-" }}
-            </div>
+      <div class="d-flex flex-column ga-4">
+        <!-- Name -->
+        <div>
+          <div class="d-flex justify-space-between align-center mb-2">
+            <div class="text-caption text-medium-emphasis">ชื่อ-นามสกุล</div>
+            <v-btn
+              v-if="showEditButton"
+              variant="text"
+              size="small"
+              class="text-none"
+              @click="openEditDialog('name')"
+            >
+              แก้ไข
+            </v-btn>
           </div>
-          <div>
-            <div class="text-caption text-medium-emphasis mb-2">อีเมล</div>
-            <v-text-field
-              v-if="isEditing"
-              v-model="editForm.email"
-              type="email"
-              density="compact"
-              variant="outlined"
-              hide-details
-              :rules="[rules.required, rules.email]"
-            />
-            <div v-else class="text-body-1 font-weight-medium">
-              {{ email || "-" }}
-            </div>
-          </div>
-          <div>
-            <div class="text-caption text-medium-emphasis mb-2">
-              เบอร์โทรศัพท์
-            </div>
-            <v-text-field
-              v-if="isEditing"
-              v-model="editForm.phone"
-              density="compact"
-              variant="outlined"
-              hide-details
-              placeholder="+66812345678"
-              :rules="[rules.phone]"
-            />
-            <div v-else class="text-body-1 font-weight-medium">
-              {{ formatPhoneNumber(phone) }}
-            </div>
-          </div>
-          <div>
-            <div class="text-caption text-medium-emphasis mb-2">LINE ID</div>
-            <v-text-field
-              v-if="isEditing"
-              v-model="editForm.line"
-              density="compact"
-              variant="outlined"
-              hide-details
-              placeholder="@lineuser"
-            />
-            <div v-else class="text-body-1 font-weight-medium">
-              {{ line || "-" }}
-            </div>
-          </div>
-          <div>
-            <div class="text-caption text-medium-emphasis mb-2">ที่อยู่</div>
-            <v-textarea
-              v-if="isEditing"
-              v-model="editForm.address"
-              density="compact"
-              variant="outlined"
-              hide-details
-              rows="2"
-            />
-            <div v-else class="text-body-1 font-weight-medium">
-              {{ address || "-" }}
-            </div>
+          <div class="text-body-1 font-weight-medium">
+            {{ name || "-" }}
           </div>
         </div>
-      </v-form>
+
+        <!-- Email -->
+        <div>
+          <div class="d-flex justify-space-between align-center mb-2">
+            <div class="text-caption text-medium-emphasis">อีเมล</div>
+            <v-btn
+              v-if="showEditButton"
+              variant="text"
+              size="small"
+              class="text-none"
+              @click="openEditDialog('email')"
+            >
+              แก้ไข
+            </v-btn>
+          </div>
+          <div class="text-body-1 font-weight-medium">
+            {{ email || "-" }}
+          </div>
+        </div>
+
+        <!-- Phone -->
+        <div>
+          <div class="d-flex justify-space-between align-center mb-2">
+            <div class="text-caption text-medium-emphasis">เบอร์โทรศัพท์</div>
+            <v-btn
+              v-if="showEditButton"
+              variant="text"
+              size="small"
+              class="text-none"
+              @click="openEditDialog('phone')"
+            >
+              แก้ไข
+            </v-btn>
+          </div>
+          <div class="text-body-1 font-weight-medium">
+            {{ formatPhoneNumber(phone) }}
+          </div>
+        </div>
+
+        <!-- LINE ID -->
+        <div>
+          <div class="d-flex justify-space-between align-center mb-2">
+            <div class="text-caption text-medium-emphasis">LINE ID</div>
+            <v-btn
+              v-if="showEditButton"
+              variant="text"
+              size="small"
+              class="text-none"
+              @click="openEditDialog('line')"
+            >
+              แก้ไข
+            </v-btn>
+          </div>
+          <div class="text-body-1 font-weight-medium">
+            {{ line || "-" }}
+          </div>
+        </div>
+
+        <!-- Address -->
+        <div>
+          <div class="d-flex justify-space-between align-center mb-2">
+            <div class="text-caption text-medium-emphasis">ที่อยู่</div>
+            <v-btn
+              v-if="showEditButton"
+              variant="text"
+              size="small"
+              class="text-none"
+              @click="openEditDialog('address')"
+            >
+              แก้ไข
+            </v-btn>
+          </div>
+          <div class="text-body-1 font-weight-medium">
+            {{ address || "-" }}
+          </div>
+        </div>
+      </div>
     </v-card-text>
+
+    <!-- Edit Dialog -->
+    <EditFieldDialog
+      v-model="editDialog"
+      :field-label="currentFieldConfig.label"
+      :field-name="currentFieldConfig.name"
+      :current-value="currentFieldConfig.value"
+      :field-type="currentFieldConfig.type"
+      :additional-rules="currentFieldConfig.rules"
+      :loading="isSaving"
+      :api-error="editError"
+      @confirm="handleConfirmEdit"
+    />
   </v-card>
 </template>
 
 <script setup lang="ts">
-import { ref, watch } from "vue";
+import { ref, computed } from "vue";
 import { useAuth } from "~/composables/useAuth";
+import EditFieldDialog from "./EditFieldDialog.vue";
 
 interface Props {
   name?: string;
@@ -159,33 +148,98 @@ const props = withDefaults(defineProps<Props>(), {
 
 const { updateProfile } = useAuth();
 
-const isEditing = ref(false);
+const editDialog = ref(false);
+const currentField = ref<string>("");
 const isSaving = ref(false);
-const formRef = ref();
+const editError = ref("");
 
-const editForm = ref({
-  name: "",
-  email: "",
-  phone: "",
-  line: "",
-  address: "",
-});
-
-// Validation rules
-const rules = {
-  required: (v: string) => !!v || "กรุณากรอกข้อมูล",
-  email: (v: string) => {
-    const pattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    return !v || pattern.test(v) || "รูปแบบอีเมลไม่ถูกต้อง";
+// Field configurations
+const fieldConfigs: Record<
+  string,
+  {
+    label: string;
+    name: string;
+    value: string;
+    type: string;
+    rules: Array<(v: string) => boolean | string>;
+  }
+> = {
+  name: {
+    label: "ชื่อ-นามสกุล",
+    name: "name",
+    value: props.name || "",
+    type: "text",
+    rules: [],
   },
-  phone: (v: string) => {
-    if (!v) return true;
-    const pattern = /^\+?[0-9]{10,15}$/;
-    return (
-      pattern.test(v.replace(/\s/g, "")) || "รูปแบบเบอร์โทรศัพท์ไม่ถูกต้อง"
-    );
+  email: {
+    label: "อีเมล",
+    name: "email",
+    value: props.email || "",
+    type: "email",
+    rules: [
+      (v: string) => {
+        const pattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+        return !v || pattern.test(v) || "รูปแบบอีเมลไม่ถูกต้อง";
+      },
+    ],
+  },
+  phone: {
+    label: "เบอร์โทรศัพท์",
+    name: "phone",
+    value: props.phone || "",
+    type: "tel",
+    rules: [
+      (v: string) => {
+        if (!v) return true;
+        const pattern = /^\+?[0-9]{10,15}$/;
+        return (
+          pattern.test(v.replace(/\s/g, "")) || "รูปแบบเบอร์โทรศัพท์ไม่ถูกต้อง"
+        );
+      },
+    ],
+  },
+  line: {
+    label: "LINE ID",
+    name: "line",
+    value: props.line || "",
+    type: "text",
+    rules: [],
+  },
+  address: {
+    label: "ที่อยู่",
+    name: "address",
+    value: props.address || "",
+    type: "text",
+    rules: [],
   },
 };
+
+const currentFieldConfig = computed(() => {
+  if (currentField.value && fieldConfigs[currentField.value]) {
+    const config = fieldConfigs[currentField.value];
+    // Update value dynamically based on props
+    return {
+      ...config,
+      value:
+        currentField.value === "name"
+          ? props.name || ""
+          : currentField.value === "email"
+          ? props.email || ""
+          : currentField.value === "phone"
+          ? props.phone || ""
+          : currentField.value === "line"
+          ? props.line || ""
+          : props.address || "",
+    };
+  }
+  return {
+    label: "",
+    name: "",
+    value: "",
+    type: "text",
+    rules: [],
+  };
+});
 
 const formatPhoneNumber = (phone?: string) => {
   if (!phone) return "-";
@@ -202,56 +256,31 @@ const formatPhoneNumber = (phone?: string) => {
   return phone;
 };
 
-const startEdit = () => {
-  editForm.value = {
-    name: props.name || "",
-    email: props.email || "",
-    phone: props.phone || "",
-    line: props.line || "",
-    address: props.address || "",
-  };
-  isEditing.value = true;
+const openEditDialog = (field: string) => {
+  currentField.value = field;
+  editError.value = "";
+  editDialog.value = true;
 };
 
-const cancelEdit = () => {
-  isEditing.value = false;
-  editForm.value = {
-    name: "",
-    email: "",
-    phone: "",
-    line: "",
-    address: "",
-  };
-};
-
-const confirmEdit = async () => {
-  const { valid } = await formRef.value.validate();
-  if (!valid) return;
-
+const handleConfirmEdit = async (newValue: string) => {
   isSaving.value = true;
+  editError.value = "";
+
   try {
-    await updateProfile(editForm.value);
-    isEditing.value = false;
-  } catch (error) {
+    // Create update payload with only the field being edited
+    const updatePayload: Record<string, string> = {
+      [currentField.value]: newValue,
+    };
+
+    await updateProfile(updatePayload);
+    // Only close dialog on success
+    editDialog.value = false;
+  } catch (error: any) {
     console.error("Failed to update profile:", error);
+    // Set error message for dialog to display
+    editError.value = error?.message || "เกิดข้อผิดพลาดในการอัปเดตข้อมูล";
   } finally {
     isSaving.value = false;
   }
 };
-
-// Watch for prop changes to update form
-watch(
-  () => [props.name, props.email, props.phone, props.line, props.address],
-  () => {
-    if (!isEditing.value) {
-      editForm.value = {
-        name: props.name || "",
-        email: props.email || "",
-        phone: props.phone || "",
-        line: props.line || "",
-        address: props.address || "",
-      };
-    }
-  }
-);
 </script>
