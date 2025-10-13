@@ -2,35 +2,26 @@
   <div class="d-flex flex-column align-center justify-center pa-4">
     <!-- Welcome Section -->
     <div class="text-center mb-6">
-      <v-avatar 
-        size="60" 
-        class="mb-4 gradient-avatar"
-        color="transparent"
-      >
+      <v-avatar size="60" class="mb-4 gradient-avatar" color="transparent">
         <v-icon icon="mdi-key-outline" size="32" color="primary" />
       </v-avatar>
-      
-      <h1 class="text-h4 font-weight-bold gradient-text mb-2">
-        ลืมรหัสผ่าน?
-      </h1>
-      
+
+      <h1 class="text-h4 font-weight-bold gradient-text mb-2">ลืมรหัสผ่าน?</h1>
+
       <p class="text-body-2 text-medium-emphasis">
         กรุณาใส่อีเมลของคุณเพื่อรับลิงก์รีเซ็ตรหัสผ่าน
       </p>
     </div>
 
     <!-- Vuetify Form Card -->
-    <v-card
-      class="w-100 glass-card"
-      max-width="450"
-      elevation="8"
-      rounded="xl"
-    >
+    <v-card class="w-100 glass-card" max-width="450" elevation="8" rounded="xl">
       <v-card-text class="pa-6">
         <v-form @submit.prevent="handleForgotPassword">
           <!-- Email Field -->
           <div class="mb-4">
-            <v-label class="text-caption font-weight-medium text-uppercase mb-1">
+            <v-label
+              class="text-caption font-weight-medium text-uppercase mb-1"
+            >
               อีเมล
             </v-label>
             <v-text-field
@@ -103,48 +94,50 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed } from 'vue'
-import { emailRules } from '@/utils/validation-rules'
+import { ref, computed } from "vue";
+import { emailRules } from "@/utils/validation-rules";
 
 // Use auth layout
 definePageMeta({
-  layout: 'auth'
-})
+  layout: "auth",
+});
 
 // Reactive data
-const email = ref('')
-const loading = ref(false)
+const email = ref("");
+const loading = ref(false);
 
 // Validation rules imported from common
 
 // Form validation
 const isFormValid = computed(() => {
-  return email.value.trim() !== "" && 
-         email.value.includes("@") && 
-         email.value.includes(".");
+  return (
+    email.value.trim() !== "" &&
+    email.value.includes("@") &&
+    email.value.includes(".")
+  );
 });
 
 // Methods
 const handleForgotPassword = () => {
-  loading.value = true
-  
+  loading.value = true;
+
   // TODO: Implement forgot password logic
-  console.log('Forgot password request:', { email: email.value })
-  
+  console.log("Forgot password request:", { email: email.value });
+
   // Simulate API call
   setTimeout(() => {
-    loading.value = false
+    loading.value = false;
     // TODO: Show success message and redirect
-    console.log('Reset password email sent successfully')
-  }, 1500)
-}
+    console.log("Reset password email sent successfully");
+  }, 1500);
+};
 
 const goToLogin = () => {
   // Navigate to login page
-  navigateTo('/login-page')
-}
+  navigateTo("/login");
+};
 </script>
 
 <style scoped>
-@import '@/assets/css/auth-common.css';
+@import "@/assets/css/auth-common.css";
 </style>

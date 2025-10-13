@@ -2,35 +2,28 @@
   <div class="d-flex flex-column align-center justify-center pa-4">
     <!-- Welcome Section -->
     <div class="text-center mb-6">
-      <v-avatar 
-        size="60" 
-        class="mb-4 gradient-avatar"
-        color="transparent"
-      >
+      <v-avatar size="60" class="mb-4 gradient-avatar" color="transparent">
         <v-icon icon="mdi-lock-reset" size="32" color="primary" />
       </v-avatar>
-      
+
       <h1 class="text-h4 font-weight-bold gradient-text mb-2">
         รีเซ็ตรหัสผ่าน
       </h1>
-      
+
       <p class="text-body-2 text-medium-emphasis">
         กรุณาใส่รหัสผ่านใหม่ของคุณเพื่อความปลอดภัย
       </p>
     </div>
 
     <!-- Vuetify Form Card -->
-    <v-card
-      class="w-100 glass-card"
-      max-width="450"
-      elevation="8"
-      rounded="xl"
-    >
+    <v-card class="w-100 glass-card" max-width="450" elevation="8" rounded="xl">
       <v-card-text class="pa-6">
         <v-form @submit.prevent="handleResetPassword">
           <!-- Password Field -->
           <div class="mb-4">
-            <v-label class="text-caption font-weight-medium text-uppercase mb-1">
+            <v-label
+              class="text-caption font-weight-medium text-uppercase mb-1"
+            >
               รหัสผ่านใหม่
             </v-label>
             <v-text-field
@@ -51,7 +44,9 @@
 
           <!-- Confirm Password Field -->
           <div class="mb-4">
-            <v-label class="text-caption font-weight-medium text-uppercase mb-1">
+            <v-label
+              class="text-caption font-weight-medium text-uppercase mb-1"
+            >
               ยืนยันรหัสผ่าน
             </v-label>
             <v-text-field
@@ -64,7 +59,9 @@
               placeholder="กรุณายืนยันรหัสผ่าน"
               :rules="confirmPasswordRules"
               hide-details="auto"
-              :append-inner-icon="showConfirmPassword ? 'mdi-eye-off' : 'mdi-eye'"
+              :append-inner-icon="
+                showConfirmPassword ? 'mdi-eye-off' : 'mdi-eye'
+              "
               class="mb-1"
               @click:append-inner="showConfirmPassword = !showConfirmPassword"
             />
@@ -72,7 +69,9 @@
 
           <!-- Password Strength Indicator -->
           <div class="mb-4">
-            <div class="text-caption text-medium-emphasis mb-2">ความแข็งแกร่งของรหัสผ่าน:</div>
+            <div class="text-caption text-medium-emphasis mb-2">
+              ความแข็งแกร่งของรหัสผ่าน:
+            </div>
             <v-progress-linear
               :model-value="passwordStrength"
               :color="passwordStrengthColor"
@@ -147,12 +146,12 @@
 
 <script setup lang="ts">
 import { ref, computed } from "vue";
-import { 
-  passwordRulesStrong, 
+import {
+  passwordRulesStrong,
   createConfirmPasswordRules,
   calculatePasswordStrength,
   getPasswordStrengthColor,
-  getPasswordStrengthText
+  getPasswordStrengthText,
 } from "@/utils/validation-rules";
 
 // Use auth layout
@@ -168,20 +167,30 @@ const showConfirmPassword = ref(false);
 const loading = ref(false);
 
 // Password strength calculation using common functions
-const passwordStrength = computed(() => calculatePasswordStrength(password.value));
-const passwordStrengthColor = computed(() => getPasswordStrengthColor(passwordStrength.value));
-const passwordStrengthText = computed(() => getPasswordStrengthText(passwordStrength.value));
+const passwordStrength = computed(() =>
+  calculatePasswordStrength(password.value)
+);
+const passwordStrengthColor = computed(() =>
+  getPasswordStrengthColor(passwordStrength.value)
+);
+const passwordStrengthText = computed(() =>
+  getPasswordStrengthText(passwordStrength.value)
+);
 
 // Validation rules using common functions
 const passwordRules = passwordRulesStrong;
-const confirmPasswordRules = computed(() => createConfirmPasswordRules(password.value));
+const confirmPasswordRules = computed(() =>
+  createConfirmPasswordRules(password.value)
+);
 
 // Form validation
 const isFormValid = computed(() => {
-  return password.value.trim() !== "" && 
-         confirmPassword.value.trim() !== "" && 
-         password.value === confirmPassword.value &&
-         passwordStrength.value >= 60;
+  return (
+    password.value.trim() !== "" &&
+    confirmPassword.value.trim() !== "" &&
+    password.value === confirmPassword.value &&
+    passwordStrength.value >= 60
+  );
 });
 
 // Methods
@@ -196,16 +205,16 @@ const handleResetPassword = () => {
     loading.value = false;
     // TODO: Show success message and redirect to login
     console.log("Password reset successfully");
-    // navigateTo('/login-page')
+    // navigateTo('/login')
   }, 1500);
 };
 
 const goToLogin = () => {
   // Navigate to login page
-  navigateTo("/login-page");
+  navigateTo("/login");
 };
 </script>
 
 <style scoped>
-@import '@/assets/css/auth-common.css';
+@import "@/assets/css/auth-common.css";
 </style>

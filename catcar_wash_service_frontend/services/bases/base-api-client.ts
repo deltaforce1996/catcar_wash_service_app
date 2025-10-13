@@ -6,6 +6,7 @@ import type {
   AxiosRequestConfig,
 } from "axios";
 import axios from "axios";
+import { navigateTo } from "#app";
 import { getConfigUtils } from "~/configs";
 import { authTokenManager } from "~/utils/auth-token-manager";
 import { SignatureUtils } from "~/utils/signature-utils";
@@ -127,6 +128,8 @@ export abstract class BaseApiClient {
               error.response?.data.message || "Invalid token or access denied"
             }`
           );
+          // Redirect to login page
+          navigateTo("/login");
         }
 
         // Handle server errors
