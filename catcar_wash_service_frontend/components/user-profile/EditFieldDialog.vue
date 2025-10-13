@@ -26,6 +26,21 @@
       <v-divider />
       <v-card-text class="pa-6">
         <v-form ref="formRef">
+          <!-- Password field (for email changes) -->
+          <div v-if="requirePassword" class="mb-4">
+            <v-text-field
+              v-model="password"
+              label="รหัสผ่านปัจจุบัน"
+              type="password"
+              variant="outlined"
+              density="comfortable"
+              :disabled="loading"
+              :rules="[rules.required]"
+              @input="clearError"
+            />
+          </div>
+
+          <!-- New value field -->
           <div class="mb-4">
             <v-text-field
               v-model="value1"
@@ -38,7 +53,9 @@
               @input="clearError"
             />
           </div>
-          <div>
+
+          <!-- Confirmation field (only if requireDoubleEntry is true) -->
+          <div v-if="requireDoubleEntry" class="mb-4">
             <v-text-field
               v-model="value2"
               :label="`ยืนยัน${fieldLabel}ใหม่`"
@@ -112,6 +129,8 @@ interface Props {
   fieldType?: string;
   loading?: boolean;
   apiError?: string;
+  requireDoubleEntry?: boolean;
+  requirePassword?: boolean;
   additionalRules?: Array<(v: string) => boolean | string>;
 }
 
@@ -120,18 +139,26 @@ const props = withDefaults(defineProps<Props>(), {
   fieldType: "text",
   loading: false,
   apiError: "",
+  requireDoubleEntry: false,
+  requirePassword: false,
   additionalRules: () => [],
 });
 
+interface ConfirmPayload {
+  value: string;
+  password?: string;
+}
+
 const emit = defineEmits<{
   "update:modelValue": [value: boolean];
-  confirm: [value: string];
+  confirm: [payload: ConfirmPayload];
 }>();
 
 const dialog = ref(props.modelValue);
 const formRef = ref();
 const value1 = ref("");
 const value2 = ref("");
+const password = ref("");
 const validationError = ref("");
 const localApiError = ref("");
 
@@ -154,6 +181,7 @@ const clearError = () => {
 const handleCancel = () => {
   value1.value = "";
   value2.value = "";
+  password.value = "";
   validationError.value = "";
   localApiError.value = "";
   dialog.value = false;
@@ -172,13 +200,22 @@ const handleConfirm = async () => {
     return;
   }
 
-  if (value1.value !== value2.value) {
+  // Only check match if double entry is required
+  if (props.requireDoubleEntry && value1.value !== value2.value) {
     validationError.value = "ข้อมูลไม่ตรงกัน กรุณาตรวจสอบอีกครั้ง";
     return;
   }
 
-  // Emit confirm event - parent will handle API call and close dialog on success
-  emit("confirm", value1.value);
+  // Emit confirm event with value and password (if required)
+  const payload: ConfirmPayload = {
+    value: value1.value,
+  };
+
+  if (props.requirePassword && password.value) {
+    payload.password = password.value;
+  }
+
+  emit("confirm", payload);
 };
 
 // Watch for dialog changes
@@ -187,9 +224,10 @@ watch(
   (newVal) => {
     dialog.value = newVal;
     if (newVal) {
-      // Clear both fields and errors when dialog opens
+      // Clear all fields and errors when dialog opens
       value1.value = "";
       value2.value = "";
+      password.value = "";
       validationError.value = "";
       localApiError.value = "";
     }

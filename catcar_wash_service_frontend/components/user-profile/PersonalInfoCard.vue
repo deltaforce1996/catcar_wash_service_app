@@ -118,6 +118,8 @@
       :current-value="currentFieldConfig.value"
       :field-type="currentFieldConfig.type"
       :additional-rules="currentFieldConfig.rules"
+      :require-double-entry="currentField === 'email'"
+      :require-password="currentField === 'email'"
       :loading="isSaving"
       :api-error="editError"
       @confirm="handleConfirmEdit"
@@ -148,7 +150,7 @@ const props = withDefaults(defineProps<Props>(), {
   showEditButton: true,
 });
 
-const { updateProfile } = useAuth();
+const { updateProfile, login, user } = useAuth();
 
 const editDialog = ref(false);
 const currentField = ref<string>("");
@@ -264,17 +266,28 @@ const openEditDialog = (field: string) => {
   editDialog.value = true;
 };
 
-const handleConfirmEdit = async (newValue: string) => {
+const handleConfirmEdit = async (payload: { value: string; password?: string }) => {
   isSaving.value = true;
   editError.value = "";
 
   try {
     // Create update payload with only the field being edited
     const updatePayload: Record<string, string> = {
-      [currentField.value]: newValue,
+      [currentField.value]: payload.value,
     };
 
     await updateProfile(updatePayload);
+
+    // If email was updated, re-login to get new auth token
+    if (currentField.value === "email" && payload.password && user.value) {
+      try {
+        await login(payload.value, payload.password, "USER");
+      } catch (loginError) {
+        console.error("Re-login after email update failed:", loginError);
+        // Don't show error if re-login fails, profile was already updated
+      }
+    }
+
     // Only close dialog on success
     editDialog.value = false;
   } catch (error: any) {
