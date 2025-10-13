@@ -250,11 +250,6 @@ const managementMenuItems = [
     to: "/employee-management",
   },
   {
-    title: "โปรไฟล์ (Example)",
-    icon: "mdi-account-group",
-    to: "/examples/ex-profile",
-  },
-  {
     title: "จับคู่อุปกรณ์ (Example)",
     icon: "mdi-bluetooth-connect",
     to: "/examples/ex-pairing-page",
