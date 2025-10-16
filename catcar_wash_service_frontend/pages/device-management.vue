@@ -12,10 +12,10 @@
       title="รายการอุปกรณ์"
       :items="filteredDevices"
       :headers="deviceHeaders"
-      :loading="false"
+      :loading="isSearching || isUpdating"
       :has-filter-changes="hasFilterChanges"
-      :total-items="filteredDevices.length"
-      :total-pages="1"
+      :total-items="totalDevices"
+      :total-pages="totalPages"
       show-select
       expandable
       @apply-filters="applyFilters"
@@ -191,14 +191,14 @@
       <!-- Owner Column -->
       <template #[`item.owner.fullname`]="{ item }">
         <div class="text-body-2">
-          {{ item.owner.fullname }}
+          {{ item.owner?.fullname || "-" }}
         </div>
       </template>
 
       <!-- Registered By Column -->
       <template #[`item.registered_by.name`]="{ item }">
         <div class="text-body-2">
-          {{ item.registered_by.name }}
+          {{ item.registered_by?.name || "-" }}
         </div>
       </template>
 
@@ -213,7 +213,10 @@
             <span class="text-body-2 text-on-surface-variant">
               สร้าง: {{ formatDate(item.created_at) }}
             </span>
-            <span class="text-body-2 text-on-surface-variant">
+            <span
+              v-if="item.owner?.email"
+              class="text-body-2 text-on-surface-variant"
+            >
               {{ item.owner.email }}
             </span>
           </div>
@@ -230,7 +233,7 @@
         </div>
 
         <!-- Sale Config Grid -->
-        <div class="mb-2">
+        <div v-if="item.configs?.sale" class="mb-2">
           <h4 class="text-subtitle-1 font-weight-bold mb-2">
             การตั้งค่าการขาย
           </h4>
@@ -334,7 +337,7 @@
         <v-card-text>
           <p>
             คุณต้องการบันทึกการตั้งค่าของอุปกรณ์
-            {{ selectedDevice?.deviceName }} หรือไม่?
+            {{ selectedDevice?.name }} หรือไม่?
           </p>
         </v-card-text>
         <v-card-actions class="pa-6 pt-0">
@@ -349,22 +352,56 @@
         </v-card-actions>
       </v-card>
     </v-dialog>
+
+    <!-- Snackbar for success/error messages -->
+    <v-snackbar
+      v-model="showSnackbar"
+      :color="snackbarColor"
+      :timeout="3000"
+      location="top"
+    >
+      {{ snackbarMessage }}
+      <template #actions>
+        <v-btn variant="text" @click="showSnackbar = false"> ปิด </v-btn>
+      </template>
+    </v-snackbar>
   </div>
 </template>
 
 <script setup lang="ts">
-import { devicesData, type Device, type DeviceConfig } from "~/data/devices";
+import type { DeviceConfig } from "~/data/devices";
+import type { DeviceResponseApi } from "~/services/apis/device-api.service";
 import EnhancedDataTable from "~/components/common/EnhancedDataTable.vue";
 
+// Device API Composable
+const {
+  devices: apiDevices,
+  isSearching,
+  isUpdating,
+  error: apiError,
+  successMessage: apiSuccessMessage,
+  totalDevices,
+  totalPages,
+  searchDevices,
+  updateDeviceConfigs,
+  setDeviceStatus,
+  clearMessages,
+} = useDevice();
+
 // Reactive state
-const selectedDevices = ref<Device[]>([]);
+const selectedDevices = ref<DeviceResponseApi[]>([]);
 const showApplySystemConfigDialog = ref(false);
 const showDeviceDetailDialog = ref(false);
 const showApplyDeviceConfigDialog = ref(false);
-const selectedDevice = ref<Device | null>(null);
+const selectedDevice = ref<DeviceResponseApi | null>(null);
 const isEditMode = ref(false);
 const editableConfigs = ref<Record<string, DeviceConfig>>({});
 const originalConfigs = ref<Record<string, DeviceConfig>>({});
+
+// Snackbar for messages
+const showSnackbar = ref(false);
+const snackbarMessage = ref("");
+const snackbarColor = ref("success");
 
 // Temporary filter state (before applying)
 const tempDeviceSearch = ref("");
@@ -377,9 +414,6 @@ const appliedDeviceSearch = ref("");
 const appliedSelectedTypeFilters = ref<string[]>([]);
 const appliedSelectedFilters = ref<string[]>([]);
 const appliedSelectedUserFilters = ref<string[]>([]);
-
-// Device data imported from separate file
-const allDevices = ref<Device[]>(devicesData);
 
 // Table headers
 const deviceHeaders = [
@@ -404,7 +438,7 @@ const hasFilterChanges = computed(() => {
 });
 
 // Computed to check if any filters are active
-const hasActiveFilters = computed(() => {
+const _hasActiveFilters = computed(() => {
   return (
     tempDeviceSearch.value.trim() !== "" ||
     tempSelectedTypeFilters.value.length > 0 ||
@@ -414,56 +448,48 @@ const hasActiveFilters = computed(() => {
 });
 
 // Computed properties
-const filteredDevices = computed(() => {
-  let filtered = allDevices.value;
-
-  // Type filter using applied state
-  if (appliedSelectedTypeFilters.value.length > 0) {
-    filtered = filtered.filter((device) =>
-      appliedSelectedTypeFilters.value.includes(device.type)
-    );
-  }
-
-  // Search filter using applied state
-  if (appliedDeviceSearch.value && appliedDeviceSearch.value.trim()) {
-    const query = appliedDeviceSearch.value.toLowerCase();
-    filtered = filtered.filter(
-      (device) =>
-        device.name.toLowerCase().includes(query) ||
-        device.id.toLowerCase().includes(query) ||
-        device.owner.fullname.toLowerCase().includes(query)
-    );
-  }
-
-  // Status filter using applied state
-  if (appliedSelectedFilters.value.length > 0) {
-    filtered = filtered.filter((device) =>
-      appliedSelectedFilters.value.includes(device.status)
-    );
-  }
-
-  // User filter using applied state
-  if (appliedSelectedUserFilters.value.length > 0) {
-    filtered = filtered.filter((device) =>
-      appliedSelectedUserFilters.value.includes(device.owner.id)
-    );
-  }
-
-  return filtered;
-});
+const filteredDevices = computed(() => apiDevices.value);
 
 const selectedDevicesCount = computed(() => selectedDevices.value.length);
 
-// Apply filters function
-const applyFilters = () => {
+// Apply filters function - now calls API with search params
+const applyFilters = async () => {
   appliedDeviceSearch.value = tempDeviceSearch.value;
   appliedSelectedTypeFilters.value = [...tempSelectedTypeFilters.value];
   appliedSelectedFilters.value = [...tempSelectedFilters.value];
   appliedSelectedUserFilters.value = [...tempSelectedUserFilters.value];
+
+  // Build query object for API
+  const query: Record<string, string> = {};
+
+  if (appliedDeviceSearch.value.trim()) {
+    query.search = appliedDeviceSearch.value.trim();
+  }
+
+  if (appliedSelectedTypeFilters.value.length === 1) {
+    query.type = appliedSelectedTypeFilters.value[0];
+  }
+
+  if (appliedSelectedFilters.value.length === 1) {
+    query.status = appliedSelectedFilters.value[0];
+  }
+
+  if (appliedSelectedUserFilters.value.length === 1) {
+    query.owner = appliedSelectedUserFilters.value[0];
+  }
+
+  // Call API with filters
+  await searchDevices({
+    query: Object.keys(query).length > 0 ? query : undefined,
+    page: 1,
+    limit: 10,
+    sort_by: "created_at",
+    sort_order: "desc",
+  });
 };
 
 // Clear all filters
-const clearAllFilters = () => {
+const clearAllFilters = async () => {
   tempDeviceSearch.value = "";
   tempSelectedTypeFilters.value = [];
   tempSelectedFilters.value = [];
@@ -472,23 +498,35 @@ const clearAllFilters = () => {
   appliedSelectedTypeFilters.value = [];
   appliedSelectedFilters.value = [];
   appliedSelectedUserFilters.value = [];
+
+  // Reset to initial search
+  await searchDevices({
+    page: 1,
+    limit: 10,
+    sort_by: "created_at",
+    sort_order: "desc",
+  });
 };
 
 // Methods
 const getTypeOptions = () => {
-  const types = [...new Set(allDevices.value.map((device) => device.type))];
+  const types = [...new Set(apiDevices.value.map((device) => device.type))];
   return types;
 };
 
 const getFilterOptions = () => {
   const statuses = [
-    ...new Set(allDevices.value.map((device) => device.status)),
+    ...new Set(apiDevices.value.map((device) => device.status)),
   ];
   return statuses;
 };
 
 const getUserOptions = () => {
-  const users = [...new Set(allDevices.value.map((device) => device.owner.id))];
+  const users = [
+    ...new Set(
+      apiDevices.value.map((device) => device.owner?.id).filter(Boolean)
+    ),
+  ];
   return users;
 };
 
@@ -552,59 +590,98 @@ const formatDate = (dateString: string) => {
   });
 };
 
-const openDeviceDetailDialog = (device: Device) => {
+const openDeviceDetailDialog = async (device: DeviceResponseApi) => {
   selectedDevice.value = device;
-  originalConfigs.value = JSON.parse(JSON.stringify(device.configs.sale));
-  editableConfigs.value = JSON.parse(JSON.stringify(device.configs.sale));
+  originalConfigs.value = JSON.parse(
+    JSON.stringify(device.configs?.sale || {})
+  );
+  editableConfigs.value = JSON.parse(
+    JSON.stringify(device.configs?.sale || {})
+  );
   isEditMode.value = false;
   showDeviceDetailDialog.value = true;
 };
 
-const toggleDeviceStatus = () => {
-  if (selectedDevice.value) {
-    selectedDevice.value.status =
-      selectedDevice.value.status === "DEPLOYED" ? "MAINTENANCE" : "DEPLOYED";
-    // TODO: Implement API call to update device status
+const toggleDeviceStatus = async () => {
+  if (!selectedDevice.value) return;
+
+  const deviceId = selectedDevice.value.id;
+  const newStatus =
+    selectedDevice.value.status === "DEPLOYED" ? "DISABLED" : "DEPLOYED";
+
+  try {
+    await setDeviceStatus(deviceId, { status: newStatus });
+
+    // Update local state on success
+    selectedDevice.value.status = newStatus;
+
+    // Show success message
+    displayMessage("อัปเดตสถานะอุปกรณ์สำเร็จ", "success");
+  } catch {
+    displayMessage("ไม่สามารถอัปเดตสถานะอุปกรณ์ได้", "error");
   }
 };
 
 const applySystemConfig = () => {
   // TODO: Implement system config application logic
   showApplySystemConfigDialog.value = false;
-  // Show success notification or handle errors
+  displayMessage("นำการตั้งค่าระบบไปใช้สำเร็จ", "success");
 };
 
-const applyDeviceConfig = () => {
-  // TODO: Implement device config save logic
-  if (selectedDevice.value) {
-    selectedDevice.value.configs.sale = { ...editableConfigs.value };
-  }
-  showApplyDeviceConfigDialog.value = false;
-  isEditMode.value = false;
-  // Show success notification or handle errors
-};
+const applyDeviceConfig = async () => {
+  if (!selectedDevice.value) return;
 
-// Filter removal helpers
-const removeTypeFilter = (type: string) => {
-  const index = tempSelectedTypeFilters.value.indexOf(type);
-  if (index > -1) {
-    tempSelectedTypeFilters.value.splice(index, 1);
-  }
-};
+  try {
+    await updateDeviceConfigs(selectedDevice.value.id, {
+      configs: {
+        sale: editableConfigs.value,
+      },
+    });
 
-const removeStatusFilter = (status: string) => {
-  const index = tempSelectedFilters.value.indexOf(status);
-  if (index > -1) {
-    tempSelectedFilters.value.splice(index, 1);
+    showApplyDeviceConfigDialog.value = false;
+    isEditMode.value = false;
+    showDeviceDetailDialog.value = false;
+
+    // Refresh device data
+    await applyFilters();
+
+    displayMessage("บันทึกการตั้งค่าอุปกรณ์สำเร็จ", "success");
+  } catch {
+    displayMessage("ไม่สามารถบันทึกการตั้งค่าอุปกรณ์ได้", "error");
   }
 };
 
-const removeUserFilter = (user: string) => {
-  const index = tempSelectedUserFilters.value.indexOf(user);
-  if (index > -1) {
-    tempSelectedUserFilters.value.splice(index, 1);
-  }
+// Display message helper
+const displayMessage = (message: string, color: "success" | "error") => {
+  snackbarMessage.value = message;
+  snackbarColor.value = color;
+  showSnackbar.value = true;
 };
+
+// Watch for API messages
+watch(apiSuccessMessage, (newMessage) => {
+  if (newMessage) {
+    displayMessage(newMessage, "success");
+    clearMessages();
+  }
+});
+
+watch(apiError, (newError) => {
+  if (newError) {
+    displayMessage(newError, "error");
+    clearMessages();
+  }
+});
+
+// Initialize on mount
+onMounted(async () => {
+  await searchDevices({
+    page: 1,
+    limit: 10,
+    sort_by: "created_at",
+    sort_order: "desc",
+  });
+});
 </script>
 
 <style scoped>
