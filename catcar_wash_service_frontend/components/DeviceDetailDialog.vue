@@ -455,7 +455,7 @@ const hasConfigChanges = computed(() => {
   return Object.keys(editableConfigs.value).some((key) => isConfigChanged(key));
 });
 
-const configChangeCount = computed(() => {
+const _configChangeCount = computed(() => {
   return Object.keys(editableConfigs.value).filter((key) =>
     isConfigChanged(key)
   ).length;

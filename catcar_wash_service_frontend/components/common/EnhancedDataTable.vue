@@ -227,11 +227,11 @@ const handleClearFilters = () => {
   emit("clear-filters");
 };
 
-const handlePageUpdate = (newPage: number) => {
+const _handlePageUpdate = (newPage: number) => {
   emit("update:page", newPage);
 };
 
-const handleItemsPerPageUpdate = (newLimit: number) => {
+const _handleItemsPerPageUpdate = (newLimit: number) => {
   emit("update:items-per-page", newLimit);
 };
 

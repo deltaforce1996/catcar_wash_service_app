@@ -5,12 +5,6 @@
       <h1 class="text-h4 font-weight-bold mb-1">จัดการอุปกรณ์</h1>
     </div>
 
-    <!-- Device Type Tabs -->
-    <v-tabs v-model="activeDeviceType" color="primary" class="mt-4 mb-6">
-      <v-tab value="WASH">เครื่องล้าง</v-tab>
-      <v-tab value="DRYING">เครื่องอบแห้ง</v-tab>
-    </v-tabs>
-
     <!-- Enhanced Data Table -->
     <EnhancedDataTable
       v-model:selected="selectedDevices"
@@ -29,96 +23,144 @@
     >
       <!-- Filter Section -->
       <template #filters>
-        <v-row>
-          <!-- Device Search -->
-          <v-col cols="12" md="6">
-            <div class="d-flex flex-column ga-2">
-              <div class="text-caption text-medium-emphasis">
-                <v-icon size="small" class="me-1">mdi-filter-variant</v-icon>
-                ค้นหา
-              </div>
+        <v-card
+          flat
+          color="surface-container-low"
+          class="pa-4 mb-2"
+          rounded="lg"
+        >
+          <!-- Search Bar - Full Width -->
+          <v-row dense>
+            <v-col cols="12">
               <v-text-field
                 v-model="tempDeviceSearch"
                 prepend-inner-icon="mdi-magnify"
-                variant="outlined"
-                density="compact"
-                placeholder="ค้นหาด้วยชื่ออุปกรณ์ หรือรหัสเครื่อง หรือชื่อเจ้าของ"
+                variant="solo"
+                density="comfortable"
+                placeholder="ค้นหาด้วยชื่ออุปกรณ์ รหัสเครื่อง หรือชื่อเจ้าของ..."
                 hide-details
                 clearable
+                rounded="lg"
                 aria-label="ค้นหาอุปกรณ์"
                 role="searchbox"
+                class="filter-search"
               />
-            </div>
-          </v-col>
+            </v-col>
+          </v-row>
 
-          <!-- Device Filter Dropdown -->
-          <v-col cols="12" md="3">
-            <div class="d-flex flex-column ga-2">
-              <div class="text-caption text-medium-emphasis">
-                <v-icon size="small" class="me-1">mdi-filter-variant</v-icon>
-                กรองตามสถานะ
+          <!-- Advanced Filters -->
+          <v-row dense class="mt-2">
+            <!-- Device Type Filter -->
+            <v-col cols="12" sm="6" md="4">
+              <div class="filter-group">
+                <label class="filter-label">
+                  <v-icon size="18" class="me-1">mdi-cog</v-icon>
+                  ประเภทอุปกรณ์
+                </label>
+                <v-combobox
+                  v-model="tempSelectedTypeFilters"
+                  :items="getTypeOptions()"
+                  placeholder="ทั้งหมด"
+                  prepend-inner-icon="mdi-cog"
+                  variant="solo"
+                  density="compact"
+                  chips
+                  clearable
+                  closable-chips
+                  multiple
+                  hide-details
+                  rounded="lg"
+                  class="filter-input"
+                >
+                  <template #chip="{ props, item }">
+                    <v-chip
+                      v-bind="props"
+                      :color="getTypeColor(item.raw)"
+                      size="small"
+                      variant="flat"
+                    >
+                      {{ getTypeLabel(item.raw) }}
+                    </v-chip>
+                  </template>
+                </v-combobox>
               </div>
-              <v-combobox
-                v-model="tempSelectedFilters"
-                :items="getFilterOptions()"
-                placeholder="เลือกสถานะ"
-                prepend-inner-icon="mdi-filter-variant"
-                variant="outlined"
-                density="compact"
-                chips
-                clearable
-                closable-chips
-                multiple
-                hide-details
-              >
-                <template #chip="{ props, item }">
-                  <v-chip
-                    v-bind="props"
-                    :color="getStatusColor(item.raw)"
-                    size="small"
-                    variant="tonal"
-                  >
-                    {{ getStatusLabel(item.raw) }}
-                  </v-chip>
-                </template>
-              </v-combobox>
-            </div>
-          </v-col>
+            </v-col>
 
-          <!-- User ID Filter Dropdown -->
-          <v-col cols="12" md="3">
-            <div class="d-flex flex-column ga-2">
-              <div class="text-caption text-medium-emphasis">
-                <v-icon size="small" class="me-1">mdi-account-filter</v-icon>
-                กรองตามเจ้าของ
-              </div>
-              <v-combobox
-                v-model="tempSelectedUserFilters"
-                :items="getUserOptions()"
-                placeholder="เลือกเจ้าของ"
-                prepend-inner-icon="mdi-account-filter"
-                variant="outlined"
-                density="compact"
-                chips
-                clearable
-                closable-chips
-                multiple
-                hide-details
-              >
-                <template #chip="{ props, item }">
-                  <v-chip
-                    v-bind="props"
-                    color="info"
-                    size="small"
-                    variant="tonal"
+            <!-- Device Status Filter -->
+            <v-col cols="12" sm="6" md="4">
+              <div class="filter-group">
+                <label class="filter-label">
+                  <v-icon size="18" class="me-1"
+                    >mdi-checkbox-marked-circle-outline</v-icon
                   >
-                    {{ item.raw }}
-                  </v-chip>
-                </template>
-              </v-combobox>
-            </div>
-          </v-col>
-        </v-row>
+                  สถานะ
+                </label>
+                <v-combobox
+                  v-model="tempSelectedFilters"
+                  :items="getFilterOptions()"
+                  placeholder="ทั้งหมด"
+                  prepend-inner-icon="mdi-checkbox-marked-circle-outline"
+                  variant="solo"
+                  density="compact"
+                  chips
+                  clearable
+                  closable-chips
+                  multiple
+                  hide-details
+                  rounded="lg"
+                  class="filter-input"
+                >
+                  <template #chip="{ props, item }">
+                    <v-chip
+                      v-bind="props"
+                      :color="getStatusColor(item.raw)"
+                      size="small"
+                      variant="flat"
+                    >
+                      {{ getStatusLabel(item.raw) }}
+                    </v-chip>
+                  </template>
+                </v-combobox>
+              </div>
+            </v-col>
+
+            <!-- Owner Filter -->
+            <v-col cols="12" sm="6" md="4">
+              <div class="filter-group">
+                <label class="filter-label">
+                  <v-icon size="18" class="me-1">mdi-account-circle</v-icon>
+                  เจ้าของ
+                </label>
+                <v-combobox
+                  v-model="tempSelectedUserFilters"
+                  :items="getUserOptions()"
+                  placeholder="ทั้งหมด"
+                  prepend-inner-icon="mdi-account-circle"
+                  variant="solo"
+                  density="compact"
+                  chips
+                  clearable
+                  closable-chips
+                  multiple
+                  hide-details
+                  rounded="lg"
+                  class="filter-input"
+                >
+                  <template #chip="{ props, item }">
+                    <v-chip
+                      v-bind="props"
+                      color="primary"
+                      size="small"
+                      variant="flat"
+                    >
+                      {{ item.raw }}
+                    </v-chip>
+                  </template>
+                </v-combobox>
+              </div>
+            </v-col>
+          </v-row>
+        </v-card>
       </template>
 
       <!-- Device Name Column -->
@@ -315,7 +357,6 @@ import { devicesData, type Device, type DeviceConfig } from "~/data/devices";
 import EnhancedDataTable from "~/components/common/EnhancedDataTable.vue";
 
 // Reactive state
-const activeDeviceType = ref<"WASH" | "DRYING">("WASH");
 const selectedDevices = ref<Device[]>([]);
 const showApplySystemConfigDialog = ref(false);
 const showDeviceDetailDialog = ref(false);
@@ -327,11 +368,13 @@ const originalConfigs = ref<Record<string, DeviceConfig>>({});
 
 // Temporary filter state (before applying)
 const tempDeviceSearch = ref("");
+const tempSelectedTypeFilters = ref<string[]>([]);
 const tempSelectedFilters = ref<string[]>([]);
 const tempSelectedUserFilters = ref<string[]>([]);
 
 // Applied filter state (actual filters being used)
 const appliedDeviceSearch = ref("");
+const appliedSelectedTypeFilters = ref<string[]>([]);
 const appliedSelectedFilters = ref<string[]>([]);
 const appliedSelectedUserFilters = ref<string[]>([]);
 
@@ -351,6 +394,8 @@ const deviceHeaders = [
 const hasFilterChanges = computed(() => {
   return (
     tempDeviceSearch.value !== appliedDeviceSearch.value ||
+    JSON.stringify(tempSelectedTypeFilters.value) !==
+      JSON.stringify(appliedSelectedTypeFilters.value) ||
     JSON.stringify(tempSelectedFilters.value) !==
       JSON.stringify(appliedSelectedFilters.value) ||
     JSON.stringify(tempSelectedUserFilters.value) !==
@@ -358,11 +403,26 @@ const hasFilterChanges = computed(() => {
   );
 });
 
+// Computed to check if any filters are active
+const hasActiveFilters = computed(() => {
+  return (
+    tempDeviceSearch.value.trim() !== "" ||
+    tempSelectedTypeFilters.value.length > 0 ||
+    tempSelectedFilters.value.length > 0 ||
+    tempSelectedUserFilters.value.length > 0
+  );
+});
+
 // Computed properties
 const filteredDevices = computed(() => {
-  let filtered = allDevices.value.filter(
-    (device) => device.type === activeDeviceType.value
-  );
+  let filtered = allDevices.value;
+
+  // Type filter using applied state
+  if (appliedSelectedTypeFilters.value.length > 0) {
+    filtered = filtered.filter((device) =>
+      appliedSelectedTypeFilters.value.includes(device.type)
+    );
+  }
 
   // Search filter using applied state
   if (appliedDeviceSearch.value && appliedDeviceSearch.value.trim()) {
@@ -397,6 +457,7 @@ const selectedDevicesCount = computed(() => selectedDevices.value.length);
 // Apply filters function
 const applyFilters = () => {
   appliedDeviceSearch.value = tempDeviceSearch.value;
+  appliedSelectedTypeFilters.value = [...tempSelectedTypeFilters.value];
   appliedSelectedFilters.value = [...tempSelectedFilters.value];
   appliedSelectedUserFilters.value = [...tempSelectedUserFilters.value];
 };
@@ -404,33 +465,30 @@ const applyFilters = () => {
 // Clear all filters
 const clearAllFilters = () => {
   tempDeviceSearch.value = "";
+  tempSelectedTypeFilters.value = [];
   tempSelectedFilters.value = [];
   tempSelectedUserFilters.value = [];
   appliedDeviceSearch.value = "";
+  appliedSelectedTypeFilters.value = [];
   appliedSelectedFilters.value = [];
   appliedSelectedUserFilters.value = [];
 };
 
 // Methods
+const getTypeOptions = () => {
+  const types = [...new Set(allDevices.value.map((device) => device.type))];
+  return types;
+};
+
 const getFilterOptions = () => {
   const statuses = [
-    ...new Set(
-      allDevices.value
-        .filter((device) => device.type === activeDeviceType.value)
-        .map((device) => device.status)
-    ),
+    ...new Set(allDevices.value.map((device) => device.status)),
   ];
   return statuses;
 };
 
 const getUserOptions = () => {
-  const users = [
-    ...new Set(
-      allDevices.value
-        .filter((device) => device.type === activeDeviceType.value)
-        .map((device) => device.owner.id)
-    ),
-  ];
+  const users = [...new Set(allDevices.value.map((device) => device.owner.id))];
   return users;
 };
 
@@ -526,16 +584,27 @@ const applyDeviceConfig = () => {
   // Show success notification or handle errors
 };
 
-// Clear selected devices and filters when switching tabs
-watch(activeDeviceType, () => {
-  selectedDevices.value = [];
-  tempDeviceSearch.value = "";
-  tempSelectedFilters.value = [];
-  tempSelectedUserFilters.value = [];
-  appliedDeviceSearch.value = "";
-  appliedSelectedFilters.value = [];
-  appliedSelectedUserFilters.value = [];
-});
+// Filter removal helpers
+const removeTypeFilter = (type: string) => {
+  const index = tempSelectedTypeFilters.value.indexOf(type);
+  if (index > -1) {
+    tempSelectedTypeFilters.value.splice(index, 1);
+  }
+};
+
+const removeStatusFilter = (status: string) => {
+  const index = tempSelectedFilters.value.indexOf(status);
+  if (index > -1) {
+    tempSelectedFilters.value.splice(index, 1);
+  }
+};
+
+const removeUserFilter = (user: string) => {
+  const index = tempSelectedUserFilters.value.indexOf(user);
+  if (index > -1) {
+    tempSelectedUserFilters.value.splice(index, 1);
+  }
+};
 </script>
 
 <style scoped>
@@ -543,5 +612,39 @@ watch(activeDeviceType, () => {
   border: 2px dashed rgba(var(--v-theme-on-surface), 0.12);
   border-radius: 8px;
   padding: 16px;
+}
+
+/* Filter Styling */
+.filter-group {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.filter-label {
+  display: flex;
+  align-items: center;
+  font-size: 0.75rem;
+  font-weight: 600;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+  color: rgb(var(--v-theme-on-surface-variant));
+  padding-left: 4px;
+}
+
+.filter-search :deep(.v-field__input) {
+  font-size: 0.95rem;
+}
+
+.filter-input :deep(.v-field) {
+  transition: all 0.2s ease;
+}
+
+.filter-input :deep(.v-field:hover) {
+  background: rgba(var(--v-theme-on-surface), 0.04);
+}
+
+.filter-input :deep(.v-field--focused) {
+  background: rgba(var(--v-theme-primary), 0.05);
 }
 </style>
