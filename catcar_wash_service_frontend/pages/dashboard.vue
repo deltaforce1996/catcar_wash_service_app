@@ -1,178 +1,170 @@
 <template>
   <div>
     <!-- Header Section -->
-    <v-row>
-      <v-col cols="12">
-        <div class="d-flex justify-space-between align-center flex-wrap">
-          <div>
-            <h1 class="text-h4 font-weight-bold mb-1">แดชบอร์ดยอดขาย</h1>
-          </div>
-          <div class="d-flex align-center ga-3 flex-wrap">
-            <v-menu v-model="datePickerMenu">
-              <template #activator="{ props }">
-                <v-text-field
-                  v-bind="props"
-                  v-model="selectedDate"
-                  readonly
-                  prepend-inner-icon="mdi-calendar"
-                  variant="outlined"
-                  density="compact"
-                  hide-details
-                  class="date-picker"
-                />
-              </template>
-              <v-date-picker
-                v-model="selectedDateObject"
-                @update:model-value="datePickerMenu = false"
-              />
-            </v-menu>
-            <v-menu v-model="filterMenu" :close-on-content-click="false">
-              <template #activator="{ props }">
-                <v-btn
-                  v-bind="props"
-                  variant="outlined"
-                  prepend-icon="mdi-filter-variant"
-                  class="text-none"
-                >
-                  <template #default>
-                    <span>กรองข้อมูล</span>
-                    <v-chip
-                      v-if="activeFilterCount > 0"
-                      :text="activeFilterCount.toString()"
-                      color="primary"
-                      size="small"
-                      class="ml-2"
-                    />
-                  </template>
-                </v-btn>
-              </template>
-
-              <v-card
-                class="pa-4"
-                elevation="8"
-                rounded="lg"
-                min-width="320"
-                max-width="400"
-              >
-                <v-card-title class="pa-0 mb-4">
-                  <h3 class="text-h6 font-weight-bold">ตัวกรองข้อมูล</h3>
-                </v-card-title>
-
-                <v-card-text class="pa-0">
-                  <div class="d-flex flex-column ga-4">
-                    <!-- User ID Filter -->
-                    <v-combobox
-                      v-model="tempSelectedUserIds"
-                      :items="userOptions"
-                      label="ชื่อผู้ใช้"
-                      prepend-inner-icon="mdi-account"
-                      variant="outlined"
-                      density="compact"
-                      chips
-                      clearable
-                      closable-chips
-                      multiple
-                      hide-details
-                    >
-                      <template #chip="{ props, item }">
-                        <v-chip
-                          v-bind="props"
-                          color="primary"
-                          size="small"
-                          variant="tonal"
-                        >
-                          {{ item.raw }}
-                        </v-chip>
-                      </template>
-                    </v-combobox>
-
-                    <!-- Payment Status Filter -->
-                    <v-combobox
-                      v-model="tempSelectedPaymentStatuses"
-                      :items="paymentStatusOptions"
-                      label="สถานะการชำระเงิน"
-                      prepend-inner-icon="mdi-credit-card"
-                      variant="outlined"
-                      density="compact"
-                      chips
-                      clearable
-                      closable-chips
-                      multiple
-                      hide-details
-                    >
-                      <template #chip="{ props, item }">
-                        <v-chip
-                          v-bind="props"
-                          :color="getPaymentStatusColor(item.raw)"
-                          size="small"
-                          variant="tonal"
-                        >
-                          {{ item.raw }}
-                        </v-chip>
-                      </template>
-                    </v-combobox>
-
-                    <!-- Device Type Filter -->
-                    <v-combobox
-                      v-model="tempSelectedDeviceTypes"
-                      :items="deviceTypeOptions"
-                      label="ประเภทอุปกรณ์"
-                      prepend-inner-icon="mdi-cog"
-                      variant="outlined"
-                      density="compact"
-                      chips
-                      clearable
-                      closable-chips
-                      multiple
-                      hide-details
-                    >
-                      <template #chip="{ props, item }">
-                        <v-chip
-                          v-bind="props"
-                          :color="getDeviceTypeColor(item.raw)"
-                          size="small"
-                          variant="tonal"
-                        >
-                          {{ item.raw }}
-                        </v-chip>
-                      </template>
-                    </v-combobox>
-                  </div>
-                </v-card-text>
-
-                <v-card-actions class="pa-0 mt-4">
-                  <v-btn
-                    variant="outlined"
-                    size="small"
-                    prepend-icon="mdi-refresh"
-                    @click="resetPopoverFilters"
-                  >
-                    ล้างตัวกรอง
-                  </v-btn>
-                  <v-spacer />
-                  <v-btn
-                    variant="elevated"
-                    color="primary"
-                    size="small"
-                    prepend-icon="mdi-check"
-                    @click="applyPopoverFilters"
-                  >
-                    ยืนยันตัวกรอง
-                  </v-btn>
-                </v-card-actions>
-              </v-card>
-            </v-menu>
+    <div class="d-flex justify-space-between align-center flex-wrap mb-6">
+      <div>
+        <h1 class="text-h4 font-weight-bold mb-1">แดชบอร์ดยอดขาย</h1>
+      </div>
+      <div class="d-flex align-center ga-3 flex-wrap">
+        <v-menu v-model="datePickerMenu">
+          <template #activator="{ props }">
+            <v-text-field
+              v-bind="props"
+              v-model="selectedDate"
+              readonly
+              prepend-inner-icon="mdi-calendar"
+              variant="outlined"
+              density="compact"
+              hide-details
+              class="date-picker"
+            />
+          </template>
+          <v-date-picker
+            v-model="selectedDateObject"
+            @update:model-value="datePickerMenu = false"
+          />
+        </v-menu>
+        <v-menu v-model="filterMenu" :close-on-content-click="false">
+          <template #activator="{ props }">
             <v-btn
-              color="primary"
-              prepend-icon="mdi-download"
+              v-bind="props"
+              variant="outlined"
+              prepend-icon="mdi-filter-variant"
               class="text-none"
             >
-              ส่งออก
+              <template #default>
+                <span>กรองข้อมูล</span>
+                <v-chip
+                  v-if="activeFilterCount > 0"
+                  :text="activeFilterCount.toString()"
+                  color="primary"
+                  size="small"
+                  class="ml-2"
+                />
+              </template>
             </v-btn>
-          </div>
-        </div>
-      </v-col>
-    </v-row>
+          </template>
+
+          <v-card
+            class="pa-4"
+            elevation="8"
+            rounded="lg"
+            min-width="320"
+            max-width="400"
+          >
+            <v-card-title class="pa-0 mb-4">
+              <h3 class="text-h6 font-weight-bold">ตัวกรองข้อมูล</h3>
+            </v-card-title>
+
+            <v-card-text class="pa-0">
+              <div class="d-flex flex-column ga-4">
+                <!-- User ID Filter -->
+                <v-combobox
+                  v-model="tempSelectedUserIds"
+                  :items="userOptions"
+                  label="ชื่อผู้ใช้"
+                  prepend-inner-icon="mdi-account"
+                  variant="outlined"
+                  density="compact"
+                  chips
+                  clearable
+                  closable-chips
+                  multiple
+                  hide-details
+                >
+                  <template #chip="{ props, item }">
+                    <v-chip
+                      v-bind="props"
+                      color="primary"
+                      size="small"
+                      variant="tonal"
+                    >
+                      {{ item.raw }}
+                    </v-chip>
+                  </template>
+                </v-combobox>
+
+                <!-- Payment Status Filter -->
+                <v-combobox
+                  v-model="tempSelectedPaymentStatuses"
+                  :items="paymentStatusOptions"
+                  label="สถานะการชำระเงิน"
+                  prepend-inner-icon="mdi-credit-card"
+                  variant="outlined"
+                  density="compact"
+                  chips
+                  clearable
+                  closable-chips
+                  multiple
+                  hide-details
+                >
+                  <template #chip="{ props, item }">
+                    <v-chip
+                      v-bind="props"
+                      :color="getPaymentStatusColor(item.raw)"
+                      size="small"
+                      variant="tonal"
+                    >
+                      {{ item.raw }}
+                    </v-chip>
+                  </template>
+                </v-combobox>
+
+                <!-- Device Type Filter -->
+                <v-combobox
+                  v-model="tempSelectedDeviceTypes"
+                  :items="deviceTypeOptions"
+                  label="ประเภทอุปกรณ์"
+                  prepend-inner-icon="mdi-cog"
+                  variant="outlined"
+                  density="compact"
+                  chips
+                  clearable
+                  closable-chips
+                  multiple
+                  hide-details
+                >
+                  <template #chip="{ props, item }">
+                    <v-chip
+                      v-bind="props"
+                      :color="getDeviceTypeColor(item.raw)"
+                      size="small"
+                      variant="tonal"
+                    >
+                      {{ item.raw }}
+                    </v-chip>
+                  </template>
+                </v-combobox>
+              </div>
+            </v-card-text>
+
+            <v-card-actions class="pa-0 mt-4">
+              <v-btn
+                variant="outlined"
+                size="small"
+                prepend-icon="mdi-refresh"
+                @click="resetPopoverFilters"
+              >
+                ล้างตัวกรอง
+              </v-btn>
+              <v-spacer />
+              <v-btn
+                variant="elevated"
+                color="primary"
+                size="small"
+                prepend-icon="mdi-check"
+                @click="applyPopoverFilters"
+              >
+                ยืนยันตัวกรอง
+              </v-btn>
+            </v-card-actions>
+          </v-card>
+        </v-menu>
+        <v-btn color="primary" prepend-icon="mdi-download" class="text-none">
+          ส่งออก
+        </v-btn>
+      </div>
+    </div>
 
     <!-- KPI Cards Section -->
     <v-row class="mb-8">

@@ -1,7 +1,7 @@
 <template>
   <div>
     <!-- Header Section -->
-    <div class="d-flex justify-space-between align-center flex-wrap">
+    <div class="d-flex justify-space-between align-center flex-wrap mb-5">
       <div>
         <h1 class="text-h4 font-weight-bold mb-1">จัดการลูกค้า</h1>
       </div>
@@ -19,7 +19,6 @@
 
     <!-- Enhanced Data Table -->
     <EnhancedDataTable
-      card-class="mt-8"
       title="รายการลูกค้า"
       :items="users"
       :headers="customerHeaders"

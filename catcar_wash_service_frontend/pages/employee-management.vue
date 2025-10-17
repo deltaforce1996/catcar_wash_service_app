@@ -1,7 +1,7 @@
 <template>
   <div>
     <!-- Header Section -->
-    <div class="d-flex justify-space-between align-center flex-wrap">
+    <div class="d-flex justify-space-between align-center flex-wrap mb-5">
       <div>
         <h1 class="text-h4 font-weight-bold mb-1">จัดการพนักงาน</h1>
       </div>
@@ -19,7 +19,6 @@
 
     <!-- Enhanced Data Table -->
     <EnhancedDataTable
-      card-class="mt-8"
       title="รายการพนักงาน"
       :items="employees"
       :headers="employeeHeaders"
@@ -189,22 +188,18 @@
 
                 <v-card class="mb-2" color="info" variant="tonal">
                   <v-card-text class="pa-3">
-                    <div class="text-caption text-medium-emphasis">
-                      ที่อยู่
-                    </div>
+                    <div class="text-caption text-medium-emphasis">ที่อยู่</div>
                     <div class="text-body-2">
-                      {{ item.address || 'ไม่ระบุ' }}
+                      {{ item.address || "ไม่ระบุ" }}
                     </div>
                   </v-card-text>
                 </v-card>
 
                 <v-card class="mb-2" color="success" variant="tonal">
                   <v-card-text class="pa-3">
-                    <div class="text-caption text-medium-emphasis">
-                      LINE ID
-                    </div>
+                    <div class="text-caption text-medium-emphasis">LINE ID</div>
                     <div class="text-body-2">
-                      {{ item.line || 'ไม่ระบุ' }}
+                      {{ item.line || "ไม่ระบุ" }}
                     </div>
                   </v-card-text>
                 </v-card>
@@ -215,12 +210,14 @@
                       สิทธิ์การใช้งาน
                     </div>
                     <v-chip
-                      :color="getPermissionColor(item.permission?.name || 'USER')"
+                      :color="
+                        getPermissionColor(item.permission?.name || 'USER')
+                      "
                       size="small"
                       variant="tonal"
                       class="mt-1"
                     >
-                      {{ getPermissionLabel(item.permission?.name || 'USER') }}
+                      {{ getPermissionLabel(item.permission?.name || "USER") }}
                     </v-chip>
                   </v-card-text>
                 </v-card>
@@ -274,7 +271,7 @@
                           เบอร์โทร
                         </div>
                         <div class="text-body-2 font-weight-medium">
-                          {{ item.phone || 'ไม่ระบุ' }}
+                          {{ item.phone || "ไม่ระบุ" }}
                         </div>
                       </div>
                     </div>
@@ -288,7 +285,9 @@
                 >
                   <v-card-text class="pa-3">
                     <div class="d-flex align-center">
-                      <v-icon color="warning" class="me-2">mdi-account-group</v-icon>
+                      <v-icon color="warning" class="me-2"
+                        >mdi-account-group</v-icon
+                      >
                       <div>
                         <div class="text-caption text-medium-emphasis">
                           สถานะ
