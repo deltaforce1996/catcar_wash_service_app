@@ -1,7 +1,7 @@
 <template>
   <div>
     <!-- Header Section -->
-    <div class="d-flex justify-space-between align-center flex-wrap">
+    <div class="d-flex justify-space-between align-center flex-wrap mb-6">
       <h1 class="text-h4 font-weight-bold mb-1">จัดการอุปกรณ์</h1>
     </div>
 
@@ -204,39 +204,23 @@
 
       <!-- Expandable Row Content -->
       <template #expanded-content="{ item }">
-        <!-- Compact Device Info Header -->
-        <div class="d-flex justify-space-between align-center mb-4">
-          <div class="d-flex align-center" style="gap: 24px">
-            <v-chip color="info" size="small" variant="tonal" class="px-3">
-              ID: {{ item.id.slice(-8) }}
-            </v-chip>
-            <span class="text-body-2 text-on-surface-variant">
-              สร้าง: {{ formatDate(item.created_at) }}
-            </span>
-            <span
-              v-if="item.owner?.email"
-              class="text-body-2 text-on-surface-variant"
-            >
-              {{ item.owner.email }}
-            </span>
-          </div>
-          <v-btn
-            color="primary"
-            variant="outlined"
-            size="small"
-            prepend-icon="mdi-pencil"
-            class="text-none"
-            @click="openDeviceDetailDialog(item)"
-          >
-            แก้ไขการตั้งค่า
-          </v-btn>
-        </div>
-
         <!-- Sale Config Grid -->
         <div v-if="item.configs?.sale" class="mb-2">
-          <h4 class="text-subtitle-1 font-weight-bold mb-2">
-            การตั้งค่าการขาย
-          </h4>
+          <div class="d-flex justify-space-between align-center mb-4">
+            <h4 class="text-subtitle-1 font-weight-bold mb-2">
+              การตั้งค่าการขาย
+            </h4>
+            <v-btn
+              color="primary"
+              variant="outlined"
+              size="small"
+              prepend-icon="mdi-pencil"
+              class="text-none"
+              @click="openDeviceDetailDialog(item)"
+            >
+              แก้ไขการตั้งค่า
+            </v-btn>
+          </div>
           <v-row dense>
             <v-col
               v-for="(config, key) in item.configs.sale"
@@ -271,7 +255,7 @@
                     </v-chip>
                   </div>
                   <v-spacer />
-                  <div class="d-flex align-center justify-space-between">
+                  <div class="d-flex align-center justify-end">
                     <v-chip
                       color="success"
                       size="small"
@@ -279,10 +263,8 @@
                       class="font-weight-bold"
                     >
                       {{ config.value }}
-                    </v-chip>
-                    <span class="text-caption text-on-surface-variant">
                       {{ config.unit }}
-                    </span>
+                    </v-chip>
                   </div>
                 </div>
               </v-card>
