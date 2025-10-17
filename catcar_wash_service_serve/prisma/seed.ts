@@ -237,6 +237,314 @@ const generate = async () => {
     },
   });
 
+  const user3 = await prisma.tbl_users.upsert({
+    where: { email: 'user3@catcarwash.com' },
+    update: {
+      id: 'user-0003',
+      fullname: 'นายวิชัย สุขสันต์',
+      email: 'user3@catcarwash.com',
+      phone: '+66856789012',
+      password: hashedPassword,
+      permission_id: userPermission.id,
+      status: 'ACTIVE',
+      custom_name: 'ลูกค้าทั่วไป',
+      address: '456 ถนนพระราม 9 แขวงห้วยขวาง เขตห้วยขวาง กรุงเทพมหานคร 10310',
+      payment_info: paymentInfo,
+    },
+    create: {
+      id: 'user-0003',
+      fullname: 'นายวิชัย สุขสันต์',
+      email: 'user3@catcarwash.com',
+      phone: '+66856789012',
+      password: hashedPassword,
+      permission_id: userPermission.id,
+      status: 'ACTIVE',
+      custom_name: 'ลูกค้าทั่วไป',
+      address: '456 ถนนพระราม 9 แขวงห้วยขวาง เขตห้วยขวาง กรุงเทพมหานคร 10310',
+      payment_info: paymentInfo,
+    },
+  });
+
+  const user4 = await prisma.tbl_users.upsert({
+    where: { email: 'user4@catcarwash.com' },
+    update: {
+      id: 'user-0004',
+      fullname: 'นางสมพร รักสะอาด',
+      email: 'user4@catcarwash.com',
+      phone: '+66867890123',
+      password: hashedPassword,
+      permission_id: userPermission.id,
+      status: 'ACTIVE',
+      custom_name: 'ลูกค้าประจำ',
+      address: '789 ถนนวิภาวดีรังสิต แขวงลาดยาว เขตจตุจักร กรุงเทพมหานคร 10900',
+      payment_info: paymentInfo,
+    },
+    create: {
+      id: 'user-0004',
+      fullname: 'นางสมพร รักสะอาด',
+      email: 'user4@catcarwash.com',
+      phone: '+66867890123',
+      password: hashedPassword,
+      permission_id: userPermission.id,
+      status: 'ACTIVE',
+      custom_name: 'ลูกค้าประจำ',
+      address: '789 ถนนวิภาวดีรังสิต แขวงลาดยาว เขตจตุจักร กรุงเทพมหานคร 10900',
+      payment_info: paymentInfo,
+    },
+  });
+
+  const user5 = await prisma.tbl_users.upsert({
+    where: { email: 'user5@catcarwash.com' },
+    update: {
+      id: 'user-0005',
+      fullname: 'นายสมศักดิ์ ใจดี',
+      email: 'user5@catcarwash.com',
+      phone: '+66878901234',
+      password: hashedPassword,
+      permission_id: userPermission.id,
+      status: 'ACTIVE',
+      custom_name: 'ลูกค้าธุรกิจ',
+      address: '321 ถนนพหลโยธิน แขวงสามเสนใน เขตพญาไท กรุงเทพมหานคร 10400',
+      payment_info: paymentInfo,
+    },
+    create: {
+      id: 'user-0005',
+      fullname: 'นายสมศักดิ์ ใจดี',
+      email: 'user5@catcarwash.com',
+      phone: '+66878901234',
+      password: hashedPassword,
+      permission_id: userPermission.id,
+      status: 'ACTIVE',
+      custom_name: 'ลูกค้าธุรกิจ',
+      address: '321 ถนนพหลโยธิน แขวงสามเสนใน เขตพญาไท กรุงเทพมหานคร 10400',
+      payment_info: paymentInfo,
+    },
+  });
+
+  const user6 = await prisma.tbl_users.upsert({
+    where: { email: 'user6@catcarwash.com' },
+    update: {
+      id: 'user-0006',
+      fullname: 'นางสาวสุมาลี ใสสะอาด',
+      email: 'user6@catcarwash.com',
+      phone: '+66889012345',
+      password: hashedPassword,
+      permission_id: userPermission.id,
+      status: 'ACTIVE',
+      custom_name: 'ลูกค้าทั่วไป',
+      address: '654 ถนนรามคำแหง แขวงพลับพลา เขตวังทองหลาง กรุงเทพมหานคร 10310',
+      payment_info: paymentInfo,
+    },
+    create: {
+      id: 'user-0006',
+      fullname: 'นางสาวสุมาลี ใสสะอาด',
+      email: 'user6@catcarwash.com',
+      phone: '+66889012345',
+      password: hashedPassword,
+      permission_id: userPermission.id,
+      status: 'ACTIVE',
+      custom_name: 'ลูกค้าทั่วไป',
+      address: '654 ถนนรามคำแหง แขวงพลับพลา เขตวังทองหลาง กรุงเทพมหานคร 10310',
+      payment_info: paymentInfo,
+    },
+  });
+
+  const user7 = await prisma.tbl_users.upsert({
+    where: { email: 'user7@catcarwash.com' },
+    update: {
+      id: 'user-0007',
+      fullname: 'นายสมหมาย รักรถ',
+      email: 'user7@catcarwash.com',
+      phone: '+66890123456',
+      password: hashedPassword,
+      permission_id: userPermission.id,
+      status: 'ACTIVE',
+      custom_name: 'ลูกค้าประจำ VIP',
+      address: '987 ถนนลาดพร้าว แขวงจอมพล เขตจตุจักร กรุงเทพมหานคร 10900',
+      payment_info: paymentInfo,
+    },
+    create: {
+      id: 'user-0007',
+      fullname: 'นายสมหมาย รักรถ',
+      email: 'user7@catcarwash.com',
+      phone: '+66890123456',
+      password: hashedPassword,
+      permission_id: userPermission.id,
+      status: 'ACTIVE',
+      custom_name: 'ลูกค้าประจำ VIP',
+      address: '987 ถนนลาดพร้าว แขวงจอมพล เขตจตุจักร กรุงเทพมหานคร 10900',
+      payment_info: paymentInfo,
+    },
+  });
+
+  const user8 = await prisma.tbl_users.upsert({
+    where: { email: 'user8@catcarwash.com' },
+    update: {
+      id: 'user-0008',
+      fullname: 'นางสมใจ ใจดี',
+      email: 'user8@catcarwash.com',
+      phone: '+66901234567',
+      password: hashedPassword,
+      permission_id: userPermission.id,
+      status: 'ACTIVE',
+      custom_name: 'ลูกค้าธุรกิจ',
+      address: '147 ถนนรัชดาภิเษก แขวงห้วยขวาง เขตห้วยขวาง กรุงเทพมหานคร 10310',
+      payment_info: paymentInfo,
+    },
+    create: {
+      id: 'user-0008',
+      fullname: 'นางสมใจ ใจดี',
+      email: 'user8@catcarwash.com',
+      phone: '+66901234567',
+      password: hashedPassword,
+      permission_id: userPermission.id,
+      status: 'ACTIVE',
+      custom_name: 'ลูกค้าธุรกิจ',
+      address: '147 ถนนรัชดาภิเษก แขวงห้วยขวาง เขตห้วยขวาง กรุงเทพมหานคร 10310',
+      payment_info: paymentInfo,
+    },
+  });
+
+  const user9 = await prisma.tbl_users.upsert({
+    where: { email: 'user9@catcarwash.com' },
+    update: {
+      id: 'user-0009',
+      fullname: 'นายสมบูรณ์ ครบถ้วน',
+      email: 'user9@catcarwash.com',
+      phone: '+66912345678',
+      password: hashedPassword,
+      permission_id: userPermission.id,
+      status: 'ACTIVE',
+      custom_name: 'ลูกค้าทั่วไป',
+      address: '258 ถนนสุขุมวิท แขวงคลองตัน เขตวัฒนา กรุงเทพมหานคร 10110',
+      payment_info: paymentInfo,
+    },
+    create: {
+      id: 'user-0009',
+      fullname: 'นายสมบูรณ์ ครบถ้วน',
+      email: 'user9@catcarwash.com',
+      phone: '+66912345678',
+      password: hashedPassword,
+      permission_id: userPermission.id,
+      status: 'ACTIVE',
+      custom_name: 'ลูกค้าทั่วไป',
+      address: '258 ถนนสุขุมวิท แขวงคลองตัน เขตวัฒนา กรุงเทพมหานคร 10110',
+      payment_info: paymentInfo,
+    },
+  });
+
+  const user10 = await prisma.tbl_users.upsert({
+    where: { email: 'user10@catcarwash.com' },
+    update: {
+      id: 'user-0010',
+      fullname: 'นางสาวสมฤดี รักสะอาด',
+      email: 'user10@catcarwash.com',
+      phone: '+66923456789',
+      password: hashedPassword,
+      permission_id: userPermission.id,
+      status: 'ACTIVE',
+      custom_name: 'ลูกค้าประจำ',
+      address: '369 ถนนพระราม 4 แขวงคลองตัน เขตวัฒนา กรุงเทพมหานคร 10110',
+      payment_info: paymentInfo,
+    },
+    create: {
+      id: 'user-0010',
+      fullname: 'นางสาวสมฤดี รักสะอาด',
+      email: 'user10@catcarwash.com',
+      phone: '+66923456789',
+      password: hashedPassword,
+      permission_id: userPermission.id,
+      status: 'ACTIVE',
+      custom_name: 'ลูกค้าประจำ',
+      address: '369 ถนนพระราม 4 แขวงคลองตัน เขตวัฒนา กรุงเทพมหานคร 10110',
+      payment_info: paymentInfo,
+    },
+  });
+
+  const user11 = await prisma.tbl_users.upsert({
+    where: { email: 'user11@catcarwash.com' },
+    update: {
+      id: 'user-0011',
+      fullname: 'นายสมชาติ รักรถ',
+      email: 'user11@catcarwash.com',
+      phone: '+66934567890',
+      password: hashedPassword,
+      permission_id: userPermission.id,
+      status: 'ACTIVE',
+      custom_name: 'ลูกค้าธุรกิจ',
+      address: '741 ถนนเพชรบุรี แขวงถนนเพชรบุรี เขตราชเทวี กรุงเทพมหานคร 10400',
+      payment_info: paymentInfo,
+    },
+    create: {
+      id: 'user-0011',
+      fullname: 'นายสมชาติ รักรถ',
+      email: 'user11@catcarwash.com',
+      phone: '+66934567890',
+      password: hashedPassword,
+      permission_id: userPermission.id,
+      status: 'ACTIVE',
+      custom_name: 'ลูกค้าธุรกิจ',
+      address: '741 ถนนเพชรบุรี แขวงถนนเพชรบุรี เขตราชเทวี กรุงเทพมหานคร 10400',
+      payment_info: paymentInfo,
+    },
+  });
+
+  const user12 = await prisma.tbl_users.upsert({
+    where: { email: 'user12@catcarwash.com' },
+    update: {
+      id: 'user-0012',
+      fullname: 'นางสมใจ ใจสะอาด',
+      email: 'user12@catcarwash.com',
+      phone: '+66945678901',
+      password: hashedPassword,
+      permission_id: userPermission.id,
+      status: 'ACTIVE',
+      custom_name: 'ลูกค้าทั่วไป',
+      address: '852 ถนนอโศก-ดินแดง แขวงดินแดง เขตดินแดง กรุงเทพมหานคร 10400',
+      payment_info: paymentInfo,
+    },
+    create: {
+      id: 'user-0012',
+      fullname: 'นางสมใจ ใจสะอาด',
+      email: 'user12@catcarwash.com',
+      phone: '+66945678901',
+      password: hashedPassword,
+      permission_id: userPermission.id,
+      status: 'ACTIVE',
+      custom_name: 'ลูกค้าทั่วไป',
+      address: '852 ถนนอโศก-ดินแดง แขวงดินแดง เขตดินแดง กรุงเทพมหานคร 10400',
+      payment_info: paymentInfo,
+    },
+  });
+
+  const user13 = await prisma.tbl_users.upsert({
+    where: { email: 'user13@catcarwash.com' },
+    update: {
+      id: 'user-0013',
+      fullname: 'นายสมศักดิ์ ใจดี',
+      email: 'user13@catcarwash.com',
+      phone: '+66956789012',
+      password: hashedPassword,
+      permission_id: userPermission.id,
+      status: 'ACTIVE',
+      custom_name: 'ลูกค้าประจำ VIP',
+      address: '963 ถนนลาดพร้าว แขวงจอมพล เขตจตุจักร กรุงเทพมหานคร 10900',
+      payment_info: paymentInfo,
+    },
+    create: {
+      id: 'user-0013',
+      fullname: 'นายสมศักดิ์ ใจดี',
+      email: 'user13@catcarwash.com',
+      phone: '+66956789012',
+      password: hashedPassword,
+      permission_id: userPermission.id,
+      status: 'ACTIVE',
+      custom_name: 'ลูกค้าประจำ VIP',
+      address: '963 ถนนลาดพร้าว แขวงจอมพล เขตจตุจักร กรุงเทพมหานคร 10900',
+      payment_info: paymentInfo,
+    },
+  });
+
   const washConfig = new DeviceWashConfig({
     configs: {
       machine: {
@@ -471,6 +779,18 @@ const generate = async () => {
   console.log(`Technician employee created with ID: ${technician.id}`);
   console.log(`User created with ID: ${user.id}`);
   console.log(`User 2 created with ID: ${user2.id}`);
+  console.log(`User 3 created with ID: ${user3.id}`);
+  console.log(`User 4 created with ID: ${user4.id}`);
+  console.log(`User 5 created with ID: ${user5.id}`);
+  console.log(`User 6 created with ID: ${user6.id}`);
+  console.log(`User 7 created with ID: ${user7.id}`);
+  console.log(`User 8 created with ID: ${user8.id}`);
+  console.log(`User 9 created with ID: ${user9.id}`);
+  console.log(`User 10 created with ID: ${user10.id}`);
+  console.log(`User 11 created with ID: ${user11.id}`);
+  console.log(`User 12 created with ID: ${user12.id}`);
+  console.log(`User 13 created with ID: ${user13.id}`);
+  console.log(`Total customers created: 13`);
   console.log(`Devices created: ${devicesUser.count}`);
   console.log(`Devices created: ${devicesUser2.count}`);
   console.log(`Logs events created: ${newLogsEvents.count}`);

@@ -304,6 +304,7 @@
 
     <!-- Device Detail Dialog Component -->
     <DeviceDetailDialog
+      ref="deviceDetailDialogRef"
       v-model="showDeviceDetailDialog"
       :device="selectedDevice"
       @save="showApplyDeviceConfigDialog = true"
@@ -379,6 +380,9 @@ const selectedDevice = ref<DeviceResponseApi | null>(null);
 const isEditMode = ref(false);
 const editableConfigs = ref<Record<string, DeviceConfig>>({});
 const originalConfigs = ref<Record<string, DeviceConfig>>({});
+
+// Ref to DeviceDetailDialog component
+const deviceDetailDialogRef = ref<InstanceType<typeof DeviceDetailDialog> | null>(null);
 
 // Snackbar for messages
 const showSnackbar = ref(false);
@@ -564,7 +568,7 @@ const getTypeLabel = (type: string) => {
   }
 };
 
-const formatDate = (dateString: string) => {
+const _formatDate = (dateString: string) => {
   return new Date(dateString).toLocaleDateString("th-TH", {
     day: "2-digit",
     month: "2-digit",
@@ -611,14 +615,19 @@ const applySystemConfig = () => {
 };
 
 const applyDeviceConfig = async () => {
-  if (!selectedDevice.value) return;
+  if (!selectedDevice.value || !deviceDetailDialogRef.value) return;
 
   try {
-    await updateDeviceConfigs(selectedDevice.value.id, {
-      configs: {
-        sale: editableConfigs.value,
-      },
-    });
+    // Get the save payload from the dialog component
+    const payload = deviceDetailDialogRef.value.getSavePayload();
+
+    // Only update if there are changes
+    if (!payload.configs || Object.keys(payload.configs).length === 0) {
+      displayMessage("ไม่มีการเปลี่ยนแปลง", "info");
+      return;
+    }
+
+    await updateDeviceConfigs(selectedDevice.value.id, payload);
 
     showApplyDeviceConfigDialog.value = false;
     isEditMode.value = false;
@@ -634,7 +643,7 @@ const applyDeviceConfig = async () => {
 };
 
 // Display message helper
-const displayMessage = (message: string, color: "success" | "error") => {
+const displayMessage = (message: string, color: "success" | "error" | "info") => {
   snackbarMessage.value = message;
   snackbarColor.value = color;
   showSnackbar.value = true;
