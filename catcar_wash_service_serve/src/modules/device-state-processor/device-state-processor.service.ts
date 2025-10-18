@@ -45,6 +45,7 @@ export class DeviceStateProcessorService implements OnModuleInit {
     batchProcessingCount: 0,
     averageProcessingTime: 0,
     offlineDevicesDetected: 0,
+    skippedNonExistentDevices: 0,
   };
 
   constructor(
@@ -74,11 +75,15 @@ export class DeviceStateProcessorService implements OnModuleInit {
    */
   async initializeSubscriptions(): Promise<void> {
     try {
+      // รอให้ MQTT connection สำเร็จก่อน
+      await this.waitForMqttConnection();
+
       // Subscribe to device streaming topics
       await this.mqttService.subscribeToDeviceStreaming();
 
       // Register callback for device streaming messages
       this.mqttService.onMessage('server/+/streaming', (message: MqttMessage) => {
+        // INSERT_YOUR_CODE
         this.handleDeviceStreamingMessage(message);
       });
 
@@ -90,34 +95,58 @@ export class DeviceStateProcessorService implements OnModuleInit {
   }
 
   /**
+   * Wait for MQTT connection to be established
+   */
+  private async waitForMqttConnection(): Promise<void> {
+    const maxRetries = 30; // 30 วินาที
+    const retryInterval = 1000; // 1 วินาที
+
+    for (let i = 0; i < maxRetries; i++) {
+      if (this.mqttService.isConnected()) {
+        this.logger.log('MQTT connection established');
+        return;
+      }
+
+      this.logger.log(`Waiting for MQTT connection... (${i + 1}/${maxRetries})`);
+      await new Promise((resolve) => setTimeout(resolve, retryInterval));
+    }
+
+    throw new Error('MQTT connection timeout - failed to establish connection within 30 seconds');
+  }
+
+  /**
    * Handle incoming device streaming messages
    */
   private handleDeviceStreamingMessage(message: MqttMessage): void {
     try {
       const parsedMessage = this.parseDeviceMessage(message);
       if (!parsedMessage) {
-        this.logger.warn(`Invalid device message format for topic: ${message.topic}`);
+        this.logger.warn(`⚠️ Invalid device message format for topic: ${message.topic}`);
         return;
       }
 
+      this.logger.debug(
+        `📥 [Device ${parsedMessage.deviceId}] ==> [Server] streaming message: ${JSON.stringify(parsedMessage.payload)}`,
+      );
+
       this.stats.totalMessages++;
+
+      // อัพเดท last seen timestamp (ก่อนตรวจสอบ rate limit เพื่อไม่ให้ถือว่า offline)
+      this.deviceLastSeen.set(parsedMessage.deviceId, Date.now());
 
       // ตรวจสอบ rate limiting
       if (!this.isWithinSlidingWindowLimit(parsedMessage.deviceId)) {
         this.stats.rateLimitedMessages++;
-        this.logger.debug(`Rate limited: Device ${parsedMessage.deviceId} - skipping message`);
+        this.logger.warn(`⚠️ Rate limited: Device ${parsedMessage.deviceId} - skipping message`);
         return;
       }
-
-      // อัพเดท last seen timestamp
-      this.deviceLastSeen.set(parsedMessage.deviceId, Date.now());
 
       // เพิ่มเข้า batch
       this.messageBatch.push(parsedMessage);
 
-      this.logger.debug(`Message queued for batch processing: ${parsedMessage.deviceId}`);
+      this.logger.debug(`✅ Message queued for batch processing: ${parsedMessage.deviceId}`);
     } catch (error) {
-      this.logger.error(`Error processing device streaming message from topic ${message.topic}:`, error);
+      this.logger.error(`❌ Error processing device streaming message from topic ${message.topic}:`, error);
     }
   }
 
@@ -170,25 +199,54 @@ export class DeviceStateProcessorService implements OnModuleInit {
       const startTime = Date.now();
       const batch = this.messageBatch.splice(0, this.BATCH_SIZE);
 
-      this.logger.log(`Processing batch of ${batch.length} messages`);
+      // สกัด unique deviceIds จาก batch
+      const uniqueDeviceIds = [...new Set(batch.map((msg) => msg.deviceId))];
 
-      // ประมวลผลทีละ message ใน batch
-      for (let i = 0; i < batch.length; i++) {
-        const message = batch[i];
+      this.logger.log(`⚙️ Processing batch of ${batch.length} messages from ${uniqueDeviceIds.length} unique devices`);
 
-        try {
-          await this.saveDeviceState(message);
-          this.stats.processedMessages++;
-          this.logger.debug(`Device state saved for device: ${message.deviceId}`);
-        } catch (error) {
-          this.stats.droppedMessages++;
-          this.logger.error(`Error saving device state for device ${message.deviceId}:`, error);
+      // Query unique devices ทั้งหมดพร้อมกันครั้งเดียว
+      const devices = await this.prisma.tbl_devices.findMany({
+        where: { id: { in: uniqueDeviceIds } },
+        select: { id: true, status: true },
+      });
+
+      // สร้าง Map สำหรับการค้นหาแบบ O(1)
+      const deviceMap = new Map(devices.map((d) => [d.id, d]));
+
+      this.logger.debug(`🔍 Found ${devices.length}/${uniqueDeviceIds.length} devices in database`);
+
+      // กรอง messages ที่มี device อยู่จริง
+      const validMessages: ParsedDeviceMessage[] = [];
+      for (const message of batch) {
+        const device = deviceMap.get(message.deviceId);
+        if (!device) {
+          this.stats.skippedNonExistentDevices++;
+          this.logger.warn(`❌ Device not found: ${message.deviceId} - skipping message`);
+        } else {
+          validMessages.push(message);
         }
+      }
 
-        // รอ 100ms ก่อนประมวลผล message ถัดไป
-        if (i < batch.length - 1) {
-          await new Promise((resolve) => setTimeout(resolve, 100));
-        }
+      if (validMessages.length === 0) {
+        this.logger.log('No valid messages to process in this batch');
+        return;
+      }
+
+      try {
+        // Batch insert ทุก messages ไปที่ tbl_devices_state
+        await this.batchInsertDeviceStates(validMessages);
+
+        // หา message ล่าสุดของแต่ละ device สำหรับ last_state
+        const lastMessagePerDevice = this.getLastMessagePerDevice(validMessages);
+
+        // Batch upsert last states
+        await this.batchUpsertLastStates(lastMessagePerDevice);
+
+        this.stats.processedMessages += validMessages.length;
+        this.logger.log(`✅ Successfully processed ${validMessages.length} messages`);
+      } catch (error) {
+        this.stats.droppedMessages += validMessages.length;
+        this.logger.error('Error in batch processing:', error);
       }
 
       const processingTime = Date.now() - startTime;
@@ -196,10 +254,76 @@ export class DeviceStateProcessorService implements OnModuleInit {
         (this.stats.averageProcessingTime * (this.stats.batchProcessingCount - 1) + processingTime) /
         this.stats.batchProcessingCount;
 
-      this.logger.log(`Batch processed in ${processingTime}ms`);
+      this.logger.log(`⏱️ Batch processed in ${processingTime}ms`);
     } finally {
       this.isProcessingBatch = false;
     }
+  }
+
+  /**
+   * Batch insert device states (historical data)
+   */
+  private async batchInsertDeviceStates(messages: ParsedDeviceMessage[]): Promise<void> {
+    const stateRecords = messages.map((msg) => {
+      const stateHash = this.generateStateHash(msg.payload);
+      return {
+        device_id: msg.deviceId,
+        state_data: msg.payload as any,
+        hash_state: stateHash,
+      };
+    });
+
+    await this.prisma.tbl_devices_state.createMany({
+      data: stateRecords,
+      skipDuplicates: false,
+    });
+
+    this.logger.debug(`💾 Batch inserted ${stateRecords.length} device states`);
+  }
+
+  /**
+   * Get last message per device (based on timestamp in payload)
+   */
+  private getLastMessagePerDevice(messages: ParsedDeviceMessage[]): Map<string, ParsedDeviceMessage> {
+    const lastMessages = new Map<string, ParsedDeviceMessage>();
+
+    for (const message of messages) {
+      const existing = lastMessages.get(message.deviceId);
+
+      // ถ้ายังไม่มี หรือ message นี้มี timestamp ใหม่กว่า ให้เก็บ message นี้
+      if (!existing || message.payload.timestamp > existing.payload.timestamp) {
+        lastMessages.set(message.deviceId, message);
+      }
+    }
+
+    this.logger.debug(`📊 Extracted ${lastMessages.size} last messages from ${messages.length} total messages`);
+    return lastMessages;
+  }
+
+  /**
+   * Batch upsert last device states
+   */
+  private async batchUpsertLastStates(lastMessages: Map<string, ParsedDeviceMessage>): Promise<void> {
+    // Prisma ไม่มี upsertMany ต้องใช้ Promise.all
+    const upsertPromises = Array.from(lastMessages.values()).map((msg) => {
+      const stateHash = this.generateStateHash(msg.payload);
+
+      return this.prisma.tbl_devices_last_state.upsert({
+        where: { device_id: msg.deviceId },
+        update: {
+          state_data: msg.payload as any,
+          hash_state: stateHash,
+        },
+        create: {
+          device_id: msg.deviceId,
+          state_data: msg.payload as any,
+          hash_state: stateHash,
+        },
+      });
+    });
+
+    await Promise.all(upsertPromises);
+    this.logger.debug(`🔄 Batch upserted ${lastMessages.size} last device states`);
   }
 
   /**
@@ -236,7 +360,7 @@ export class DeviceStateProcessorService implements OnModuleInit {
     }
 
     if (cleanedDevices > 0) {
-      this.logger.log(`Cleaned up ${cleanedDevices} inactive devices from rate limiting cache`);
+      this.logger.log(`🧹 Cleaned up ${cleanedDevices} inactive devices from rate limiting cache`);
     }
   }
 
@@ -259,11 +383,12 @@ export class DeviceStateProcessorService implements OnModuleInit {
   private logStats(): void {
     const rateLimitStats = this.getRateLimitStats();
 
-    this.logger.log(`=== Device State Processor Stats ===`);
+    this.logger.log(`📊 === Device State Processor Stats ===`);
     this.logger.log(`Total Messages: ${this.stats.totalMessages}`);
     this.logger.log(`Processed Messages: ${this.stats.processedMessages}`);
     this.logger.log(`Dropped Messages: ${this.stats.droppedMessages}`);
     this.logger.log(`Rate Limited Messages: ${this.stats.rateLimitedMessages}`);
+    this.logger.log(`Skipped Non-Existent Devices: ${this.stats.skippedNonExistentDevices}`);
     this.logger.log(`Batch Processing Count: ${this.stats.batchProcessingCount}`);
     this.logger.log(`Average Processing Time: ${this.stats.averageProcessingTime.toFixed(2)}ms`);
     this.logger.log(`Queue Size: ${this.messageBatch.length}`);
@@ -334,7 +459,7 @@ export class DeviceStateProcessorService implements OnModuleInit {
     }
 
     if (offlineDevices.length > 0) {
-      this.logger.log(`Detected ${offlineDevices.length} offline devices`);
+      this.logger.log(`🔴 Detected ${offlineDevices.length} offline devices`);
     }
   }
 
@@ -350,7 +475,7 @@ export class DeviceStateProcessorService implements OnModuleInit {
       });
 
       if (!device) {
-        this.logger.warn(`Device not found for offline marking: ${deviceId}`);
+        this.logger.warn(`⚠️ Device not found for offline marking: ${deviceId}`);
         return;
       }
 
@@ -391,9 +516,9 @@ export class DeviceStateProcessorService implements OnModuleInit {
         });
       });
 
-      this.logger.log(`Device marked as offline: ${deviceId}`);
+      this.logger.log(`🔴 Device marked as offline: ${deviceId}`);
     } catch (error) {
-      this.logger.error(`Error marking device as offline ${deviceId}:`, error);
+      this.logger.error(`❌ Error marking device as offline ${deviceId}:`, error);
     }
   }
 
@@ -422,12 +547,13 @@ export class DeviceStateProcessorService implements OnModuleInit {
       const deviceId = topicMatch[1];
 
       // Parse JSON payload
-      const payloadStr = message.payload.toString();
+      const payloadStr = message.payload?.toString() || '';
+      // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
       const payload: DeviceStreamingPayload = JSON.parse(payloadStr);
 
       // Validate payload structure
       if (!this.validatePayload(payload)) {
-        this.logger.warn(`Invalid payload structure for device ${deviceId}:`, payload);
+        this.logger.warn(`⚠️ Invalid payload structure for device ${deviceId}:`, payload);
         return null;
       }
 
@@ -437,7 +563,7 @@ export class DeviceStateProcessorService implements OnModuleInit {
         topic: message.topic,
       };
     } catch (error) {
-      this.logger.error('Error parsing device message:', error);
+      this.logger.error('❌ Error parsing device message:', error);
       return null;
     }
   }
@@ -462,60 +588,6 @@ export class DeviceStateProcessorService implements OnModuleInit {
       typeof p.uptime === 'number' &&
       typeof p.timestamp === 'number'
     );
-  }
-
-  /**
-   * Save device state to database
-   */
-  private async saveDeviceState(parsedMessage: ParsedDeviceMessage): Promise<void> {
-    const { deviceId, payload } = parsedMessage;
-
-    try {
-      // Check if device exists
-      const device = await this.prisma.tbl_devices.findUnique({
-        where: { id: deviceId },
-        select: { id: true, status: true },
-      });
-
-      if (!device) {
-        this.logger.warn(`Device not found: ${deviceId}`);
-        return;
-      }
-
-      // Generate hash for state data to detect changes
-      const stateHash = this.generateStateHash(payload);
-
-      // Use transaction to ensure data consistency
-      await this.prisma.$transaction(async (tx) => {
-        // Save to historical states table
-        await tx.tbl_devices_state.create({
-          data: {
-            device_id: deviceId,
-            state_data: payload as any,
-            hash_state: stateHash,
-          },
-        });
-
-        // Update last state table (upsert)
-        await tx.tbl_devices_last_state.upsert({
-          where: { device_id: deviceId },
-          update: {
-            state_data: payload as any,
-            hash_state: stateHash,
-          },
-          create: {
-            device_id: deviceId,
-            state_data: payload as any,
-            hash_state: stateHash,
-          },
-        });
-      });
-
-      this.logger.debug(`Device state saved successfully for device: ${deviceId}`);
-    } catch (error) {
-      this.logger.error(`Error saving device state for device ${deviceId}:`, error);
-      throw error;
-    }
   }
 
   /**

@@ -33,7 +33,7 @@ export class MqttCommandManagerService implements OnModuleInit, OnModuleDestroy 
     };
     this.mqttService.onMessage('server/+/ack', this.ackMessageHandler);
 
-    this.logger.log('MQTT Command Manager Service initialized');
+    this.logger.log('✅ MQTT Command Manager Service initialized');
   }
 
   onModuleDestroy() {
@@ -49,7 +49,7 @@ export class MqttCommandManagerService implements OnModuleInit, OnModuleDestroy 
       activeCommand.reject(new Error('Service shutting down'));
     }
     this.activeCommands.clear();
-    this.logger.log('MQTT Command Manager Service destroyed');
+    this.logger.log('🛑 MQTT Command Manager Service destroyed');
   }
 
   /**
@@ -111,6 +111,43 @@ export class MqttCommandManagerService implements OnModuleInit, OnModuleDestroy 
   }
 
   /**
+   * Send payment status to device
+   */
+  public async sendPaymentStatus(chargeId: string, status: string): Promise<MqttCommandAckResponse<any>> {
+    const commandId = this.generateCommandId();
+    const topic = `device/${chargeId}/payment-status`;
+    const timestamp = Date.now();
+    const mqttPayload: MqttCommandPayload<any> = {
+      command_id: commandId,
+      command: 'PAYMENT',
+      require_ack: false,
+      payload: { chargeId, status: status as 'PENDING' | 'SUCCEEDED' | 'FAILED' | 'CANCELLED' },
+      timestamp,
+    };
+    try {
+      await this.mqttService.publishJson(topic, mqttPayload, { qos: 1 });
+      this.logger.log(`💳 Payment status sent: ${commandId} (${chargeId}) to device: ${chargeId}`);
+      return {
+        command_id: commandId,
+        device_id: chargeId,
+        command: 'PAYMENT',
+        status: 'SENT',
+        timestamp,
+      };
+    } catch (error) {
+      this.logger.error(`❌ Failed to send payment status: ${commandId} (${chargeId}) to device: ${chargeId}`, error);
+      return {
+        command_id: commandId,
+        device_id: chargeId,
+        command: 'PAYMENT',
+        status: 'ERROR',
+        error: error.message,
+        timestamp,
+      };
+    }
+  }
+
+  /**
    * Core method to send MQTT command
    */
   private async sendCommand<T, R>(
@@ -137,7 +174,7 @@ export class MqttCommandManagerService implements OnModuleInit, OnModuleDestroy 
       // Send MQTT message
       await this.mqttService.publishJson(topic, mqttPayload, { qos: 1 });
 
-      this.logger.log(`Command sent: ${commandId} (${command}) to device: ${deviceId}`);
+      this.logger.log(`📤 Command sent: ${commandId} (${command}) to device: ${deviceId}`);
 
       const result: MqttCommandAckResponse<R> = {
         command_id: commandId,
@@ -165,7 +202,7 @@ export class MqttCommandManagerService implements OnModuleInit, OnModuleDestroy 
             timestamp: timestamp,
           };
 
-          this.logger.warn(`Command timeout: ${commandId} (${command}) to device: ${deviceId}`);
+          this.logger.warn(`⏱️ Command timeout: ${commandId} (${command}) to device: ${deviceId}`);
           this.eventAdapter?.emitCommandTimeout(timeoutResult);
           resolve(timeoutResult);
         }, timeout);
@@ -193,7 +230,7 @@ export class MqttCommandManagerService implements OnModuleInit, OnModuleDestroy 
         timestamp: Date.now(),
       };
 
-      this.logger.error(`Failed to send command: ${commandId} (${command}) to device: ${deviceId}`, error);
+      this.logger.error(`❌ Failed to send command: ${commandId} (${command}) to device: ${deviceId}`, error);
       this.eventAdapter?.emitCommandError(errorResult);
       return errorResult;
     }
@@ -208,20 +245,20 @@ export class MqttCommandManagerService implements OnModuleInit, OnModuleDestroy 
       const ackResponse: any = JSON.parse(payloadStr);
 
       if (!ackResponse.command_id) {
-        this.logger.warn(`Invalid ACK response: ${payloadStr}`);
+        this.logger.warn(`⚠️ Invalid ACK response: ${payloadStr}`);
         return;
       }
 
       const { command_id, device_id, command, status, error }: any = ackResponse;
 
       this.logger.log(
-        `ACK received: ${String(command_id)} (${String(command)}) from device: ${String(device_id)} - Status: ${String(status)}`,
+        `📥 ACK received: ${String(command_id)} (${String(command)}) from device: ${String(device_id)} - Status: ${String(status)}`,
       );
 
       const activeCommand = this.activeCommands.get(String(command_id));
 
       if (!activeCommand) {
-        this.logger.warn(`Received ACK for unknown command: ${String(command_id)}`);
+        this.logger.warn(`⚠️ Received ACK for unknown command: ${String(command_id)}`);
         return;
       }
 
@@ -250,7 +287,7 @@ export class MqttCommandManagerService implements OnModuleInit, OnModuleDestroy 
       // Resolve promise
       activeCommand.resolve(result);
     } catch (error) {
-      this.logger.error('Failed to parse ACK response:', error);
+      this.logger.error('❌ Failed to parse ACK response:', error);
       this.eventAdapter?.emitCommandError({
         command_id: 'unknown',
         device_id: 'unknown',

@@ -15,7 +15,7 @@ catcar_api_client/
 
 1. **ติดตั้ง Python dependencies:**
    ```bash
-   cd catcar_api_client
+   cd catcar_api_client`
    pip install -r requirements.txt
    ```
 

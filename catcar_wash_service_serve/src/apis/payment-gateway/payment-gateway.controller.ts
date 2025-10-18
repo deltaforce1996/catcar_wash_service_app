@@ -7,6 +7,7 @@ import { SuccessResponse } from 'src/types';
 // import { UserAuth } from '../auth/decorators';
 // import type { AuthenticatedUser } from 'src/types/internal.type';
 import { BeamWebhookSignatureGuard } from './guards/beam-webhook-signature.guard';
+import { DeviceSignatureGuard } from './guards/device-signature.guard';
 import type { BeamWebhookPayloadUnion, BeamWebhookEventType } from 'src/types';
 
 @UseFilters(AllExceptionFilter)
@@ -18,8 +19,10 @@ export class PaymentGatewayController {
   /**
    * สร้างการชำระเงินใหม่
    * POST /api/v1/payment-gateway/payments
+   * Device request - requires x-signature header
    */
   @Post('payments')
+  @UseGuards(DeviceSignatureGuard)
   async createPayment(@Body() createPaymentDto: CreatePaymentDto): Promise<SuccessResponse<any>> {
     const result = await this.paymentGatewayService.createPayment(createPaymentDto);
     return {
@@ -32,8 +35,10 @@ export class PaymentGatewayController {
   /**
    * ตรวจสอบสถานะการชำระเงิน
    * GET /api/v1/payment-gateway/payments/:id/status
+   * Device request - requires x-signature header
    */
   @Get('payments/:id/status')
+  @UseGuards(DeviceSignatureGuard)
   async getPaymentStatus(
     @Param('id') paymentId: string,
   ): Promise<SuccessResponse<{ chargeId: string; status: string }>> {

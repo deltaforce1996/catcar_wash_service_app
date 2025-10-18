@@ -17,6 +17,7 @@ import {
   BeamChargeSucceededPayload,
   BeamPaymentMethodType,
 } from 'src/types';
+import { MqttCommandManagerService } from 'src/services/adepters/mqtt-command-manager.service';
 
 type PaymentInfoByDevice = Prisma.tbl_usersGetPayload<{
   select: { id: true; payment_info: true };
@@ -29,6 +30,7 @@ export class PaymentGatewayService {
   constructor(
     private readonly beamCheckoutService: BeamCheckoutService,
     private readonly prisma: PrismaService,
+    private readonly mqttCommandManagerService: MqttCommandManagerService,
   ) {}
 
   /**
@@ -289,6 +291,8 @@ export class PaymentGatewayService {
         status: payload.status,
       },
     });
+
+    await this.mqttCommandManagerService.sendPaymentStatus(payload.chargeId, payload.status);
 
     return {
       message: 'Charge succeeded webhook processed successfully',
