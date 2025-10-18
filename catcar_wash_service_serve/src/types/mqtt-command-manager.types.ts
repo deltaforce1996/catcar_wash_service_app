@@ -1,4 +1,4 @@
-export type MqttCommandType = 'APPLY_CONFIG' | 'RESTART' | 'UPDATE_FIRMWARE' | 'RESET_CONFIG';
+export type MqttCommandType = 'APPLY_CONFIG' | 'RESTART' | 'UPDATE_FIRMWARE' | 'RESET_CONFIG' | 'PAYMENT';
 export interface MqttCommandPayload<T> {
   command_id: string;
   command: MqttCommandType;
