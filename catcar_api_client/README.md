@@ -1,14 +1,22 @@
 # CatCar API Client
 
-Python client สำหรับเรียกใช้ CatCar Wash Service API endpoints พร้อมระบบเลือก Command
+Python client และ simulators สำหรับทดสอบ CatCar Wash Service
 
 ## โครงสร้างไฟล์
 
 ```
 catcar_api_client/
-├── README.md                    # เอกสารนี้
-├── catcar_client.py             # Script หลักพร้อมระบบเลือก Command
-└── requirements.txt             # Dependencies
+├── README.md                              # เอกสารนี้
+├── catcar_client.py                       # API Client หลัก
+├── mqtt_device_simulator.py               # MQTT Device State Simulator
+├── payment_device_simulator.py            # Payment Device Simulator
+├── device_command_simulator.py            # Device Command Simulator (รับคำสั่ง)
+├── test_device_commands.py                # API Tester (ส่งคำสั่ง)
+├── requirements.txt                       # Dependencies
+├── README_MQTT_SIMULATOR.md               # เอกสาร MQTT Simulator
+├── README_PAYMENT_SIMULATOR.md            # เอกสาร Payment Simulator
+├── README_DEVICE_COMMAND_SIMULATOR.md     # เอกสาร Device Command Simulator
+└── README_TEST_DEVICE_COMMANDS.md         # เอกสาร API Tester
 ```
 
 ## การติดตั้ง
@@ -21,7 +29,7 @@ catcar_api_client/
 
 ## การใช้งาน
 
-### CatCar Client
+### 1. CatCar Client
 
 เรียกใช้ API client พร้อมระบบเลือก Command
 
@@ -34,6 +42,63 @@ python catcar_client.py
 2. 📊 **View Last Result** - ดูผลลัพธ์ล่าสุด
 3. 🔄 **Change Base URL** - เปลี่ยน URL
 4. ❌ **Exit** - ออกจากโปรแกรม
+
+### 2. MQTT Device State Simulator
+
+จำลองอุปกรณ์ที่ส่ง state streaming ผ่าน MQTT
+
+```bash
+python mqtt_device_simulator.py
+```
+
+ดูรายละเอียดใน [README_MQTT_SIMULATOR.md](./README_MQTT_SIMULATOR.md)
+
+### 3. Payment Device Simulator
+
+จำลองอุปกรณ์ที่ขอชำระเงินผ่าน Payment Gateway
+
+```bash
+python payment_device_simulator.py
+```
+
+ดูรายละเอียดใน [README_PAYMENT_SIMULATOR.md](./README_PAYMENT_SIMULATOR.md)
+
+### 4. Device Command Simulator (รับคำสั่ง)
+
+จำลองอุปกรณ์ที่รับและตอบคำสั่งผ่าน MQTT
+
+```bash
+python device_command_simulator.py
+# Enter Device ID: D001
+```
+
+**คำสั่งที่รองรับ:**
+- `APPLY_CONFIG` - รับ configuration ใหม่
+- `RESTART` - รีสตาร์ท
+- `UPDATE_FIRMWARE` - อัพเดท firmware
+- `RESET_CONFIG` - รีเซ็ต configuration
+- `PAYMENT` - รับข้อมูลการชำระเงิน
+
+ดูรายละเอียดใน [README_DEVICE_COMMAND_SIMULATOR.md](./README_DEVICE_COMMAND_SIMULATOR.md)
+
+### 5. Test Device Commands API (ส่งคำสั่ง)
+
+ทดสอบส่งคำสั่งไปยังอุปกรณ์ผ่าน REST API
+
+```bash
+python test_device_commands.py
+# Enter Device ID: D001
+```
+
+**คำสั่งที่ทดสอบได้:**
+1. 🔧 APPLY_CONFIG
+2. 🔄 RESTART
+3. 📦 UPDATE_FIRMWARE
+4. ♻️  RESET_CONFIG
+5. ⚙️  CUSTOM
+6. 🚀 TEST ALL
+
+ดูรายละเอียดใน [README_TEST_DEVICE_COMMANDS.md](./README_TEST_DEVICE_COMMANDS.md)
 
 ## ตัวอย่างการใช้งาน
 
@@ -105,7 +170,60 @@ python catcar_client.py
 - ✅ ตรวจสอบข้อมูล input
 - ✅ รันได้หลายครั้ง
 
+## Complete Testing Flow
+
+### ทดสอบ Device Commands API
+
+**Terminal 1: Start MQTT Broker**
+```bash
+docker-compose -f docker-compose.develop.yml up emqx
+```
+
+**Terminal 2: Start Backend Server**
+```bash
+cd catcar_wash_service_serve
+pnpm run start:dev
+```
+
+**Terminal 3: Start Device Command Simulator (รับคำสั่ง)**
+```bash
+cd catcar_api_client
+python device_command_simulator.py
+# Enter Device ID: D001
+```
+
+**Terminal 4: Test Device Commands API (ส่งคำสั่ง)**
+```bash
+cd catcar_api_client
+python test_device_commands.py
+# Enter Device ID: D001
+# Choose option: 6 (TEST ALL)
+```
+
+### ทดสอบ Device State Streaming
+
+**Terminal 1: Start MQTT Broker**
+```bash
+docker-compose -f docker-compose.develop.yml up emqx
+```
+
+**Terminal 2: Start Backend Server**
+```bash
+cd catcar_wash_service_serve
+pnpm run start:dev
+```
+
+**Terminal 3: Start MQTT Device Simulator**
+```bash
+cd catcar_api_client
+python mqtt_device_simulator.py
+# Add devices and start simulation
+```
+
 ## Requirements
 
 - Python 3.7+
 - requests >= 2.31.0
+- paho-mqtt >= 1.6.1
+- PyYAML >= 6.0
+- qrcode >= 7.4.2
