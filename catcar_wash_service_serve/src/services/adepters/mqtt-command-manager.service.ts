@@ -113,7 +113,7 @@ export class MqttCommandManagerService implements OnModuleInit, OnModuleDestroy 
   /**
    * Send payment status to device
    */
-  public async sendPaymentStatus(chargeId: string, status: string): Promise<MqttCommandAckResponse<any>> {
+  public async sendPaymentStatus(chargeId: string, status: string): Promise<void> {
     const commandId = this.generateCommandId();
     const topic = `device/${chargeId}/payment-status`;
     const timestamp = Date.now();
@@ -127,23 +127,8 @@ export class MqttCommandManagerService implements OnModuleInit, OnModuleDestroy 
     try {
       await this.mqttService.publishJson(topic, mqttPayload, { qos: 1 });
       this.logger.log(`💳 Payment status sent: ${commandId} (${chargeId}) to device: ${chargeId}`);
-      return {
-        command_id: commandId,
-        device_id: chargeId,
-        command: 'PAYMENT',
-        status: 'SENT',
-        timestamp,
-      };
     } catch (error) {
       this.logger.error(`❌ Failed to send payment status: ${commandId} (${chargeId}) to device: ${chargeId}`, error);
-      return {
-        command_id: commandId,
-        device_id: chargeId,
-        command: 'PAYMENT',
-        status: 'ERROR',
-        error: error.message,
-        timestamp,
-      };
     }
   }
 

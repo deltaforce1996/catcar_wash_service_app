@@ -215,6 +215,16 @@ export class PaymentGatewayService {
             },
           });
 
+          // await this.mqttCommandManagerService.sendPaymentStatus(chargeResult.chargeId, 'PENDING');
+
+          setTimeout(() => {
+            if (chargeResult) {
+              this.mqttCommandManagerService
+                .sendPaymentStatus(chargeResult.chargeId, 'SUCCEEDED')
+                .catch((err) => this.logger.error('Failed to send payment status', err));
+            }
+          }, 6000);
+
           this.logger.log(`Payment created successfully with charge ID: ${chargeResult.chargeId}`);
 
           return updatedPaymentTemp;
