@@ -69,6 +69,9 @@ export class UsersService {
 
     const ands: Prisma.tbl_usersWhereInput['AND'] = [];
 
+    // Exclude device-intial user (system placeholder user)
+    ands.push({ id: { not: 'device-intial' } });
+
     // Handle general search - search id, fullname, email, phone, and address fields
     const search = pairs.find((p) => p.key === 'search')?.value;
     if (search) {
