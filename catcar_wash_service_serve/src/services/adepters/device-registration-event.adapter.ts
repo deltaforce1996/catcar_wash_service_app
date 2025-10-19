@@ -66,6 +66,7 @@ export class DeviceRegistrationEventAdapter implements IDeviceRegistrationEventA
         handler: (data: DeviceRegistrationSession) => ({
           type: 'registration_requested',
           data: {
+            device_id: data.device_id,
             pin: data.pin,
             chip_id: data.chip_id,
             mac_address: data.mac_address,
@@ -80,11 +81,11 @@ export class DeviceRegistrationEventAdapter implements IDeviceRegistrationEventA
         handler: (data: DeviceRegistrationSession) => ({
           type: 'registration_completed',
           data: {
+            device_id: data.device_id,
             pin: data.pin,
             chip_id: data.chip_id,
             mac_address: data.mac_address,
             firmware_version: data.firmware_version,
-            device_id: data.device_id,
             created_at: data.created_at,
             expires_at: data.expires_at,
           },
@@ -134,7 +135,7 @@ export class DeviceRegistrationEventAdapter implements IDeviceRegistrationEventA
         };
       },
       // Heartbeat every 30 seconds
-      30000,
+      3000,
     );
   }
 

@@ -201,9 +201,10 @@ export class DevicesService {
 
     const device = await this.prisma.tbl_devices.create({
       data: {
+        id: data.id,
         name: data.name,
         type: data.type,
-        information: data.information,
+        information: data.information as any,
         configs: data.configs as any,
         owner_id: data.owner_id,
         register_by_id: data.register_by,

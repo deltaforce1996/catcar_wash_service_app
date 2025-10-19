@@ -6,7 +6,7 @@ export interface DeviceRegistrationSession {
   chip_id: string;
   mac_address: string;
   firmware_version: string;
-  device_id?: string;
+  device_id: string;
   created_at: Date;
   expires_at: Date;
 }
