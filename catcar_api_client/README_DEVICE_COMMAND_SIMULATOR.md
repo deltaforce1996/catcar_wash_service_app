@@ -18,7 +18,13 @@ Device Command Simulator ใช้สำหรับทดสอบระบบ�
 - `RESET_CONFIG` - รีเซ็ต configuration
 - `PAYMENT` - รับข้อมูลสถานะการชำระเงิน
 
-✅ จำลองความสำเร็จและความล้มเหลวแบบสุ่ม
+✅ **Error Simulation Modes** - เลือกโหมดจำลอง error ได้ 3 แบบ:
+  - **None** - ไม่มี error เลย (always success)
+  - **Random** - จำลอง error แบบสุ่มตาม error rate
+  - **Always** - จำลอง error ทุกครั้ง (for testing)
+
+✅ **SHA256 Signature** - ACK message มี digital signature เพื่อความปลอดภัย
+✅ **Result Data** - ส่งข้อมูลผลลัพธ์กลับไปใน ACK
 ✅ แสดงสถิติการทำงาน
 ✅ รองรับ Graceful Shutdown
 
@@ -49,10 +55,16 @@ pip install paho-mqtt PyYAML
 python device_command_simulator.py
 ```
 
-### กรอก Device ID
+### กรอก Device ID และเลือก Error Mode
 
 ```
 🆔 Enter Device ID (e.g., D001): D001
+
+⚙️  Error Simulation Mode:
+1. ❌ None - Always success (no errors)
+2. 🎲 Random - Random failures based on error rates (default)
+3. 💥 Always - Always fail (for testing error handling)
+👉 Select mode (1-3, default: 2): 2
 ```
 
 ### Simulator จะแสดงข้อมูล
@@ -72,34 +84,84 @@ python device_command_simulator.py
 🔗 MQTT Broker: localhost:1883
 📡 Listening on: device/D001/command
 📡 Listening on: device/D001/payment-status
+⚙️  Failure Mode: random
+📊 Error Rates:
+   - APPLY_CONFIG: 10%
+   - RESTART: 5%
+   - UPDATE_FIRMWARE: 15%
+   - RESET_CONFIG: 8%
+   - PAYMENT: 0%
 ============================================================
 ✅ Waiting for commands... (Press Ctrl+C to stop)
 ```
 
 ## Simulated Command Behavior
 
+### Error Simulation Modes
+
+| Mode | Description | Use Case |
+|------|-------------|----------|
+| **None** | Always success (0% error) | ทดสอบ happy path |
+| **Random** | Random failures based on error rates | จำลองสถานการณ์จริง |
+| **Always** | Always fail (100% error) | ทดสอบ error handling |
+
+### Error Rates (Random Mode)
+
+| Command | Error Rate | Success Rate |
+|---------|-----------|--------------|
+| APPLY_CONFIG | 10% | 90% |
+| RESTART | 5% | 95% |
+| UPDATE_FIRMWARE | 15% | 85% |
+| RESET_CONFIG | 8% | 92% |
+| PAYMENT | 0% | 100% |
+
 ### APPLY_CONFIG
 
 - **Processing Time:** 0.5 - 1.5 seconds
-- **Success Rate:** 90%
 - **Success Response:**
   ```json
   {
-    "config_applied": { ... },
-    "timestamp": 1697654321000
+    "command_id": "cmd-123",
+    "device_id": "D001",
+    "command": "APPLY_CONFIG",
+    "status": "SUCCESS",
+    "timestamp": 1697654321000,
+    "result": {
+      "config_applied": { ... },
+      "timestamp": 1697654321000
+    },
+    "sha256": "abc123..."
   }
   ```
-- **Failure Reason:** "Failed to apply configuration: Validation error"
+- **Failure Response:**
+  ```json
+  {
+    "command_id": "cmd-123",
+    "device_id": "D001",
+    "command": "APPLY_CONFIG",
+    "status": "FAILED",
+    "timestamp": 1697654321000,
+    "error": "Failed to apply configuration: Validation error",
+    "sha256": "def456..."
+  }
+  ```
 
 ### RESTART
 
 - **Processing Time:** 0.5 seconds
-- **Success Rate:** 95%
 - **Success Response:**
   ```json
   {
-    "delay_seconds": 5,
-    "restart_at": 1697654326000
+    "command_id": "cmd-456",
+    "device_id": "D001",
+    "command": "RESTART",
+    "status": "SUCCESS",
+    "timestamp": 1697654326000,
+    "result": {
+      "delay_seconds": 5,
+      "restart_at": 1697654326000
+    },
+    "sha256": "ghi789..."
   }
   ```
 - **Failure Reason:** "Failed to restart: System busy"
@@ -107,13 +169,14 @@ python device_command_simulator.py
 ### UPDATE_FIRMWARE
 
 - **Processing Time:** 1.0 - 2.0 seconds (simulates download)
-- **Success Rate:** 85%
 - **Success Response:**
   ```json
   {
-    "version": "2.0.0",
-    "download_started": true,
-    "estimated_time": 300
+    "result": {
+      "version": "2.0.0",
+      "download_started": true,
+      "estimated_time": 300
+    }
   }
   ```
 - **Failure Reason:** "Failed to update firmware: Download failed"
@@ -121,12 +184,13 @@ python device_command_simulator.py
 ### RESET_CONFIG
 
 - **Processing Time:** 0.5 - 1.5 seconds
-- **Success Rate:** 92%
 - **Success Response:**
   ```json
   {
-    "config_reset": { ... },
-    "timestamp": 1697654321000
+    "result": {
+      "config_reset": { ... },
+      "timestamp": 1697654321000
+    }
   }
   ```
 - **Failure Reason:** "Failed to reset configuration: Invalid config"
@@ -166,6 +230,7 @@ python device_command_simulator.py
 🔧 Handling APPLY_CONFIG command...
 ✅ Configuration applied successfully
 [12:34:57] 📤 ✅ ACK sent: cmd-1697654321000-abc123 - SUCCESS
+   🔐 Signature: a1b2c3d4e5f6g7h8...
 ```
 
 ### Receiving RESTART Command
@@ -348,15 +413,43 @@ python device_command_simulator.py
 # Enter Device ID: D003
 ```
 
-### Custom Success Rate
+### Custom Error Simulation
 
-แก้ไขใน code:
+#### ใช้ Failure Mode แบบต่างๆ
 
 ```python
-def _handle_apply_config(self, payload: dict) -> tuple:
-    # Change success rate from 90% to 50%
-    success = random.random() < 0.5  # Was 0.9
-    ...
+# Always success (no errors)
+simulator = DeviceCommandSimulator(device_id="D001", failure_mode="none")
+
+# Random failures (default)
+simulator = DeviceCommandSimulator(device_id="D001", failure_mode="random")
+
+# Always fail (for testing)
+simulator = DeviceCommandSimulator(device_id="D001", failure_mode="always")
+```
+
+#### เปลี่ยน Error Rate
+
+```python
+simulator = DeviceCommandSimulator(device_id="D001")
+
+# เปลี่ยน error rate ของ APPLY_CONFIG เป็น 50%
+simulator.set_error_rate('APPLY_CONFIG', 0.5)
+
+# เปลี่ยน error rate ของ RESTART เป็น 20%
+simulator.set_error_rate('RESTART', 0.2)
+```
+
+#### เปลี่ยน Failure Mode แบบ Dynamic
+
+```python
+simulator = DeviceCommandSimulator(device_id="D001")
+simulator.start()
+
+# ระหว่างทำงาน สามารถเปลี่ยนได้
+simulator.set_failure_mode("always")  # เปลี่ยนเป็น always fail
+simulator.set_failure_mode("none")    # เปลี่ยนเป็น always success
+simulator.set_failure_mode("random")  # เปลี่ยนเป็น random
 ```
 
 ## Related Documentation
@@ -365,10 +458,30 @@ def _handle_apply_config(self, payload: dict) -> tuple:
 - [MQTT Communication Plan](../PLAN-COMUNICATION.md)
 - [MQTT Device Simulator](./README_MQTT_SIMULATOR.md)
 
+## Security
+
+### SHA256 Signature
+
+ทุก ACK message จะมี `sha256` signature เพื่อป้องกัน:
+- Message tampering
+- Unauthorized ACK messages
+- Man-in-the-middle attacks
+
+**Signature Calculation:**
+```python
+payload_string = JSON.stringify(ack_payload)
+combined = payload_string + SECRET_KEY
+signature = SHA256(combined)
+```
+
+**SECRET_KEY:** `modernchabackdoor`
+
 ## Notes
 
 - Simulator จะจำลองเวลาในการประมวลผลแต่ละคำสั่ง
-- Success rate ของแต่ละคำสั่งถูกตั้งค่าให้สมจริง
+- Error rates สามารถปรับได้ตาม use case
 - คำสั่ง PAYMENT ไม่ส่ง ACK (notification only)
 - สามารถกด Ctrl+C เพื่อหยุด simulator ได้ทุกเวลา
+- ACK message มี digital signature เพื่อความปลอดภัย
+- รองรับการจำลอง error ทั้งแบบสุ่มและแบบบังคับ
 

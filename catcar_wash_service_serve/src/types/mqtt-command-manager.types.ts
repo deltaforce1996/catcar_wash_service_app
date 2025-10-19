@@ -5,6 +5,7 @@ export interface MqttCommandPayload<T> {
   require_ack: boolean;
   payload: T;
   timestamp: number;
+  sha256?: string;
 }
 
 export interface MqttCommandAckResponse<T> {
@@ -15,6 +16,7 @@ export interface MqttCommandAckResponse<T> {
   results?: T;
   error?: string;
   timestamp: number;
+  sha256?: string;
 }
 
 export interface FirmwarePayload {

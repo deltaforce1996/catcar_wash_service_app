@@ -2,7 +2,7 @@ import { Body, Controller, Param, Post, UseFilters } from '@nestjs/common';
 import { DeviceCommandsService } from './device-commands.service';
 import { AllExceptionFilter } from '../../common';
 import type { SuccessResponse } from '../../types';
-import { ApplyConfigDto, RestartDeviceDto, UpdateFirmwareDto, SendCustomCommandDto } from './dtos';
+import { RestartDeviceDto, UpdateFirmwareDto, SendCustomCommandDto } from './dtos';
 import type { MqttCommandAckResponse, CommandConfig, FirmwarePayload } from '../../types/mqtt-command-manager.types';
 
 @UseFilters(AllExceptionFilter)
@@ -17,9 +17,8 @@ export class DeviceCommandsController {
   @Post(':deviceId/apply-config')
   async applyConfig(
     @Param('deviceId') deviceId: string,
-    @Body() config: ApplyConfigDto,
   ): Promise<SuccessResponse<MqttCommandAckResponse<CommandConfig>>> {
-    const result = await this.deviceCommandsService.applyConfig(deviceId, config);
+    const result = await this.deviceCommandsService.applyConfig(deviceId);
     return {
       success: true,
       data: result,
@@ -68,9 +67,8 @@ export class DeviceCommandsController {
   @Post(':deviceId/reset-config')
   async resetConfig(
     @Param('deviceId') deviceId: string,
-    @Body() config: ApplyConfigDto,
   ): Promise<SuccessResponse<MqttCommandAckResponse<CommandConfig>>> {
-    const result = await this.deviceCommandsService.resetConfig(deviceId, config);
+    const result = await this.deviceCommandsService.resetConfig(deviceId);
     return {
       success: true,
       data: result,

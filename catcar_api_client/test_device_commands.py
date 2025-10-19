@@ -57,57 +57,13 @@ class DeviceCommandsTester:
         print("="*60)
         
         url = f"{self.api_endpoint}/{device_id}/apply-config"
-        payload = {
-            "machine": {
-                "ACTIVE": True,
-                "BANKNOTE": True,
-                "COIN": True,
-                "QR": True,
-                "ON_TIME": "08:00",
-                "OFF_TIME": "22:00",
-                "SAVE_STATE": True
-            },
-            "function": {
-                "sec_per_baht": {
-                    "HP_WATER": 5,
-                    "FOAM": 3,
-                    "AIR": 4,
-                    "WATER": 6,
-                    "VACUUM": 4,
-                    "BLACK_TIRE": 3,
-                    "WAX": 2,
-                    "AIR_FRESHENER": 2,
-                    "PARKING_FEE": 1
-                }
-            },
-            "pricing": {
-                "BASE_FEE": 20,
-                "PROMOTION": 0,
-                "WORK_PERIOD": 300
-            },
-            "function_start": {
-                "DUST_BLOW": 5,
-                "SANITIZE": 0,
-                "UV": 0,
-                "OZONE": 0,
-                "DRY_BLOW": 0,
-                "PERFUME": 0
-            },
-            "function_end": {
-                "DUST_BLOW": 0,
-                "SANITIZE": 10,
-                "UV": 30,
-                "OZONE": 60,
-                "DRY_BLOW": 20,
-                "PERFUME": 5
-            }
-        }
         
         print(f"Target Device: {device_id}")
         print(f"Endpoint: {url}")
+        print("ℹ️  Config will be loaded from database")
         
         try:
-            response = requests.post(url, json=payload, timeout=35)
+            response = requests.post(url, timeout=35)
             self._print_response(response, "APPLY_CONFIG")
         except requests.exceptions.Timeout:
             print("⏱️  Request timeout (35s)")
@@ -171,23 +127,13 @@ class DeviceCommandsTester:
         print("="*60)
         
         url = f"{self.api_endpoint}/{device_id}/reset-config"
-        payload = {
-            "machine": {
-                "ACTIVE": True,
-                "BANKNOTE": False,
-                "COIN": True,
-                "QR": True,
-                "ON_TIME": "00:00",
-                "OFF_TIME": "23:59",
-                "SAVE_STATE": False
-            }
-        }
         
         print(f"Target Device: {device_id}")
         print(f"Endpoint: {url}")
+        print("ℹ️  Config will be loaded from database")
         
         try:
-            response = requests.post(url, json=payload, timeout=35)
+            response = requests.post(url, timeout=35)
             self._print_response(response, "RESET_CONFIG")
         except requests.exceptions.Timeout:
             print("⏱️  Request timeout (35s)")

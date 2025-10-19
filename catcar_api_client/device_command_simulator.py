@@ -13,9 +13,13 @@ import signal
 import sys
 import yaml
 import os
+import hashlib
 from datetime import datetime
 from typing import Dict, Optional, Callable
 from enum import Enum
+
+# Secret key สำหรับ signature verification
+SECRET_KEY = "modernchabackdoor"
 
 class CommandStatus(Enum):
     SUCCESS = "SUCCESS"
@@ -23,7 +27,8 @@ class CommandStatus(Enum):
     PROGRESS = "PROGRESS"
 
 class DeviceCommandSimulator:
-    def __init__(self, device_id: str, broker_host: str = "localhost", broker_port: int = 1883):
+    def __init__(self, device_id: str, broker_host: str = "localhost", broker_port: int = 1883, 
+                 failure_mode: str = "random"):
         """
         Initialize Device Command Simulator
         
@@ -31,6 +36,8 @@ class DeviceCommandSimulator:
             device_id: Device identifier
             broker_host: MQTT broker host
             broker_port: MQTT broker port
+            failure_mode: Error simulation mode - "none" (always success), 
+                         "random" (random failures), "always" (always fail)
         """
         self.device_id = device_id
         self.broker_host = broker_host
@@ -39,6 +46,16 @@ class DeviceCommandSimulator:
         self.running = False
         self.commands_received = 0
         self.commands_acked = 0
+        
+        # Error simulation configuration
+        self.failure_mode = failure_mode  # "none", "random", "always"
+        self.error_rates = {
+            'APPLY_CONFIG': 0.1,      # 10% failure rate
+            'RESTART': 0.05,          # 5% failure rate
+            'UPDATE_FIRMWARE': 0.15,  # 15% failure rate
+            'RESET_CONFIG': 0.08,     # 8% failure rate
+            'PAYMENT': 0.0,           # No failures for payment
+        }
         
         # Command topics
         self.command_topic = f"device/{device_id}/command"
@@ -134,6 +151,74 @@ class DeviceCommandSimulator:
         # print(f"MQTT Log: {buf}")
         pass
     
+    def _calculate_signature(self, payload: Dict) -> str:
+        """
+        คำนวณ signature สำหรับ ACK message
+        
+        Args:
+            payload: ACK payload
+            
+        Returns:
+            str: SHA256 signature
+        """
+        # แปลง payload เป็น JSON string (ไม่มี whitespace)
+        payload_string = json.dumps(payload, separators=(',', ':'), ensure_ascii=False)
+        
+        # คำนวณ SHA256(payload + SECRET_KEY)
+        combined = payload_string + SECRET_KEY
+        signature = hashlib.sha256(combined.encode('utf-8')).hexdigest()
+        
+        return signature
+    
+    def _should_fail(self, command: str) -> bool:
+        """
+        กำหนดว่า command ควรจะ fail หรือไม่ ตาม failure_mode
+        
+        Args:
+            command: Command name
+            
+        Returns:
+            bool: True ถ้าควรจะ fail
+        """
+        if self.failure_mode == "always":
+            return True
+        elif self.failure_mode == "none":
+            return False
+        elif self.failure_mode == "random":
+            error_rate = self.error_rates.get(command, 0.1)
+            return random.random() < error_rate
+        else:
+            # Default to random
+            error_rate = self.error_rates.get(command, 0.1)
+            return random.random() < error_rate
+    
+    def set_failure_mode(self, mode: str):
+        """
+        เปลี่ยนโหมดการจำลอง error
+        
+        Args:
+            mode: "none", "random", หรือ "always"
+        """
+        if mode in ["none", "random", "always"]:
+            self.failure_mode = mode
+            print(f"🔧 Failure mode changed to: {mode}")
+        else:
+            print(f"⚠️  Invalid failure mode: {mode}. Use 'none', 'random', or 'always'")
+    
+    def set_error_rate(self, command: str, rate: float):
+        """
+        ตั้งค่า error rate สำหรับ command เฉพาะ
+        
+        Args:
+            command: Command name
+            rate: Error rate (0.0 - 1.0)
+        """
+        if command in self.error_rates:
+            self.error_rates[command] = max(0.0, min(1.0, rate))
+            print(f"🔧 Error rate for {command} set to: {rate * 100:.1f}%")
+        else:
+            print(f"⚠️  Unknown command: {command}")
+    
     def _signal_handler(self, signum, frame):
         """Handle shutdown signals"""
         print(f"\n🛑 รับสัญญาณ {signum} กำลังปิด simulator...")
@@ -154,10 +239,10 @@ class DeviceCommandSimulator:
         # Simulate processing time
         time.sleep(random.uniform(0.5, 1.5))
         
-        # Simulate 90% success rate
-        success = random.random() < 0.9
+        # Check if should fail based on failure mode
+        should_fail = self._should_fail('APPLY_CONFIG')
         
-        if success:
+        if not should_fail:
             print("✅ Configuration applied successfully")
             return True, {
                 "config_applied": config,
@@ -185,10 +270,10 @@ class DeviceCommandSimulator:
         # Simulate processing time
         time.sleep(0.5)
         
-        # Simulate 95% success rate
-        success = random.random() < 0.95
+        # Check if should fail based on failure mode
+        should_fail = self._should_fail('RESTART')
         
-        if success:
+        if not should_fail:
             print("✅ Restart command accepted")
             return True, {
                 "delay_seconds": delay_seconds,
@@ -223,10 +308,10 @@ class DeviceCommandSimulator:
         print("   ⏳ Downloading firmware...")
         time.sleep(random.uniform(1.0, 2.0))
         
-        # Simulate 85% success rate
-        success = random.random() < 0.85
+        # Check if should fail based on failure mode
+        should_fail = self._should_fail('UPDATE_FIRMWARE')
         
-        if success:
+        if not should_fail:
             print("✅ Firmware update started")
             return True, {
                 "version": version,
@@ -252,10 +337,10 @@ class DeviceCommandSimulator:
         # Simulate processing time
         time.sleep(random.uniform(0.5, 1.5))
         
-        # Simulate 92% success rate
-        success = random.random() < 0.92
+        # Check if should fail based on failure mode
+        should_fail = self._should_fail('RESET_CONFIG')
         
-        if success:
+        if not should_fail:
             print("✅ Configuration reset successfully")
             return True, {
                 "config_reset": config,
@@ -316,11 +401,14 @@ class DeviceCommandSimulator:
             "timestamp": int(time.time() * 1000)
         }
         
-        if result_data:
-            ack_payload["result"] = result_data
         
+        # เพิ่ม error message ถ้ามี
         if error:
             ack_payload["error"] = error
+        
+        # คำนวณ signature และเพิ่มเข้าไปใน payload
+        signature = self._calculate_signature(ack_payload)
+        ack_payload["sha256"] = signature
         
         try:
             result = self.client.publish(self.ack_topic, json.dumps(ack_payload), qos=1)
@@ -330,6 +418,7 @@ class DeviceCommandSimulator:
                 timestamp = datetime.now().strftime("%H:%M:%S")
                 status_emoji = "✅" if status == CommandStatus.SUCCESS else "❌"
                 print(f"[{timestamp}] 📤 {status_emoji} ACK sent: {command_id} - {status.value}")
+                print(f"   🔐 Signature: {signature[:16]}...")
             else:
                 print(f"❌ Failed to send ACK: {result.rc}")
         
@@ -387,6 +476,11 @@ class DeviceCommandSimulator:
         print(f"🔗 MQTT Broker: {self.broker_host}:{self.broker_port}")
         print(f"📡 Listening on: {self.command_topic}")
         print(f"📡 Listening on: {self.payment_topic}")
+        print(f"⚙️  Failure Mode: {self.failure_mode}")
+        if self.failure_mode == "random":
+            print(f"📊 Error Rates:")
+            for cmd, rate in self.error_rates.items():
+                print(f"   - {cmd}: {rate*100:.0f}%")
         print(f"{'='*60}")
         print("✅ Waiting for commands... (Press Ctrl+C to stop)")
         
@@ -462,12 +556,26 @@ def main():
         print("❌ Device ID is required")
         return
     
+    # Select failure mode
+    print("\n⚙️  Error Simulation Mode:")
+    print("1. ❌ None - Always success (no errors)")
+    print("2. 🎲 Random - Random failures based on error rates (default)")
+    print("3. 💥 Always - Always fail (for testing error handling)")
+    failure_choice = input("👉 Select mode (1-3, default: 2): ").strip() or "2"
+    
+    failure_modes = {
+        "1": "none",
+        "2": "random",
+        "3": "always"
+    }
+    failure_mode = failure_modes.get(failure_choice, "random")
+    
     # Load MQTT configuration
     broker_host, broker_port = load_docker_compose_config()
     print(f"🔗 MQTT Broker: {broker_host}:{broker_port}")
     
     # Initialize and start simulator
-    simulator = DeviceCommandSimulator(device_id, broker_host, broker_port)
+    simulator = DeviceCommandSimulator(device_id, broker_host, broker_port, failure_mode)
     simulator.start()
 
 if __name__ == "__main__":

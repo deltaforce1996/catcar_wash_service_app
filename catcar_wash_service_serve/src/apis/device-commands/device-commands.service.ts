@@ -2,8 +2,9 @@ import { Injectable, Logger } from '@nestjs/common';
 import { MqttCommandManagerService } from '../../services/adepters/mqtt-command-manager.service';
 import { PrismaService } from '../../database/prisma/prisma.service';
 import { ItemNotFoundException } from '../../errors';
-import { ApplyConfigDto, RestartDeviceDto, UpdateFirmwareDto, SendCustomCommandDto } from './dtos';
+import { RestartDeviceDto, UpdateFirmwareDto, SendCustomCommandDto } from './dtos';
 import type { MqttCommandAckResponse, CommandConfig, FirmwarePayload } from '../../types/mqtt-command-manager.types';
+import { DeviceType } from '@prisma/client';
 
 @Injectable()
 export class DeviceCommandsService {
@@ -31,20 +32,104 @@ export class DeviceCommandsService {
   }
 
   /**
+   * Get device with configs from database
+   */
+  private async getDeviceWithConfig(deviceId: string) {
+    const device = await this.prisma.tbl_devices.findUnique({
+      where: { id: deviceId },
+      select: {
+        id: true,
+        type: true,
+        configs: true,
+      },
+    });
+
+    if (!device) {
+      throw new ItemNotFoundException(`Device ${deviceId} not found`);
+    }
+
+    if (!device.configs) {
+      throw new ItemNotFoundException(`Device ${deviceId} has no configuration`);
+    }
+
+    return device;
+  }
+
+  /**
+   * Map database config to CommandConfig based on device type
+   */
+  private mapToCommandConfig(dbConfig: any, deviceType: DeviceType): CommandConfig {
+    const system = dbConfig.system || {};
+    const sale = dbConfig.sale || {};
+    const pricing = dbConfig.pricing || {};
+
+    // Machine config (common for both types)
+    const machine = {
+      ACTIVE: true,
+      BANKNOTE: system.payment_method?.bank_note ?? true,
+      COIN: system.payment_method?.coin ?? true,
+      QR: system.payment_method?.promptpay ?? true,
+      ON_TIME: system.on_time ?? '00:00',
+      OFF_TIME: system.off_time ?? '23:59',
+      SAVE_STATE: system.save_state ?? true,
+    };
+
+    const commandConfig: CommandConfig = { machine };
+
+    if (deviceType === DeviceType.WASH) {
+      // WASH device: has function with sec_per_baht
+      commandConfig.function = {
+        sec_per_baht: {
+          HP_WATER: sale.hp_water?.value ?? 10,
+          FOAM: sale.foam?.value ?? 10,
+          AIR: sale.air?.value ?? 10,
+          WATER: sale.water?.value ?? 10,
+          VACUUM: sale.vacuum?.value ?? 10,
+          BLACK_TIRE: sale.black_tire?.value ?? 10,
+          WAX: sale.wax?.value ?? 10,
+          AIR_FRESHENER: sale.air_conditioner?.value ?? 10,
+          PARKING_FEE: sale.parking_fee?.value ?? 10,
+        },
+      };
+    } else if (deviceType === DeviceType.DRYING) {
+      // DRYING device: has pricing, function_start, function_end
+      commandConfig.pricing = {
+        BASE_FEE: pricing.base_fee?.value ?? 10,
+        PROMOTION: pricing.promotion?.value ?? 0,
+        WORK_PERIOD: pricing.work_period?.value ?? 600,
+      };
+
+      commandConfig.function_start = {
+        DUST_BLOW: sale.blow_dust?.start ?? 0,
+        SANITIZE: sale.sterilize?.start ?? 100,
+        UV: sale.uv?.start ?? 200,
+        OZONE: sale.ozone?.start ?? 300,
+        DRY_BLOW: sale.drying?.start ?? 400,
+        PERFUME: sale.perfume?.start ?? 500,
+      };
+
+      commandConfig.function_end = {
+        DUST_BLOW: sale.blow_dust?.end ?? 100,
+        SANITIZE: sale.sterilize?.end ?? 200,
+        UV: sale.uv?.end ?? 300,
+        OZONE: sale.ozone?.end ?? 400,
+        DRY_BLOW: sale.drying?.end ?? 500,
+        PERFUME: sale.perfume?.end ?? 600,
+      };
+    }
+
+    return commandConfig;
+  }
+
+  /**
    * Apply configuration to device
    */
-  async applyConfig(deviceId: string, config: ApplyConfigDto): Promise<MqttCommandAckResponse<CommandConfig>> {
-    await this.verifyDevice(deviceId);
+  async applyConfig(deviceId: string): Promise<MqttCommandAckResponse<CommandConfig>> {
+    const device = await this.getDeviceWithConfig(deviceId);
 
-    this.logger.log(`Applying config to device: ${deviceId}`);
+    this.logger.log(`Applying config to device: ${deviceId} (type: ${device.type})`);
 
-    const commandConfig: CommandConfig = {
-      machine: config.machine,
-      function: config.function,
-      pricing: config.pricing,
-      function_start: config.function_start,
-      function_end: config.function_end,
-    };
+    const commandConfig = this.mapToCommandConfig(device.configs, device.type);
 
     const result = await this.mqttCommandManager.applyConfig(deviceId, commandConfig);
 
@@ -101,18 +186,12 @@ export class DeviceCommandsService {
   /**
    * Reset configuration on device
    */
-  async resetConfig(deviceId: string, config: ApplyConfigDto): Promise<MqttCommandAckResponse<CommandConfig>> {
-    await this.verifyDevice(deviceId);
+  async resetConfig(deviceId: string): Promise<MqttCommandAckResponse<CommandConfig>> {
+    const device = await this.getDeviceWithConfig(deviceId);
 
-    this.logger.log(`Resetting config for device: ${deviceId}`);
+    this.logger.log(`Resetting config for device: ${deviceId} (type: ${device.type})`);
 
-    const commandConfig: CommandConfig = {
-      machine: config.machine,
-      function: config.function,
-      pricing: config.pricing,
-      function_start: config.function_start,
-      function_end: config.function_end,
-    };
+    const commandConfig = this.mapToCommandConfig(device.configs, device.type);
 
     const result = await this.mqttCommandManager.resetConfig(deviceId, commandConfig);
 

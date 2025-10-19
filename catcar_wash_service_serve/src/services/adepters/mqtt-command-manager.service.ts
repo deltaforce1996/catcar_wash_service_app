@@ -1,4 +1,6 @@
 import { Injectable, Logger, OnModuleInit, OnModuleDestroy } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
+import * as crypto from 'crypto';
 import { MqttService, type MqttMessage } from '../../modules/mqtt/mqtt.service';
 import {
   MqttCommandPayload,
@@ -16,12 +18,18 @@ export class MqttCommandManagerService implements OnModuleInit, OnModuleDestroy 
   private readonly activeCommands = new Map<string, ActiveCommand>();
   private ackMessageHandler: ((message: MqttMessage) => void) | null = null;
   private eventAdapter: IMqttCommandEventAdapter;
+  private readonly secretKey: string;
 
   private readonly defaultTimeout = 30000; // 30 seconds
   private readonly defaultRetryAttempts = 3; // 3 attempts
   private readonly defaultRetryDelay = 1000; // 1 second between retries
 
-  constructor(private readonly mqttService: MqttService) {}
+  constructor(
+    private readonly mqttService: MqttService,
+    private readonly configService: ConfigService,
+  ) {
+    this.secretKey = this.configService.get<string>('app.deviceSecretKey', 'modernchabackdoor');
+  }
 
   async onModuleInit() {
     // Subscribe to all ACK responses from devices
@@ -124,6 +132,10 @@ export class MqttCommandManagerService implements OnModuleInit, OnModuleDestroy 
       payload: { chargeId, status: status as 'PENDING' | 'SUCCEEDED' | 'FAILED' | 'CANCELLED' },
       timestamp,
     };
+
+    // Add SHA256 signature
+    mqttPayload.sha256 = this.generateSignature(mqttPayload);
+
     try {
       await this.mqttService.publishJson(topic, mqttPayload, { qos: 1 });
       this.logger.log(`💳 Payment status sent: ${commandId} (${chargeId}) to device: ${chargeId}`);
@@ -154,6 +166,9 @@ export class MqttCommandManagerService implements OnModuleInit, OnModuleDestroy 
       payload,
       timestamp,
     };
+
+    // Add SHA256 signature
+    mqttPayload.sha256 = this.generateSignature(mqttPayload);
 
     try {
       // Send MQTT message
@@ -234,11 +249,61 @@ export class MqttCommandManagerService implements OnModuleInit, OnModuleDestroy 
         return;
       }
 
-      const { command_id, device_id, command, status, error }: any = ackResponse;
+      const { command_id, device_id, command, status, error, sha256 }: any = ackResponse;
 
       this.logger.log(
         `📥 ACK received: ${String(command_id)} (${String(command)}) from device: ${String(device_id)} - Status: ${String(status)}`,
       );
+
+      // Verify signature if present
+      if (sha256) {
+        const isValid = this.verifySignature(ackResponse, String(sha256));
+        if (!isValid) {
+          this.logger.warn(`⚠️ Invalid signature in ACK from device: ${String(device_id)}`);
+          this.logger.warn(`⚠️ Rejecting ACK for command: ${String(command_id)}`);
+
+          const activeCommand = this.activeCommands.get(String(command_id));
+          if (activeCommand) {
+            clearTimeout(activeCommand.timeout);
+            this.activeCommands.delete(String(command_id));
+
+            const errorResult: MqttCommandAckResponse<any> = {
+              command_id,
+              device_id,
+              command,
+              status: 'ERROR',
+              error: 'Invalid signature - ACK rejected',
+              timestamp: Date.now(),
+            };
+
+            this.eventAdapter?.emitCommandError(errorResult);
+            activeCommand.resolve(errorResult);
+          }
+        }
+        this.logger.debug(`✅ ACK signature verified for command: ${String(command_id)}`);
+      } else {
+        this.logger.warn(`⚠️ No signature in ACK from device: ${String(device_id)}`);
+        this.logger.warn(`⚠️ Rejecting ACK for command: ${String(command_id)}`);
+
+        const activeCommand = this.activeCommands.get(String(command_id));
+        if (activeCommand) {
+          clearTimeout(activeCommand.timeout);
+          this.activeCommands.delete(String(command_id));
+
+          const errorResult: MqttCommandAckResponse<any> = {
+            command_id,
+            device_id,
+            command,
+            status: 'ERROR',
+            error: 'No signature in ACK from device - ACK rejected',
+            timestamp: Date.now(),
+          };
+
+          this.eventAdapter?.emitCommandError(errorResult);
+          activeCommand.resolve(errorResult);
+        }
+        return;
+      }
 
       const activeCommand = this.activeCommands.get(String(command_id));
 
@@ -260,6 +325,7 @@ export class MqttCommandManagerService implements OnModuleInit, OnModuleDestroy 
         error: status !== 'SUCCESS' ? error || `Command failed with status: ${status}` : undefined,
         results: ackResponse,
         timestamp: Date.now(),
+        sha256,
       };
 
       // Emit events
@@ -298,5 +364,55 @@ export class MqttCommandManagerService implements OnModuleInit, OnModuleDestroy 
     const timestamp = Date.now();
     const random = Math.random().toString(36).substring(2, 15);
     return `cmd-${timestamp}-${random}`;
+  }
+
+  /**
+   * Generate SHA256 signature for payload
+   * According to PLAN-COMUNICATION.md:
+   * SHA256(JSON.stringify(payload) + SECRET_KEY)
+   */
+  private generateSignature(payload: any): string {
+    try {
+      // Remove sha256 field if it exists to avoid circular calculation
+      // eslint-disable-next-line @typescript-eslint/no-unused-vars
+      const { sha256, ...payloadWithoutSignature } = payload;
+      const payloadString = JSON.stringify(payloadWithoutSignature);
+      const combined = payloadString + this.secretKey;
+      const signature = crypto.createHash('sha256').update(combined, 'utf8').digest('hex');
+
+      this.logger.debug(`Generated signature for payload: ${payloadString.substring(0, 100)}...`);
+      return signature;
+    } catch (error) {
+      this.logger.error('Failed to generate signature:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Verify SHA256 signature from incoming message
+   */
+  private verifySignature(payload: any, receivedSignature: string): boolean {
+    try {
+      if (!receivedSignature) {
+        this.logger.warn('⚠️ No signature provided for verification');
+        return false;
+      }
+
+      const expectedSignature = this.generateSignature(payload);
+      const isValid = expectedSignature.toLowerCase() === receivedSignature.toLowerCase();
+
+      if (!isValid) {
+        this.logger.warn('⚠️ Signature verification failed');
+        this.logger.debug(`Expected: ${expectedSignature}`);
+        this.logger.debug(`Received: ${receivedSignature}`);
+      } else {
+        this.logger.debug('✅ Signature verified successfully');
+      }
+
+      return isValid;
+    } catch (error) {
+      this.logger.error('❌ Error during signature verification:', error);
+      return false;
+    }
   }
 }

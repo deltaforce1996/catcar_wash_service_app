@@ -1,4 +1,5 @@
 import { Injectable, CanActivate, ExecutionContext, UnauthorizedException, Logger } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
 import * as crypto from 'crypto';
 
 /**
@@ -6,17 +7,22 @@ import * as crypto from 'crypto';
  * ตรวจสอบ x-signature header จาก device requests
  * ตาม PLAN-COMUNICATION.md:
  *
- * SECRET_KEY = modernchabackdoor
+ * SECRET_KEY = modernchabackdoor (from app.deviceSecretKey config)
  * x-signature: SHA256( payload (raw JSON bytes) + SECRET_KEY)
  *
  * Example:
  * payload = {"device_id":"device-0004","amount":100,"payment_method":"QR_PROMPT_PAY","description":"Car wash payment"}
- * signature = SHA256(payload_string + "modernchabackdoor")
+ * signature = SHA256(payload_string + SECRET_KEY)
  */
 @Injectable()
 export class DeviceSignatureGuard implements CanActivate {
   private readonly logger = new Logger(DeviceSignatureGuard.name);
-  private readonly SECRET_KEY = 'modernchabackdoor';
+  private readonly SECRET_KEY: string;
+
+  constructor(private readonly configService: ConfigService) {
+    this.SECRET_KEY = this.configService.get<string>('app.deviceSecretKey', 'modernchabackdoor');
+    this.logger.log(`Device signature guard initialized with centralized SECRET_KEY from config`);
+  }
 
   canActivate(context: ExecutionContext): boolean {
     const request = context.switchToHttp().getRequest();

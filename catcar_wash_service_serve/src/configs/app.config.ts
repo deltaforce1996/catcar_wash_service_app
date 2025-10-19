@@ -6,4 +6,5 @@ export default registerAs('app', () => ({
   apiPrefix: process.env.API_PREFIX,
   version: process.env.VERSION,
   logLevel: process.env.LOG_LEVEL,
+  deviceSecretKey: process.env.DEVICE_SECRET_KEY ?? 'modernchabackdoor',
 }));
