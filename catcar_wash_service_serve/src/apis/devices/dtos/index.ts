@@ -4,4 +4,3 @@ export * from './update-basic-device.dto';
 export * from './update-device-configs.dto';
 export * from './device-registration.dto';
 export * from './sync-device-configs.dto';
-export * from '../../../types/device-config.types';

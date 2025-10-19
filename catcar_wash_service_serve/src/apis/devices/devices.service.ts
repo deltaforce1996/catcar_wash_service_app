@@ -328,32 +328,80 @@ export class DevicesService {
         };
       }
 
-      // Update sale configs - only update values, preserve unit and description
+      // Update sale configs - type-specific handling
       if (data.configs.sale) {
-        updatedConfigs = {
-          ...updatedConfigs,
-          sale: {
-            ...updatedConfigs?.sale,
-          },
-        };
+        if (existingDevice.type === DeviceType.WASH) {
+          // WASH device: Handle value-based parameters
+          updatedConfigs = {
+            ...updatedConfigs,
+            sale: {
+              ...updatedConfigs?.sale,
+            },
+          };
 
-        // Update only the value for each parameter
-        Object.keys(data.configs.sale).forEach((key) => {
-          if (data.configs?.sale?.[key] !== undefined) {
-            // Check if the parameter exists in the current config
-            if (updatedConfigs.sale[key]) {
-              updatedConfigs.sale[key] = {
-                ...updatedConfigs.sale[key],
-                value: data.configs.sale[key],
-              };
-            } else {
-              // If parameter doesn't exist, log a warning but don't add it
-              throw new ItemNotFoundException(
-                `Parameter '${key}' not found in device type '${existingDevice.type}' configuration`,
-              );
+          Object.keys(data.configs.sale).forEach((key) => {
+            const saleParam = data.configs?.sale?.[key];
+            if (saleParam !== undefined) {
+              // Check if the parameter exists in the current config
+              if (updatedConfigs.sale[key]) {
+                const currentParam = updatedConfigs.sale[key];
+
+                // Support both shorthand (number) and object format
+                if (typeof saleParam === 'number') {
+                  // Shorthand: "hp_water": 15
+                  updatedConfigs.sale[key] = {
+                    ...currentParam,
+                    value: saleParam,
+                  };
+                } else {
+                  // Object: "hp_water": { "value": 15 }
+                  updatedConfigs.sale[key] = {
+                    ...currentParam,
+                    ...(saleParam.value !== undefined && { value: saleParam.value }),
+                  };
+                }
+              } else {
+                // If parameter doesn't exist, throw error
+                throw new ItemNotFoundException(`Parameter '${key}' not found in WASH device configuration`);
+              }
             }
-          }
-        });
+          });
+        } else if (existingDevice.type === DeviceType.DRYING) {
+          // DRYING device: Handle start/end-based parameters
+          updatedConfigs = {
+            ...updatedConfigs,
+            sale: {
+              ...updatedConfigs?.sale,
+            },
+          };
+
+          Object.keys(data.configs.sale).forEach((key) => {
+            const saleParam = data.configs?.sale?.[key];
+            if (saleParam !== undefined) {
+              // Check if the parameter exists in the current config
+              if (updatedConfigs.sale[key]) {
+                // DRYING device requires object format with start/end
+                if (typeof saleParam === 'number') {
+                  throw new ItemNotFoundException(
+                    `Parameter '${key}' in DRYING device requires object format with start/end, not a number`,
+                  );
+                }
+
+                const currentParam = updatedConfigs.sale[key];
+                updatedConfigs.sale[key] = {
+                  ...currentParam,
+                  ...(saleParam.start !== undefined && { start: saleParam.start }),
+                  ...(saleParam.end !== undefined && { end: saleParam.end }),
+                };
+              } else {
+                // If parameter doesn't exist, throw error
+                throw new ItemNotFoundException(`Parameter '${key}' not found in DRYING device configuration`);
+              }
+            }
+          });
+        } else {
+          throw new ItemNotFoundException(`Unsupported device type: ${String(existingDevice.type)}`);
+        }
       }
 
       // Update pricing configs
@@ -373,7 +421,7 @@ export class DevicesService {
                 value: data.configs.pricing[key],
               };
             } else {
-              // If parameter doesn't exist, log a warning but don't add it
+              // If parameter doesn't exist, throw error
               throw new ItemNotFoundException(
                 `Parameter '${key}' not found in device type '${existingDevice.type}' pricing configuration`,
               );
