@@ -2,9 +2,17 @@ import { Injectable, Logger } from '@nestjs/common';
 import { DeviceStatus, DeviceType, PermissionType, Prisma } from '@prisma/client';
 import { PrismaService } from 'src/database/prisma/prisma.service';
 import { ItemNotFoundException } from 'src/errors';
-import { UpdateDeviceBasicDto, CreateDeviceDto, SearchDeviceDto, UpdateDeviceConfigsDto } from './dtos/index';
+import {
+  UpdateDeviceBasicDto,
+  CreateDeviceDto,
+  SearchDeviceDto,
+  UpdateDeviceConfigsDto,
+  SyncDeviceConfigsDto,
+} from './dtos/index';
 import { parseKeyValueOnly } from 'src/shared/kv-parser';
 import { AuthenticatedUser, DeviceInfo, PaginatedResult } from 'src/types/internal.type';
+import { DeviceWashConfig } from 'src/shared/device-wash-config';
+import { DeviceDryingConfig } from 'src/shared/device-drying-config';
 
 export const devicePublicSelect = Prisma.validator<Prisma.tbl_devicesSelect>()({
   id: true,
@@ -72,9 +80,9 @@ export class DevicesService {
     //TODO: Verify that the device exists and get devic type
     const tag = firmware_version.split('_')[0];
     if (tag.includes('carwash')) {
-      return { type: DeviceType.WASH, default_name: 'เครื่องล้างรถเครื่อใหม่' };
+      return { type: DeviceType.WASH, default_name: 'เครื่องล้างรถเครื่องใหม่' };
     } else if (tag.includes('helmet')) {
-      return { type: DeviceType.DRYING, default_name: 'เครื่องอบแห้งหมวกกันน็อคเครื่อใหม่' };
+      return { type: DeviceType.DRYING, default_name: 'เครื่องอบแห้งหมวกกันน็อคเครื่องใหม่' };
     } else {
       throw new ItemNotFoundException('Invalid firmware version');
     }
@@ -384,5 +392,61 @@ export class DevicesService {
     });
 
     return device;
+  }
+
+  async syncConfigsById(device_id: string, data: SyncDeviceConfigsDto): Promise<void> {
+    // Get device and check if exists
+    const device = await this.prisma.tbl_devices.findUnique({
+      where: { id: device_id },
+      select: { id: true, type: true },
+    });
+
+    if (!device) {
+      throw new ItemNotFoundException('Device not found');
+    }
+
+    // Parse configs based on device type
+    let structuredConfig: any;
+
+    if (device.type === DeviceType.WASH) {
+      // Create payload structure expected by DeviceWashConfig
+      const washPayload = {
+        configs: {
+          machine: data.configs.machine,
+          pricing: {
+            PROMOTION: data.configs.pricing.PROMOTION ?? 0,
+          },
+          function: data.configs.function!,
+        },
+      };
+      const washConfig = new DeviceWashConfig(washPayload);
+      structuredConfig = washConfig.configs;
+    } else if (device.type === DeviceType.DRYING) {
+      // Create payload structure expected by DeviceDryingConfig
+      const dryingPayload = {
+        configs: {
+          machine: data.configs.machine,
+          pricing: {
+            BASE_FEE: data.configs.pricing.BASE_FEE ?? 0,
+            PROMOTION: data.configs.pricing.PROMOTION ?? 0,
+            WORK_PERIOD: data.configs.pricing.WORK_PERIOD ?? 0,
+          },
+          function_start: data.configs.function_start!,
+          function_end: data.configs.function_end!,
+        },
+      };
+      const dryingConfig = new DeviceDryingConfig(dryingPayload);
+      structuredConfig = dryingConfig.configs;
+    } else {
+      throw new ItemNotFoundException(`Unsupported device type: ${String(device.type)}`);
+    }
+
+    // Update configs in database
+    await this.prisma.tbl_devices.update({
+      where: { id: device_id },
+      data: {
+        configs: structuredConfig,
+      },
+    });
   }
 }

@@ -1,16 +1,4 @@
-import {
-  Body,
-  Controller,
-  Get,
-  Param,
-  Post,
-  Put,
-  Query,
-  UseFilters,
-  UseGuards,
-  Sse,
-  MessageEvent,
-} from '@nestjs/common';
+import { Body, Controller, Get, Param, Post, Put, Query, UseFilters, UseGuards, Sse } from '@nestjs/common';
 import { Observable } from 'rxjs';
 import { DeviceRow, DeviceWithoutRefRow, DevicesService } from './devices.service';
 import { AllExceptionFilter } from 'src/common';
@@ -23,10 +11,12 @@ import {
   SearchDeviceDto,
   UpdateDeviceConfigsDto,
   DeviceNeedRegisterDto,
+  SyncDeviceConfigsDto,
 } from './dtos/index';
 import { UserAuth } from '../auth/decorators';
 import type { AuthenticatedUser } from 'src/types/internal.type';
 import { DeviceRegistrationService, DeviceRegistrationEventAdapter } from '../../services';
+import { DeviceSignatureGuard } from '../payment-gateway/guards/device-signature.guard';
 
 type DevicePublicResponse = PaginatedResult<DeviceRow | DeviceWithoutRefRow>;
 
@@ -130,6 +120,20 @@ export class DevicesController {
         device_id: device.id,
       },
       message: 'Device registration session created successfully',
+    };
+  }
+
+  // Device Sync Configs Endpoint (without JWT guard, use signature guard)
+  @Post('sync-configs/:device_id')
+  @UseGuards(DeviceSignatureGuard)
+  async syncDeviceConfigs(
+    @Param('device_id') deviceId: string,
+    @Body() data: SyncDeviceConfigsDto,
+  ): Promise<SuccessResponse<void>> {
+    await this.devicesService.syncConfigsById(deviceId, data);
+    return {
+      success: true,
+      message: 'Device configs synced successfully',
     };
   }
 
