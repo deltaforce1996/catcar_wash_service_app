@@ -4,7 +4,7 @@ import { PrismaService } from 'src/database/prisma/prisma.service';
 import { ItemNotFoundException } from 'src/errors';
 import { UpdateDeviceBasicDto, CreateDeviceDto, SearchDeviceDto, UpdateDeviceConfigsDto } from './dtos/index';
 import { parseKeyValueOnly } from 'src/shared/kv-parser';
-import { AuthenticatedUser, PaginatedResult } from 'src/types/internal.type';
+import { AuthenticatedUser, DeviceInfo, PaginatedResult } from 'src/types/internal.type';
 
 export const devicePublicSelect = Prisma.validator<Prisma.tbl_devicesSelect>()({
   id: true,
@@ -66,6 +66,18 @@ export class DevicesService {
 
   constructor(private readonly prisma: PrismaService) {
     this.logger.log('DevicesService initialized');
+  }
+
+  private getDeviceType(firmware_version: string): { type: DeviceType; default_name: string } {
+    //TODO: Verify that the device exists and get devic type
+    const tag = firmware_version.split('_')[0];
+    if (tag.includes('carwash')) {
+      return { type: DeviceType.WASH, default_name: 'เครื่องล้างรถเครื่อใหม่' };
+    } else if (tag.includes('helmet')) {
+      return { type: DeviceType.DRYING, default_name: 'เครื่องอบแห้งหมวกกันน็อคเครื่อใหม่' };
+    } else {
+      throw new ItemNotFoundException('Invalid firmware version');
+    }
   }
 
   async searchDevices(
@@ -180,7 +192,46 @@ export class DevicesService {
     return device;
   }
 
-  async createDevice(data: CreateDeviceDto): Promise<DeviceRow> {
+  async intialDevice(information: DeviceInfo): Promise<DeviceRow> {
+    //TODO: Verify that the device exists and get devic type
+    const { type, default_name } = this.getDeviceType(information.firmware_version);
+
+    // Check if device with the same chip_id already exists
+    const existingDevice = await this.prisma.tbl_devices.findFirst({
+      where: {
+        information: {
+          path: ['chip_id'],
+          equals: information.chip_id,
+        },
+      },
+      select: devicePublicSelect,
+    });
+
+    // If device with same chip_id exists, return it
+    if (existingDevice) {
+      this.logger.log(`Device with chip_id ${information.chip_id} already exists, returning existing device`);
+      return existingDevice;
+    }
+
+    const tempDeviceId = `device-${information.chip_id}`;
+
+    // Create new device if chip_id doesn't exist
+    const device = await this.prisma.tbl_devices.create({
+      data: {
+        id: tempDeviceId,
+        type: type,
+        name: default_name,
+        information: information,
+        owner_id: 'device-intial',
+        register_by_id: 'device-intial',
+        status: DeviceStatus.DEPLOYED,
+      },
+      select: devicePublicSelect,
+    });
+    return device;
+  }
+
+  async assignDeviceToEmployee(data: CreateDeviceDto): Promise<DeviceRow> {
     // Verify that the owner exists
     const owner = await this.prisma.tbl_users.findUnique({
       where: { id: data.owner_id },
@@ -199,19 +250,23 @@ export class DevicesService {
       throw new ItemNotFoundException('Employee not found');
     }
 
-    const device = await this.prisma.tbl_devices.create({
-      data: {
+    // Upsert (insert or update) a device record based on the provided data
+    const device = await this.prisma.tbl_devices.upsert({
+      where: { id: data.id },
+      update: {
+        name: data.name,
+        owner_id: data.owner_id,
+        register_by_id: data.register_by,
+      },
+      create: {
         id: data.id,
         name: data.name,
         type: data.type,
-        information: data.information as any,
-        configs: data.configs as any,
         owner_id: data.owner_id,
         register_by_id: data.register_by,
       },
       select: devicePublicSelect,
     });
-
     return device;
   }
 

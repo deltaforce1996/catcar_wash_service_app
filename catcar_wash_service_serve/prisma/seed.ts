@@ -237,6 +237,54 @@ const generate = async () => {
     },
   });
 
+  // Create system user for initial device registration
+  const deviceInitialUser = await prisma.tbl_users.upsert({
+    where: { email: 'device-initial@system.catcarwash.com' },
+    update: {
+      id: 'device-intial',
+      fullname: 'System - Device Initial Owner',
+      email: 'device-initial@system.catcarwash.com',
+      password: hashedPassword,
+      permission_id: userPermission.id,
+      status: 'ACTIVE',
+      custom_name: 'ระบบ - อุปกรณ์รอการกำหนดเจ้าของ',
+      address: 'System Address',
+    },
+    create: {
+      id: 'device-intial',
+      fullname: 'System - Device Initial Owner',
+      email: 'device-initial@system.catcarwash.com',
+      password: hashedPassword,
+      permission_id: userPermission.id,
+      status: 'ACTIVE',
+      custom_name: 'ระบบ - อุปกรณ์รอการกำหนดเจ้าของ',
+      address: 'System Address',
+    },
+  });
+
+  // Create system employee for initial device registration
+  const deviceInitialEmp = await prisma.tbl_emps.upsert({
+    where: { email: 'device-initial-emp@system.catcarwash.com' },
+    update: {
+      id: 'device-intial',
+      name: 'System - Device Initial Registrar',
+      email: 'device-initial-emp@system.catcarwash.com',
+      password: hashedPassword,
+      permission_id: adminPermission.id,
+      status: 'ACTIVE',
+      address: 'System Address',
+    },
+    create: {
+      id: 'device-intial',
+      name: 'System - Device Initial Registrar',
+      email: 'device-initial-emp@system.catcarwash.com',
+      password: hashedPassword,
+      permission_id: adminPermission.id,
+      status: 'ACTIVE',
+      address: 'System Address',
+    },
+  });
+
   const washConfig = new DeviceWashConfig({
     configs: {
       machine: {
@@ -471,6 +519,8 @@ const generate = async () => {
   console.log(`Technician employee created with ID: ${technician.id}`);
   console.log(`User created with ID: ${user.id}`);
   console.log(`User 2 created with ID: ${user2.id}`);
+  console.log(`Device Initial System User created with ID: ${deviceInitialUser.id}`);
+  console.log(`Device Initial System Employee created with ID: ${deviceInitialEmp.id}`);
   console.log(`Devices created: ${devicesUser.count}`);
   console.log(`Devices created: ${devicesUser2.count}`);
   console.log(`Logs events created: ${newLogsEvents.count}`);

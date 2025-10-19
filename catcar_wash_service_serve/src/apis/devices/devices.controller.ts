@@ -70,7 +70,7 @@ export class DevicesController {
   @Post('create')
   @UseGuards(JwtAuthGuard)
   async createDevice(@Body() data: CreateDeviceDto): Promise<SuccessResponse<DeviceRow>> {
-    const result = await this.devicesService.createDevice(data);
+    const result = await this.devicesService.assignDeviceToEmployee(data);
     return {
       success: true,
       data: result,
@@ -109,21 +109,25 @@ export class DevicesController {
   // Device Registration Endpoints (without JWT guard for device requests)
   @Post('need-register')
   @UseFilters(AllExceptionFilter)
-  deviceNeedRegister(@Body() data: DeviceNeedRegisterDto): SuccessResponse<{ pin: string; device_id: string }> {
-    // Generate a temporary device_id for tracking (will be replaced when actually registered)
-    const tempDeviceId = `temp-${data.chip_id}`;
+  async deviceNeedRegister(
+    @Body() data: DeviceNeedRegisterDto,
+  ): Promise<SuccessResponse<{ pin: string; device_id: string }>> {
+    // Initialize device first (will return existing device if chip_id already exists)
+    const device = await this.devicesService.intialDevice(data);
+
+    // Create registration session with the actual device_id
     const session = this.deviceRegistrationService.createRegistrationSession(
       data.chip_id,
       data.mac_address,
       data.firmware_version,
-      tempDeviceId,
+      device.id,
     );
 
     return {
       success: true,
       data: {
         pin: session.pin,
-        device_id: tempDeviceId,
+        device_id: device.id,
       },
       message: 'Device registration session created successfully',
     };
