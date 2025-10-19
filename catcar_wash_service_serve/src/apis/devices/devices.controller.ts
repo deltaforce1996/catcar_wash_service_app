@@ -1,16 +1,4 @@
-import {
-  Body,
-  Controller,
-  Get,
-  Param,
-  Post,
-  Put,
-  Query,
-  UseFilters,
-  UseGuards,
-  Sse,
-  MessageEvent,
-} from '@nestjs/common';
+import { Body, Controller, Get, Param, Post, Put, Query, UseFilters, UseGuards, Sse } from '@nestjs/common';
 import { Observable } from 'rxjs';
 import { DeviceRow, DeviceWithoutRefRow, DevicesService } from './devices.service';
 import { AllExceptionFilter } from 'src/common';
@@ -23,10 +11,12 @@ import {
   SearchDeviceDto,
   UpdateDeviceConfigsDto,
   DeviceNeedRegisterDto,
+  SyncDeviceConfigsDto,
 } from './dtos/index';
 import { UserAuth } from '../auth/decorators';
 import type { AuthenticatedUser } from 'src/types/internal.type';
 import { DeviceRegistrationService, DeviceRegistrationEventAdapter } from '../../services';
+import { DeviceSignatureGuard } from '../payment-gateway/guards/device-signature.guard';
 
 type DevicePublicResponse = PaginatedResult<DeviceRow | DeviceWithoutRefRow>;
 
@@ -70,7 +60,7 @@ export class DevicesController {
   @Post('create')
   @UseGuards(JwtAuthGuard)
   async createDevice(@Body() data: CreateDeviceDto): Promise<SuccessResponse<DeviceRow>> {
-    const result = await this.devicesService.createDevice(data);
+    const result = await this.devicesService.assignDeviceToEmployee(data);
     return {
       success: true,
       data: result,
@@ -109,23 +99,41 @@ export class DevicesController {
   // Device Registration Endpoints (without JWT guard for device requests)
   @Post('need-register')
   @UseFilters(AllExceptionFilter)
-  deviceNeedRegister(@Body() data: DeviceNeedRegisterDto): SuccessResponse<{ pin: string; device_id: string }> {
-    // Generate a temporary device_id for tracking (will be replaced when actually registered)
-    const tempDeviceId = `temp-${data.chip_id}`;
+  async deviceNeedRegister(
+    @Body() data: DeviceNeedRegisterDto,
+  ): Promise<SuccessResponse<{ pin: string; device_id: string }>> {
+    // Initialize device first (will return existing device if chip_id already exists)
+    const device = await this.devicesService.intialDevice(data);
+
+    // Create registration session with the actual device_id
     const session = this.deviceRegistrationService.createRegistrationSession(
       data.chip_id,
       data.mac_address,
       data.firmware_version,
-      tempDeviceId,
+      device.id,
     );
 
     return {
       success: true,
       data: {
         pin: session.pin,
-        device_id: tempDeviceId,
+        device_id: device.id,
       },
       message: 'Device registration session created successfully',
+    };
+  }
+
+  // Device Sync Configs Endpoint (without JWT guard, use signature guard)
+  @Post('sync-configs/:device_id')
+  @UseGuards(DeviceSignatureGuard)
+  async syncDeviceConfigs(
+    @Param('device_id') deviceId: string,
+    @Body() data: SyncDeviceConfigsDto,
+  ): Promise<SuccessResponse<void>> {
+    await this.devicesService.syncConfigsById(deviceId, data);
+    return {
+      success: true,
+      message: 'Device configs synced successfully',
     };
   }
 

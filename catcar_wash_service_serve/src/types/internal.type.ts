@@ -59,6 +59,7 @@ export type GlobalSetup = {
 };
 
 export type DeviceInfo = {
+  chip_id: string;
   mac_address: string;
   firmware_version: string;
 };

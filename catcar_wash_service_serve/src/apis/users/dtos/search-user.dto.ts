@@ -28,4 +28,8 @@ export class SearchUserDto {
   @IsBoolean()
   @IsOptional()
   exclude_device_counts?: boolean = false;
+
+  @IsString()
+  @IsOptional()
+  is_minimal?: boolean = false;
 }

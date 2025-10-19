@@ -94,18 +94,19 @@ export interface SearchDevicesRequest {
   exclude_all_ref_table?: boolean; // true if need full response false if need only device (For select device only)
 }
 
+export interface DeviceInfoPayload {
+  mac_address: string;
+  chip_id: string;
+  firmware_version: string;
+}
+
 export interface CreateDevicePayload {
+  id: string;
   name: string;
   type: EnumDeviceType;
   owner_id: string;
   register_by: string;
-  information?: {
-    description: string;
-    mac_address: string;
-    chip_id: string;
-    model: string;
-    firmware_version: string;
-  };
+  information: DeviceInfoPayload;
   configs?: unknown;
 }
 
@@ -235,7 +236,7 @@ export interface DeviceRegistrationSession {
   chip_id: string;
   mac_address: string;
   firmware_version: string;
-  device_id?: string;
+  device_id: string;
   created_at: string;
   expires_at: string;
 }

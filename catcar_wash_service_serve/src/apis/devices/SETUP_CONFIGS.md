@@ -32,22 +32,48 @@ Updates device configuration values only. This endpoint preserves existing unit 
 - `start_service_fee` - Starting service fee
 - `promotion` - Discount percentage
 
-**Request Body:**
+**Request Body Format:**
+
+For **WASH devices** (value-based, shorthand):
 ```json
 {
   "configs": {
-    "system": {
-      "on_time": "06:00",
-      "off_time": "22:00",
-      "payment_method": {
-        "coin": true,
-        "promptpay": true,
-        "bank_note": false
-      }
-    },
+    "system": { ... },
     "sale": {
       "hp_water": 30,
       "foam": 15
+    },
+    "pricing": {
+      "promotion": 10
+    }
+  }
+}
+```
+
+Or explicit format:
+```json
+{
+  "configs": {
+    "sale": {
+      "hp_water": { "value": 30 },
+      "foam": { "value": 15 }
+    }
+  }
+}
+```
+
+For **DRYING devices** (time range-based):
+```json
+{
+  "configs": {
+    "system": { ... },
+    "sale": {
+      "uv": { "start": 200, "end": 300 },
+      "ozone": { "start": 300, "end": 400 }
+    },
+    "pricing": {
+      "base_fee": 10,
+      "work_period": 600
     }
   }
 }
@@ -55,29 +81,39 @@ Updates device configuration values only. This endpoint preserves existing unit 
 
 ## Examples
 
-### Example 1: Update WASH Device Values Only
+### Example 1: Update WASH Device Sale Configs (Shorthand)
 ```json
 {
   "configs": {
     "sale": {
       "hp_water": 35,
       "foam": 20,
-      "vacuum": 65,
-      "promotion": 15
+      "vacuum": 65
     }
   }
 }
 ```
 
-### Example 2: Update DRYING Device Values Only
+### Example 2: Update DRYING Device Sale Configs
 ```json
 {
   "configs": {
     "sale": {
-      "blow_dust": 25,
-      "sterilize": 35,
-      "start_service_fee": 25,
-      "promotion": 20
+      "blow_dust": { "start": 0, "end": 25 },
+      "sterilize": { "start": 25, "end": 60 },
+      "uv": { "start": 60, "end": 90 }
+    }
+  }
+}
+```
+
+### Example 2b: Update DRYING Partial Config (start or end only)
+```json
+{
+  "configs": {
+    "sale": {
+      "uv": { "end": 300 },
+      "ozone": { "start": 300 }
     }
   }
 }
@@ -100,7 +136,7 @@ Updates device configuration values only. This endpoint preserves existing unit 
 }
 ```
 
-### Example 4: Mixed Update (System + Sale)
+### Example 4: Mixed Update for WASH Device
 ```json
 {
   "configs": {
@@ -108,8 +144,28 @@ Updates device configuration values only. This endpoint preserves existing unit 
       "on_time": "08:00"
     },
     "sale": {
-      "hp_water": 40,
-      "promotion": 20
+      "hp_water": 40
+    },
+    "pricing": {
+      "promotion": 10
+    }
+  }
+}
+```
+
+### Example 5: Mixed Update for DRYING Device
+```json
+{
+  "configs": {
+    "system": {
+      "on_time": "08:00"
+    },
+    "sale": {
+      "uv": { "start": 200, "end": 300 }
+    },
+    "pricing": {
+      "base_fee": 15,
+      "promotion": 10
     }
   }
 }
@@ -144,7 +200,24 @@ Updates device configuration values only. This endpoint preserves existing unit 
         "hp_water": {
           "value": 30,
           "unit": "วินาที",
-          "description": "ปริมาณน้ำ"
+          "description": "น้ำแรงดันสูง"
+        },
+        "foam": {
+          "value": 15,
+          "unit": "วินาที",
+          "description": "โฟม"
+        }
+      },
+      "pricing": {
+        "base_fee": {
+          "value": 10,
+          "unit": "บาท",
+          "description": "ค่าบริการเริ่มต้น"
+        },
+        "work_period": {
+          "value": 600,
+          "unit": "วินาที",
+          "description": "ระยะเวลาการทำงาน"
         }
       }
     },
@@ -164,16 +237,46 @@ Updates device configuration values only. This endpoint preserves existing unit 
 }
 ```
 
+## Configuration Structure
+
+### Sale Configuration
+
+Sale parameters have **different structures** based on device type:
+
+#### WASH Devices (value-based):
+- Each parameter has a single `value` (in seconds per baht)
+- `unit` and `description` are preserved and cannot be updated
+- **Shorthand format (recommended)**: `"hp_water": 30`
+- **Explicit format**: `"hp_water": { "value": 30 }`
+- Both formats work the same way
+
+#### DRYING Devices (time range-based):
+- Each parameter has `start` and `end` values (in seconds)
+- `unit` and `description` are preserved and cannot be updated
+- You can update `start`, `end`, or both
+- Structure: `{ "parameter_name": { "start"?: number, "end"?: number } }`
+- Example: `"uv": { "start": 200, "end": 300 }`
+
+### Pricing Configuration
+Pricing parameters use a simple value structure:
+- Send only the numeric value to update
+- `unit` and `description` are preserved and cannot be updated
+- Structure: Send `number` directly (e.g., `"base_fee": 10`)
+- Works the same for both WASH and DRYING devices
+
 ## Key Features
 
-1. **Type-Specific Configuration**: Different parameters available for WASH vs DRYING devices.
-2. **Simple Key:Value Format**: Use simple key:value pairs for easy parameter updates.
-3. **Value-Only Updates**: Can only update parameter values, preserving existing unit and description.
-4. **Preserve Structure**: Maintains existing configuration structure while updating only values.
+1. **Type-Specific Configuration**: Different parameters and structures for WASH vs DRYING devices.
+2. **Flexible Sale Updates**: 
+   - WASH devices: Use shorthand `"hp_water": 30` or explicit `"hp_water": { "value": 30 }`
+   - DRYING devices: Update `start`, `end`, or both `"uv": { "start": 200, "end": 300 }`
+3. **Simple Pricing Updates**: Update pricing with simple numeric values.
+4. **Preserve Metadata**: Unit and description fields are automatically preserved.
 5. **Partial Updates**: Allows updating only specific parameters without affecting others.
 6. **System Configuration**: Can update operating hours and payment methods.
 7. **Safe Updates**: Prevents accidental changes to unit and description fields.
-8. **Parameter Validation**: Warns when trying to update parameters that don't exist for the device type.
+8. **Parameter Validation**: Throws error when trying to update parameters that don't exist for the device type.
+9. **Auto-Detection**: Automatically detects device structure (value vs start/end) and updates accordingly.
 
 ## Error Handling
 

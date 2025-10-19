@@ -176,6 +176,12 @@
                       <v-card-text>
                         <v-list density="compact">
                           <v-list-item>
+                            <v-list-item-title>Device ID</v-list-item-title>
+                            <template #append>
+                              <span class="text-caption">{{ session.raw.device_id }}</span>
+                            </template>
+                          </v-list-item>
+                          <v-list-item>
                             <v-list-item-title>MAC Address</v-list-item-title>
                             <template #append>
                               <span class="text-caption">{{ session.raw.mac_address }}</span>
@@ -308,6 +314,7 @@ const toggleScanning = () => {
   } else {
     startScanning({
       onConnected: () => {
+        console.log('Connected to device registration service', state.value.sessions)
         addEventLog('success', 'Connected to device registration service')
       },
       onDisconnected: () => {

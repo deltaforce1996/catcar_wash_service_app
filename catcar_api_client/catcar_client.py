@@ -128,11 +128,14 @@ def generate_random_data():
     mac_parts = [f"{random.randint(0, 255):02x}" for _ in range(6)]
     mac_address = ":".join(mac_parts).upper()
     
-    # สร้าง Firmware Version สุ่ม (รูปแบบ: vX.X.X)
-    major = random.randint(1, 5)
-    minor = random.randint(0, 9)
-    patch = random.randint(0, 99)
-    firmware_version = f"v{major}.{minor}.{patch}"
+    # สร้าง Firmware Version สุ่ม (รูปแบบ: carwash_HW_X.X_VX.X.X หรือ helmet_HW_X.X_VX.X.X)
+    device_type = random.choice(['carwash', 'helmet'])
+    hw_major = random.randint(1, 3)
+    hw_minor = random.randint(0, 9)
+    sw_major = random.randint(1, 5)
+    sw_minor = random.randint(0, 9)
+    sw_patch = random.randint(0, 99)
+    firmware_version = f"{device_type}_HW_{hw_major}.{hw_minor}_V{sw_major}.{sw_minor}.{sw_patch}"
     
     return chip_id, mac_address, firmware_version
 

@@ -2,9 +2,17 @@ import { Injectable, Logger } from '@nestjs/common';
 import { DeviceStatus, DeviceType, PermissionType, Prisma } from '@prisma/client';
 import { PrismaService } from 'src/database/prisma/prisma.service';
 import { ItemNotFoundException } from 'src/errors';
-import { UpdateDeviceBasicDto, CreateDeviceDto, SearchDeviceDto, UpdateDeviceConfigsDto } from './dtos/index';
+import {
+  UpdateDeviceBasicDto,
+  CreateDeviceDto,
+  SearchDeviceDto,
+  UpdateDeviceConfigsDto,
+  SyncDeviceConfigsDto,
+} from './dtos/index';
 import { parseKeyValueOnly } from 'src/shared/kv-parser';
-import { AuthenticatedUser, PaginatedResult } from 'src/types/internal.type';
+import { AuthenticatedUser, DeviceInfo, PaginatedResult } from 'src/types/internal.type';
+import { DeviceWashConfig } from 'src/shared/device-wash-config';
+import { DeviceDryingConfig } from 'src/shared/device-drying-config';
 
 export const devicePublicSelect = Prisma.validator<Prisma.tbl_devicesSelect>()({
   id: true,
@@ -66,6 +74,18 @@ export class DevicesService {
 
   constructor(private readonly prisma: PrismaService) {
     this.logger.log('DevicesService initialized');
+  }
+
+  private getDeviceType(firmware_version: string): { type: DeviceType; default_name: string } {
+    //TODO: Verify that the device exists and get devic type
+    const tag = firmware_version.split('_')[0];
+    if (tag.includes('carwash')) {
+      return { type: DeviceType.WASH, default_name: 'เครื่องล้างรถเครื่องใหม่' };
+    } else if (tag.includes('helmet')) {
+      return { type: DeviceType.DRYING, default_name: 'เครื่องอบแห้งหมวกกันน็อคเครื่องใหม่' };
+    } else {
+      throw new ItemNotFoundException('Invalid firmware version');
+    }
   }
 
   async searchDevices(
@@ -180,7 +200,46 @@ export class DevicesService {
     return device;
   }
 
-  async createDevice(data: CreateDeviceDto): Promise<DeviceRow> {
+  async intialDevice(information: DeviceInfo): Promise<DeviceRow> {
+    //TODO: Verify that the device exists and get devic type
+    const { type, default_name } = this.getDeviceType(information.firmware_version);
+
+    // Check if device with the same chip_id already exists
+    const existingDevice = await this.prisma.tbl_devices.findFirst({
+      where: {
+        information: {
+          path: ['chip_id'],
+          equals: information.chip_id,
+        },
+      },
+      select: devicePublicSelect,
+    });
+
+    // If device with same chip_id exists, return it
+    if (existingDevice) {
+      this.logger.log(`Device with chip_id ${information.chip_id} already exists, returning existing device`);
+      return existingDevice;
+    }
+
+    const tempDeviceId = `device-${information.chip_id}`;
+
+    // Create new device if chip_id doesn't exist
+    const device = await this.prisma.tbl_devices.create({
+      data: {
+        id: tempDeviceId,
+        type: type,
+        name: default_name,
+        information: information,
+        owner_id: 'device-intial',
+        register_by_id: 'device-intial',
+        status: DeviceStatus.DEPLOYED,
+      },
+      select: devicePublicSelect,
+    });
+    return device;
+  }
+
+  async assignDeviceToEmployee(data: CreateDeviceDto): Promise<DeviceRow> {
     // Verify that the owner exists
     const owner = await this.prisma.tbl_users.findUnique({
       where: { id: data.owner_id },
@@ -199,18 +258,23 @@ export class DevicesService {
       throw new ItemNotFoundException('Employee not found');
     }
 
-    const device = await this.prisma.tbl_devices.create({
-      data: {
+    // Upsert (insert or update) a device record based on the provided data
+    const device = await this.prisma.tbl_devices.upsert({
+      where: { id: data.id },
+      update: {
+        name: data.name,
+        owner_id: data.owner_id,
+        register_by_id: data.register_by,
+      },
+      create: {
+        id: data.id,
         name: data.name,
         type: data.type,
-        information: data.information,
-        configs: data.configs as any,
         owner_id: data.owner_id,
         register_by_id: data.register_by,
       },
       select: devicePublicSelect,
     });
-
     return device;
   }
 
@@ -264,32 +328,80 @@ export class DevicesService {
         };
       }
 
-      // Update sale configs - only update values, preserve unit and description
+      // Update sale configs - type-specific handling
       if (data.configs.sale) {
-        updatedConfigs = {
-          ...updatedConfigs,
-          sale: {
-            ...updatedConfigs?.sale,
-          },
-        };
+        if (existingDevice.type === DeviceType.WASH) {
+          // WASH device: Handle value-based parameters
+          updatedConfigs = {
+            ...updatedConfigs,
+            sale: {
+              ...updatedConfigs?.sale,
+            },
+          };
 
-        // Update only the value for each parameter
-        Object.keys(data.configs.sale).forEach((key) => {
-          if (data.configs?.sale?.[key] !== undefined) {
-            // Check if the parameter exists in the current config
-            if (updatedConfigs.sale[key]) {
-              updatedConfigs.sale[key] = {
-                ...updatedConfigs.sale[key],
-                value: data.configs.sale[key],
-              };
-            } else {
-              // If parameter doesn't exist, log a warning but don't add it
-              throw new ItemNotFoundException(
-                `Parameter '${key}' not found in device type '${existingDevice.type}' configuration`,
-              );
+          Object.keys(data.configs.sale).forEach((key) => {
+            const saleParam = data.configs?.sale?.[key];
+            if (saleParam !== undefined) {
+              // Check if the parameter exists in the current config
+              if (updatedConfigs.sale[key]) {
+                const currentParam = updatedConfigs.sale[key];
+
+                // Support both shorthand (number) and object format
+                if (typeof saleParam === 'number') {
+                  // Shorthand: "hp_water": 15
+                  updatedConfigs.sale[key] = {
+                    ...currentParam,
+                    value: saleParam,
+                  };
+                } else {
+                  // Object: "hp_water": { "value": 15 }
+                  updatedConfigs.sale[key] = {
+                    ...currentParam,
+                    ...(saleParam.value !== undefined && { value: saleParam.value }),
+                  };
+                }
+              } else {
+                // If parameter doesn't exist, throw error
+                throw new ItemNotFoundException(`Parameter '${key}' not found in WASH device configuration`);
+              }
             }
-          }
-        });
+          });
+        } else if (existingDevice.type === DeviceType.DRYING) {
+          // DRYING device: Handle start/end-based parameters
+          updatedConfigs = {
+            ...updatedConfigs,
+            sale: {
+              ...updatedConfigs?.sale,
+            },
+          };
+
+          Object.keys(data.configs.sale).forEach((key) => {
+            const saleParam = data.configs?.sale?.[key];
+            if (saleParam !== undefined) {
+              // Check if the parameter exists in the current config
+              if (updatedConfigs.sale[key]) {
+                // DRYING device requires object format with start/end
+                if (typeof saleParam === 'number') {
+                  throw new ItemNotFoundException(
+                    `Parameter '${key}' in DRYING device requires object format with start/end, not a number`,
+                  );
+                }
+
+                const currentParam = updatedConfigs.sale[key];
+                updatedConfigs.sale[key] = {
+                  ...currentParam,
+                  ...(saleParam.start !== undefined && { start: saleParam.start }),
+                  ...(saleParam.end !== undefined && { end: saleParam.end }),
+                };
+              } else {
+                // If parameter doesn't exist, throw error
+                throw new ItemNotFoundException(`Parameter '${key}' not found in DRYING device configuration`);
+              }
+            }
+          });
+        } else {
+          throw new ItemNotFoundException(`Unsupported device type: ${String(existingDevice.type)}`);
+        }
       }
 
       // Update pricing configs
@@ -309,7 +421,7 @@ export class DevicesService {
                 value: data.configs.pricing[key],
               };
             } else {
-              // If parameter doesn't exist, log a warning but don't add it
+              // If parameter doesn't exist, throw error
               throw new ItemNotFoundException(
                 `Parameter '${key}' not found in device type '${existingDevice.type}' pricing configuration`,
               );
@@ -328,5 +440,61 @@ export class DevicesService {
     });
 
     return device;
+  }
+
+  async syncConfigsById(device_id: string, data: SyncDeviceConfigsDto): Promise<void> {
+    // Get device and check if exists
+    const device = await this.prisma.tbl_devices.findUnique({
+      where: { id: device_id },
+      select: { id: true, type: true },
+    });
+
+    if (!device) {
+      throw new ItemNotFoundException('Device not found');
+    }
+
+    // Parse configs based on device type
+    let structuredConfig: any;
+
+    if (device.type === DeviceType.WASH) {
+      // Create payload structure expected by DeviceWashConfig
+      const washPayload = {
+        configs: {
+          machine: data.configs.machine,
+          pricing: {
+            PROMOTION: data.configs.pricing.PROMOTION ?? 0,
+          },
+          function: data.configs.function!,
+        },
+      };
+      const washConfig = new DeviceWashConfig(washPayload);
+      structuredConfig = washConfig.configs;
+    } else if (device.type === DeviceType.DRYING) {
+      // Create payload structure expected by DeviceDryingConfig
+      const dryingPayload = {
+        configs: {
+          machine: data.configs.machine,
+          pricing: {
+            BASE_FEE: data.configs.pricing.BASE_FEE ?? 0,
+            PROMOTION: data.configs.pricing.PROMOTION ?? 0,
+            WORK_PERIOD: data.configs.pricing.WORK_PERIOD ?? 0,
+          },
+          function_start: data.configs.function_start!,
+          function_end: data.configs.function_end!,
+        },
+      };
+      const dryingConfig = new DeviceDryingConfig(dryingPayload);
+      structuredConfig = dryingConfig.configs;
+    } else {
+      throw new ItemNotFoundException(`Unsupported device type: ${String(device.type)}`);
+    }
+
+    // Update configs in database
+    await this.prisma.tbl_devices.update({
+      where: { id: device_id },
+      data: {
+        configs: structuredConfig,
+      },
+    });
   }
 }

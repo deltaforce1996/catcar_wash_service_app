@@ -1,8 +1,26 @@
 import { DeviceType } from '@prisma/client';
-import { IsEnum, IsNotEmpty, IsOptional, IsString, IsObject } from 'class-validator';
-import type { DeviceConfig } from '../../../types/device-config.types';
+import { IsEnum, IsNotEmpty, IsString } from 'class-validator';
+import type { DeviceInfo } from 'src/types/internal.type';
+
+export class DeviceInfoDto implements DeviceInfo {
+  @IsString()
+  @IsNotEmpty()
+  chip_id: string;
+
+  @IsString()
+  @IsNotEmpty()
+  mac_address: string;
+
+  @IsString()
+  @IsNotEmpty()
+  firmware_version: string;
+}
 
 export class CreateDeviceDto {
+  @IsString()
+  @IsNotEmpty()
+  id: string;
+
   @IsString()
   @IsNotEmpty()
   name: string;
@@ -18,12 +36,4 @@ export class CreateDeviceDto {
   @IsString()
   @IsNotEmpty()
   register_by: string;
-
-  @IsObject()
-  @IsOptional()
-  information?: any;
-
-  @IsObject()
-  @IsOptional()
-  configs?: DeviceConfig;
 }
