@@ -1,1 +1,17 @@
-# .playwright-mcp
+# Existing
+.playwright-mcp
+
+# Environment files (CRITICAL)
+.env.prod
+.env.production
+.env.*.local
+*.env
+
+# Backup data
+backups/
+
+# Docker volumes
+postgres_data/
+pgadmin_data/
+emqx_data/
+emqx_log/

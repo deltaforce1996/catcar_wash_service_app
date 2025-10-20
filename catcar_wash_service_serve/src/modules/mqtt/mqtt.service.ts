@@ -60,18 +60,18 @@ export class MqttService implements OnModuleInit, OnModuleDestroy {
     this.setupGlobalErrorHandling();
 
     this.config = {
-      brokerUrl: this.configService.get<string>('MQTT_BROKER_URL', 'mqtt://localhost:1883'),
-      clientId: this.configService.get<string>('MQTT_CLIENT_ID', `catcar-wash-${Date.now()}`),
-      username: this.configService.get<string>('MQTT_USERNAME'),
-      password: this.configService.get<string>('MQTT_PASSWORD'),
-      keepalive: this.configService.get<number>('MQTT_KEEPALIVE', 60),
-      connectTimeout: this.configService.get<number>('MQTT_CONNECT_TIMEOUT', 30000),
-      reconnectPeriod: this.configService.get<number>('MQTT_RECONNECT_PERIOD', 5000),
-      clean: this.configService.get<boolean>('MQTT_CLEAN', true),
-      qos: this.configService.get<number>('MQTT_QOS', 1) as 0 | 1 | 2,
+      brokerUrl: this.configService.get<string>('app.mqttBrokerUrl', 'mqtt://localhost:1883'),
+      clientId: this.configService.get<string>('app.mqttClientId', `catcar-wash-${Date.now()}`),
+      username: this.configService.get<string>('app.mqttUsername'),
+      password: this.configService.get<string>('app.mqttPassword'),
+      keepalive: this.configService.get<number>('app.mqttKeepalive', 60),
+      connectTimeout: this.configService.get<number>('app.mqttConnectTimeout', 30000),
+      reconnectPeriod: this.configService.get<number>('app.mqttReconnectPeriod', 5000),
+      clean: this.configService.get<boolean>('app.mqttClean', true),
+      qos: this.configService.get<number>('app.mqttQos', 1) as 0 | 1 | 2,
     };
 
-    this.maxReconnectAttempts = this.configService.get<number>('MQTT_MAX_RECONNECT_ATTEMPTS', 5);
+    this.maxReconnectAttempts = this.configService.get<number>('app.mqttMaxReconnectAttempts', 5);
 
     this.connectionStatus = {
       connected: false,
