@@ -51,7 +51,7 @@
           <!-- Advanced Filters -->
           <v-row dense class="mt-2">
             <!-- Device Type Filter -->
-            <v-col cols="12" sm="6" md="4">
+            <v-col cols="12" sm="6">
               <div class="filter-group">
                 <label class="filter-label">
                   <v-icon size="18" class="me-1">mdi-cog</v-icon>
@@ -60,6 +60,8 @@
                 <v-combobox
                   v-model="tempSelectedTypeFilters"
                   :items="getTypeOptions()"
+                  item-title="label"
+                  item-value="value"
                   placeholder="ทั้งหมด"
                   prepend-inner-icon="mdi-cog"
                   variant="solo"
@@ -71,15 +73,16 @@
                   hide-details
                   rounded="lg"
                   class="filter-input"
+                  return-object
                 >
                   <template #chip="{ props, item }">
                     <v-chip
                       v-bind="props"
-                      :color="getTypeColor(item.raw)"
+                      :color="getTypeColor(item.raw.value)"
                       size="small"
                       variant="flat"
                     >
-                      {{ getTypeLabel(item.raw) }}
+                      {{ item.raw.label }}
                     </v-chip>
                   </template>
                 </v-combobox>
@@ -87,7 +90,7 @@
             </v-col>
 
             <!-- Device Status Filter -->
-            <v-col cols="12" sm="6" md="4">
+            <v-col cols="12" sm="6">
               <div class="filter-group">
                 <label class="filter-label">
                   <v-icon size="18" class="me-1"
@@ -98,6 +101,8 @@
                 <v-combobox
                   v-model="tempSelectedFilters"
                   :items="getFilterOptions()"
+                  item-title="label"
+                  item-value="value"
                   placeholder="ทั้งหมด"
                   prepend-inner-icon="mdi-checkbox-marked-circle-outline"
                   variant="solo"
@@ -109,51 +114,16 @@
                   hide-details
                   rounded="lg"
                   class="filter-input"
+                  return-object
                 >
                   <template #chip="{ props, item }">
                     <v-chip
                       v-bind="props"
-                      :color="getStatusColor(item.raw)"
+                      :color="getStatusColor(item.raw.value)"
                       size="small"
                       variant="flat"
                     >
-                      {{ getStatusLabel(item.raw) }}
-                    </v-chip>
-                  </template>
-                </v-combobox>
-              </div>
-            </v-col>
-
-            <!-- Owner Filter -->
-            <v-col cols="12" sm="6" md="4">
-              <div class="filter-group">
-                <label class="filter-label">
-                  <v-icon size="18" class="me-1">mdi-account-circle</v-icon>
-                  เจ้าของ
-                </label>
-                <v-combobox
-                  v-model="tempSelectedUserFilters"
-                  :items="getUserOptions()"
-                  placeholder="ทั้งหมด"
-                  prepend-inner-icon="mdi-account-circle"
-                  variant="solo"
-                  density="compact"
-                  chips
-                  clearable
-                  closable-chips
-                  multiple
-                  hide-details
-                  rounded="lg"
-                  class="filter-input"
-                >
-                  <template #chip="{ props, item }">
-                    <v-chip
-                      v-bind="props"
-                      color="primary"
-                      size="small"
-                      variant="flat"
-                    >
-                      {{ item.raw }}
+                      {{ item.raw.label }}
                     </v-chip>
                   </template>
                 </v-combobox>
@@ -230,7 +200,9 @@
               md="4"
               lg="3"
             >
+              <!-- WASH device config card (single value) -->
               <v-card
+                v-if="item.type === 'WASH' && config.value !== undefined"
                 elevation="1"
                 color="surface-container"
                 class="pa-2"
@@ -263,6 +235,51 @@
                       class="font-weight-bold"
                     >
                       {{ config.value }}
+                      {{ config.unit }}
+                    </v-chip>
+                  </div>
+                </div>
+              </v-card>
+
+              <!-- DRYING device config card (range: start-end) -->
+              <v-card
+                v-else-if="
+                  item.type === 'DRYING' &&
+                  config.start !== undefined &&
+                  config.end !== undefined
+                "
+                elevation="1"
+                color="surface-container"
+                class="pa-2"
+                height="80"
+                rounded="lg"
+              >
+                <div class="d-flex flex-column h-100">
+                  <div class="d-flex justify-space-between align-start mb-1">
+                    <span
+                      class="text-body-2 font-weight-medium text-truncate"
+                      style="max-width: 120px"
+                    >
+                      {{ config.description }}
+                    </span>
+                    <v-chip
+                      size="x-small"
+                      color="on-surface-variant"
+                      variant="flat"
+                      class="ml-1"
+                    >
+                      {{ key }}
+                    </v-chip>
+                  </div>
+                  <v-spacer />
+                  <div class="d-flex align-center justify-end">
+                    <v-chip
+                      color="info"
+                      size="small"
+                      variant="elevated"
+                      class="font-weight-bold"
+                    >
+                      {{ config.start }}-{{ config.end }}
                       {{ config.unit }}
                     </v-chip>
                   </div>
@@ -304,6 +321,7 @@
 
     <!-- Device Detail Dialog Component -->
     <DeviceDetailDialog
+      ref="deviceDetailDialogRef"
       v-model="showDeviceDetailDialog"
       :device="selectedDevice"
       @save="showApplyDeviceConfigDialog = true"
@@ -380,6 +398,9 @@ const isEditMode = ref(false);
 const editableConfigs = ref<Record<string, DeviceConfig>>({});
 const originalConfigs = ref<Record<string, DeviceConfig>>({});
 
+// Ref to DeviceDetailDialog component
+const deviceDetailDialogRef = ref<InstanceType<typeof DeviceDetailDialog> | null>(null);
+
 // Snackbar for messages
 const showSnackbar = ref(false);
 const snackbarMessage = ref("");
@@ -389,13 +410,11 @@ const snackbarColor = ref("success");
 const tempDeviceSearch = ref("");
 const tempSelectedTypeFilters = ref<string[]>([]);
 const tempSelectedFilters = ref<string[]>([]);
-const tempSelectedUserFilters = ref<string[]>([]);
 
 // Applied filter state (actual filters being used)
 const appliedDeviceSearch = ref("");
 const appliedSelectedTypeFilters = ref<string[]>([]);
 const appliedSelectedFilters = ref<string[]>([]);
-const appliedSelectedUserFilters = ref<string[]>([]);
 
 // Table headers
 const deviceHeaders = [
@@ -413,9 +432,7 @@ const hasFilterChanges = computed(() => {
     JSON.stringify(tempSelectedTypeFilters.value) !==
       JSON.stringify(appliedSelectedTypeFilters.value) ||
     JSON.stringify(tempSelectedFilters.value) !==
-      JSON.stringify(appliedSelectedFilters.value) ||
-    JSON.stringify(tempSelectedUserFilters.value) !==
-      JSON.stringify(appliedSelectedUserFilters.value)
+      JSON.stringify(appliedSelectedFilters.value)
   );
 });
 
@@ -424,8 +441,7 @@ const _hasActiveFilters = computed(() => {
   return (
     tempDeviceSearch.value.trim() !== "" ||
     tempSelectedTypeFilters.value.length > 0 ||
-    tempSelectedFilters.value.length > 0 ||
-    tempSelectedUserFilters.value.length > 0
+    tempSelectedFilters.value.length > 0
   );
 });
 
@@ -439,7 +455,6 @@ const applyFilters = async () => {
   appliedDeviceSearch.value = tempDeviceSearch.value;
   appliedSelectedTypeFilters.value = [...tempSelectedTypeFilters.value];
   appliedSelectedFilters.value = [...tempSelectedFilters.value];
-  appliedSelectedUserFilters.value = [...tempSelectedUserFilters.value];
 
   // Build query object for API
   const query: Record<string, string> = {};
@@ -449,15 +464,13 @@ const applyFilters = async () => {
   }
 
   if (appliedSelectedTypeFilters.value.length === 1) {
-    query.type = appliedSelectedTypeFilters.value[0];
+    const typeFilter = appliedSelectedTypeFilters.value[0];
+    query.type = typeof typeFilter === 'object' ? typeFilter.value : typeFilter;
   }
 
   if (appliedSelectedFilters.value.length === 1) {
-    query.status = appliedSelectedFilters.value[0];
-  }
-
-  if (appliedSelectedUserFilters.value.length === 1) {
-    query.owner = appliedSelectedUserFilters.value[0];
+    const statusFilter = appliedSelectedFilters.value[0];
+    query.status = typeof statusFilter === 'object' ? statusFilter.value : statusFilter;
   }
 
   // Call API with filters
@@ -475,11 +488,9 @@ const clearAllFilters = async () => {
   tempDeviceSearch.value = "";
   tempSelectedTypeFilters.value = [];
   tempSelectedFilters.value = [];
-  tempSelectedUserFilters.value = [];
   appliedDeviceSearch.value = "";
   appliedSelectedTypeFilters.value = [];
   appliedSelectedFilters.value = [];
-  appliedSelectedUserFilters.value = [];
 
   // Reset to initial search
   await searchDevices({
@@ -490,26 +501,24 @@ const clearAllFilters = async () => {
   });
 };
 
+// Hardcoded filter options
+const typeOptions = [
+  { value: "WASH", label: "เครื่องล้าง" },
+  { value: "DRYING", label: "เครื่องอบแห้ง" },
+];
+
+const statusOptions = [
+  { value: "DEPLOYED", label: "ใช้งานได้" },
+  { value: "DISABLED", label: "ปิดใช้งาน" },
+];
+
 // Methods
 const getTypeOptions = () => {
-  const types = [...new Set(apiDevices.value.map((device) => device.type))];
-  return types;
+  return typeOptions;
 };
 
 const getFilterOptions = () => {
-  const statuses = [
-    ...new Set(apiDevices.value.map((device) => device.status)),
-  ];
-  return statuses;
-};
-
-const getUserOptions = () => {
-  const users = [
-    ...new Set(
-      apiDevices.value.map((device) => device.owner?.id).filter(Boolean)
-    ),
-  ];
-  return users;
+  return statusOptions;
 };
 
 const getStatusColor = (status: string) => {
@@ -564,7 +573,7 @@ const getTypeLabel = (type: string) => {
   }
 };
 
-const formatDate = (dateString: string) => {
+const _formatDate = (dateString: string) => {
   return new Date(dateString).toLocaleDateString("th-TH", {
     day: "2-digit",
     month: "2-digit",
@@ -611,14 +620,19 @@ const applySystemConfig = () => {
 };
 
 const applyDeviceConfig = async () => {
-  if (!selectedDevice.value) return;
+  if (!selectedDevice.value || !deviceDetailDialogRef.value) return;
 
   try {
-    await updateDeviceConfigs(selectedDevice.value.id, {
-      configs: {
-        sale: editableConfigs.value,
-      },
-    });
+    // Get the save payload from the dialog component
+    const payload = deviceDetailDialogRef.value.getSavePayload();
+
+    // Only update if there are changes
+    if (!payload.configs || Object.keys(payload.configs).length === 0) {
+      displayMessage("ไม่มีการเปลี่ยนแปลง", "info");
+      return;
+    }
+
+    await updateDeviceConfigs(selectedDevice.value.id, payload);
 
     showApplyDeviceConfigDialog.value = false;
     isEditMode.value = false;
@@ -634,7 +648,7 @@ const applyDeviceConfig = async () => {
 };
 
 // Display message helper
-const displayMessage = (message: string, color: "success" | "error") => {
+const displayMessage = (message: string, color: "success" | "error" | "info") => {
   snackbarMessage.value = message;
   snackbarColor.value = color;
   showSnackbar.value = true;

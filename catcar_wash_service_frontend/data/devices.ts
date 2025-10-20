@@ -1,6 +1,8 @@
 interface DeviceConfig {
   unit: string;
-  value: number;
+  value?: number; // For WASH devices
+  start?: number; // For DRYING devices
+  end?: number; // For DRYING devices
   description: string;
 }
 

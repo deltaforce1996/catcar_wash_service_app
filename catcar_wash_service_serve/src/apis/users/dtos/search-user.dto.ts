@@ -31,5 +31,5 @@ export class SearchUserDto {
 
   @IsString()
   @IsOptional()
-  is_minimal?: boolean = false;
+  is_minimal?: 'true' | 'false';
 }

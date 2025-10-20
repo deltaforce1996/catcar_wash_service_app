@@ -54,6 +54,7 @@
 
     <!-- Data Table -->
     <v-data-table
+      v-model:expanded="expandedItems"
       :headers="headers"
       :items="items"
       :loading="loading"
@@ -70,30 +71,33 @@
       :select-strategy="selectStrategy"
       v-bind="$attrs"
       @update:selected="handleSelectionUpdate"
+      @update:expanded="handleExpandedUpdate"
     >
       <!-- Expandable row content (styled like ex-user-mgmt.vue) -->
       <template v-if="expandable" #expanded-row="{ columns, item }">
         <td :colspan="columns.length" class="pa-0">
-          <v-card
-            class="ma-2 enhanced-details-card"
-            color="surface-container"
-            elevation="1"
-            rounded="lg"
-          >
-            <v-card-text class="pa-4">
-              <div class="enhanced-breakdown">
-                <slot name="expanded-content" :item="item" :columns="columns">
-                  <!-- Default expanded content -->
-                  <h3 class="text-subtitle-1 font-weight-bold mb-4">
-                    รายละเอียด
-                  </h3>
-                  <div class="text-body-2 text-medium-emphasis">
-                    ไม่มีเนื้อหาเพิ่มเติม
-                  </div>
-                </slot>
-              </div>
-            </v-card-text>
-          </v-card>
+          <v-expand-transition>
+            <v-card
+              class="ma-2 enhanced-details-card"
+              color="surface-container"
+              elevation="1"
+              rounded="lg"
+            >
+              <v-card-text class="pa-4">
+                <div class="enhanced-breakdown">
+                  <slot name="expanded-content" :item="item" :columns="columns">
+                    <!-- Default expanded content -->
+                    <h3 class="text-subtitle-1 font-weight-bold mb-4">
+                      รายละเอียด
+                    </h3>
+                    <div class="text-body-2 text-medium-emphasis">
+                      ไม่มีเนื้อหาเพิ่มเติม
+                    </div>
+                  </slot>
+                </div>
+              </v-card-text>
+            </v-card>
+          </v-expand-transition>
         </td>
       </template>
 
@@ -104,7 +108,11 @@
 
       <!-- Custom table slots passthrough -->
       <template v-for="(_, name) in $slots" :key="name" #[name]="slotData">
-        <slot v-if="!isCustomSlot(name)" :name="name" v-bind="slotData" />
+        <slot
+          v-if="!isCustomSlot(String(name))"
+          :name="String(name)"
+          v-bind="slotData"
+        />
       </template>
     </v-data-table>
 
@@ -156,7 +164,6 @@ interface Header {
   [key: string]: unknown;
 }
 
-
 interface Props {
   // Data
   title: string;
@@ -207,6 +214,9 @@ interface Emits {
 
 const emit = defineEmits<Emits>();
 
+// State for expanded rows (only one at a time)
+const expandedItems = ref<readonly string[]>([]);
+
 // Computed Properties
 const displayItemCount = computed(() => props.totalItems);
 
@@ -239,6 +249,15 @@ const handleSelectionUpdate = (selectedItems: Record<string, unknown>[]) => {
   emit("update:selected", selectedItems);
 };
 
+const handleExpandedUpdate = (newExpandedItems: readonly string[]) => {
+  // Only keep the most recently expanded item
+  if (newExpandedItems.length > 1) {
+    expandedItems.value = [newExpandedItems[newExpandedItems.length - 1]];
+  } else {
+    expandedItems.value = newExpandedItems;
+  }
+};
+
 const handlePreviousPage = () => {
   if (computedPage.value > 1) {
     emit("update:page", computedPage.value - 1);
@@ -261,8 +280,9 @@ const isCustomSlot = (name: string): boolean => {
 
 /* Enhanced details expandable row styles */
 .enhanced-details-card {
-  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
   background: rgba(var(--v-theme-surface-container-low), 1);
+  transform-origin: top;
 }
 
 .enhanced-breakdown {
@@ -304,19 +324,22 @@ const isCustomSlot = (name: string): boolean => {
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
 }
 
-/* Expand/collapse animation matching ex-user-mgmt.vue */
+/* Expand/collapse with Vuetify transition - smooth appearance */
 :deep(.v-data-table__expanded-row) {
-  animation: slideDown 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  background: transparent;
 }
 
-@keyframes slideDown {
+/* Add subtle fade-in effect to the card content during expansion */
+.enhanced-details-card {
+  animation: fadeInContent 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+@keyframes fadeInContent {
   from {
     opacity: 0;
-    transform: translateY(-10px);
   }
   to {
     opacity: 1;
-    transform: translateY(0);
   }
 }
 
