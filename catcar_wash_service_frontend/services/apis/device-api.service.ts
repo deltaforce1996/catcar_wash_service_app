@@ -74,6 +74,11 @@ export interface DeviceResponseApi {
   };
 }
 
+// Extract DeviceConfig type from DeviceResponseApi's sale config union type
+export type DeviceConfig = NonNullable<
+  NonNullable<DeviceResponseApi["configs"]>["sale"]
+>[string];
+
 export interface SearchDevicesRequest {
   query?: {
     search?: string; // search device id, device name, and owner fullname fields

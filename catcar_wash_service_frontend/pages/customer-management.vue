@@ -178,17 +178,6 @@
               </div>
 
               <div class="customer-info-grid">
-                <v-card class="mb-2" color="primary" variant="tonal">
-                  <v-card-text class="pa-3">
-                    <div class="text-caption text-medium-emphasis">
-                      รหัสลูกค้า
-                    </div>
-                    <div class="text-body-2 font-family-monospace">
-                      {{ item.id.slice(-8) }}
-                    </div>
-                  </v-card-text>
-                </v-card>
-
                 <v-card class="mb-2" color="info" variant="tonal">
                   <v-card-text class="pa-3">
                     <div class="text-caption text-medium-emphasis">ที่อยู่</div>

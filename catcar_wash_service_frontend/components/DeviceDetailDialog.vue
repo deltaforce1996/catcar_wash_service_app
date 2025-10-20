@@ -48,7 +48,7 @@
                 </div>
 
                 <!-- Device Status -->
-                <v-card flat color="surface-container" class="mb-4">
+                <v-card flat color="surface-container">
                   <v-card-text class="pa-3">
                     <div class="d-flex justify-space-between align-center mb-2">
                       <span class="font-weight-medium">สถานะ:</span>
@@ -80,7 +80,7 @@
                 </v-card>
 
                 <!-- Device Description -->
-                <v-card flat color="info" variant="tonal">
+                <!-- <v-card flat color="info" variant="tonal">
                   <v-card-text class="pa-3">
                     <div class="d-flex align-start">
                       <v-icon class="mr-2 mt-1" size="20"
@@ -94,7 +94,7 @@
                       </div>
                     </div>
                   </v-card-text>
-                </v-card>
+                </v-card> -->
               </v-card-text>
             </v-card>
           </v-col>
@@ -1088,7 +1088,10 @@
 </template>
 
 <script setup lang="ts">
-import type { Device, DeviceConfig } from "~/data/devices";
+import type {
+  DeviceResponseApi,
+  DeviceConfig,
+} from "~/services/apis/device-api.service";
 
 interface SystemConfig {
   on_time?: string;
@@ -1103,7 +1106,7 @@ interface SystemConfig {
 
 interface Props {
   modelValue: boolean;
-  device: Device | null;
+  device: DeviceResponseApi | null;
 }
 
 interface Emits {
@@ -1274,7 +1277,7 @@ const getRangeModel = (key: string) => {
   return [0, 100];
 };
 
-const getMaxRangeValue = (key: string) => {
+const getMaxRangeValue = (_key: string) => {
   // Use work_period from pricing config as max value, fallback to 1000
   const workPeriod = props.device?.configs?.pricing?.work_period?.value;
   return workPeriod ?? 1000;
@@ -1387,7 +1390,7 @@ const getTypeLabel = (type: string) => {
   }
 };
 
-const getDeviceDescription = (type: string) => {
+const _getDeviceDescription = (type: string) => {
   switch (type) {
     case "WASH":
       return "เครื่องล้างรถอัตโนมัติที่มีระบบฉีดน้ำแรงดันสูง ระบบฟองสบู่ และการล้างด้วยแปรง นำมาใช้สำหรับทำความสะอาดรถยนต์และรถจักรยานยนต์อย่างมีประสิทธิภาพ";
@@ -1522,8 +1525,16 @@ watch(
   }
 );
 
+// Method to reset all edit modes back to view mode
+const resetToViewMode = () => {
+  isSaleEditMode.value = false;
+  isSystemEditMode.value = false;
+  isPricingEditMode.value = false;
+};
+
 // Expose methods for parent component
 defineExpose({
   getSavePayload,
+  resetToViewMode,
 });
 </script>
