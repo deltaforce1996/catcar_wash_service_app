@@ -48,7 +48,7 @@
                 </div>
 
                 <!-- Device Status -->
-                <v-card flat color="surface-container" class="mb-4">
+                <v-card flat color="surface-container">
                   <v-card-text class="pa-3">
                     <div class="d-flex justify-space-between align-center mb-2">
                       <span class="font-weight-medium">สถานะ:</span>
@@ -80,7 +80,7 @@
                 </v-card>
 
                 <!-- Device Description -->
-                <v-card flat color="info" variant="tonal">
+                <!-- <v-card flat color="info" variant="tonal">
                   <v-card-text class="pa-3">
                     <div class="d-flex align-start">
                       <v-icon class="mr-2 mt-1" size="20"
@@ -94,7 +94,7 @@
                       </div>
                     </div>
                   </v-card-text>
-                </v-card>
+                </v-card> -->
               </v-card-text>
             </v-card>
           </v-col>
