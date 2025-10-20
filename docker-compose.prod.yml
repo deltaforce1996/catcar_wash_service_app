@@ -1,0 +1,189 @@
+version: "3.8"
+
+services:
+  # PostgreSQL Database Service
+  postgres:
+    image: postgres:15-alpine
+    container_name: catcar_wash_postgres_prod
+    restart: always
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-catcar_wash_db_prod}
+      POSTGRES_USER: ${POSTGRES_USER:-catcar_wash_user_prod}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?POSTGRES_PASSWORD is required}
+      POSTGRES_INITDB_ARGS: "--encoding=UTF-8 --lc-collate=C --lc-ctype=C"
+      PGDATA: /var/lib/postgresql/data/pgdata
+    # Don't expose PostgreSQL port to host in production
+    # Only accessible within Docker network
+    expose:
+      - "5432"
+    volumes:
+      - ./backups/prod/postgres_data:/var/lib/postgresql/data
+      - ./init-scripts:/docker-entrypoint-initdb.d:ro
+    networks:
+      - catcar_wash_network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-catcar_wash_user_prod} -d ${POSTGRES_DB:-catcar_wash_db_prod}"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 40s
+    # deploy:
+    #   resources:
+    #     limits:
+    #       cpus: '2'
+    #       memory: 2G
+    #     reservations:
+    #       cpus: '0.5'
+    #       memory: 512M
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+  # pgAdmin for database management
+  # NOTE: Comment out or remove in production if not needed
+  pgadmin:
+    image: dpage/pgadmin4:latest
+    container_name: catcar_wash_pgadmin_prod
+    restart: unless-stopped
+    environment:
+      PGADMIN_DEFAULT_EMAIL: ${PGADMIN_EMAIL:?PGADMIN_EMAIL is required}
+      PGADMIN_DEFAULT_PASSWORD: ${PGADMIN_PASSWORD:?PGADMIN_PASSWORD is required}
+      PGADMIN_CONFIG_SERVER_MODE: "True"
+      PGADMIN_CONFIG_MASTER_PASSWORD_REQUIRED: "True"
+    # Only expose on localhost for security
+    ports:
+      # - "127.0.0.1:8080:80"
+      - "8080:80"
+    volumes:
+      - ./backups/prod/pgadmin_data:/var/lib/pgadmin
+    networks:
+      - catcar_wash_network
+    depends_on:
+      postgres:
+        condition: service_healthy
+    # deploy:
+    #   resources:
+    #     limits:
+    #       cpus: '0.5'
+    #       memory: 512M
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "5m"
+        max-file: "2"
+
+  # EMQX MQTT Broker
+  emqx:
+    image: emqx/emqx:5.6
+    container_name: catcar_wash_emqx_prod
+    restart: always
+    ports:
+      - "1883:1883"      # MQTT TCP
+      - "8083:8083"      # MQTT over WebSocket
+      - "18083:18083"  # EMQX Dashboard
+    environment:
+      - EMQX_DASHBOARD__DEFAULT_USERNAME=${EMQX_DASHBOARD_USER:?EMQX_DASHBOARD_USER is required}
+      - EMQX_DASHBOARD__DEFAULT_PASSWORD=${EMQX_DASHBOARD_PASSWORD:?EMQX_DASHBOARD_PASSWORD is required}
+      - EMQX_LOG__CONSOLE_HANDLER__LEVEL=warning
+      - EMQX_ALLOW_ANONYMOUS=false
+    volumes:
+      - ./backups/prod/emqx_data:/opt/emqx/data
+      - ./backups/prod/emqx_log:/opt/emqx/log
+    networks:
+      - catcar_wash_network
+    # deploy:
+    #   resources:
+    #     limits:
+    #       cpus: '1'
+    #       memory: 1G
+    #     reservations:
+    #       cpus: '0.25'
+    #       memory: 256M
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+    healthcheck:
+      test: ["CMD", "emqx", "ping"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 30s
+
+  # Backend Service (NestJS + Prisma)
+  backend:
+    build:
+      context: ./catcar_wash_service_serve
+      dockerfile: Dockerfile
+      args:
+        NODE_ENV: production
+    image: catcar_wash_backend:${VERSION:-1.0.0}
+    container_name: catcar_wash_backend_prod
+    restart: always
+    ports:
+      - "${BACKEND_PORT:-3000}:3000"
+    environment:
+      # Application
+      - NODE_ENV=production
+      - PORT=3000
+      - API_PREFIX=${API_PREFIX:-api}
+      - VERSION=${VERSION:-1.0.0}
+      - LOG_LEVEL=${LOG_LEVEL:-info}
+      
+      # Database
+      - DATABASE_URL=postgresql://${POSTGRES_USER:-catcar_wash_user_prod}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB:-catcar_wash_db_prod}?schema=public&connect_timeout=30&pool_timeout=30
+      
+      # JWT
+      - JWT_SECRET=${JWT_SECRET:?JWT_SECRET is required}
+      - JWT_EXPIRES_IN=${JWT_EXPIRES_IN:-24h}
+
+      - DEVICE_SECRET_KEY=${DEVICE_SECRET_KEY:-your-device-secret-key}
+      
+      # External APIs
+      - BEAM_API_URL=${BEAM_API_URL:-https://api.beamcheckout.com}
+      
+      # MQTT
+      - MQTT_BROKER_URL=mqtt://emqx:1883
+      # - MQTT_USERNAME=${MQTT_USERNAME}
+      # - MQTT_PASSWORD=${MQTT_PASSWORD}
+    depends_on:
+      postgres:
+        condition: service_healthy
+      emqx:
+        condition: service_healthy
+    networks:
+      - catcar_wash_network
+    # deploy:
+    #   resources:
+    #     limits:
+    #       cpus: '2'
+    #       memory: 2G
+    #     reservations:
+    #       cpus: '0.5'
+    #       memory: 512M
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "20m"
+        max-file: "5"
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:3000/api/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
+
+networks:
+  catcar_wash_network:
+    driver: bridge
+
+# HOW TO RUN PRODUCTION:
+# 1. Copy .env.prod.example to .env.prod and fill in all secrets
+# 2. Load environment: set -a; source .env.prod; set +a (Linux/Mac)
+#    or use: docker-compose --env-file .env.prod -f docker-compose.prod.yml up -d
+# 3. Run: docker-compose -f docker-compose.prod.yml up -d
+# 4. Check logs: docker-compose -f docker-compose.prod.yml logs -f
+# 5. Stop: docker-compose -f docker-compose.prod.yml down
