@@ -100,6 +100,9 @@ export class DevicesService {
       ands.push({ owner_id: user.id });
     }
 
+    // Exclude device-initial (devices that haven't completed registration)
+    ands.push({ owner_id: { not: 'device-intial' } });
+
     // Handle general search - search both id and name fields
     const search = pairs.find((p) => p.key === 'search')?.value;
     if (search) {

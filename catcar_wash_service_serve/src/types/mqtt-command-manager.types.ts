@@ -1,4 +1,10 @@
-export type MqttCommandType = 'APPLY_CONFIG' | 'RESTART' | 'UPDATE_FIRMWARE' | 'RESET_CONFIG' | 'PAYMENT';
+export type MqttCommandType =
+  | 'APPLY_CONFIG'
+  | 'RESTART'
+  | 'UPDATE_FIRMWARE'
+  | 'RESET_CONFIG'
+  | 'PAYMENT'
+  | 'MANUAL_PAYMENT';
 export interface MqttCommandPayload<T> {
   command_id: string;
   command: MqttCommandType;
@@ -17,6 +23,11 @@ export interface MqttCommandAckResponse<T> {
   error?: string;
   timestamp: number;
   sha256?: string;
+}
+
+export interface ManualPaymentPayload {
+  amount: number;
+  expire_at: number;
 }
 
 export interface FirmwarePayload {

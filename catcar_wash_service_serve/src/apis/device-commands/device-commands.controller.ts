@@ -2,8 +2,13 @@ import { Body, Controller, Param, Post, UseFilters } from '@nestjs/common';
 import { DeviceCommandsService } from './device-commands.service';
 import { AllExceptionFilter } from '../../common';
 import type { SuccessResponse } from '../../types';
-import { RestartDeviceDto, UpdateFirmwareDto, SendCustomCommandDto } from './dtos';
-import type { MqttCommandAckResponse, CommandConfig, FirmwarePayload } from '../../types/mqtt-command-manager.types';
+import { RestartDeviceDto, UpdateFirmwareDto, SendCustomCommandDto, ManualPaymentDto } from './dtos';
+import type {
+  MqttCommandAckResponse,
+  CommandConfig,
+  FirmwarePayload,
+  ManualPaymentPayload,
+} from '../../types/mqtt-command-manager.types';
 
 @UseFilters(AllExceptionFilter)
 @Controller('api/v1/device-commands')
@@ -90,6 +95,23 @@ export class DeviceCommandsController {
       success: true,
       data: result,
       message: `Custom command sent to device ${deviceId}`,
+    };
+  }
+
+  /**
+   * Send manual payment
+   * POST /api/v1/device-commands/:deviceId/manual-payment
+   */
+  @Post(':deviceId/manual-payment')
+  async sendManualPayment(
+    @Param('deviceId') deviceId: string,
+    @Body() manualPaymentDto: ManualPaymentDto,
+  ): Promise<SuccessResponse<MqttCommandAckResponse<ManualPaymentPayload>>> {
+    const result = await this.deviceCommandsService.sendManualPayment(deviceId, manualPaymentDto);
+    return {
+      success: true,
+      data: result,
+      message: `Manual payment sent to device ${deviceId}`,
     };
   }
 }

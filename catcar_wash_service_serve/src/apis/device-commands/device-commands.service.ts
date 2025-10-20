@@ -2,8 +2,13 @@ import { Injectable, Logger } from '@nestjs/common';
 import { MqttCommandManagerService } from '../../services/adepters/mqtt-command-manager.service';
 import { PrismaService } from '../../database/prisma/prisma.service';
 import { ItemNotFoundException } from '../../errors';
-import { RestartDeviceDto, UpdateFirmwareDto, SendCustomCommandDto } from './dtos';
-import type { MqttCommandAckResponse, CommandConfig, FirmwarePayload } from '../../types/mqtt-command-manager.types';
+import { RestartDeviceDto, UpdateFirmwareDto, SendCustomCommandDto, ManualPaymentDto } from './dtos';
+import type {
+  MqttCommandAckResponse,
+  CommandConfig,
+  FirmwarePayload,
+  ManualPaymentPayload,
+} from '../../types/mqtt-command-manager.types';
 import { DeviceType } from '@prisma/client';
 
 @Injectable()
@@ -223,5 +228,22 @@ export class DeviceCommandsService {
     );
 
     return result;
+  }
+
+  /**
+   * Send manual payment to device
+   */
+  async sendManualPayment(
+    deviceId: string,
+    manualPaymentDto: ManualPaymentDto,
+  ): Promise<MqttCommandAckResponse<ManualPaymentPayload>> {
+    await this.verifyDevice(deviceId);
+
+    this.logger.log(`Sending manual payment to device: ${deviceId}, amount: ${manualPaymentDto.amount}`);
+
+    return await this.mqttCommandManager.manualPayment(deviceId, {
+      amount: manualPaymentDto.amount,
+      expire_at: Date.now() + 1000 * 10, // 10 seconds
+    });
   }
 }

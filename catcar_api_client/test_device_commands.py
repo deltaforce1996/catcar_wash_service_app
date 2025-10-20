@@ -140,6 +140,29 @@ class DeviceCommandsTester:
         except Exception as e:
             print(f"❌ Error: {e}")
     
+    def test_manual_payment(self, device_id: str, amount: int = 50):
+        """Test MANUAL_PAYMENT command"""
+        print("\n" + "="*60)
+        print("💰 Testing MANUAL_PAYMENT Command")
+        print("="*60)
+        
+        url = f"{self.api_endpoint}/{device_id}/manual-payment"
+        payload = {
+            "amount": amount
+        }
+        
+        print(f"Target Device: {device_id}")
+        print(f"Amount: {amount} baht")
+        print(f"Endpoint: {url}")
+        
+        try:
+            response = requests.post(url, json=payload, timeout=35)
+            self._print_response(response, "MANUAL_PAYMENT")
+        except requests.exceptions.Timeout:
+            print("⏱️  Request timeout (35s)")
+        except Exception as e:
+            print(f"❌ Error: {e}")
+    
     def test_custom_command(self, device_id: str):
         """Test CUSTOM command"""
         print("\n" + "="*60)
@@ -183,6 +206,7 @@ class DeviceCommandsTester:
             ("RESTART", lambda: self.test_restart_device(device_id)),
             ("UPDATE_FIRMWARE", lambda: self.test_update_firmware(device_id)),
             ("RESET_CONFIG", lambda: self.test_reset_config(device_id)),
+            ("MANUAL_PAYMENT", lambda: self.test_manual_payment(device_id)),
             ("CUSTOM", lambda: self.test_custom_command(device_id)),
         ]
         
@@ -219,10 +243,11 @@ def show_menu():
     print("2. 🔄 RESTART - รีสตาร์ทอุปกรณ์")
     print("3. 📦 UPDATE_FIRMWARE - อัพเดท firmware")
     print("4. ♻️  RESET_CONFIG - รีเซ็ต configuration")
-    print("5. ⚙️  CUSTOM - ส่งคำสั่งกำหนดเอง")
-    print("6. 🚀 TEST ALL - ทดสอบทุกคำสั่ง")
-    print("7. ⚙️  SETTINGS - ตั้งค่า API URL")
-    print("8. ❌ EXIT - ออกจากโปรแกรม")
+    print("5. 💰 MANUAL_PAYMENT - ส่งคำสั่งชำระเงินแบบ manual")
+    print("6. ⚙️  CUSTOM - ส่งคำสั่งกำหนดเอง")
+    print("7. 🚀 TEST ALL - ทดสอบทุกคำสั่ง")
+    print("8. ⚙️  SETTINGS - ตั้งค่า API URL")
+    print("9. ❌ EXIT - ออกจากโปรแกรม")
     print("="*60)
 
 def main():
@@ -246,7 +271,7 @@ def main():
     
     while True:
         show_menu()
-        choice = input("👉 เลือกคำสั่ง (1-8): ").strip()
+        choice = input("👉 เลือกคำสั่ง (1-9): ").strip()
         
         try:
             if choice == "1":
@@ -260,25 +285,29 @@ def main():
             elif choice == "4":
                 tester.test_reset_config(device_id)
             elif choice == "5":
-                tester.test_custom_command(device_id)
+                amount_input = input("💰 Amount (baht, default: 50): ").strip()
+                amount = int(amount_input) if amount_input else 50
+                tester.test_manual_payment(device_id, amount)
             elif choice == "6":
+                tester.test_custom_command(device_id)
+            elif choice == "7":
                 delay_input = input("⏱️  Delay between tests (seconds, default: 2): ").strip()
                 delay = float(delay_input) if delay_input else 2.0
                 tester.test_all_commands(device_id, delay)
-            elif choice == "7":
+            elif choice == "8":
                 new_url = input(f"🔗 Enter API URL (current: {api_url}): ").strip()
                 if new_url:
                     api_url = new_url
                     tester = DeviceCommandsTester(api_url)
                     print(f"✅ API URL updated to: {api_url}")
-            elif choice == "8":
+            elif choice == "9":
                 print("👋 ออกจากโปรแกรม")
                 break
             else:
-                print("❌ กรุณาเลือกหมายเลข 1-8")
+                print("❌ กรุณาเลือกหมายเลข 1-9")
             
             # Pause before showing menu again
-            if choice not in ["7", "8"]:
+            if choice not in ["8", "9"]:
                 input("\n⏸️  กด Enter เพื่อกลับไปเมนูหลัก...")
         
         except KeyboardInterrupt:
