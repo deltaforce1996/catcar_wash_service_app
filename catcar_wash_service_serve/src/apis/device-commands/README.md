@@ -14,6 +14,7 @@ Device Commands API ช่วยให้ระบบสามารถส่ง
 | `RESTART` | สั่งให้อุปกรณ์ restart | ✅ Yes |
 | `UPDATE_FIRMWARE` | อัพเดท firmware version | ✅ Yes |
 | `RESET_CONFIG` | รีเซ็ต configuration กลับเป็นค่าเริ่มต้น | ✅ Yes |
+| `MANUAL_PAYMENT` | ส่งคำสั่งชำระเงินแบบ manual ให้อุปกรณ์ | ✅ Yes |
 | `CUSTOM` | ส่งคำสั่งกำหนดเอง | ⚙️ Configurable |
 
 ## API Endpoints
@@ -215,7 +216,47 @@ Device Commands API ช่วยให้ระบบสามารถส่ง
 
 ---
 
-### 5. Send Custom Command
+### 5. Send Manual Payment
+
+ส่งคำสั่งชำระเงินแบบ manual ให้อุปกรณ์
+
+**Endpoint:** `POST /api/v1/device-commands/:deviceId/manual-payment`
+
+**Authentication:** Required (JWT Token)
+
+**Authorization:** `ADMIN`, `SUPER_ADMIN`
+
+**Request Body:**
+
+```json
+{
+  "amount": 50
+}
+```
+
+**Response:**
+
+```json
+{
+  "success": true,
+  "message": "Manual payment sent to device D001",
+  "data": {
+    "command_id": "cmd-1697654321000-xyz789",
+    "device_id": "D001",
+    "command": "MANUAL_PAYMENT",
+    "status": "SUCCESS",
+    "timestamp": 1697654325000,
+    "results": {
+      "amount": 50,
+      "expire_at": 1697654335000
+    }
+  }
+}
+```
+
+---
+
+### 6. Send Custom Command
 
 ส่งคำสั่งกำหนดเอง
 
@@ -482,6 +523,7 @@ curl -X POST http://localhost:3000/api/v1/device-commands/D001/apply-config \
 
 - คำสั่งทุกคำสั่งจะมี timeout 30 วินาที
 - หากอุปกรณ์ไม่ตอบกลับภายใน timeout จะได้รับ status `TIMEOUT`
-- คำสั่ง `PAYMENT` ไม่ต้องการ ACK (fire-and-forget)
+- คำสั่ง `PAYMENT` ไม่ต้องการ ACK (fire-and-forget) - ใช้สำหรับแจ้ง payment status
+- คำสั่ง `MANUAL_PAYMENT` ต้องการ ACK - ใช้สำหรับส่งคำสั่งชำระเงินแบบ manual
 - ควรตรวจสอบว่าอุปกรณ์เชื่อมต่ออยู่ก่อนส่งคำสั่ง
 

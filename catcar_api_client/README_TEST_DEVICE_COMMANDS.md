@@ -8,11 +8,12 @@ Test script นี้ช่วยให้คุณสามารถทดส�
 
 ## Features
 
-✅ ทดสอบคำสั่งทั้ง 5 ประเภท:
+✅ ทดสอบคำสั่งทั้ง 6 ประเภท:
 - `APPLY_CONFIG` - ส่ง configuration ใหม่
 - `RESTART` - รีสตาร์ทอุปกรณ์
 - `UPDATE_FIRMWARE` - อัพเดท firmware
 - `RESET_CONFIG` - รีเซ็ต configuration
+- `MANUAL_PAYMENT` - ส่งคำสั่งชำระเงินแบบ manual
 - `CUSTOM` - ส่งคำสั่งกำหนดเอง
 
 ✅ ทดสอบทีละคำสั่งหรือทดสอบทั้งหมดพร้อมกัน
@@ -63,10 +64,11 @@ python test_device_commands.py
 2. 🔄 RESTART - รีสตาร์ทอุปกรณ์
 3. 📦 UPDATE_FIRMWARE - อัพเดท firmware
 4. ♻️  RESET_CONFIG - รีเซ็ต configuration
-5. ⚙️  CUSTOM - ส่งคำสั่งกำหนดเอง
-6. 🚀 TEST ALL - ทดสอบทุกคำสั่ง
-7. ⚙️  SETTINGS - ตั้งค่า API URL
-8. ❌ EXIT - ออกจากโปรแกรม
+5. 💰 MANUAL_PAYMENT - ส่งคำสั่งชำระเงินแบบ manual
+6. ⚙️  CUSTOM - ส่งคำสั่งกำหนดเอง
+7. 🚀 TEST ALL - ทดสอบทุกคำสั่ง
+8. ⚙️  SETTINGS - ตั้งค่า API URL
+9. ❌ EXIT - ออกจากโปรแกรม
 ============================================================
 ```
 
@@ -209,7 +211,49 @@ Response:
 ✅ Command executed successfully
 ```
 
-### 5. Test CUSTOM Command
+### 5. Test MANUAL_PAYMENT
+
+ทดสอบคำสั่งชำระเงินแบบ manual
+
+**Prompt:**
+
+```
+💰 Amount (baht, default: 50): 100
+```
+
+**Output:**
+
+```
+============================================================
+💰 Testing MANUAL_PAYMENT Command
+============================================================
+Target Device: D001
+Amount: 100 baht
+Endpoint: http://localhost:3000/api/v1/device-commands/D001/manual-payment
+
+[12:38:10] 📤 Sent: MANUAL_PAYMENT
+Status Code: 200
+Response:
+{
+  "success": true,
+  "message": "Manual payment sent to device D001",
+  "data": {
+    "command_id": "cmd-1697654490000-xyz123",
+    "device_id": "D001",
+    "command": "MANUAL_PAYMENT",
+    "status": "SUCCESS",
+    "timestamp": 1697654495000,
+    "results": {
+      "amount": 100,
+      "expire_at": 1697654505000,
+      "accepted": true
+    }
+  }
+}
+✅ Command executed successfully
+```
+
+### 6. Test CUSTOM Command
 
 ทดสอบส่งคำสั่งกำหนดเอง
 
@@ -240,7 +284,7 @@ Response:
 ✅ Command executed successfully
 ```
 
-### 6. Test All Commands
+### 7. Test All Commands
 
 ทดสอบคำสั่งทั้งหมดพร้อมกัน
 
@@ -260,26 +304,29 @@ Target Device: D001
 API Base URL: http://localhost:3000
 ======================================================================
 
-📝 Test 1/5: APPLY_CONFIG
+📝 Test 1/6: APPLY_CONFIG
 ... (results)
 
-📝 Test 2/5: RESTART
+📝 Test 2/6: RESTART
 ... (results)
 
-📝 Test 3/5: UPDATE_FIRMWARE
+📝 Test 3/6: UPDATE_FIRMWARE
 ... (results)
 
-📝 Test 4/5: RESET_CONFIG
+📝 Test 4/6: RESET_CONFIG
 ... (results)
 
-📝 Test 5/5: CUSTOM
+📝 Test 5/6: MANUAL_PAYMENT
+... (results)
+
+📝 Test 6/6: CUSTOM
 ... (results)
 
 ======================================================================
 📊 Test Summary
 ======================================================================
-Total Tests: 5
-✅ Passed: 5
+Total Tests: 6
+✅ Passed: 6
 ❌ Failed: 0
 ======================================================================
 ```
@@ -326,10 +373,10 @@ python test_device_commands.py
 
 ### Change API URL
 
-เลือก option `7` จาก menu:
+เลือก option `8` จาก menu:
 
 ```
-👉 เลือกคำสั่ง (1-8): 7
+👉 เลือกคำสั่ง (1-9): 8
 🔗 Enter API URL (current: http://localhost:3000): http://192.168.1.100:3000
 ✅ API URL updated to: http://192.168.1.100:3000
 ```
@@ -446,11 +493,13 @@ python test_device_commands.py > test_results.log 2>&1
 
 ## Tips
 
-💡 ใช้ option `6` (TEST ALL) เพื่อทดสอบทุกคำสั่งอย่างรวดเร็ว
+💡 ใช้ option `7` (TEST ALL) เพื่อทดสอบทุกคำสั่งอย่างรวดเร็ว (ทั้งหมด 6 คำสั่ง)
 
 💡 เปิด Device Simulator ก่อนทดสอบเพื่อดูผลลัพธ์แบบ real-time
 
 💡 ตรวจสอบ Backend Server logs เพื่อดู MQTT communication
 
 💡 ใช้ delay 2-3 วินาทีระหว่างการทดสอบเพื่อให้อุปกรณ์มีเวลาประมวลผล
+
+💡 ทดสอบ MANUAL_PAYMENT เพื่อดูการทำงานของระบบชำระเงินแบบ manual บนอุปกรณ์
 

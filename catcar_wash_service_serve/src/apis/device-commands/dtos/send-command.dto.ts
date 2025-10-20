@@ -167,3 +167,12 @@ export class SendCustomCommandDto {
   @IsBoolean()
   require_ack?: boolean = true;
 }
+
+/**'
+ * DTO for sending manual payment
+ */
+export class ManualPaymentDto {
+  @IsNumber()
+  @IsNotEmpty()
+  amount: number;
+}

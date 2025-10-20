@@ -9,6 +9,7 @@ import {
   ActiveCommand,
   CommandConfig,
   FirmwarePayload,
+  ManualPaymentPayload,
 } from '../../types/mqtt-command-manager.types';
 import { IMqttCommandEventAdapter } from './mqtt-command-event-adepter';
 
@@ -81,6 +82,18 @@ export class MqttCommandManagerService implements OnModuleInit, OnModuleDestroy 
         require_ack: true,
       },
     );
+  }
+
+  /**
+   * Send MANUAL_PAYMENT command to device
+   */
+  async manualPayment(
+    deviceId: string,
+    payload: ManualPaymentPayload,
+  ): Promise<MqttCommandAckResponse<ManualPaymentPayload>> {
+    return this.sendCommand(deviceId, 'MANUAL_PAYMENT', payload, {
+      require_ack: true,
+    });
   }
 
   /**

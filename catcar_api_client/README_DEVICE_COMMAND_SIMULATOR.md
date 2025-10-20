@@ -11,11 +11,12 @@ Device Command Simulator ใช้สำหรับทดสอบระบบ�
 
 ## Features
 
-✅ รองรับคำสั่งหลัก 5 ประเภท:
+✅ รองรับคำสั่งหลัก 6 ประเภท:
 - `APPLY_CONFIG` - ใช้ configuration ใหม่
 - `RESTART` - รีสตาร์ทอุปกรณ์
 - `UPDATE_FIRMWARE` - อัพเดท firmware
 - `RESET_CONFIG` - รีเซ็ต configuration
+- `MANUAL_PAYMENT` - รับคำสั่งชำระเงินแบบ manual
 - `PAYMENT` - รับข้อมูลสถานะการชำระเงิน
 
 ✅ **Error Simulation Modes** - เลือกโหมดจำลอง error ได้ 3 แบบ:
@@ -90,6 +91,7 @@ python device_command_simulator.py
    - RESTART: 5%
    - UPDATE_FIRMWARE: 15%
    - RESET_CONFIG: 8%
+   - MANUAL_PAYMENT: 5%
    - PAYMENT: 0%
 ============================================================
 ✅ Waiting for commands... (Press Ctrl+C to stop)
@@ -113,6 +115,7 @@ python device_command_simulator.py
 | RESTART | 5% | 95% |
 | UPDATE_FIRMWARE | 15% | 85% |
 | RESET_CONFIG | 8% | 92% |
+| MANUAL_PAYMENT | 5% | 95% |
 | PAYMENT | 0% | 100% |
 
 ### APPLY_CONFIG
@@ -194,6 +197,40 @@ python device_command_simulator.py
   }
   ```
 - **Failure Reason:** "Failed to reset configuration: Invalid config"
+
+### MANUAL_PAYMENT
+
+- **Processing Time:** 0.3 - 0.8 seconds
+- **Success Response:**
+  ```json
+  {
+    "command_id": "cmd-789",
+    "device_id": "D001",
+    "command": "MANUAL_PAYMENT",
+    "status": "SUCCESS",
+    "timestamp": 1697654328000,
+    "result": {
+      "amount": 50,
+      "expire_at": 1697654338000,
+      "accepted": true,
+      "processed_at": 1697654328000
+    },
+    "sha256": "xyz012..."
+  }
+  ```
+- **Failure Response:**
+  ```json
+  {
+    "command_id": "cmd-789",
+    "device_id": "D001",
+    "command": "MANUAL_PAYMENT",
+    "status": "FAILED",
+    "timestamp": 1697654328000,
+    "error": "Failed to process manual payment: Device busy",
+    "sha256": "abc345..."
+  }
+  ```
+- **Failure Reason:** "Failed to process manual payment: Device busy"
 
 ### PAYMENT
 
@@ -481,6 +518,7 @@ signature = SHA256(combined)
 - Simulator จะจำลองเวลาในการประมวลผลแต่ละคำสั่ง
 - Error rates สามารถปรับได้ตาม use case
 - คำสั่ง PAYMENT ไม่ส่ง ACK (notification only)
+- คำสั่ง MANUAL_PAYMENT ต้องส่ง ACK (requires acknowledgment)
 - สามารถกด Ctrl+C เพื่อหยุด simulator ได้ทุกเวลา
 - ACK message มี digital signature เพื่อความปลอดภัย
 - รองรับการจำลอง error ทั้งแบบสุ่มและแบบบังคับ

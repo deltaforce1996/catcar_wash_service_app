@@ -598,6 +598,18 @@ Content-Type: application/json
   "timestamp": 1758358335794
 }
 ```
+```json
+{
+  "command_id": "cmd-manual-payment-001",
+  "command": "MANUAL_PAYMENT",
+  "require_ack": true,
+  "payload": {
+    "amount": 50,
+    "expire_at": 1758358345794
+  },
+  "timestamp": 1758358335794
+}
+```
 
 **⚡ Command without ACK (Fire and Forget):**
 ```json
@@ -628,9 +640,11 @@ Content-Type: application/json
 - `RESTART` - Restart device (ต้อง ACK)
 - `UPDATE_FIRMWARE` - Update firmware (ต้อง ACK)
 - `RESET_CONFIG` - Reset to default config (ต้อง ACK)
+- `MANUAL_PAYMENT` - Send manual payment command (ต้อง ACK)
 
 **⚡ Commands without ACK (Fire and Forget):**
 - `PING` - PING device (ไม่ต้อง ACK)
+- `PAYMENT` - Payment status notification (ไม่ต้อง ACK)
 - `GET_STATUS` (Example ยังคิดไม่ออก)- Get device status (ไม่ต้อง ACK)
 
 #### 📡 Device → Server: MQTT ACK Response
@@ -641,12 +655,27 @@ Content-Type: application/json
 **✅ MQTT Success ACK:**
 
 ```json
-**✅ MQTT Success ACK for APPLY_CONFIG / RESTART/ RESET_CONFIG :**
+**✅ MQTT Success ACK for APPLY_CONFIG / RESTART/ RESET_CONFIG / MANUAL_PAYMENT :**
 {
   "command_id": "cmd-cmfwv9cqw0001u20olfjb9nyx",
   "device_id": "device-0001",
   "command": "APPLY_CONFIG",
   "status": "SUCCESS",
+  "timestamp": 1758358355794
+}
+```
+```json
+**✅ MQTT Success ACK for MANUAL_PAYMENT with result :**
+{
+  "command_id": "cmd-manual-payment-001",
+  "device_id": "device-0001",
+  "command": "MANUAL_PAYMENT",
+  "status": "SUCCESS",
+  "result": {
+    "amount": 50,
+    "expire_at": 1758358345794,
+    "accepted": true
+  },
   "timestamp": 1758358355794
 }
 ```

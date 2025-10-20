@@ -55,6 +55,7 @@ class DeviceCommandSimulator:
             'UPDATE_FIRMWARE': 0.15,  # 15% failure rate
             'RESET_CONFIG': 0.08,     # 8% failure rate
             'PAYMENT': 0.0,           # No failures for payment
+            'MANUAL_PAYMENT': 0.05,   # 5% failure rate
         }
         
         # Command topics
@@ -69,6 +70,7 @@ class DeviceCommandSimulator:
             'UPDATE_FIRMWARE': self._handle_update_firmware,
             'RESET_CONFIG': self._handle_reset_config,
             'PAYMENT': self._handle_payment,
+            'MANUAL_PAYMENT': self._handle_manual_payment,
         }
         
         # Setup signal handlers for graceful shutdown
@@ -374,6 +376,41 @@ class DeviceCommandSimulator:
             "status": status,
             "processed_at": int(time.time() * 1000)
         }, None
+    
+    def _handle_manual_payment(self, payload: dict) -> tuple:
+        """
+        Handle MANUAL_PAYMENT command
+        
+        Returns:
+            tuple: (success: bool, result_data: dict, error: str)
+        """
+        print("💰 Handling MANUAL_PAYMENT command...")
+        
+        payment_payload = payload.get('payload', {})
+        amount = payment_payload.get('amount', 0)
+        expire_at = payment_payload.get('expire_at', 0)
+        
+        print(f"   Amount: {amount} baht")
+        print(f"   Expire at: {expire_at}")
+        
+        # Simulate processing time
+        time.sleep(random.uniform(0.3, 0.8))
+        
+        # Check if should fail based on failure mode
+        should_fail = self._should_fail('MANUAL_PAYMENT')
+        
+        if not should_fail:
+            print("✅ Manual payment accepted")
+            return True, {
+                "amount": amount,
+                "expire_at": expire_at,
+                "accepted": True,
+                "processed_at": int(time.time() * 1000)
+            }, None
+        else:
+            error = "Failed to process manual payment: Device busy"
+            print(f"❌ {error}")
+            return False, None, error
     
     def _send_ack(
         self,
