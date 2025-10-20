@@ -369,13 +369,16 @@
 </template>
 
 <script setup lang="ts">
-import type { DeviceConfig } from "~/data/devices";
-import type { DeviceResponseApi } from "~/services/apis/device-api.service";
+import type {
+  DeviceResponseApi,
+  DeviceConfig,
+} from "~/services/apis/device-api.service";
 import EnhancedDataTable from "~/components/common/EnhancedDataTable.vue";
 
 // Device API Composable
 const {
   devices: apiDevices,
+  currentDevice,
   isSearching,
   isUpdating,
   error: apiError,
@@ -399,7 +402,9 @@ const editableConfigs = ref<Record<string, DeviceConfig>>({});
 const originalConfigs = ref<Record<string, DeviceConfig>>({});
 
 // Ref to DeviceDetailDialog component
-const deviceDetailDialogRef = ref<InstanceType<typeof DeviceDetailDialog> | null>(null);
+const deviceDetailDialogRef = ref<InstanceType<
+  typeof DeviceDetailDialog
+> | null>(null);
 
 // Snackbar for messages
 const showSnackbar = ref(false);
@@ -465,12 +470,13 @@ const applyFilters = async () => {
 
   if (appliedSelectedTypeFilters.value.length === 1) {
     const typeFilter = appliedSelectedTypeFilters.value[0];
-    query.type = typeof typeFilter === 'object' ? typeFilter.value : typeFilter;
+    query.type = typeof typeFilter === "object" ? typeFilter.value : typeFilter;
   }
 
   if (appliedSelectedFilters.value.length === 1) {
     const statusFilter = appliedSelectedFilters.value[0];
-    query.status = typeof statusFilter === 'object' ? statusFilter.value : statusFilter;
+    query.status =
+      typeof statusFilter === "object" ? statusFilter.value : statusFilter;
   }
 
   // Call API with filters
@@ -527,10 +533,6 @@ const getStatusColor = (status: string) => {
       return "success";
     case "MAINTENANCE":
       return "warning";
-    case "ERROR":
-      return "error";
-    case "DISABLED":
-      return "grey";
     default:
       return "grey";
   }
@@ -540,10 +542,6 @@ const getStatusLabel = (status: string) => {
   switch (status) {
     case "DEPLOYED":
       return "ใช้งานได้";
-    case "MAINTENANCE":
-      return "บำรุงรักษา";
-    case "ERROR":
-      return "ขัดข้อง";
     case "DISABLED":
       return "ปิดใช้งาน";
     default:
@@ -556,7 +554,7 @@ const getTypeColor = (type: string) => {
     case "WASH":
       return "primary";
     case "DRYING":
-      return "secondary";
+      return "blue";
     default:
       return "grey";
   }
@@ -571,14 +569,6 @@ const getTypeLabel = (type: string) => {
     default:
       return type;
   }
-};
-
-const _formatDate = (dateString: string) => {
-  return new Date(dateString).toLocaleDateString("th-TH", {
-    day: "2-digit",
-    month: "2-digit",
-    year: "numeric",
-  });
 };
 
 const openDeviceDetailDialog = async (device: DeviceResponseApi) => {
@@ -603,8 +593,13 @@ const toggleDeviceStatus = async () => {
   try {
     await setDeviceStatus(deviceId, { status: newStatus });
 
-    // Update local state on success
-    selectedDevice.value.status = newStatus;
+    // Refresh device data from API response (setDeviceStatus updates currentDevice)
+    if (currentDevice.value) {
+      selectedDevice.value = currentDevice.value;
+    }
+
+    // Refresh the devices list
+    await applyFilters();
 
     // Show success message
     displayMessage("อัปเดตสถานะอุปกรณ์สำเร็จ", "success");
@@ -632,13 +627,24 @@ const applyDeviceConfig = async () => {
       return;
     }
 
-    await updateDeviceConfigs(selectedDevice.value.id, payload);
+    // Update device configs and capture the response
+    const updatedDevice = await updateDeviceConfigs(
+      selectedDevice.value.id,
+      payload
+    );
+
+    // Refresh selectedDevice with the API response to update dialog
+    if (updatedDevice) {
+      selectedDevice.value = updatedDevice;
+    }
 
     showApplyDeviceConfigDialog.value = false;
     isEditMode.value = false;
-    showDeviceDetailDialog.value = false;
 
-    // Refresh device data
+    // Reset dialog to view mode instead of closing it
+    deviceDetailDialogRef.value.resetToViewMode();
+
+    // Refresh the devices list
     await applyFilters();
 
     displayMessage("บันทึกการตั้งค่าอุปกรณ์สำเร็จ", "success");
@@ -648,7 +654,10 @@ const applyDeviceConfig = async () => {
 };
 
 // Display message helper
-const displayMessage = (message: string, color: "success" | "error" | "info") => {
+const displayMessage = (
+  message: string,
+  color: "success" | "error" | "info"
+) => {
   snackbarMessage.value = message;
   snackbarColor.value = color;
   showSnackbar.value = true;
