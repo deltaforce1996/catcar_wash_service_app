@@ -17,6 +17,7 @@ import { MqttModule } from './modules/mqtt';
 import { DashboardModule } from './apis/dashboard/dashboard.module';
 import { PaymentGatewayModule } from './apis/payment-gateway/payment-gateway.module';
 import { DeviceCommandsModule } from './apis/device-commands/device-commands.module';
+import { MqttConsoleModule } from './apis/mqtt-console';
 import { DateTimeService } from './services';
 
 @Module({
@@ -39,6 +40,7 @@ import { DateTimeService } from './services';
     DashboardModule,
     PaymentGatewayModule,
     DeviceCommandsModule,
+    MqttConsoleModule,
   ],
   controllers: [AppController],
   providers: [AppService, DateTimeService],
