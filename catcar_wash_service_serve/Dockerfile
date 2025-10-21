@@ -79,6 +79,9 @@ RUN pnpm prisma generate
 # The dist directory contains the compiled NestJS application
 COPY --from=base /app/dist ./dist
 
+# Copy the public directory containing static files like mqtt-console.html
+COPY --from=base /app/public ./public
+
 # Create startup script that runs migrations before starting the app
 RUN echo '#!/bin/sh' > /app/start.sh && \
     echo 'echo "Waiting for database to be ready..."' >> /app/start.sh && \
