@@ -9,6 +9,7 @@ export interface MqttConsoleMessage {
   qos?: number;
   retain?: boolean;
   receivedAt: Date;
+  direction: 'incoming' | 'outgoing'; // 📡 incoming = received, 🚀 outgoing = published
 }
 
 @Injectable()
@@ -19,10 +20,33 @@ export class MqttConsoleService {
   private subscribers: Array<(message: MqttConsoleMessage) => void> = [];
 
   /**
-   * Listen to MQTT messages
+   * Listen to MQTT messages (INCOMING - from broker)
    */
   @OnEvent('mqtt.message')
   handleMqttMessage(message: MqttMessage) {
+    this.processMessage(message, 'incoming');
+  }
+
+  /**
+   * Listen to MQTT published messages (OUTGOING - to broker)
+   */
+  @OnEvent('mqtt.messagePublished')
+  handleMqttPublishedMessage(data: { topic: string; payload: any; options?: any }) {
+    this.processMessage(
+      {
+        topic: data.topic,
+        payload: data.payload,
+        qos: data.options?.qos,
+        retain: data.options?.retain,
+      },
+      'outgoing',
+    );
+  }
+
+  /**
+   * Process MQTT message (incoming or outgoing)
+   */
+  private processMessage(message: MqttMessage, direction: 'incoming' | 'outgoing') {
     try {
       const timestamp = new Date().toISOString();
       const receivedAt = new Date();
@@ -44,6 +68,7 @@ export class MqttConsoleService {
         qos: message.qos,
         retain: message.retain,
         receivedAt,
+        direction,
       };
 
       // Add to messages array
@@ -57,7 +82,8 @@ export class MqttConsoleService {
       // Notify all subscribers
       this.notifySubscribers(consoleMessage);
 
-      this.logger.debug(`MQTT Console: Received message on topic ${message.topic}`);
+      const directionIcon = direction === 'incoming' ? '📥' : '📤';
+      this.logger.debug(`${directionIcon} MQTT Console: ${direction} message on topic ${message.topic}`);
     } catch (error) {
       this.logger.error('Error handling MQTT message in console:', error);
     }
