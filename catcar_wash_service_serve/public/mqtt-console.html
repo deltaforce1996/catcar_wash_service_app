@@ -491,6 +491,14 @@
                 </div>
             </div>
             <div class="filter-group">
+                <label>Direction:</label>
+                <select id="direction-filter">
+                    <option value="all">All</option>
+                    <option value="incoming">📥 Incoming</option>
+                    <option value="outgoing">📤 Outgoing</option>
+                </select>
+            </div>
+            <div class="filter-group">
                 <label>Show:</label>
                 <select id="limit-select">
                     <option value="50">Last 50</option>
@@ -524,6 +532,7 @@
         let messagesInLastSecond = 0;
         let lastSecondTimestamp = Date.now();
         let topicFilter = '';
+        let directionFilter = 'all';
         let displayLimit = 100;
         let availableTopics = [];
         let topicCounts = {};
@@ -609,8 +618,13 @@
             
             updateStats();
             
-            // Apply filter
+            // Apply topic filter
             if (topicFilter && !matchesTopic(message.topic, topicFilter)) {
+                return;
+            }
+            
+            // Apply direction filter
+            if (directionFilter !== 'all' && message.direction !== directionFilter) {
                 return;
             }
             
@@ -657,15 +671,21 @@
                 // Not JSON, use as is
             }
             
+            // Determine direction icon and badge
+            const directionIcon = message.direction === 'outgoing' ? '📤' : '📥';
+            const directionLabel = message.direction === 'outgoing' ? 'OUTGOING' : 'INCOMING';
+            const directionColor = message.direction === 'outgoing' ? '#10b981' : '#3b82f6';
+            
             messageEl.innerHTML = `
                 <div class="message-header">
                     <span class="message-topic">
-                        📡 ${escapeHtml(message.topic)}
+                        ${directionIcon} ${escapeHtml(message.topic)}
                     </span>
                     <span class="message-time">${timestamp}</span>
                 </div>
                 <div class="message-payload">${escapeHtml(payloadDisplay)}</div>
                 <div class="message-meta">
+                    <span class="meta-badge" style="background: ${directionColor}; color: white;">${directionLabel}</span>
                     <span class="meta-badge">QoS: ${message.qos ?? 0}</span>
                     ${message.retain ? '<span class="meta-badge">RETAINED</span>' : ''}
                 </div>
@@ -725,6 +745,11 @@
                 refilterMessages();
             });
             
+            document.getElementById('direction-filter').addEventListener('change', (e) => {
+                directionFilter = e.target.value;
+                refilterMessages();
+            });
+            
             document.getElementById('limit-select').addEventListener('change', (e) => {
                 displayLimit = parseInt(e.target.value);
                 refilterMessages();
@@ -736,8 +761,15 @@
             container.innerHTML = '';
             
             let filteredMessages = messages;
+            
+            // Apply topic filter
             if (topicFilter) {
-                filteredMessages = messages.filter(msg => matchesTopic(msg.topic, topicFilter));
+                filteredMessages = filteredMessages.filter(msg => matchesTopic(msg.topic, topicFilter));
+            }
+            
+            // Apply direction filter
+            if (directionFilter !== 'all') {
+                filteredMessages = filteredMessages.filter(msg => msg.direction === directionFilter);
             }
             
             // Apply limit

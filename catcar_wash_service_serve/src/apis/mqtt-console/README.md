@@ -5,6 +5,8 @@
 ## Features ✨
 
 - 📊 **Real-time Monitoring**: ดู MQTT messages แบบ real-time ผ่าน Server-Sent Events (SSE)
+- 📥📤 **Bidirectional Messages**: แสดงทั้ง incoming (รับเข้า) และ outgoing (ส่งออก) messages
+- 🎯 **Direction Filter**: กรองดู messages ตามทิศทาง (Incoming/Outgoing/All)
 - 🕒 **Timestamp Display**: แสดงเวลาที่ได้รับ message แบบละเอียด (มิลลิวินาที)
 - 🔍 **Topic Filtering**: กรองข้อความตาม topic pattern (รองรับ MQTT wildcards: `+` และ `#`)
 - 📋 **Topic Selector**: เลือก topic จากรายการแบบคลิกได้เลย ไม่ต้องพิมพ์ (พร้อมจำนวนข้อความแต่ละ topic)
@@ -53,9 +55,14 @@ GET /mqtt-console/stream
   "payload": "{\"temperature\":25.5,\"humidity\":60}",
   "qos": 1,
   "retain": false,
-  "receivedAt": "2025-10-20T10:30:45.123Z"
+  "receivedAt": "2025-10-20T10:30:45.123Z",
+  "direction": "incoming"
 }
 ```
+
+**Direction Field:**
+- `incoming`: Messages received from MQTT broker (📥)
+- `outgoing`: Messages published by server to MQTT broker (📤)
 
 ### 3. Get Recent Messages (REST API)
 ```
@@ -168,16 +175,27 @@ server/+/status/#
 ### Data Flow
 
 ```
-MQTT Broker → MqttService → EventEmitter
-                              ↓
-                      'mqtt.message' event
-                              ↓
-                    MqttConsoleService
-                     (stores messages)
-                              ↓
-                    SSE Stream / REST API
-                              ↓
-                      Browser (Console UI)
+INCOMING (📥):
+MQTT Broker → MqttService → EventEmitter → 'mqtt.message' event
+                                               ↓
+                                      MqttConsoleService
+                                       (stores messages)
+                                               ↓
+                                      SSE Stream / REST API
+                                               ↓
+                                       Browser (Console UI)
+
+OUTGOING (📤):
+Application → MqttService.publish() → MQTT Broker
+                       ↓
+                EventEmitter → 'mqtt.messagePublished' event
+                       ↓
+             MqttConsoleService
+              (stores messages)
+                       ↓
+              SSE Stream / REST API
+                       ↓
+               Browser (Console UI)
 ```
 
 ## Configuration ⚙️
@@ -243,19 +261,27 @@ export class MqttConsoleController {
 ## Example Use Cases 💡
 
 1. **Debugging Device Communication**
-   - ดู messages จาก devices แบบ real-time
+   - ดู messages จาก devices แบบ real-time (📥 incoming)
    - ตรวจสอบ payload format
    - หา error patterns
+   - ดู commands ที่ server ส่งไป (📤 outgoing)
 
 2. **Monitoring System Health**
    - ดูจำนวน messages per second
    - ตรวจสอบว่ามี devices ส่ง messages หรือไม่
    - ดู topic patterns
+   - เช็คว่า server ส่ง commands ถูกต้องหรือไม่
 
 3. **Development & Testing**
    - ทดสอบ MQTT integration
-   - Verify message formats
+   - Verify message formats (ทั้ง incoming และ outgoing)
    - Debug communication issues
+   - ตรวจสอบว่า payment status ถูกส่งไปหรือไม่
+
+4. **Payment Gateway Debugging** 🆕
+   - ดู payment status messages ที่ server ส่งไปยัง devices
+   - กรองดู outgoing messages เฉพาะ topic `device/*/payment-status`
+   - ตรวจสอบ payload และ timing ของการส่ง payment status
 
 ## Future Enhancements 🚀
 

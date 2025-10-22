@@ -217,11 +217,28 @@ export class PaymentGatewayService {
 
           // await this.mqttCommandManagerService.sendPaymentStatus(chargeResult.chargeId, 'PENDING');
 
+          // 🔍 DEBUG: Log payment details before sending MQTT message
+          this.logger.debug('=== PAYMENT DEBUG START ===');
+          this.logger.debug(`Device ID: ${createPaymentDto.device_id}`);
+          this.logger.debug(`Charge ID: ${chargeResult.chargeId}`);
+          this.logger.debug(`Amount: ${createPaymentDto.amount} THB`);
+          this.logger.debug(`Payment Temp ID: ${updatedPaymentTemp.id}`);
+          this.logger.debug(`Payment Method: ${createPaymentDto.payment_method || 'N/A'}`);
+          this.logger.debug(`Reference ID: ${createPaymentDto.reference_id || 'N/A'}`);
+          this.logger.debug('=== PAYMENT DEBUG END ===');
+
           setTimeout(() => {
-            if (chargeResult) {
+            if (chargeResult?.chargeId) {
+              const safeChargeId = chargeResult.chargeId;
+              this.logger.debug(`🚀 Sending PAYMENT_STATUS to chargeId: ${safeChargeId}, status: SUCCEEDED`);
               this.mqttCommandManagerService
-                .sendPaymentStatus(chargeResult.chargeId, 'SUCCEEDED')
-                .catch((err) => this.logger.error('Failed to send payment status', err));
+                .sendPaymentStatus(safeChargeId, 'SUCCEEDED')
+                .then(() => {
+                  this.logger.debug(`✅ Payment status SUCCEEDED sent successfully for chargeId: ${safeChargeId}`);
+                })
+                .catch((err) => {
+                  this.logger.error(`❌ Failed to send payment status for chargeId: ${safeChargeId}`, err);
+                });
             }
           }, 6000);
 
