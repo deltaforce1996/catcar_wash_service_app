@@ -4,20 +4,27 @@
     <div class="d-flex justify-space-between align-center flex-wrap mb-5">
       <div>
         <h1 class="text-h4 font-weight-bold mb-1">จับคู่อุปกรณ์</h1>
-        <p class="text-body-2 text-medium-emphasis">
-          จับคู่อุปกรณ์กับลูกค้าเพื่อเริ่มใช้งานระบบ
-        </p>
       </div>
     </div>
 
     <!-- Stepper Card -->
     <v-card elevation="2" rounded="lg">
+      <!-- Screen Reader Announcement for Current Step (Accessibility) -->
+      <div class="sr-only" role="status" aria-live="polite" aria-atomic="true">
+        {{
+          `ขั้นตอนที่ ${currentStep} จาก ${stepperItems.length}: ${
+            stepperItems[currentStep - 1]?.title
+          }`
+        }}
+      </div>
+
       <v-stepper
         v-model="currentStep"
         alt-labels
         hide-actions
         :items="stepperItems"
         elevation="0"
+        aria-label="ขั้นตอนการจับคู่อุปกรณ์ 4 ขั้นตอน"
       >
         <!-- Step 1: Scan/Select Device -->
         <template #[`item.1`]>
@@ -81,93 +88,100 @@
               <h3 class="text-subtitle-1 font-weight-medium mb-3">
                 เลือกอุปกรณ์ที่ต้องการจับคู่
               </h3>
-              <v-radio-group v-model="selectedDevice" hide-details>
-                <v-row>
-                  <v-col
-                    v-for="device in detectedDevices"
-                    :key="device.pin"
-                    cols="12"
-                    md="6"
-                    lg="4"
-                  >
-                    <v-card
-                      variant="outlined"
-                      :class="[
-                        'device-card',
-                        {
-                          'device-card-selected':
-                            selectedDevice?.pin === device.pin,
-                        },
-                      ]"
-                      hover
-                      @click="selectedDevice = device"
+              <!-- Scrollable Container -->
+              <div class="device-list-scrollable">
+                <v-radio-group v-model="selectedDevice" hide-details>
+                  <v-row>
+                    <v-col
+                      v-for="device in detectedDevices"
+                      :key="device.pin"
+                      cols="12"
+                      md="6"
+                      lg="4"
                     >
-                      <v-card-text class="pa-4">
-                        <div
-                          class="d-flex align-center justify-space-between mb-3"
-                        >
-                          <v-radio :value="device" hide-details />
-                          <v-chip color="primary" size="small" variant="tonal">
-                            PIN: {{ device.pin }}
-                          </v-chip>
-                        </div>
+                      <v-card
+                        variant="outlined"
+                        :class="[
+                          'device-card',
+                          {
+                            'device-card-selected':
+                              selectedDevice?.pin === device.pin,
+                          },
+                        ]"
+                        hover
+                        @click="selectedDevice = device"
+                      >
+                        <v-card-text class="pa-4">
+                          <div
+                            class="d-flex align-center justify-space-between mb-3"
+                          >
+                            <v-radio :value="device" hide-details />
+                            <v-chip
+                              color="primary"
+                              size="small"
+                              variant="tonal"
+                            >
+                              PIN: {{ device.pin }}
+                            </v-chip>
+                          </div>
 
-                        <v-list density="compact" class="bg-transparent">
-                          <v-list-item class="px-0">
-                            <v-list-item-title
-                              class="text-caption text-medium-emphasis"
-                            >
-                              Device ID
-                            </v-list-item-title>
-                            <v-list-item-subtitle
-                              class="text-body-2 font-family-monospace"
-                            >
-                              {{ device.device_id }}
-                            </v-list-item-subtitle>
-                          </v-list-item>
+                          <v-list density="compact" class="bg-transparent">
+                            <v-list-item class="px-0">
+                              <v-list-item-title
+                                class="text-caption text-medium-emphasis"
+                              >
+                                Device ID
+                              </v-list-item-title>
+                              <v-list-item-subtitle
+                                class="text-body-2 font-family-monospace"
+                              >
+                                {{ device.device_id }}
+                              </v-list-item-subtitle>
+                            </v-list-item>
 
-                          <v-list-item class="px-0">
-                            <v-list-item-title
-                              class="text-caption text-medium-emphasis"
-                            >
-                              MAC Address
-                            </v-list-item-title>
-                            <v-list-item-subtitle
-                              class="text-body-2 font-family-monospace"
-                            >
-                              {{ device.mac_address }}
-                            </v-list-item-subtitle>
-                          </v-list-item>
+                            <v-list-item class="px-0">
+                              <v-list-item-title
+                                class="text-caption text-medium-emphasis"
+                              >
+                                MAC Address
+                              </v-list-item-title>
+                              <v-list-item-subtitle
+                                class="text-body-2 font-family-monospace"
+                              >
+                                {{ device.mac_address }}
+                              </v-list-item-subtitle>
+                            </v-list-item>
 
-                          <v-list-item class="px-0">
-                            <v-list-item-title
-                              class="text-caption text-medium-emphasis"
-                            >
-                              Chip ID
-                            </v-list-item-title>
-                            <v-list-item-subtitle
-                              class="text-body-2 font-family-monospace"
-                            >
-                              {{ device.chip_id }}
-                            </v-list-item-subtitle>
-                          </v-list-item>
+                            <v-list-item class="px-0">
+                              <v-list-item-title
+                                class="text-caption text-medium-emphasis"
+                              >
+                                Chip ID
+                              </v-list-item-title>
+                              <v-list-item-subtitle
+                                class="text-body-2 font-family-monospace"
+                              >
+                                {{ device.chip_id }}
+                              </v-list-item-subtitle>
+                            </v-list-item>
 
-                          <v-list-item class="px-0">
-                            <v-list-item-title
-                              class="text-caption text-medium-emphasis"
-                            >
-                              Firmware
-                            </v-list-item-title>
-                            <v-list-item-subtitle class="text-body-2">
-                              {{ device.firmware_version }}
-                            </v-list-item-subtitle>
-                          </v-list-item>
-                        </v-list>
-                      </v-card-text>
-                    </v-card>
-                  </v-col>
-                </v-row>
-              </v-radio-group>
+                            <v-list-item class="px-0">
+                              <v-list-item-title
+                                class="text-caption text-medium-emphasis"
+                              >
+                                Firmware
+                              </v-list-item-title>
+                              <v-list-item-subtitle class="text-body-2">
+                                {{ device.firmware_version }}
+                              </v-list-item-subtitle>
+                            </v-list-item>
+                          </v-list>
+                        </v-card-text>
+                      </v-card>
+                    </v-col>
+                  </v-row>
+                </v-radio-group>
+              </div>
             </div>
 
             <!-- Empty State -->
@@ -332,13 +346,16 @@
 
             <v-row>
               <!-- Device Information -->
-              <v-col cols="12" md="6">
-                <v-card variant="outlined">
-                  <v-card-title class="d-flex align-center">
-                    <v-icon class="mr-2">mdi-devices</v-icon>
-                    ข้อมูลอุปกรณ์
+              <v-col cols="12" sm="12" md="6">
+                <v-card elevation="1" class="h-100">
+                  <v-card-title class="d-flex align-center py-4">
+                    <v-icon class="mr-2" color="primary">mdi-devices</v-icon>
+                    <span class="text-subtitle-1 font-weight-bold"
+                      >ข้อมูลอุปกรณ์</span
+                    >
                   </v-card-title>
-                  <v-card-text>
+                  <v-divider />
+                  <v-card-text class="pt-4">
                     <v-list density="compact" class="bg-transparent">
                       <v-list-item class="px-0">
                         <v-list-item-title
@@ -346,10 +363,15 @@
                         >
                           PIN
                         </v-list-item-title>
-                        <v-list-item-subtitle
-                          class="text-body-2 font-weight-medium text-primary"
-                        >
-                          {{ selectedDevice?.pin }}
+                        <v-list-item-subtitle>
+                          <v-chip
+                            color="primary"
+                            variant="tonal"
+                            size="small"
+                            class="font-weight-bold"
+                          >
+                            {{ selectedDevice?.pin }}
+                          </v-chip>
                         </v-list-item-subtitle>
                       </v-list-item>
 
@@ -402,7 +424,11 @@
                           {{ selectedDevice?.firmware_version }}
                         </v-list-item-subtitle>
                       </v-list-item>
+                    </v-list>
 
+                    <v-divider class="my-3" />
+
+                    <v-list density="compact" class="bg-transparent">
                       <v-list-item class="px-0">
                         <v-list-item-title
                           class="text-caption text-medium-emphasis"
@@ -410,7 +436,7 @@
                           ชื่ออุปกรณ์ที่จะสร้าง
                         </v-list-item-title>
                         <v-list-item-subtitle
-                          class="text-body-2 font-weight-medium text-primary"
+                          class="text-body-1 font-weight-bold text-primary"
                         >
                           อุปกรณ์ใหม่-{{ selectedDevice?.device_id }}
                         </v-list-item-subtitle>
@@ -421,13 +447,16 @@
               </v-col>
 
               <!-- Customer Information -->
-              <v-col cols="12" md="6">
-                <v-card variant="outlined">
-                  <v-card-title class="d-flex align-center">
-                    <v-icon class="mr-2">mdi-account</v-icon>
-                    ข้อมูลลูกค้า
+              <v-col cols="12" sm="12" md="6">
+                <v-card elevation="1" class="h-100">
+                  <v-card-title class="d-flex align-center py-4">
+                    <v-icon class="mr-2" color="primary">mdi-account</v-icon>
+                    <span class="text-subtitle-1 font-weight-bold"
+                      >ข้อมูลลูกค้า</span
+                    >
                   </v-card-title>
-                  <v-card-text>
+                  <v-divider />
+                  <v-card-text class="pt-4">
                     <v-list density="compact" class="bg-transparent">
                       <v-list-item class="px-0">
                         <v-list-item-title
@@ -484,15 +513,17 @@
             </v-row>
 
             <!-- Warning Card -->
-            <v-card variant="tonal" color="warning" class="mt-4">
-              <v-card-text>
-                <div class="d-flex align-start">
-                  <v-icon color="warning" class="mr-3">mdi-alert</v-icon>
-                  <div>
-                    <p class="text-body-2 font-weight-medium mb-1">
+            <v-card variant="tonal" color="warning" class="mt-6" border>
+              <v-card-text class="pa-4">
+                <div class="d-flex align-start ga-3">
+                  <v-avatar color="warning" size="40" rounded="lg">
+                    <v-icon color="on-warning" size="24">mdi-alert</v-icon>
+                  </v-avatar>
+                  <div class="flex-grow-1">
+                    <p class="text-body-1 font-weight-bold mb-2">
                       โปรดตรวจสอบข้อมูลให้ถูกต้อง
                     </p>
-                    <p class="text-caption text-medium-emphasis">
+                    <p class="text-body-2">
                       เมื่อกดยืนยันแล้ว อุปกรณ์จะถูกจับคู่กับลูกค้าที่เลือกทันที
                     </p>
                   </div>
@@ -563,7 +594,7 @@
       <v-card-actions v-if="currentStep < 4" class="pa-6 pt-0">
         <v-btn
           v-if="currentStep > 1"
-          variant="outlined"
+          variant="text"
           size="large"
           :disabled="isCreatingDevice"
           @click="goToPreviousStep"
@@ -574,6 +605,7 @@
         <v-spacer />
         <v-btn
           v-if="currentStep === 1"
+          variant="elevated"
           color="primary"
           size="large"
           :disabled="!selectedDevice"
@@ -584,6 +616,7 @@
         </v-btn>
         <v-btn
           v-else-if="currentStep === 2"
+          variant="elevated"
           color="primary"
           size="large"
           :disabled="!selectedUser"
@@ -594,6 +627,7 @@
         </v-btn>
         <v-btn
           v-else-if="currentStep === 3"
+          variant="elevated"
           color="success"
           size="large"
           :loading="isCreatingDevice"
@@ -841,6 +875,46 @@ onMounted(() => {
 </script>
 
 <style scoped>
+/* ============================================
+   DEVICE CARD STYLES
+   ============================================ */
+
+/* Scrollable Device List Container - Dynamic Height */
+.device-list-scrollable {
+  max-height: 600px;
+  overflow-y: auto;
+  overflow-x: hidden;
+  padding: 4px 8px 4px 0;
+  margin: -4px -8px -4px 0;
+}
+
+/* Custom Scrollbar Styling */
+.device-list-scrollable::-webkit-scrollbar {
+  width: 8px;
+}
+
+.device-list-scrollable::-webkit-scrollbar-track {
+  background: rgba(var(--v-theme-surface-variant), 0.3);
+  border-radius: 4px;
+}
+
+.device-list-scrollable::-webkit-scrollbar-thumb {
+  background: rgba(var(--v-theme-primary), 0.5);
+  border-radius: 4px;
+  transition: background 0.2s ease;
+}
+
+.device-list-scrollable::-webkit-scrollbar-thumb:hover {
+  background: rgba(var(--v-theme-primary), 0.7);
+}
+
+/* Firefox Scrollbar */
+.device-list-scrollable {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(var(--v-theme-primary), 0.5)
+    rgba(var(--v-theme-surface-variant), 0.3);
+}
+
 .device-card {
   transition: all 0.2s ease;
   cursor: pointer;
@@ -864,19 +938,255 @@ onMounted(() => {
   word-break: break-all;
 }
 
+/* ============================================
+   ENHANCED STEPPER VISIBILITY STYLES
+   ============================================ */
+
+/* Base Stepper Window */
 :deep(.v-stepper-window) {
   margin: 0 !important;
 }
 
+/* Base Stepper Item Padding */
 :deep(.v-stepper-item) {
   padding: 12px 16px;
+  position: relative;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
+/* Active Step Container Enhancement */
+:deep(.v-stepper-item--selected) {
+  background: rgba(var(--v-theme-primary), 0.15);
+  border-radius: 12px;
+  box-shadow: 0 2px 12px rgba(245, 127, 42, 0.12);
+}
+
+/* Active Step Top Border Indicator */
+:deep(.v-stepper-item--selected::before) {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 3px;
+  background: rgb(var(--v-theme-primary));
+  border-radius: 12px 12px 0 0;
+}
+
+/* Active Step Number/Icon Circle */
+:deep(.v-stepper-item--selected .v-avatar) {
+  width: 52px !important;
+  height: 52px !important;
+  background-color: rgb(var(--v-theme-primary)) !important;
+  box-shadow: 0 2px 8px rgba(245, 127, 42, 0.3), 0 0 0 0 rgba(245, 127, 42, 0.4);
+  animation: stepper-pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* Pulse Animation for Active Step */
+@keyframes stepper-pulse {
+  0%,
+  100% {
+    box-shadow: 0 2px 8px rgba(245, 127, 42, 0.3),
+      0 0 0 0 rgba(245, 127, 42, 0.4);
+  }
+  50% {
+    box-shadow: 0 2px 8px rgba(245, 127, 42, 0.3),
+      0 0 0 8px rgba(245, 127, 42, 0);
+  }
+}
+
+/* Active Step Number/Icon Text */
+:deep(.v-stepper-item--selected .v-avatar .v-icon),
+:deep(.v-stepper-item--selected .v-avatar) {
+  color: rgb(var(--v-theme-on-primary)) !important;
+  font-weight: 700;
+  font-size: 1.125rem;
+}
+
+/* Active Step Title */
+:deep(.v-stepper-item--selected .v-stepper-item__title) {
+  color: rgb(var(--v-theme-primary)) !important;
+  font-weight: 700 !important;
+  font-size: 0.9375rem !important;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* Inactive Step Title - Reduced Emphasis */
+:deep(.v-stepper-item:not(.v-stepper-item--selected) .v-stepper-item__title) {
+  color: rgb(var(--v-theme-on-surface-variant));
+  font-weight: 500;
+  opacity: 0.5;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* Inactive Step Avatar */
+:deep(
+    .v-stepper-item:not(.v-stepper-item--selected):not(
+        .v-stepper-item--complete
+      )
+      .v-avatar
+  ) {
+  width: 40px !important;
+  height: 40px !important;
+  background-color: rgb(var(--v-theme-surface-variant)) !important;
+  opacity: 0.4;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* Completed Step Styling */
+:deep(.v-stepper-item--complete .v-avatar) {
+  background-color: rgb(var(--v-theme-success)) !important;
+  width: 40px !important;
+  height: 40px !important;
+  box-shadow: 0 1px 4px rgba(16, 185, 129, 0.3);
+}
+
+:deep(.v-stepper-item--complete .v-stepper-item__title) {
+  color: rgb(var(--v-theme-success));
+  font-weight: 600;
+  opacity: 0.9;
+}
+
+/* Connector Line - Default */
+:deep(.v-stepper-header .v-divider) {
+  border-color: rgb(var(--v-theme-surface-variant));
+  opacity: 0.3;
+  border-width: 1px;
+  transition: all 0.3s ease;
+}
+
+/* Active-to-Next Connector Line (Dashed) */
+:deep(.v-stepper-item--selected + .v-divider) {
+  border-color: rgb(var(--v-theme-primary));
+  opacity: 0.7;
+  border-width: 3px;
+  border-style: dashed;
+}
+
+/* Completed Connector Lines (Solid) */
+:deep(.v-stepper-item--complete + .v-divider) {
+  border-color: rgb(var(--v-theme-success)) !important;
+  opacity: 1;
+  border-width: 2px;
+  border-style: solid;
+}
+
+/* Hover State for Interactive Steps */
+:deep(.v-stepper-item:not(.v-stepper-item--disabled):hover) {
+  background: rgba(var(--v-theme-surface-variant), 0.5);
+  border-radius: 12px;
+  cursor: pointer;
+}
+
+/* Focus Indicator for Keyboard Navigation (Accessibility) */
+:deep(.v-stepper-item:focus-visible) {
+  outline: 3px solid rgb(var(--v-theme-primary));
+  outline-offset: 2px;
+  border-radius: 12px;
+}
+
+/* Smooth Animation for Step Transitions */
+:deep(.v-stepper-item__avatar),
+:deep(.v-stepper-item__title) {
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* Mobile Responsiveness - Maintain visibility on small screens */
+@media (max-width: 600px) {
+  :deep(.v-stepper-item--selected .v-avatar) {
+    width: 48px !important;
+    height: 48px !important;
+  }
+
+  :deep(
+      .v-stepper-item:not(.v-stepper-item--selected):not(
+          .v-stepper-item--complete
+        )
+        .v-avatar
+    ) {
+    width: 36px !important;
+    height: 36px !important;
+  }
+
+  :deep(.v-stepper-item--selected) {
+    background: rgba(var(--v-theme-primary), 0.2);
+  }
+
+  :deep(.v-stepper-item--selected .v-stepper-item__title) {
+    font-size: 0.875rem !important;
+  }
+
+  :deep(.v-stepper-item) {
+    padding: 8px 12px;
+  }
+
+  :deep(.v-stepper-item--selected::before) {
+    height: 2px;
+  }
+}
+
+/* Tablet Responsiveness */
+@media (min-width: 601px) and (max-width: 960px) {
+  :deep(.v-stepper-item--selected .v-avatar) {
+    width: 46px !important;
+    height: 46px !important;
+  }
+}
+
+/* Device List Scrollable - Mobile Responsiveness */
+@media (max-width: 600px) {
+  .device-list-scrollable {
+    max-height: 500px;
+  }
+}
+
+/* Device List Scrollable - Tablet Responsiveness */
+@media (min-width: 601px) and (max-width: 960px) {
+  .device-list-scrollable {
+    max-height: 550px;
+  }
+}
+
+/* ============================================
+   LIST ITEM STYLES
+   ============================================ */
 :deep(.v-list-item) {
   cursor: pointer;
+  transition: background 0.2s ease;
 }
 
 :deep(.v-list-item:hover) {
   background: rgba(var(--v-theme-primary), 0.08);
+}
+
+/* Screen Reader Only - For Accessibility */
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border-width: 0;
+}
+
+/* Reduced Motion Support - Accessibility */
+@media (prefers-reduced-motion: reduce) {
+  :deep(.v-stepper-item--selected .v-avatar) {
+    animation: none !important;
+  }
+
+  :deep(.v-stepper-item--selected + .v-divider) {
+    animation: none !important;
+  }
+
+  :deep(.v-stepper-item),
+  :deep(.v-stepper-item__avatar),
+  :deep(.v-stepper-item__title) {
+    transition: none !important;
+  }
 }
 </style>
