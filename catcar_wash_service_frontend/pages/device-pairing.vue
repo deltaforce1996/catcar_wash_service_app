@@ -344,6 +344,19 @@
                         <v-list-item-title
                           class="text-caption text-medium-emphasis"
                         >
+                          PIN
+                        </v-list-item-title>
+                        <v-list-item-subtitle
+                          class="text-body-2 font-weight-medium text-primary"
+                        >
+                          {{ selectedDevice?.pin }}
+                        </v-list-item-subtitle>
+                      </v-list-item>
+
+                      <v-list-item class="px-0">
+                        <v-list-item-title
+                          class="text-caption text-medium-emphasis"
+                        >
                           Device ID
                         </v-list-item-title>
                         <v-list-item-subtitle
@@ -720,6 +733,8 @@ const stopDeviceScanning = () => {
 };
 
 const goToStep2 = () => {
+  // Stop device scanning before proceeding to step 2
+  stopDeviceScanning();
   currentStep.value = 2;
   // Auto-search users when entering step 2
   if (users.value.length === 0) {
@@ -774,6 +789,7 @@ const confirmPairing = async () => {
 
   try {
     const deviceName = `อุปกรณ์ใหม่-${selectedDevice.value.device_id}`;
+    const pairedDevicePin = selectedDevice.value.pin;
 
     await createDevice({
       id: selectedDevice.value.device_id,
@@ -782,6 +798,11 @@ const confirmPairing = async () => {
       owner_id: selectedUser.value.id,
       register_by: authUser.value.id,
     });
+
+    // Remove the successfully paired device from detectedDevices array
+    detectedDevices.value = detectedDevices.value.filter(
+      (device) => device.pin !== pairedDevicePin
+    );
 
     // Success - move to step 4
     createdDeviceId.value = selectedDevice.value.device_id;
