@@ -111,7 +111,6 @@ export interface CreateDevicePayload {
   type: EnumDeviceType;
   owner_id: string;
   register_by: string;
-  information: DeviceInfoPayload;
   configs?: unknown;
 }
 
