@@ -89,7 +89,17 @@
                 เลือกอุปกรณ์ที่ต้องการจับคู่
               </h3>
               <!-- Scrollable Container -->
-              <div class="device-list-scrollable">
+              <v-sheet
+                class="overflow-y-auto overflow-x-hidden pa-1 pr-2"
+                :style="{
+                  maxHeight: $vuetify.display.xs
+                    ? 'calc(100vh - 550px)'
+                    : $vuetify.display.sm
+                    ? 'calc(100vh - 530px)'
+                    : 'calc(100vh - 510px)',
+                }"
+                color="transparent"
+              >
                 <v-radio-group v-model="selectedDevice" hide-details>
                   <v-row>
                     <v-col
@@ -101,13 +111,11 @@
                     >
                       <v-card
                         variant="outlined"
-                        :class="[
-                          'device-card',
-                          {
-                            'device-card-selected':
-                              selectedDevice?.pin === device.pin,
-                          },
-                        ]"
+                        :color="
+                          selectedDevice?.pin === device.pin
+                            ? 'primary'
+                            : undefined
+                        "
                         hover
                         @click="selectedDevice = device"
                       >
@@ -181,7 +189,7 @@
                     </v-col>
                   </v-row>
                 </v-radio-group>
-              </div>
+              </v-sheet>
             </div>
 
             <!-- Empty State -->
@@ -247,9 +255,10 @@
                     <v-list-item
                       v-for="(user, index) in users"
                       :key="user.id"
-                      :class="{
-                        'bg-primary-lighten-2': selectedUser?.id === user.id,
-                      }"
+                      :active="selectedUser?.id === user.id"
+                      :color="
+                        selectedUser?.id === user.id ? 'primary' : undefined
+                      "
                       @click="selectedUser = user"
                     >
                       <template #prepend>
@@ -876,60 +885,34 @@ onMounted(() => {
 
 <style scoped>
 /* ============================================
-   DEVICE CARD STYLES
+   CUSTOM SCROLLBAR STYLES
    ============================================ */
 
-/* Scrollable Device List Container - Dynamic Height */
-.device-list-scrollable {
-  max-height: 600px;
-  overflow-y: auto;
-  overflow-x: hidden;
-  padding: 4px 8px 4px 0;
-  margin: -4px -8px -4px 0;
-}
-
-/* Custom Scrollbar Styling */
-.device-list-scrollable::-webkit-scrollbar {
+/* Custom Scrollbar Styling for v-sheet */
+.overflow-y-auto::-webkit-scrollbar {
   width: 8px;
 }
 
-.device-list-scrollable::-webkit-scrollbar-track {
+.overflow-y-auto::-webkit-scrollbar-track {
   background: rgba(var(--v-theme-surface-variant), 0.3);
   border-radius: 4px;
 }
 
-.device-list-scrollable::-webkit-scrollbar-thumb {
+.overflow-y-auto::-webkit-scrollbar-thumb {
   background: rgba(var(--v-theme-primary), 0.5);
   border-radius: 4px;
   transition: background 0.2s ease;
 }
 
-.device-list-scrollable::-webkit-scrollbar-thumb:hover {
+.overflow-y-auto::-webkit-scrollbar-thumb:hover {
   background: rgba(var(--v-theme-primary), 0.7);
 }
 
 /* Firefox Scrollbar */
-.device-list-scrollable {
+.overflow-y-auto {
   scrollbar-width: thin;
   scrollbar-color: rgba(var(--v-theme-primary), 0.5)
     rgba(var(--v-theme-surface-variant), 0.3);
-}
-
-.device-card {
-  transition: all 0.2s ease;
-  cursor: pointer;
-}
-
-.device-card:hover {
-  border-color: rgb(var(--v-theme-primary)) !important;
-  transform: translateY(-2px);
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
-}
-
-.device-card-selected {
-  border-color: rgb(var(--v-theme-primary)) !important;
-  border-width: 2px !important;
-  background: rgba(var(--v-theme-primary), 0.05);
 }
 
 .font-family-monospace {
@@ -1134,31 +1117,9 @@ onMounted(() => {
   }
 }
 
-/* Device List Scrollable - Mobile Responsiveness */
-@media (max-width: 600px) {
-  .device-list-scrollable {
-    max-height: 500px;
-  }
-}
-
-/* Device List Scrollable - Tablet Responsiveness */
-@media (min-width: 601px) and (max-width: 960px) {
-  .device-list-scrollable {
-    max-height: 550px;
-  }
-}
-
 /* ============================================
-   LIST ITEM STYLES
+   ACCESSIBILITY STYLES
    ============================================ */
-:deep(.v-list-item) {
-  cursor: pointer;
-  transition: background 0.2s ease;
-}
-
-:deep(.v-list-item:hover) {
-  background: rgba(var(--v-theme-primary), 0.08);
-}
 
 /* Screen Reader Only - For Accessibility */
 .sr-only {
