@@ -14,19 +14,19 @@
           src="/Logo/Asset 33@2x.png"
           alt="CAT CARWASH Logo"
           class="nav-logo"
-        >
+        />
         <img
           v-if="!theme.global.current.value.dark"
           src="/Logo/Asset gray text.png"
           alt="CAT CARWASH Logo gray text"
           class="nav-logo"
-        >
+        />
         <img
           v-else
           src="/Logo/Asset 1@3x.png"
           alt="CAT CARWASH Logo white text"
           class="nav-logo"
-        >
+        />
       </div>
 
       <!-- Navigation Menu -->
@@ -126,19 +126,19 @@
           src="/Logo/Asset 33@2x.png"
           alt="CAT CARWASH Logo"
           class="mobile-logo"
-        >
+        />
         <img
           v-if="!theme.global.current.value.dark"
           src="/Logo/Asset gray text.png"
           alt="CAT CARWASH Logo gray text"
           class="mobile-logo-text"
-        >
+        />
         <img
           v-else
           src="/Logo/Asset 1@3x.png"
           alt="CAT CARWASH Logo white text"
           class="mobile-logo-text"
-        >
+        />
       </div>
 
       <v-spacer />
@@ -240,19 +240,14 @@ const managementMenuItems = [
     to: "/customer-management",
   },
   {
-    title: "จับคู่อุปกรณ์",
-    icon: "mdi-link-variant",
-    to: "/device-pairing",
-  },
-  {
     title: "จัดการพนักงาน",
     icon: "mdi-account-tie",
     to: "/employee-management",
   },
   {
-    title: "จับคู่อุปกรณ์ (Example)",
-    icon: "mdi-bluetooth-connect",
-    to: "/examples/ex-pairing-page",
+    title: "จับคู่อุปกรณ์",
+    icon: "mdi-link-variant",
+    to: "/device-pairing",
   },
 ];
 
