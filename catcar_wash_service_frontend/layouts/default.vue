@@ -5,33 +5,35 @@
       :permanent="$vuetify.display.lgAndUp"
       :temporary="$vuetify.display.mdAndDown"
       color="surface"
-      class="navigation-drawer"
+      class="border-e"
       width="280"
     >
       <!-- Logo Section -->
-      <div class="logo-section">
+      <v-sheet class="py-6 px-4 text-center border-b" color="transparent">
         <img
           src="/Logo/Asset 33@2x.png"
           alt="CAT CARWASH Logo"
-          class="nav-logo"
-        />
+          style="height: 60px; width: auto; max-width: 100%"
+        >
         <img
           v-if="!theme.global.current.value.dark"
           src="/Logo/Asset gray text.png"
           alt="CAT CARWASH Logo gray text"
-          class="nav-logo"
-        />
+          style="height: 60px; width: auto; max-width: 100%"
+        >
         <img
           v-else
           src="/Logo/Asset 1@3x.png"
           alt="CAT CARWASH Logo white text"
-          class="nav-logo"
-        />
-      </div>
+          style="height: 60px; width: auto; max-width: 100%"
+        >
+      </v-sheet>
 
       <!-- Navigation Menu -->
-      <v-list nav class="nav-list">
-        <v-list-subheader class="nav-subheader"> หลัก </v-list-subheader>
+      <v-list nav class="px-4">
+        <v-list-subheader class="text-uppercase font-weight-bold text-caption text-on-surface-variant mb-2">
+          หลัก
+        </v-list-subheader>
 
         <v-list-item
           v-for="item in mainMenuItems"
@@ -39,14 +41,17 @@
           :to="item.to"
           :prepend-icon="item.icon"
           :title="item.title"
-          class="nav-item"
+          class="mb-1"
+          rounded="lg"
           color="primary"
         />
 
         <template v-if="managementMenuItems.length > 0">
           <v-divider class="my-4" />
 
-          <v-list-subheader class="nav-subheader"> จัดการ </v-list-subheader>
+          <v-list-subheader class="text-uppercase font-weight-bold text-caption text-on-surface-variant mb-2">
+            จัดการ
+          </v-list-subheader>
 
           <v-list-item
             v-for="item in managementMenuItems"
@@ -54,7 +59,8 @@
             :to="item.to"
             :prepend-icon="item.icon"
             :title="item.title"
-            class="nav-item"
+            class="mb-1"
+            rounded="lg"
             color="primary"
           />
         </template>
@@ -62,13 +68,13 @@
 
       <!-- Profile Section at Bottom -->
       <template #append>
-        <div class="profile-section">
+        <v-sheet class="border-t" color="surface-container-low">
           <v-list>
             <v-list-item
               :prepend-avatar="profileData.avatar"
               :title="profileData.name"
               :subtitle="profileData.email"
-              class="profile-item"
+              class="pa-4"
             >
               <template #append>
                 <v-menu>
@@ -102,7 +108,7 @@
               </template>
             </v-list-item>
           </v-list>
-        </div>
+        </v-sheet>
       </template>
     </v-navigation-drawer>
 
@@ -118,24 +124,24 @@
       <v-spacer />
 
       <!-- Mobile Logo -->
-      <div class="mobile-logo-container">
+      <div class="d-flex align-center ga-2">
         <img
           src="/Logo/Asset 33@2x.png"
           alt="CAT CARWASH Logo"
-          class="mobile-logo"
-        />
+          style="height: 32px; width: auto"
+        >
         <img
           v-if="!theme.global.current.value.dark"
           src="/Logo/Asset gray text.png"
           alt="CAT CARWASH Logo gray text"
-          class="mobile-logo-text"
-        />
+          style="height: 24px; width: auto"
+        >
         <img
           v-else
           src="/Logo/Asset 1@3x.png"
           alt="CAT CARWASH Logo white text"
-          class="mobile-logo-text"
-        />
+          style="height: 24px; width: auto"
+        >
       </div>
 
       <v-spacer />
@@ -290,100 +296,12 @@ const handleLogout = () => {
 </script>
 
 <style scoped>
-.navigation-drawer {
-  border-right: 1px solid rgb(var(--v-theme-outline));
-}
-
-.logo-section {
-  padding: 1.5rem 1rem;
-  text-align: center;
-  border-bottom: 1px solid rgb(var(--v-theme-outline));
-}
-
-.nav-logo {
-  height: 60px;
-  width: auto;
-  max-width: 100%;
-}
-
-.nav-list {
-  padding: 0 1rem;
-}
-
-.nav-subheader {
-  font-weight: 600;
-  color: rgb(var(--v-theme-on-surface-variant));
-  font-size: 0.875rem;
-  letter-spacing: 0.1em;
-  text-transform: uppercase;
-  margin-bottom: 0.5rem;
-}
-
-.nav-item {
-  margin-bottom: 0.25rem;
-  color: rgb(var(--v-theme-on-surface));
-}
-
-.nav-item:hover {
-  background-color: rgb(var(--v-theme-surface-variant));
-}
-
-.nav-item.router-link-active {
-  background: linear-gradient(
-    45deg,
-    rgba(255, 152, 0, 0.1) 30%,
-    rgba(255, 87, 34, 0.1) 90%
-  );
-  color: #ff9800;
-  border-left: 3px solid #ff9800;
-}
-
-.profile-section {
-  border-top: 1px solid rgb(var(--v-theme-outline));
-  background-color: rgb(var(--v-theme-surface-container-low));
-}
-
-.profile-item {
-  padding: 1rem;
-}
-
-.mobile-logo-container {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-}
-
-.mobile-logo {
-  height: 32px;
-  width: auto;
-}
-
-.mobile-logo-text {
-  height: 24px;
-  width: auto;
-}
-
-/* Theme-specific styles */
-.v-theme--dark .navigation-drawer {
+/* Theme-specific gradient backgrounds */
+.v-theme--dark .v-navigation-drawer {
   background: linear-gradient(180deg, #1a1a1a 0%, #0f0f0f 100%);
 }
 
-.v-theme--light .navigation-drawer {
+.v-theme--light .v-navigation-drawer {
   background: linear-gradient(180deg, #ffffff 0%, #f8f9fa 100%);
-}
-
-/* Responsive adjustments */
-@media (max-width: 960px) {
-  .logo-section {
-    padding: 1rem 0.75rem;
-  }
-
-  .nav-logo {
-    height: 50px;
-  }
-
-  .nav-list {
-    padding: 0 0.75rem;
-  }
 }
 </style>
