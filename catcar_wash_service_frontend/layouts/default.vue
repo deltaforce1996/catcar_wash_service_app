@@ -43,29 +43,21 @@
           color="primary"
         />
 
-        <v-divider class="my-4" />
+        <template v-if="managementMenuItems.length > 0">
+          <v-divider class="my-4" />
 
-        <v-list-subheader class="nav-subheader"> จัดการ </v-list-subheader>
+          <v-list-subheader class="nav-subheader"> จัดการ </v-list-subheader>
 
-        <v-list-item
-          v-for="item in managementMenuItems"
-          :key="item.title"
-          :to="item.to"
-          :prepend-icon="item.icon"
-          :title="item.title"
-          class="nav-item"
-          color="primary"
-        />
-
-        <v-divider class="my-4" />
-
-        <!-- Theme Toggle -->
-        <v-list-item
-          prepend-icon="mdi-brightness-6"
-          title="สลับธีม"
-          class="nav-item"
-          @click="toggleTheme"
-        />
+          <v-list-item
+            v-for="item in managementMenuItems"
+            :key="item.title"
+            :to="item.to"
+            :prepend-icon="item.icon"
+            :title="item.title"
+            class="nav-item"
+            color="primary"
+          />
+        </template>
       </v-list>
 
       <!-- Profile Section at Bottom -->
@@ -93,6 +85,11 @@
                       prepend-icon="mdi-account-outline"
                       title="โปรไฟล์"
                       @click="goToProfile"
+                    />
+                    <v-list-item
+                      prepend-icon="mdi-brightness-6"
+                      title="สลับธีม"
+                      @click="toggleTheme"
                     />
                     <v-divider />
                     <v-list-item
@@ -158,6 +155,11 @@
             title="โปรไฟล์"
             @click="goToProfile"
           />
+          <v-list-item
+            prepend-icon="mdi-brightness-6"
+            title="สลับธีม"
+            @click="toggleTheme"
+          />
           <v-divider />
           <v-list-item
             prepend-icon="mdi-logout"
@@ -218,38 +220,55 @@ const profileData = computed(() => {
   }
 });
 
-// Main menu items
-const mainMenuItems = [
+// All available menu items
+const allMainMenuItems = [
   {
     title: "แดชบอร์ดยอดขาย",
     icon: "mdi-view-dashboard",
     to: "/dashboard",
+    roles: ["USER", "TECHNICIAN", "ADMIN"],
   },
   {
     title: "จัดการอุปกรณ์",
     icon: "mdi-hammer-wrench",
     to: "/device-management",
+    roles: ["USER", "TECHNICIAN", "ADMIN"],
   },
 ];
 
-// Management menu items
-const managementMenuItems = [
+const allManagementMenuItems = [
+  {
+    title: "จับคู่อุปกรณ์",
+    icon: "mdi-link-variant",
+    to: "/device-pairing",
+    roles: ["TECHNICIAN", "ADMIN"],
+  },
   {
     title: "จัดการลูกค้า",
     icon: "mdi-account-group",
     to: "/customer-management",
+    roles: ["TECHNICIAN", "ADMIN"],
   },
   {
     title: "จัดการพนักงาน",
     icon: "mdi-account-tie",
     to: "/employee-management",
-  },
-  {
-    title: "จับคู่อุปกรณ์",
-    icon: "mdi-link-variant",
-    to: "/device-pairing",
+    roles: ["ADMIN"],
   },
 ];
+
+// Filtered menu items based on user role
+const mainMenuItems = computed(() => {
+  if (!user.value) return [];
+  const userRole = user.value.permission.name;
+  return allMainMenuItems.filter((item) => item.roles.includes(userRole));
+});
+
+const managementMenuItems = computed(() => {
+  if (!user.value) return [];
+  const userRole = user.value.permission.name;
+  return allManagementMenuItems.filter((item) => item.roles.includes(userRole));
+});
 
 // Methods
 const toggleTheme = () => {
