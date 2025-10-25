@@ -89,6 +89,8 @@
                   v-model="tempSelectedPaymentStatuses"
                   :items="paymentStatusOptions"
                   label="สถานะการชำระเงิน"
+                  item-title="label"
+                  item-value="value"
                   prepend-inner-icon="mdi-credit-card"
                   variant="outlined"
                   density="compact"
@@ -101,11 +103,11 @@
                   <template #chip="{ props, item }">
                     <v-chip
                       v-bind="props"
-                      :color="getPaymentStatusColor(item.raw)"
+                      :color="getPaymentStatusColor(item.raw.value)"
                       size="small"
                       variant="tonal"
                     >
-                      {{ item.raw }}
+                      {{ item.raw.label }}
                     </v-chip>
                   </template>
                 </v-combobox>
@@ -115,6 +117,8 @@
                   v-model="tempSelectedDeviceTypes"
                   :items="deviceTypeOptions"
                   label="ประเภทอุปกรณ์"
+                  item-title="label"
+                  item-value="value"
                   prepend-inner-icon="mdi-cog"
                   variant="outlined"
                   density="compact"
@@ -127,11 +131,11 @@
                   <template #chip="{ props, item }">
                     <v-chip
                       v-bind="props"
-                      :color="getDeviceTypeColor(item.raw)"
+                      :color="getDeviceTypeColor(item.raw.value)"
                       size="small"
                       variant="tonal"
                     >
-                      {{ item.raw }}
+                      {{ item.raw.label }}
                     </v-chip>
                   </template>
                 </v-combobox>
@@ -166,20 +170,54 @@
       </div>
     </div>
 
+    <!-- Error Alert -->
+    <v-alert
+      v-if="dashboardError"
+      type="error"
+      variant="tonal"
+      closable
+      class="mb-6"
+      @click:close="clearMessages"
+    >
+      <template #prepend>
+        <v-icon>mdi-alert-circle</v-icon>
+      </template>
+      <div class="text-body-2">
+        <strong>เกิดข้อผิดพลาด:</strong> {{ dashboardError }}
+      </div>
+    </v-alert>
+
     <!-- KPI Cards Section -->
-    <v-row class="mb-8">
-      <v-col v-for="(kpi, index) in kpiData" :key="index" cols="12" md="4">
-        <KPICard
-          :title="kpi.title"
-          :value="kpi.value"
-          :trend="kpi.trend"
-          :chart-data="kpi.chartData"
-          :chart-labels="kpi.chartLabels"
-          :chart-id="kpi.chartId"
-          :currency="kpi.currency"
+    <div class="position-relative mb-8">
+      <!-- Loading Overlay -->
+      <v-overlay
+        v-model="isLoading"
+        contained
+        persistent
+        class="align-center justify-center"
+      >
+        <v-progress-circular
+          color="primary"
+          indeterminate
+          size="64"
         />
-      </v-col>
-    </v-row>
+        <div class="text-body-1 mt-4">กำลังโหลดข้อมูล...</div>
+      </v-overlay>
+
+      <v-row>
+        <v-col v-for="(kpi, index) in kpiData" :key="index" cols="12" md="4">
+          <KPICard
+            :title="kpi.title"
+            :value="kpi.value"
+            :trend="kpi.trend"
+            :chart-data="kpi.chartData"
+            :chart-labels="kpi.chartLabels"
+            :chart-id="kpi.chartId"
+            :currency="kpi.currency"
+          />
+        </v-col>
+      </v-row>
+    </div>
 
     <!-- Hourly Revenue Card Section -->
     <!-- <v-row class="mb-8">
@@ -427,7 +465,7 @@
             size="small"
             variant="tonal"
           >
-            {{ item.payload.status }}
+            {{ getPaymentStatusLabel(item.payload.status) }}
           </v-chip>
         </template>
         <template #[`item.device.type`]="{ item }">
@@ -436,7 +474,7 @@
             size="small"
             variant="tonal"
           >
-            {{ item.device.type }}
+            {{ getDeviceTypeLabel(item.device.type) }}
           </v-chip>
         </template>
         <template #[`item.payload.total_amount`]="{ item }">
@@ -712,6 +750,20 @@
 </template>
 
 <script setup lang="ts">
+import type { DashboardFilterRequest } from "~/services/apis/dashboard-api.service";
+import type { EnumDeviceType, EnumPaymentStatus } from "~/types";
+
+// Import enum translation composable
+const {
+  getDeviceTypeLabel,
+  getDeviceTypeColor,
+  getDeviceTypeIcon,
+  getPaymentStatusLabel,
+  getPaymentStatusColor,
+  deviceTypeOptions,
+  paymentStatusOptions,
+} = useEnumTranslation();
+
 // TypeScript interfaces
 interface PaymentQR {
   ref1: string | null;
@@ -749,7 +801,19 @@ interface SaleItem {
   device: Device;
 }
 
-const { dashboardData } = useDashboardData();
+// Dashboard KPI data using new composable
+const {
+  monthlyData,
+  dailyData,
+  hourlyData,
+  isLoading,
+  error: dashboardError,
+  fetchDashboardSummary,
+  updateFilter,
+  clearMessages,
+} = useDashboard();
+
+// Sales table data (keep existing composable)
 const {
   salesData: enhancedSalesData,
   loading: _salesDataLoading,
@@ -811,8 +875,7 @@ const userOptions = computed(() => {
   return Array.from(users).sort();
 });
 
-const paymentStatusOptions = ["SUCCESS", "FAILED", "PENDING"];
-const deviceTypeOptions = ["WASH", "DRYING"];
+// Popover filter options from composable (no longer hardcoded)
 
 // Filter count badge logic
 const activeFilterCount = computed(() => {
@@ -872,10 +935,30 @@ const clearAllFilters = () => {
 };
 
 // Popover filter functions
-const applyPopoverFilters = () => {
+const applyPopoverFilters = async () => {
   selectedUserIds.value = [...tempSelectedUserIds.value];
-  selectedPaymentStatuses.value = [...tempSelectedPaymentStatuses.value];
-  selectedDeviceTypes.value = [...tempSelectedDeviceTypes.value];
+  selectedPaymentStatuses.value = tempSelectedPaymentStatuses.value.map((item) =>
+    typeof item === "string" ? item : item.value
+  );
+  selectedDeviceTypes.value = tempSelectedDeviceTypes.value.map((item) =>
+    typeof item === "string" ? item : item.value
+  );
+
+  // Call updateFilter with the API format
+  const filter: Partial<DashboardFilterRequest> = {};
+
+  if (selectedDeviceTypes.value.length > 0) {
+    filter.device_type = selectedDeviceTypes.value[0] as EnumDeviceType;
+  }
+
+  if (selectedPaymentStatuses.value.length > 0) {
+    filter.payment_status = selectedPaymentStatuses.value[0] as EnumPaymentStatus;
+  }
+
+  if (Object.keys(filter).length > 0) {
+    await updateFilter(filter);
+  }
+
   filterMenu.value = false;
 };
 
@@ -890,8 +973,12 @@ const resetPopoverFilters = () => {
   selectedDeviceTypes.value = [];
 };
 
-// Initialize temp values on component mount
-onMounted(() => {
+// Initialize temp values and fetch dashboard data on component mount
+onMounted(async () => {
+  // Fetch initial dashboard data
+  await fetchDashboardSummary();
+
+  // Initialize temp filter values
   tempSearchQuery.value = searchQuery.value;
   tempStartTimeObj.value = startTimeObj.value;
   tempEndTimeObj.value = endTimeObj.value;
@@ -903,31 +990,42 @@ onMounted(() => {
   tempSelectedDeviceTypes.value = [...selectedDeviceTypes.value];
 });
 
+// Watch date picker changes and update dashboard filter
+watch(selectedDateObject, (newDate) => {
+  if (newDate) {
+    const year = newDate.getFullYear();
+    const month = String(newDate.getMonth() + 1).padStart(2, "0");
+    const day = String(newDate.getDate()).padStart(2, "0");
+    const dateStr = `${year}-${month}-${day}`;
+    updateFilter({ date: dateStr });
+  }
+});
+
 const kpiData = computed(() => [
   {
-    title: "รายได้รายปี",
-    value: dashboardData.monthRevenue.value,
-    trend: dashboardData.monthRevenue.trend,
-    chartData: dashboardData.monthRevenue.chartData,
-    chartLabels: dashboardData.monthRevenue.chartLabels,
+    title: "รายได้รายเดือน",
+    value: monthlyData.value?.value || 0,
+    trend: monthlyData.value?.trend || 0,
+    chartData: monthlyData.value?.chartData || [],
+    chartLabels: monthlyData.value?.chartLabels || [],
     chartId: "year-kpi",
     currency: true,
   },
   {
-    title: "รายได้รายเดือน",
-    value: dashboardData.dateRevenue.value,
-    trend: dashboardData.dateRevenue.trend,
-    chartData: dashboardData.dateRevenue.chartData,
-    chartLabels: dashboardData.dateRevenue.chartLabels,
+    title: "รายได้รายวัน",
+    value: dailyData.value?.value || 0,
+    trend: dailyData.value?.trend || 0,
+    chartData: dailyData.value?.chartData || [],
+    chartLabels: dailyData.value?.chartLabels || [],
     chartId: "month-kpi",
     currency: true,
   },
   {
-    title: "รายได้รายวัน",
-    value: dashboardData.hourlyRevenue.value,
-    trend: dashboardData.hourlyRevenue.trend,
-    chartData: dashboardData.hourlyRevenue.chartData,
-    chartLabels: dashboardData.hourlyRevenue.chartLabels,
+    title: "รายได้รายชั่วโมง",
+    value: hourlyData.value?.value || 0,
+    trend: hourlyData.value?.trend || 0,
+    chartData: hourlyData.value?.chartData || [],
+    chartLabels: hourlyData.value?.chartLabels || [],
     chartId: "date-kpi",
     currency: true,
   },
@@ -1039,41 +1137,6 @@ const formatDateTime = (dateString: string) => {
     minute: "2-digit",
     timeZone: "Asia/Bangkok",
   }).format(date);
-};
-
-const getDeviceTypeColor = (deviceType: string) => {
-  switch (deviceType) {
-    case "WASH":
-      return "primary";
-    case "DRYING":
-      return "secondary";
-    default:
-      return "primary";
-  }
-};
-
-const getDeviceTypeIcon = (deviceType: string) => {
-  switch (deviceType) {
-    case "WASH":
-      return "mdi-car-wash";
-    case "DRYING":
-      return "mdi-air-filter";
-    default:
-      return "mdi-cog";
-  }
-};
-
-const getPaymentStatusColor = (status: string) => {
-  switch (status) {
-    case "SUCCESS":
-      return "success";
-    case "FAILED":
-      return "error";
-    case "PENDING":
-      return "warning";
-    default:
-      return "primary";
-  }
 };
 
 const hasQrPayment = (item: SaleItem): boolean => {
