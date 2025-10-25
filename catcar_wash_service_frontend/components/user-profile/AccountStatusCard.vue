@@ -14,12 +14,12 @@
         <div>
           <div class="text-caption text-medium-emphasis mb-2">สถานะบัญชี</div>
           <v-chip
-            :color="getStatusColor(status)"
+            :color="getUserStatusColor(status)"
             variant="tonal"
             size="small"
-            :aria-label="`สถานะบัญชี: ${getStatusLabel(status)}`"
+            :aria-label="`สถานะบัญชี: ${getUserStatusLabel(status)}`"
           >
-            {{ getStatusLabel(status) }}
+            {{ getUserStatusLabel(status) }}
           </v-chip>
         </div>
         <div>
@@ -42,6 +42,12 @@
 </template>
 
 <script setup lang="ts">
+// Import enum translation composable
+const {
+  getUserStatusLabel,
+  getUserStatusColor,
+} = useEnumTranslation();
+
 interface Props {
   status?: string;
   createdAt?: string;
@@ -53,14 +59,6 @@ withDefaults(defineProps<Props>(), {
   createdAt: "",
   updatedAt: "",
 });
-
-const getStatusColor = (status: string) => {
-  return status === "ACTIVE" ? "success" : "error";
-};
-
-const getStatusLabel = (status: string) => {
-  return status === "ACTIVE" ? "ใช้งานอยู่" : "หยุดใช้งาน";
-};
 
 const formatDate = (dateString?: string) => {
   if (!dateString) return "-";

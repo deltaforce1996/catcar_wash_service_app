@@ -38,12 +38,12 @@
                   </v-avatar>
                   <h3 class="text-h5 font-weight-bold">{{ device?.name }}</h3>
                   <v-chip
-                    :color="getTypeColor(device?.type || '')"
+                    :color="getDeviceTypeColor(device?.type || '')"
                     size="small"
                     variant="tonal"
                     class="mt-2"
                   >
-                    {{ getTypeLabel(device?.type || "") }}
+                    {{ getDeviceTypeLabel(device?.type || "") }}
                   </v-chip>
                 </div>
 
@@ -53,11 +53,11 @@
                     <div class="d-flex justify-space-between align-center mb-2">
                       <span class="font-weight-medium">สถานะ:</span>
                       <v-chip
-                        :color="getStatusColor(device?.status || '')"
+                        :color="getDeviceStatusColor(device?.status || '')"
                         size="small"
                         variant="tonal"
                       >
-                        {{ getStatusLabel(device?.status || "") }}
+                        {{ getDeviceStatusLabel(device?.status || "") }}
                       </v-chip>
                     </div>
                     <div class="d-flex justify-space-between align-center mb-2">
@@ -1058,7 +1058,7 @@
                         บันทึกการใช้งาน
                       </h3>
                       <p class="text-body-2 text-grey-darken-1">
-                        ส่วนนี้จะแสดงประวัติการใช้งานอุปกรณ์<br />
+                        ส่วนนี้จะแสดงประวัติการใช้งานอุปกรณ์<br >
                         (อยู่ในระหว่างการพัฒนา)
                       </p>
                     </div>
@@ -1072,7 +1072,7 @@
                       </v-icon>
                       <h3 class="text-h6 text-grey-darken-1 mb-2">สถานะระบบ</h3>
                       <p class="text-body-2 text-grey-darken-1">
-                        ส่วนนี้จะแสดงสถานะการทำงานของอุปกรณ์แบบเรียลไทม์<br />
+                        ส่วนนี้จะแสดงสถานะการทำงานของอุปกรณ์แบบเรียลไทม์<br >
                         (อยู่ในระหว่างการพัฒนา)
                       </p>
                     </div>
@@ -1092,6 +1092,14 @@ import type {
   DeviceResponseApi,
   DeviceConfig,
 } from "~/services/apis/device-api.service";
+
+// Import enum translation composable
+const {
+  getDeviceTypeLabel,
+  getDeviceTypeColor,
+  getDeviceStatusLabel,
+  getDeviceStatusColor,
+} = useEnumTranslation();
 
 interface SystemConfig {
   on_time?: string;
@@ -1340,54 +1348,6 @@ const isSystemConfigChanged = () => {
     JSON.stringify(originalSystemConfigs.value) !==
     JSON.stringify(editableSystemConfigs.value)
   );
-};
-
-const getStatusColor = (status: string) => {
-  switch (status) {
-    case "DEPLOYED":
-      return "success";
-    case "MAINTENANCE":
-      return "warning";
-    case "ERROR":
-      return "error";
-    default:
-      return "grey";
-  }
-};
-
-const getStatusLabel = (status: string) => {
-  switch (status) {
-    case "DEPLOYED":
-      return "ใช้งานได้";
-    case "MAINTENANCE":
-      return "บำรุงรักษา";
-    case "ERROR":
-      return "ขัดข้อง";
-    default:
-      return status;
-  }
-};
-
-const getTypeColor = (type: string) => {
-  switch (type) {
-    case "WASH":
-      return "primary";
-    case "DRYING":
-      return "secondary";
-    default:
-      return "grey";
-  }
-};
-
-const getTypeLabel = (type: string) => {
-  switch (type) {
-    case "WASH":
-      return "เครื่องล้าง";
-    case "DRYING":
-      return "เครื่องอบแห้ง";
-    default:
-      return type;
-  }
 };
 
 const _getDeviceDescription = (type: string) => {

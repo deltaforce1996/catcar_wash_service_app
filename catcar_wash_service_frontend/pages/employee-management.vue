@@ -66,13 +66,13 @@
               <v-btn
                 v-for="status in statusOptions"
                 :key="status"
-                :color="getStatusColor(status)"
+                :color="getEmpStatusColor(status)"
                 :variant="tempStatusFilter === status ? 'flat' : 'outlined'"
                 size="small"
                 class="text-none"
                 @click="selectStatusFilter(status)"
               >
-                {{ getStatusLabel(status) }}
+                {{ getEmpStatusLabel(status) }}
               </v-btn>
               <v-btn
                 color="primary"
@@ -128,11 +128,11 @@
 
       <template #[`item.status`]="{ item }">
         <v-chip
-          :color="getStatusColor(item.status)"
+          :color="getEmpStatusColor(item.status)"
           size="small"
           variant="tonal"
         >
-          {{ getStatusLabel(item.status) }}
+          {{ getEmpStatusLabel(item.status) }}
         </v-chip>
       </template>
 
@@ -200,13 +200,15 @@
                     </div>
                     <v-chip
                       :color="
-                        getPermissionColor(item.permission?.name || 'USER')
+                        getPermissionTypeColor(item.permission?.name || 'USER')
                       "
                       size="small"
                       variant="tonal"
                       class="mt-1"
                     >
-                      {{ getPermissionLabel(item.permission?.name || "USER") }}
+                      {{
+                        getPermissionTypeLabel(item.permission?.name || "USER")
+                      }}
                     </v-chip>
                   </v-card-text>
                 </v-card>
@@ -282,12 +284,12 @@
                           สถานะ
                         </div>
                         <v-chip
-                          :color="getStatusColor(item.status)"
+                          :color="getEmpStatusColor(item.status)"
                           size="small"
                           variant="tonal"
                           class="mt-1"
                         >
-                          {{ getStatusLabel(item.status) }}
+                          {{ getEmpStatusLabel(item.status) }}
                         </v-chip>
                       </div>
                     </div>
@@ -332,6 +334,15 @@ import { useEmployee } from "~/composables/useEmployee";
 import EnhancedDataTable from "~/components/common/EnhancedDataTable.vue";
 import AddEmployeeDialog from "~/components/employee/AddEmployeeDialog.vue";
 import EditEmployeeDialog from "~/components/employee/EditEmployeeDialog.vue";
+
+// Import enum translation composable
+const {
+  getEmpStatusLabel,
+  getEmpStatusColor,
+  getPermissionTypeLabel,
+  getPermissionTypeColor,
+  empStatusOptions,
+} = useEnumTranslation();
 
 // Composable
 const {
@@ -417,28 +428,6 @@ const formatDateTime = (dateString: string) => {
   });
 };
 
-const getStatusColor = (status: string) => {
-  switch (status) {
-    case "ACTIVE":
-      return "success";
-    case "INACTIVE":
-      return "error";
-    default:
-      return "grey";
-  }
-};
-
-const getStatusLabel = (status: string) => {
-  switch (status) {
-    case "ACTIVE":
-      return "ใช้งาน";
-    case "INACTIVE":
-      return "ไม่ใช้งาน";
-    default:
-      return status;
-  }
-};
-
 const getPositionColor = (position: string) => {
   switch (position?.toLowerCase()) {
     case "manager":
@@ -452,28 +441,6 @@ const getPositionColor = (position: string) => {
       return "blue";
     default:
       return "grey";
-  }
-};
-
-const getPermissionColor = (permission: string) => {
-  switch (permission) {
-    case "ADMIN":
-      return "primary";
-    case "USER":
-      return "info";
-    default:
-      return "grey";
-  }
-};
-
-const getPermissionLabel = (permission: string) => {
-  switch (permission) {
-    case "ADMIN":
-      return "ผู้ดูแลระบบ";
-    case "USER":
-      return "ผู้ใช้ทั่วไป";
-    default:
-      return permission;
   }
 };
 
@@ -513,8 +480,10 @@ const showAddEmployeeDialog = ref(false);
 const showEditEmployeeDialog = ref(false);
 const selectedEmployeeId = ref<string | null>(null);
 
-// Filter options
-const statusOptions: EnumUserStatus[] = ["ACTIVE", "INACTIVE"];
+// Filter options from composable
+const statusOptions = computed(() =>
+  empStatusOptions.value.map((opt) => opt.value as EnumUserStatus)
+);
 
 // Table headers
 const employeeHeaders = [

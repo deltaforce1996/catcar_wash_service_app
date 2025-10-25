@@ -78,7 +78,7 @@
                   <template #chip="{ props, item }">
                     <v-chip
                       v-bind="props"
-                      :color="getTypeColor(item.raw.value)"
+                      :color="getDeviceTypeColor(item.raw.value)"
                       size="small"
                       variant="flat"
                     >
@@ -119,7 +119,7 @@
                   <template #chip="{ props, item }">
                     <v-chip
                       v-bind="props"
-                      :color="getStatusColor(item.raw.value)"
+                      :color="getDeviceStatusColor(item.raw.value)"
                       size="small"
                       variant="flat"
                     >
@@ -142,19 +142,19 @@
 
       <!-- Type Column -->
       <template #[`item.type`]="{ item }">
-        <v-chip :color="getTypeColor(item.type)" size="small" variant="tonal">
-          {{ getTypeLabel(item.type) }}
+        <v-chip :color="getDeviceTypeColor(item.type)" size="small" variant="tonal">
+          {{ getDeviceTypeLabel(item.type) }}
         </v-chip>
       </template>
 
       <!-- Status Column -->
       <template #[`item.status`]="{ item }">
         <v-chip
-          :color="getStatusColor(item.status)"
+          :color="getDeviceStatusColor(item.status)"
           size="small"
           variant="tonal"
         >
-          {{ getStatusLabel(item.status) }}
+          {{ getDeviceStatusLabel(item.status) }}
         </v-chip>
       </template>
 
@@ -375,6 +375,16 @@ import type {
 } from "~/services/apis/device-api.service";
 import EnhancedDataTable from "~/components/common/EnhancedDataTable.vue";
 
+// Import enum translation composable
+const {
+  getDeviceTypeLabel,
+  getDeviceTypeColor,
+  getDeviceStatusLabel,
+  getDeviceStatusColor,
+  deviceTypeOptions,
+  deviceStatusOptions,
+} = useEnumTranslation();
+
 // Device API Composable
 const {
   devices: apiDevices,
@@ -507,68 +517,13 @@ const clearAllFilters = async () => {
   });
 };
 
-// Hardcoded filter options
-const typeOptions = [
-  { value: "WASH", label: "เครื่องล้าง" },
-  { value: "DRYING", label: "เครื่องอบแห้ง" },
-];
-
-const statusOptions = [
-  { value: "DEPLOYED", label: "ใช้งานได้" },
-  { value: "DISABLED", label: "ปิดใช้งาน" },
-];
-
-// Methods
+// Filter options from composable
 const getTypeOptions = () => {
-  return typeOptions;
+  return deviceTypeOptions.value;
 };
 
 const getFilterOptions = () => {
-  return statusOptions;
-};
-
-const getStatusColor = (status: string) => {
-  switch (status) {
-    case "DEPLOYED":
-      return "success";
-    case "MAINTENANCE":
-      return "warning";
-    default:
-      return "grey";
-  }
-};
-
-const getStatusLabel = (status: string) => {
-  switch (status) {
-    case "DEPLOYED":
-      return "ใช้งานได้";
-    case "DISABLED":
-      return "ปิดใช้งาน";
-    default:
-      return status;
-  }
-};
-
-const getTypeColor = (type: string) => {
-  switch (type) {
-    case "WASH":
-      return "primary";
-    case "DRYING":
-      return "blue";
-    default:
-      return "grey";
-  }
-};
-
-const getTypeLabel = (type: string) => {
-  switch (type) {
-    case "WASH":
-      return "เครื่องล้าง";
-    case "DRYING":
-      return "เครื่องอบแห้ง";
-    default:
-      return type;
-  }
+  return deviceStatusOptions.value;
 };
 
 const openDeviceDetailDialog = async (device: DeviceResponseApi) => {
