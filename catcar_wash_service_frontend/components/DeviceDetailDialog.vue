@@ -79,6 +79,65 @@
                   </v-card-text>
                 </v-card>
 
+                <!-- Device Management Actions -->
+                <v-card flat color="surface-container" class="mt-4">
+                  <v-card-text class="pa-3">
+                    <div class="font-weight-medium mb-3">
+                      <v-icon class="mr-1" size="20">mdi-cog</v-icon>
+                      การจัดการอุปกรณ์
+                    </div>
+                    <div class="d-flex flex-column ga-2">
+                      <v-btn
+                        color="info"
+                        variant="elevated"
+                        size="small"
+                        @click="handleUpdateFirmware"
+                      >
+                        <v-icon class="mr-2">mdi-upload</v-icon>
+                        อัปเดตเฟิร์มแวร์
+                      </v-btn>
+                      <v-btn
+                        color="warning"
+                        variant="elevated"
+                        size="small"
+                        @click="handleResetConfig"
+                      >
+                        <v-icon class="mr-2">mdi-restore</v-icon>
+                        รีเซ็ตการตั้งค่า
+                      </v-btn>
+                      <v-btn
+                        color="error"
+                        variant="elevated"
+                        size="small"
+                        @click="handleRestart"
+                      >
+                        <v-icon class="mr-2">mdi-restart</v-icon>
+                        รีสตาร์ทอุปกรณ์
+                      </v-btn>
+                    </div>
+                  </v-card-text>
+                </v-card>
+
+                <!-- Finance Actions -->
+                <v-card flat color="surface-container" class="mt-4">
+                  <v-card-text class="pa-3">
+                    <div class="font-weight-medium mb-3">
+                      <v-icon class="mr-1" size="20">mdi-cash</v-icon>
+                      การเงิน
+                    </div>
+                    <v-btn
+                      color="success"
+                      variant="elevated"
+                      size="small"
+                      block
+                      @click="handleManualPayment"
+                    >
+                      <v-icon class="mr-2">mdi-cash-plus</v-icon>
+                      เพิ่มการชำระเงินแบบแมนนวล
+                    </v-btn>
+                  </v-card-text>
+                </v-card>
+
                 <!-- Device Description -->
                 <!-- <v-card flat color="info" variant="tonal">
                   <v-card-text class="pa-3">
@@ -962,7 +1021,7 @@
                         บันทึกการใช้งาน
                       </h3>
                       <p class="text-body-2 text-grey-darken-1">
-                        ส่วนนี้จะแสดงประวัติการใช้งานอุปกรณ์<br />
+                        ส่วนนี้จะแสดงประวัติการใช้งานอุปกรณ์<br >
                         (อยู่ในระหว่างการพัฒนา)
                       </p>
                     </div>
@@ -976,7 +1035,7 @@
                       </v-icon>
                       <h3 class="text-h6 text-grey-darken-1 mb-2">สถานะระบบ</h3>
                       <p class="text-body-2 text-grey-darken-1">
-                        ส่วนนี้จะแสดงสถานะการทำงานของอุปกรณ์แบบเรียลไทม์<br />
+                        ส่วนนี้จะแสดงสถานะการทำงานของอุปกรณ์แบบเรียลไทม์<br >
                         (อยู่ในระหว่างการพัฒนา)
                       </p>
                     </div>
@@ -1064,6 +1123,150 @@
       </v-card-actions>
     </v-card>
   </v-dialog>
+
+  <!-- Update Firmware Confirmation Dialog -->
+  <v-dialog v-model="showUpdateFirmwareDialog" max-width="500">
+    <v-card>
+      <v-card-title class="d-flex align-center">
+        <v-icon color="info" class="mr-2">mdi-upload</v-icon>
+        ยืนยันการอัปเดตเฟิร์มแวร์
+      </v-card-title>
+
+      <v-card-text>
+        <p class="text-body-1">
+          คุณต้องการอัปเดตเฟิร์มแวร์สำหรับอุปกรณ์นี้หรือไม่?
+        </p>
+        <v-alert color="info" variant="tonal" density="compact" class="mt-3">
+          <v-icon class="mr-1">mdi-information</v-icon>
+          กระบวนการอัปเดตอาจใช้เวลาสักครู่ กรุณาอย่าปิดอุปกรณ์ระหว่างการอัปเดต
+        </v-alert>
+      </v-card-text>
+
+      <v-card-actions class="justify-end">
+        <v-btn
+          color="grey"
+          variant="text"
+          @click="showUpdateFirmwareDialog = false"
+        >
+          ยกเลิก
+        </v-btn>
+        <v-btn color="info" variant="elevated" @click="confirmUpdateFirmware">
+          ยืนยัน
+        </v-btn>
+      </v-card-actions>
+    </v-card>
+  </v-dialog>
+
+  <!-- Reset Config Confirmation Dialog -->
+  <v-dialog v-model="showResetConfigDialog" max-width="500">
+    <v-card>
+      <v-card-title class="d-flex align-center">
+        <v-icon color="warning" class="mr-2">mdi-restore</v-icon>
+        ยืนยันการรีเซ็ตการตั้งค่า
+      </v-card-title>
+
+      <v-card-text>
+        <p class="text-body-1">
+          คุณต้องการรีเซ็ตการตั้งค่าทั้งหมดของอุปกรณ์นี้หรือไม่?
+        </p>
+        <v-alert color="warning" variant="tonal" density="compact" class="mt-3">
+          <v-icon class="mr-1">mdi-alert</v-icon>
+          การตั้งค่าทั้งหมดจะถูกรีเซ็ตเป็นค่าเริ่มต้น การกระทำนี้ไม่สามารถย้อนกลับได้
+        </v-alert>
+      </v-card-text>
+
+      <v-card-actions class="justify-end">
+        <v-btn
+          color="grey"
+          variant="text"
+          @click="showResetConfigDialog = false"
+        >
+          ยกเลิก
+        </v-btn>
+        <v-btn color="warning" variant="elevated" @click="confirmResetConfig">
+          ยืนยัน
+        </v-btn>
+      </v-card-actions>
+    </v-card>
+  </v-dialog>
+
+  <!-- Restart Confirmation Dialog -->
+  <v-dialog v-model="showRestartDialog" max-width="500">
+    <v-card>
+      <v-card-title class="d-flex align-center">
+        <v-icon color="error" class="mr-2">mdi-restart</v-icon>
+        ยืนยันการรีสตาร์ทอุปกรณ์
+      </v-card-title>
+
+      <v-card-text>
+        <p class="text-body-1">
+          คุณต้องการรีสตาร์ทอุปกรณ์นี้หรือไม่?
+        </p>
+        <v-alert color="error" variant="tonal" density="compact" class="mt-3">
+          <v-icon class="mr-1">mdi-alert</v-icon>
+          อุปกรณ์จะหยุดทำงานชั่วคราวระหว่างการรีสตาร์ท
+        </v-alert>
+      </v-card-text>
+
+      <v-card-actions class="justify-end">
+        <v-btn color="grey" variant="text" @click="showRestartDialog = false">
+          ยกเลิก
+        </v-btn>
+        <v-btn color="error" variant="elevated" @click="confirmRestart">
+          ยืนยัน
+        </v-btn>
+      </v-card-actions>
+    </v-card>
+  </v-dialog>
+
+  <!-- Manual Payment Dialog -->
+  <v-dialog v-model="showManualPaymentDialog" max-width="500">
+    <v-card>
+      <v-card-title class="d-flex align-center">
+        <v-icon color="success" class="mr-2">mdi-cash-plus</v-icon>
+        เพิ่มการชำระเงินแบบแมนนวล
+      </v-card-title>
+
+      <v-card-text>
+        <p class="text-body-2 mb-4">
+          กรุณากรอกจำนวนเงินที่ต้องการเพิ่ม
+        </p>
+        <v-text-field
+          v-model.number="manualPaymentAmount"
+          type="number"
+          label="จำนวนเงิน"
+          variant="outlined"
+          density="comfortable"
+          prefix="฿"
+          :rules="[
+            (v) => !!v || 'กรุณากรอกจำนวนเงิน',
+            (v) => v > 0 || 'จำนวนเงินต้องมากกว่า 0',
+          ]"
+        />
+      </v-card-text>
+
+      <v-card-actions class="justify-end">
+        <v-btn
+          color="grey"
+          variant="text"
+          @click="
+            showManualPaymentDialog = false;
+            manualPaymentAmount = null;
+          "
+        >
+          ยกเลิก
+        </v-btn>
+        <v-btn
+          color="success"
+          variant="elevated"
+          :disabled="!manualPaymentAmount || manualPaymentAmount <= 0"
+          @click="confirmManualPayment"
+        >
+          ยืนยัน
+        </v-btn>
+      </v-card-actions>
+    </v-card>
+  </v-dialog>
 </template>
 
 <script setup lang="ts">
@@ -1108,6 +1311,13 @@ const emit = defineEmits<Emits>();
 const isEditMode = ref(false);
 const showCancelConfirmDialog = ref(false);
 const currentTab = ref("setup");
+
+// Device action dialogs
+const showUpdateFirmwareDialog = ref(false);
+const showResetConfigDialog = ref(false);
+const showRestartDialog = ref(false);
+const showManualPaymentDialog = ref(false);
+const manualPaymentAmount = ref<number | null>(null);
 const editableConfigs = ref<Record<string, DeviceConfig>>({});
 const originalConfigs = ref<Record<string, DeviceConfig>>({});
 const editableSystemConfigs = ref<SystemConfig>({});
@@ -1273,6 +1483,57 @@ const confirmCancel = () => {
 
 const cancelCancelAction = () => {
   showCancelConfirmDialog.value = false;
+};
+
+// Device action handlers
+const handleUpdateFirmware = () => {
+  showUpdateFirmwareDialog.value = true;
+};
+
+const confirmUpdateFirmware = () => {
+  // TODO: Implement firmware update logic
+  console.log("TODO: Update firmware for device:", props.device?.id);
+  showUpdateFirmwareDialog.value = false;
+};
+
+const handleResetConfig = () => {
+  showResetConfigDialog.value = true;
+};
+
+const confirmResetConfig = () => {
+  // TODO: Implement config reset logic
+  console.log("TODO: Reset config for device:", props.device?.id);
+  showResetConfigDialog.value = false;
+};
+
+const handleRestart = () => {
+  showRestartDialog.value = true;
+};
+
+const confirmRestart = () => {
+  // TODO: Implement device restart logic
+  console.log("TODO: Restart device:", props.device?.id);
+  showRestartDialog.value = false;
+};
+
+const handleManualPayment = () => {
+  manualPaymentAmount.value = null;
+  showManualPaymentDialog.value = true;
+};
+
+const confirmManualPayment = () => {
+  if (!manualPaymentAmount.value || manualPaymentAmount.value <= 0) {
+    return;
+  }
+  // TODO: Implement manual payment logic
+  console.log(
+    "TODO: Add manual payment for device:",
+    props.device?.id,
+    "Amount:",
+    manualPaymentAmount.value
+  );
+  showManualPaymentDialog.value = false;
+  manualPaymentAmount.value = null;
 };
 
 const resetSingleConfig = (key: string) => {
