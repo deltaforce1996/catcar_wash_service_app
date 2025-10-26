@@ -78,7 +78,7 @@
                   <template #chip="{ props, item }">
                     <v-chip
                       v-bind="props"
-                      :color="getTypeColor(item.raw.value)"
+                      :color="getDeviceTypeColor(item.raw.value)"
                       size="small"
                       variant="flat"
                     >
@@ -119,7 +119,7 @@
                   <template #chip="{ props, item }">
                     <v-chip
                       v-bind="props"
-                      :color="getStatusColor(item.raw.value)"
+                      :color="getDeviceStatusColor(item.raw.value)"
                       size="small"
                       variant="flat"
                     >
@@ -142,19 +142,23 @@
 
       <!-- Type Column -->
       <template #[`item.type`]="{ item }">
-        <v-chip :color="getTypeColor(item.type)" size="small" variant="tonal">
-          {{ getTypeLabel(item.type) }}
+        <v-chip
+          :color="getDeviceTypeColor(item.type)"
+          size="small"
+          variant="tonal"
+        >
+          {{ getDeviceTypeLabel(item.type) }}
         </v-chip>
       </template>
 
       <!-- Status Column -->
       <template #[`item.status`]="{ item }">
         <v-chip
-          :color="getStatusColor(item.status)"
+          :color="getDeviceStatusColor(item.status)"
           size="small"
           variant="tonal"
         >
-          {{ getStatusLabel(item.status) }}
+          {{ getDeviceStatusLabel(item.status) }}
         </v-chip>
       </template>
 
@@ -352,19 +356,6 @@
         </v-card-actions>
       </v-card>
     </v-dialog>
-
-    <!-- Snackbar for success/error messages -->
-    <v-snackbar
-      v-model="showSnackbar"
-      :color="snackbarColor"
-      :timeout="3000"
-      location="top"
-    >
-      {{ snackbarMessage }}
-      <template #actions>
-        <v-btn variant="text" @click="showSnackbar = false"> ปิด </v-btn>
-      </template>
-    </v-snackbar>
   </div>
 </template>
 
@@ -374,6 +365,16 @@ import type {
   DeviceConfig,
 } from "~/services/apis/device-api.service";
 import EnhancedDataTable from "~/components/common/EnhancedDataTable.vue";
+
+// Import enum translation composable
+const {
+  getDeviceTypeLabel,
+  getDeviceTypeColor,
+  getDeviceStatusLabel,
+  getDeviceStatusColor,
+  deviceTypeOptions,
+  deviceStatusOptions,
+} = useEnumTranslation();
 
 // Device API Composable
 const {
@@ -405,11 +406,6 @@ const originalConfigs = ref<Record<string, DeviceConfig>>({});
 const deviceDetailDialogRef = ref<InstanceType<
   typeof DeviceDetailDialog
 > | null>(null);
-
-// Snackbar for messages
-const showSnackbar = ref(false);
-const snackbarMessage = ref("");
-const snackbarColor = ref("success");
 
 // Temporary filter state (before applying)
 const tempDeviceSearch = ref("");
@@ -507,68 +503,13 @@ const clearAllFilters = async () => {
   });
 };
 
-// Hardcoded filter options
-const typeOptions = [
-  { value: "WASH", label: "เครื่องล้าง" },
-  { value: "DRYING", label: "เครื่องอบแห้ง" },
-];
-
-const statusOptions = [
-  { value: "DEPLOYED", label: "ใช้งานได้" },
-  { value: "DISABLED", label: "ปิดใช้งาน" },
-];
-
-// Methods
+// Filter options from composable
 const getTypeOptions = () => {
-  return typeOptions;
+  return deviceTypeOptions.value;
 };
 
 const getFilterOptions = () => {
-  return statusOptions;
-};
-
-const getStatusColor = (status: string) => {
-  switch (status) {
-    case "DEPLOYED":
-      return "success";
-    case "MAINTENANCE":
-      return "warning";
-    default:
-      return "grey";
-  }
-};
-
-const getStatusLabel = (status: string) => {
-  switch (status) {
-    case "DEPLOYED":
-      return "ใช้งานได้";
-    case "DISABLED":
-      return "ปิดใช้งาน";
-    default:
-      return status;
-  }
-};
-
-const getTypeColor = (type: string) => {
-  switch (type) {
-    case "WASH":
-      return "primary";
-    case "DRYING":
-      return "blue";
-    default:
-      return "grey";
-  }
-};
-
-const getTypeLabel = (type: string) => {
-  switch (type) {
-    case "WASH":
-      return "เครื่องล้าง";
-    case "DRYING":
-      return "เครื่องอบแห้ง";
-    default:
-      return type;
-  }
+  return deviceStatusOptions.value;
 };
 
 const openDeviceDetailDialog = async (device: DeviceResponseApi) => {
@@ -600,18 +541,14 @@ const toggleDeviceStatus = async () => {
 
     // Refresh the devices list
     await applyFilters();
-
-    // Show success message
-    displayMessage("อัปเดตสถานะอุปกรณ์สำเร็จ", "success");
   } catch {
-    displayMessage("ไม่สามารถอัปเดตสถานะอุปกรณ์ได้", "error");
+    // Error handling
   }
 };
 
 const applySystemConfig = () => {
   // TODO: Implement system config application logic
   showApplySystemConfigDialog.value = false;
-  displayMessage("นำการตั้งค่าระบบไปใช้สำเร็จ", "success");
 };
 
 const applyDeviceConfig = async () => {
@@ -623,7 +560,6 @@ const applyDeviceConfig = async () => {
 
     // Only update if there are changes
     if (!payload.configs || Object.keys(payload.configs).length === 0) {
-      displayMessage("ไม่มีการเปลี่ยนแปลง", "info");
       return;
     }
 
@@ -646,37 +582,10 @@ const applyDeviceConfig = async () => {
 
     // Refresh the devices list
     await applyFilters();
-
-    displayMessage("บันทึกการตั้งค่าอุปกรณ์สำเร็จ", "success");
   } catch {
-    displayMessage("ไม่สามารถบันทึกการตั้งค่าอุปกรณ์ได้", "error");
+    // Error handling
   }
 };
-
-// Display message helper
-const displayMessage = (
-  message: string,
-  color: "success" | "error" | "info"
-) => {
-  snackbarMessage.value = message;
-  snackbarColor.value = color;
-  showSnackbar.value = true;
-};
-
-// Watch for API messages
-watch(apiSuccessMessage, (newMessage) => {
-  if (newMessage) {
-    displayMessage(newMessage, "success");
-    clearMessages();
-  }
-});
-
-watch(apiError, (newError) => {
-  if (newError) {
-    displayMessage(newError, "error");
-    clearMessages();
-  }
-});
 
 // Initialize on mount
 onMounted(async () => {

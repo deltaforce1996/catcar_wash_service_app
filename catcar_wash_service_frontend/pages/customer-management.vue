@@ -66,13 +66,13 @@
               <v-btn
                 v-for="status in statusOptions"
                 :key="status"
-                :color="getStatusColor(status)"
+                :color="getUserStatusColor(status)"
                 :variant="tempStatusFilter === status ? 'flat' : 'outlined'"
                 size="small"
                 class="text-none"
                 @click="selectStatusFilter(status)"
               >
-                {{ getStatusLabel(status) }}
+                {{ getUserStatusLabel(status) }}
               </v-btn>
               <v-btn
                 color="primary"
@@ -118,11 +118,11 @@
 
       <template #[`item.status`]="{ item }">
         <v-chip
-          :color="getStatusColor(item.status)"
+          :color="getUserStatusColor(item.status)"
           size="small"
           variant="tonal"
         >
-          {{ getStatusLabel(item.status) }}
+          {{ getUserStatusLabel(item.status) }}
         </v-chip>
       </template>
 
@@ -193,12 +193,12 @@
                       สิทธิ์การใช้งาน
                     </div>
                     <v-chip
-                      :color="getPermissionColor(item.permission.name)"
+                      :color="getPermissionTypeColor(item.permission.name)"
                       size="small"
                       variant="tonal"
                       class="mt-1"
                     >
-                      {{ getPermissionLabel(item.permission.name) }}
+                      {{ getPermissionTypeLabel(item.permission.name) }}
                     </v-chip>
                   </v-card-text>
                 </v-card>
@@ -306,6 +306,15 @@ import EnhancedDataTable from "~/components/common/EnhancedDataTable.vue";
 import AddCustomerDialog from "~/components/customer/AddCustomerDialog.vue";
 import EditCustomerDialog from "~/components/customer/EditCustomerDialog.vue";
 
+// Import enum translation composable
+const {
+  getUserStatusLabel,
+  getUserStatusColor,
+  getPermissionTypeLabel,
+  getPermissionTypeColor,
+  userStatusOptions,
+} = useEnumTranslation();
+
 // Composable
 const {
   users,
@@ -390,54 +399,6 @@ const formatDateTime = (dateString: string) => {
   });
 };
 
-const getStatusColor = (status: string) => {
-  switch (status) {
-    case "ACTIVE":
-      return "success";
-    case "INACTIVE":
-      return "error";
-    default:
-      return "grey";
-  }
-};
-
-const getStatusLabel = (status: string) => {
-  switch (status) {
-    case "ACTIVE":
-      return "ใช้งาน";
-    case "INACTIVE":
-      return "ไม่ใช้งาน";
-    default:
-      return status;
-  }
-};
-
-const getPermissionColor = (permission: string) => {
-  switch (permission) {
-    case "ADMIN":
-      return "primary";
-    case "TECHNICIAN":
-      return "warning";
-    case "USER":
-      return "info";
-    default:
-      return "grey";
-  }
-};
-
-const getPermissionLabel = (permission: string) => {
-  switch (permission) {
-    case "ADMIN":
-      return "ผู้ดูแลระบบ";
-    case "TECHNICIAN":
-      return "ช่างเทคนิค";
-    case "USER":
-      return "ผู้ใช้ทั่วไป";
-    default:
-      return permission;
-  }
-};
-
 // Handle customer added successfully
 const handleCustomerAdded = async () => {
   await searchUsers({ page: 1 });
@@ -474,8 +435,10 @@ const showAddCustomerDialog = ref(false);
 const showEditCustomerDialog = ref(false);
 const selectedUserId = ref<string | null>(null);
 
-// Filter options
-const statusOptions: EnumUserStatus[] = ["ACTIVE", "INACTIVE"];
+// Filter options from composable
+const statusOptions = computed(() =>
+  userStatusOptions.value.map((opt) => opt.value as EnumUserStatus)
+);
 
 // Table headers
 const customerHeaders = [
