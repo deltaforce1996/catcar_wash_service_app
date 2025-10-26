@@ -112,25 +112,40 @@
               style="height: calc(100vh - 150px)"
             >
               <v-card-title class="pb-0">
-                <v-tabs
-                  v-model="currentTab"
-                  color="primary"
-                  class="flex-shrink-0"
-                >
-                  <v-tab value="logging">
-                    <v-icon class="mr-2">mdi-file-document-outline</v-icon>
-                    บันทึกการใช้งาน
-                  </v-tab>
-                  <v-tab value="state">
-                    <v-icon class="mr-2">mdi-chart-line</v-icon>
-                    สถานะระบบ
-                  </v-tab>
-                  <v-tab value="setup">
-                    <v-icon class="mr-2">mdi-cog-outline</v-icon>
-                    การตั้งค่า
-                  </v-tab>
-                </v-tabs>
-                <v-divider class="flex-shrink-0" />
+                <div class="d-flex align-center w-100">
+                  <v-tabs v-model="currentTab" color="primary">
+                    <v-tab value="logging">
+                      <v-icon class="mr-2">mdi-file-document-outline</v-icon>
+                      บันทึกการใช้งาน
+                    </v-tab>
+                    <v-tab value="state">
+                      <v-icon class="mr-2">mdi-chart-line</v-icon>
+                      สถานะระบบ
+                    </v-tab>
+                    <v-tab value="setup">
+                      <v-icon class="mr-2">mdi-cog-outline</v-icon>
+                      การตั้งค่า
+                    </v-tab>
+                  </v-tabs>
+
+                  <v-spacer />
+
+                  <!-- Edit Button in Tabs Bar -->
+                  <v-btn
+                    v-if="currentTab === 'setup'"
+                    :color="isEditMode ? 'warning' : 'primary'"
+                    :variant="isEditMode ? 'elevated' : 'outlined'"
+                    size="small"
+                    class="ml-4"
+                    @click="isEditMode ? handleCancel() : enterEditMode()"
+                  >
+                    <v-icon class="mr-1" size="small">
+                      {{ isEditMode ? "mdi-eye" : "mdi-pencil" }}
+                    </v-icon>
+                    {{ isEditMode ? "ดูอย่างเดียว" : "แก้ไข" }}
+                  </v-btn>
+                </div>
+                <v-divider />
               </v-card-title>
 
               <v-card-text class="pa-4 overflow-y-auto">
@@ -196,41 +211,10 @@
                     </v-card>
 
                     <v-card variant="text" class="mt-4">
-                      <v-card-title
-                        class="d-flex justify-space-between align-center"
-                      >
+                      <v-card-title>
                         <div class="d-flex align-center">
                           <v-icon class="mr-2" color="primary">mdi-cog</v-icon>
                           <span>การตั้งค่าการขาย</span>
-                        </div>
-
-                        <div class="d-flex align-center ga-3">
-                          <v-btn
-                            :color="isSaleEditMode ? 'warning' : 'info'"
-                            variant="elevated"
-                            @click="toggleSaleEditMode"
-                          >
-                            <v-icon class="mr-1">
-                              {{ isSaleEditMode ? "mdi-eye" : "mdi-pencil" }}
-                            </v-icon>
-                            {{ isSaleEditMode ? "ดูอย่างเดียว" : "แก้ไข" }}
-                          </v-btn>
-
-                          <!-- Save Button (only show in edit mode with changes) -->
-                          <v-btn
-                            v-if="isSaleEditMode"
-                            :color="hasSaleConfigChanges ? 'success' : 'grey'"
-                            :disabled="!hasSaleConfigChanges"
-                            variant="elevated"
-                            @click="$emit('save')"
-                          >
-                            <v-icon class="mr-1">mdi-content-save</v-icon>
-                            {{
-                              hasSaleConfigChanges
-                                ? "บันทึก"
-                                : "ไม่มีการเปลี่ยนแปลง"
-                            }}
-                          </v-btn>
                         </div>
                       </v-card-title>
 
@@ -239,7 +223,7 @@
                       <v-card-text>
                         <v-list class="py-0">
                           <template
-                            v-for="(config, key, index) in isSaleEditMode
+                            v-for="(config, key, index) in isEditMode
                               ? editableConfigs
                               : device?.configs.sale"
                             :key="key"
@@ -288,10 +272,7 @@
                                   class="d-flex align-center"
                                 >
                                   <!-- View Mode -->
-                                  <div
-                                    v-if="!isSaleEditMode"
-                                    class="text-right"
-                                  >
+                                  <div v-if="!isEditMode" class="text-right">
                                     <div
                                       class="text-h6 font-weight-bold text-primary mb-1"
                                     >
@@ -347,10 +328,7 @@
                                   class="d-flex align-center"
                                 >
                                   <!-- View Mode -->
-                                  <div
-                                    v-if="!isSaleEditMode"
-                                    class="text-right"
-                                  >
+                                  <div v-if="!isEditMode" class="text-right">
                                     <div
                                       class="text-h6 font-weight-bold text-info mb-1"
                                     >
@@ -427,7 +405,7 @@
 
                             <!-- Change indicator for edit mode -->
                             <div
-                              v-if="isSaleEditMode && isConfigChanged(key)"
+                              v-if="isEditMode && isConfigChanged(key)"
                               class="px-6 pb-2 bg-surface-container-low"
                             >
                               <v-alert
@@ -474,41 +452,10 @@
 
                     <!-- System Configuration Section -->
                     <v-card variant="text" class="mt-4">
-                      <v-card-title
-                        class="d-flex justify-space-between align-center"
-                      >
+                      <v-card-title>
                         <div class="d-flex align-center">
                           <v-icon class="mr-2" color="info">mdi-chip</v-icon>
                           <span>การตั้งค่าระบบ</span>
-                        </div>
-
-                        <div class="d-flex align-center ga-3">
-                          <v-btn
-                            :color="isSystemEditMode ? 'warning' : 'info'"
-                            variant="elevated"
-                            @click="toggleSystemEditMode"
-                          >
-                            <v-icon class="mr-1">
-                              {{ isSystemEditMode ? "mdi-eye" : "mdi-pencil" }}
-                            </v-icon>
-                            {{ isSystemEditMode ? "ดูอย่างเดียว" : "แก้ไข" }}
-                          </v-btn>
-
-                          <!-- Save Button (only show in edit mode with changes) -->
-                          <v-btn
-                            v-if="isSystemEditMode"
-                            :color="hasSystemConfigChanges ? 'success' : 'grey'"
-                            :disabled="!hasSystemConfigChanges"
-                            variant="elevated"
-                            @click="$emit('save')"
-                          >
-                            <v-icon class="mr-1">mdi-content-save</v-icon>
-                            {{
-                              hasSystemConfigChanges
-                                ? "บันทึก"
-                                : "ไม่มีการเปลี่ยนแปลง"
-                            }}
-                          </v-btn>
                         </div>
                       </v-card-title>
 
@@ -518,9 +465,7 @@
                         <v-list v-if="device?.configs?.system" class="py-0">
                           <!-- On Time -->
                           <v-list-item
-                            v-if="
-                              device.configs.system.on_time || isSystemEditMode
-                            "
+                            v-if="device.configs.system.on_time || isEditMode"
                             class="py-4 bg-surface-container-low"
                           >
                             <template #prepend>
@@ -556,7 +501,7 @@
 
                             <template #append>
                               <!-- View Mode -->
-                              <div v-if="!isSystemEditMode" class="text-right">
+                              <div v-if="!isEditMode" class="text-right">
                                 <div
                                   class="text-h6 font-weight-bold text-info mb-1"
                                 >
@@ -589,9 +534,7 @@
 
                           <!-- Off Time -->
                           <v-list-item
-                            v-if="
-                              device.configs.system.off_time || isSystemEditMode
-                            "
+                            v-if="device.configs.system.off_time || isEditMode"
                             class="py-4 bg-surface-container-low"
                           >
                             <template #prepend>
@@ -627,7 +570,7 @@
 
                             <template #append>
                               <!-- View Mode -->
-                              <div v-if="!isSystemEditMode" class="text-right">
+                              <div v-if="!isEditMode" class="text-right">
                                 <div
                                   class="text-h6 font-weight-bold text-info mb-1"
                                 >
@@ -662,7 +605,7 @@
                           <v-list-item
                             v-if="
                               device.configs.system.save_state !== undefined ||
-                              isSystemEditMode
+                              isEditMode
                             "
                             class="py-4 bg-surface-container-low"
                           >
@@ -699,7 +642,7 @@
 
                             <template #append>
                               <!-- View Mode -->
-                              <div v-if="!isSystemEditMode" class="text-right">
+                              <div v-if="!isEditMode" class="text-right">
                                 <v-chip
                                   :color="
                                     device.configs.system.save_state
@@ -740,8 +683,7 @@
                           <!-- Payment Method -->
                           <v-list-item
                             v-if="
-                              device.configs.system.payment_method ||
-                              isSystemEditMode
+                              device.configs.system.payment_method || isEditMode
                             "
                             class="py-4 bg-surface-container-low"
                           >
@@ -778,7 +720,7 @@
 
                             <template #append>
                               <!-- View Mode -->
-                              <div v-if="!isSystemEditMode" class="d-flex ga-2">
+                              <div v-if="!isEditMode" class="d-flex ga-2">
                                 <v-chip
                                   v-if="
                                     device.configs.system.payment_method?.coin
@@ -857,45 +799,12 @@
 
                     <!-- Pricing Configuration Section -->
                     <v-card variant="text" class="mt-4">
-                      <v-card-title
-                        class="d-flex justify-space-between align-center"
-                      >
+                      <v-card-title>
                         <div class="d-flex align-center">
                           <v-icon class="mr-2" color="success"
                             >mdi-currency-usd</v-icon
                           >
                           <span>การตั้งค่าราคา</span>
-                        </div>
-
-                        <div class="d-flex align-center ga-3">
-                          <v-btn
-                            :color="isPricingEditMode ? 'warning' : 'info'"
-                            variant="elevated"
-                            @click="togglePricingEditMode"
-                          >
-                            <v-icon class="mr-1">
-                              {{ isPricingEditMode ? "mdi-eye" : "mdi-pencil" }}
-                            </v-icon>
-                            {{ isPricingEditMode ? "ดูอย่างเดียว" : "แก้ไข" }}
-                          </v-btn>
-
-                          <!-- Save Button (only show in edit mode with changes) -->
-                          <v-btn
-                            v-if="isPricingEditMode"
-                            :color="
-                              hasPricingConfigChanges ? 'success' : 'grey'
-                            "
-                            :disabled="!hasPricingConfigChanges"
-                            variant="elevated"
-                            @click="$emit('save')"
-                          >
-                            <v-icon class="mr-1">mdi-content-save</v-icon>
-                            {{
-                              hasPricingConfigChanges
-                                ? "บันทึก"
-                                : "ไม่มีการเปลี่ยนแปลง"
-                            }}
-                          </v-btn>
                         </div>
                       </v-card-title>
 
@@ -904,7 +813,7 @@
                       <v-card-text>
                         <v-list v-if="device?.configs?.pricing" class="py-0">
                           <template
-                            v-for="(config, key, index) in isPricingEditMode
+                            v-for="(config, key, index) in isEditMode
                               ? editablePricingConfigs
                               : device?.configs.pricing"
                             :key="key"
@@ -946,10 +855,7 @@
                               <template #append>
                                 <div class="d-flex align-center">
                                   <!-- View Mode -->
-                                  <div
-                                    v-if="!isPricingEditMode"
-                                    class="text-right"
-                                  >
+                                  <div v-if="!isEditMode" class="text-right">
                                     <div
                                       class="text-h6 font-weight-bold text-success mb-1"
                                     >
@@ -1003,9 +909,7 @@
 
                             <!-- Change indicator for edit mode -->
                             <div
-                              v-if="
-                                isPricingEditMode && isPricingConfigChanged(key)
-                              "
+                              v-if="isEditMode && isPricingConfigChanged(key)"
                               class="px-6 pb-2 bg-surface-container-low"
                             >
                               <v-alert
@@ -1058,7 +962,7 @@
                         บันทึกการใช้งาน
                       </h3>
                       <p class="text-body-2 text-grey-darken-1">
-                        ส่วนนี้จะแสดงประวัติการใช้งานอุปกรณ์<br >
+                        ส่วนนี้จะแสดงประวัติการใช้งานอุปกรณ์<br />
                         (อยู่ในระหว่างการพัฒนา)
                       </p>
                     </div>
@@ -1072,17 +976,92 @@
                       </v-icon>
                       <h3 class="text-h6 text-grey-darken-1 mb-2">สถานะระบบ</h3>
                       <p class="text-body-2 text-grey-darken-1">
-                        ส่วนนี้จะแสดงสถานะการทำงานของอุปกรณ์แบบเรียลไทม์<br >
+                        ส่วนนี้จะแสดงสถานะการทำงานของอุปกรณ์แบบเรียลไทม์<br />
                         (อยู่ในระหว่างการพัฒนา)
                       </p>
                     </div>
                   </v-tabs-window-item>
                 </v-tabs-window>
               </v-card-text>
+
+              <!-- Sticky Bottom Bar (only visible in edit mode) -->
+              <v-card-actions
+                v-if="isEditMode && currentTab === 'setup'"
+                class="pa-4"
+                style="
+                  position: sticky;
+                  bottom: 0;
+                  background-color: rgb(var(--v-theme-surface-container-high));
+                  border-top: 1px solid
+                    rgba(var(--v-border-color), var(--v-border-opacity));
+                  z-index: 10;
+                "
+              >
+                <v-alert
+                  v-if="hasAnyChanges"
+                  color="warning"
+                  variant="tonal"
+                  density="compact"
+                >
+                  <v-icon class="mr-2">mdi-alert-circle</v-icon>
+                  มีการเปลี่ยนแปลงที่ยังไม่ได้บันทึก
+                </v-alert>
+                <v-spacer v-else />
+
+                <v-btn
+                  color="error"
+                  variant="elevated"
+                  size="large"
+                  @click="handleCancel"
+                >
+                  <v-icon class="mr-2">mdi-close</v-icon>
+                  ยกเลิก
+                </v-btn>
+
+                <v-btn
+                  :color="hasAnyChanges ? 'success' : 'grey'"
+                  :disabled="!hasAnyChanges"
+                  variant="elevated"
+                  size="large"
+                  @click="$emit('save')"
+                >
+                  <v-icon class="mr-2">mdi-content-save</v-icon>
+                  บันทึก
+                </v-btn>
+              </v-card-actions>
             </v-card>
           </v-col>
         </v-row>
       </v-container>
+    </v-card>
+  </v-dialog>
+
+  <!-- Cancel Confirmation Dialog -->
+  <v-dialog v-model="showCancelConfirmDialog" max-width="500">
+    <v-card>
+      <v-card-title class="d-flex align-center">
+        <v-icon color="warning" class="mr-2">mdi-alert-circle</v-icon>
+        ยืนยันการยกเลิก
+      </v-card-title>
+
+      <v-card-text>
+        <p class="text-body-1">
+          มีการเปลี่ยนแปลงที่ยังไม่ได้บันทึก คุณต้องการยกเลิกหรือไม่?
+        </p>
+        <v-alert color="warning" variant="tonal" density="compact" class="mt-3">
+          <v-icon class="mr-1">mdi-information</v-icon>
+          การเปลี่ยนแปลงทั้งหมดจะถูกยกเลิก
+        </v-alert>
+      </v-card-text>
+
+      <v-card-actions class="justify-end">
+        <v-btn color="grey" variant="text" @click="cancelCancelAction">
+          กลับไป
+        </v-btn>
+        <v-btn color="error" variant="elevated" @click="confirmCancel">
+          ยืนยันยกเลิก
+        </v-btn>
+      </v-card-actions>
     </v-card>
   </v-dialog>
 </template>
@@ -1126,9 +1105,8 @@ const props = defineProps<Props>();
 const emit = defineEmits<Emits>();
 
 // Local state
-const isSaleEditMode = ref(false);
-const isSystemEditMode = ref(false);
-const isPricingEditMode = ref(false);
+const isEditMode = ref(false);
+const showCancelConfirmDialog = ref(false);
 const currentTab = ref("setup");
 const editableConfigs = ref<Record<string, DeviceConfig>>({});
 const originalConfigs = ref<Record<string, DeviceConfig>>({});
@@ -1143,18 +1121,16 @@ const showDialog = computed({
   set: (value) => emit("update:modelValue", value),
 });
 
-const hasSaleConfigChanges = computed(() => {
-  return Object.keys(editableConfigs.value).some((key) => isConfigChanged(key));
-});
-
-const hasSystemConfigChanges = computed(() => {
-  return isSystemConfigChanged();
-});
-
-const hasPricingConfigChanges = computed(() => {
-  return Object.keys(editablePricingConfigs.value).some((key) =>
-    isPricingConfigChanged(key)
+// Unified change detection
+const hasAnyChanges = computed(() => {
+  const hasSaleChanges = Object.keys(editableConfigs.value).some((key) =>
+    isConfigChanged(key)
   );
+  const hasSystemChanges = isSystemConfigChanged();
+  const hasPricingChanges = Object.keys(editablePricingConfigs.value).some(
+    (key) => isPricingConfigChanged(key)
+  );
+  return hasSaleChanges || hasSystemChanges || hasPricingChanges;
 });
 
 const _configChangeCount = computed(() => {
@@ -1174,7 +1150,10 @@ const getSavePayload = () => {
   } = { configs: {} };
 
   // Transform sale configs - extract values based on device type
-  if (isSaleEditMode.value && hasSaleConfigChanges.value) {
+  const hasSaleChanges = Object.keys(editableConfigs.value).some((key) =>
+    isConfigChanged(key)
+  );
+  if (isEditMode.value && hasSaleChanges) {
     payload.configs.sale = {};
     for (const [key, config] of Object.entries(editableConfigs.value)) {
       // WASH device: extract single value
@@ -1192,12 +1171,16 @@ const getSavePayload = () => {
   }
 
   // System configs - keep as-is (they already have the correct structure)
-  if (isSystemEditMode.value && hasSystemConfigChanges.value) {
+  const hasSystemChanges = isSystemConfigChanged();
+  if (isEditMode.value && hasSystemChanges) {
     payload.configs.system = editableSystemConfigs.value;
   }
 
   // Transform pricing configs - extract only values (not unit and description)
-  if (isPricingEditMode.value && hasPricingConfigChanges.value) {
+  const hasPricingChanges = Object.keys(editablePricingConfigs.value).some(
+    (key) => isPricingConfigChanged(key)
+  );
+  if (isEditMode.value && hasPricingChanges) {
     payload.configs.pricing = {};
     for (const [key, config] of Object.entries(editablePricingConfigs.value)) {
       payload.configs.pricing[key] = config.value;
@@ -1210,9 +1193,8 @@ const getSavePayload = () => {
 // Methods
 const closeDialog = () => {
   showDialog.value = false;
-  isSaleEditMode.value = false;
-  isSystemEditMode.value = false;
-  isPricingEditMode.value = false;
+  isEditMode.value = false;
+  showCancelConfirmDialog.value = false;
   currentTab.value = "setup";
   editableConfigs.value = {};
   originalConfigs.value = {};
@@ -1222,50 +1204,75 @@ const closeDialog = () => {
   originalPricingConfigs.value = {};
 };
 
-const toggleSaleEditMode = () => {
-  isSaleEditMode.value = !isSaleEditMode.value;
-  if (isSaleEditMode.value) {
-    // Initialize both original and editable configs when entering edit mode
-    if (props.device?.configs?.sale) {
-      const saleConfigsCopy = JSON.parse(
-        JSON.stringify(props.device.configs.sale)
-      );
-      originalConfigs.value = JSON.parse(JSON.stringify(saleConfigsCopy));
-      editableConfigs.value = saleConfigsCopy;
-    }
+// Unified edit mode management
+const enterEditMode = () => {
+  isEditMode.value = true;
+
+  // Initialize sale configs
+  if (props.device?.configs?.sale) {
+    const saleConfigsCopy = JSON.parse(
+      JSON.stringify(props.device.configs.sale)
+    );
+    originalConfigs.value = JSON.parse(JSON.stringify(saleConfigsCopy));
+    editableConfigs.value = saleConfigsCopy;
+  }
+
+  // Initialize system configs
+  if (props.device?.configs?.system) {
+    const systemConfigsCopy = JSON.parse(
+      JSON.stringify(props.device.configs.system)
+    );
+    originalSystemConfigs.value = JSON.parse(JSON.stringify(systemConfigsCopy));
+    editableSystemConfigs.value = systemConfigsCopy;
+  }
+
+  // Initialize pricing configs
+  if (props.device?.configs?.pricing) {
+    const pricingConfigsCopy = JSON.parse(
+      JSON.stringify(props.device.configs.pricing)
+    );
+    originalPricingConfigs.value = JSON.parse(
+      JSON.stringify(pricingConfigsCopy)
+    );
+    editablePricingConfigs.value = pricingConfigsCopy;
   }
 };
 
-const toggleSystemEditMode = () => {
-  isSystemEditMode.value = !isSystemEditMode.value;
-  if (isSystemEditMode.value) {
-    // Initialize both original and editable system configs when entering edit mode
-    if (props.device?.configs?.system) {
-      const systemConfigsCopy = JSON.parse(
-        JSON.stringify(props.device.configs.system)
-      );
-      originalSystemConfigs.value = JSON.parse(
-        JSON.stringify(systemConfigsCopy)
-      );
-      editableSystemConfigs.value = systemConfigsCopy;
-    }
+const exitEditMode = () => {
+  isEditMode.value = false;
+  // Reset to original configs (discard changes)
+  if (Object.keys(originalConfigs.value).length > 0) {
+    editableConfigs.value = JSON.parse(JSON.stringify(originalConfigs.value));
+  }
+  if (Object.keys(originalSystemConfigs.value).length > 0) {
+    editableSystemConfigs.value = JSON.parse(
+      JSON.stringify(originalSystemConfigs.value)
+    );
+  }
+  if (Object.keys(originalPricingConfigs.value).length > 0) {
+    editablePricingConfigs.value = JSON.parse(
+      JSON.stringify(originalPricingConfigs.value)
+    );
   }
 };
 
-const togglePricingEditMode = () => {
-  isPricingEditMode.value = !isPricingEditMode.value;
-  if (isPricingEditMode.value) {
-    // Initialize both original and editable pricing configs when entering edit mode
-    if (props.device?.configs?.pricing) {
-      const pricingConfigsCopy = JSON.parse(
-        JSON.stringify(props.device.configs.pricing)
-      );
-      originalPricingConfigs.value = JSON.parse(
-        JSON.stringify(pricingConfigsCopy)
-      );
-      editablePricingConfigs.value = pricingConfigsCopy;
-    }
+const handleCancel = () => {
+  if (hasAnyChanges.value) {
+    // Show confirmation dialog if there are changes
+    showCancelConfirmDialog.value = true;
+  } else {
+    // No changes, just exit edit mode
+    exitEditMode();
   }
+};
+
+const confirmCancel = () => {
+  showCancelConfirmDialog.value = false;
+  exitEditMode();
+};
+
+const cancelCancelAction = () => {
+  showCancelConfirmDialog.value = false;
 };
 
 const resetSingleConfig = (key: string) => {
@@ -1452,9 +1459,8 @@ watch(
   (isOpen) => {
     if (!isOpen) {
       // Reset to view mode when dialog closes
-      isSaleEditMode.value = false;
-      isSystemEditMode.value = false;
-      isPricingEditMode.value = false;
+      isEditMode.value = false;
+      showCancelConfirmDialog.value = false;
       currentTab.value = "setup";
 
       // Discard any unsaved changes by resetting to original configs
@@ -1487,9 +1493,7 @@ watch(
 
 // Method to reset all edit modes back to view mode
 const resetToViewMode = () => {
-  isSaleEditMode.value = false;
-  isSystemEditMode.value = false;
-  isPricingEditMode.value = false;
+  exitEditMode();
 };
 
 // Expose methods for parent component
