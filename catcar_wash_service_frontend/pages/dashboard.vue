@@ -62,6 +62,8 @@
                 <v-combobox
                   v-model="tempSelectedUserIds"
                   :items="userOptions"
+                  item-title="title"
+                  item-value="value"
                   label="ชื่อผู้ใช้"
                   prepend-inner-icon="mdi-account"
                   variant="outlined"
@@ -79,7 +81,7 @@
                       size="small"
                       variant="tonal"
                     >
-                      {{ item.raw }}
+                      {{ item.raw.title }}
                     </v-chip>
                   </template>
                 </v-combobox>
@@ -711,6 +713,12 @@ const {
   goToPage,
 } = useDeviceEventLogs();
 
+// User data - using useUser composable
+const {
+  users,
+  searchUsers,
+} = useUser();
+
 const datePickerMenu = ref(false);
 const selectedDateObject = ref(new Date());
 const selectedDate = computed(() => {
@@ -748,13 +756,12 @@ const selectedUserIds = ref<string[]>([]);
 const selectedPaymentStatuses = ref<string[]>([]);
 const selectedDeviceTypes = ref<string[]>([]);
 
-// Popover filter options
+// Popover filter options - using users from useUser composable
 const userOptions = computed(() => {
-  const users = new Set<string>();
-  salesData.value.forEach((item) => {
-    users.add(item.device.owner.fullname);
-  });
-  return Array.from(users).sort();
+  return users.value.map((user) => ({
+    title: user.fullname,
+    value: user.id,
+  }));
 });
 
 // Popover filter options from composable (no longer hardcoded)
@@ -811,7 +818,8 @@ const applyFilters = async () => {
     query.search = searchQuery.value.trim();
   }
 
-  // Time range filter (using timestamp range)
+  // Time range filter - only add if time filters are set
+  // Combine selected date from header with the time range
   if (startTimeObj.value || endTimeObj.value) {
     const startTs = getTimestampFromDateTime(
       selectedDateObject.value,
@@ -844,7 +852,7 @@ const clearAllFilters = async () => {
   endTimeObj.value = null;
   selectedServiceTypes.value = [];
 
-  // Reset to initial search without filters
+  // Reset to initial search without any filters
   await searchEventLogs({
     page: 1,
     limit: 10,
@@ -853,8 +861,10 @@ const clearAllFilters = async () => {
 
 // Popover filter functions
 const applyPopoverFilters = async () => {
-  // Update applied state
-  selectedUserIds.value = [...tempSelectedUserIds.value];
+  // Update applied state - extract value from objects
+  selectedUserIds.value = tempSelectedUserIds.value.map((item) =>
+    typeof item === "string" ? item : item.value
+  );
   selectedPaymentStatuses.value = tempSelectedPaymentStatuses.value.map((item) =>
     typeof item === "string" ? item : item.value
   );
@@ -865,6 +875,20 @@ const applyPopoverFilters = async () => {
   // Build query for BOTH dashboard and event logs
   const dashboardFilter: Partial<DashboardFilterRequest> = {};
   const eventLogsQuery: any = {};
+
+  // Include timestamp filter only if time filters are set
+  // Combine selected date from header with the time range
+  if (startTimeObj.value || endTimeObj.value) {
+    const startTs = getTimestampFromDateTime(
+      selectedDateObject.value,
+      startTimeObj.value || { hour: 0, minute: 0 }
+    );
+    const endTs = getTimestampFromDateTime(
+      selectedDateObject.value,
+      endTimeObj.value || { hour: 23, minute: 59 }
+    );
+    eventLogsQuery.payload_timestamp = `${startTs}-${endTs}`;
+  }
 
   // Device type filter
   if (selectedDeviceTypes.value.length > 0) {
@@ -878,12 +902,9 @@ const applyPopoverFilters = async () => {
     eventLogsQuery.payment_status = selectedPaymentStatuses.value[0];
   }
 
-  // User ID filter (map fullname to user_id)
+  // User ID filter - now directly using user_id
   if (selectedUserIds.value.length > 0) {
-    const userId = userIdMap.value.get(selectedUserIds.value[0]);
-    if (userId) {
-      eventLogsQuery.user_id = userId;
-    }
+    eventLogsQuery.user_id = selectedUserIds.value[0];
   }
 
   // Update both dashboard and event logs
@@ -912,14 +933,18 @@ const resetPopoverFilters = () => {
 
 // Initialize temp values and fetch dashboard data on component mount
 onMounted(async () => {
-  // Fetch initial dashboard data
-  await fetchDashboardSummary();
-
-  // Fetch initial event logs data
-  await searchEventLogs({
-    page: 1,
-    limit: 10,
-  });
+  // Fetch initial data in parallel
+  await Promise.all([
+    fetchDashboardSummary(),
+    searchEventLogs({
+      page: 1,
+      limit: 10,
+    }),
+    searchUsers({
+      page: 1,
+      limit: 100, // Fetch more users for filter dropdown
+    }),
+  ]);
 
   // Initialize temp filter values
   tempSearchQuery.value = searchQuery.value;
@@ -941,21 +966,27 @@ watch(selectedDateObject, async (newDate) => {
     const day = String(newDate.getDate()).padStart(2, "0");
     const dateStr = `${year}-${month}-${day}`;
 
-    // Build timestamp range for full day
-    const startOfDay = new Date(newDate);
-    startOfDay.setHours(0, 0, 0, 0);
-    const endOfDay = new Date(newDate);
-    endOfDay.setHours(23, 59, 59, 999);
+    // Update dashboard KPIs for the selected date
+    await updateFilter({ date: dateStr });
 
-    const query: any = {
-      payload_timestamp: `${startOfDay.getTime()}-${endOfDay.getTime()}`
-    };
+    // Only update event logs timestamp if time filters are currently active
+    // This keeps the time filter synchronized with the date picker
+    if (startTimeObj.value || endTimeObj.value) {
+      const startTs = getTimestampFromDateTime(
+        newDate,
+        startTimeObj.value || { hour: 0, minute: 0 }
+      );
+      const endTs = getTimestampFromDateTime(
+        newDate,
+        endTimeObj.value || { hour: 23, minute: 59 }
+      );
 
-    // Update both dashboard KPIs and event logs
-    await Promise.all([
-      updateFilter({ date: dateStr }),
-      searchEventLogs({ query, page: 1, limit: 10 })
-    ]);
+      await searchEventLogs({
+        query: { payload_timestamp: `${startTs}-${endTs}` },
+        page: 1,
+        limit: 10
+      });
+    }
   }
 });
 
@@ -998,11 +1029,6 @@ const salesHeaders = [
   { title: "", key: "data-table-expand", sortable: false },
 ];
 
-// Using enhanced sales data from the composable instead of hardcoded data
-
-// Use enhanced sales data from composable
-const salesData = eventLogs;
-
 // Time picker object interface
 interface TimeObject {
   hour?: number;
@@ -1028,17 +1054,6 @@ const getTimestampFromDateTime = (date: Date, timeObj: TimeObject | Date | strin
   }
   return d.getTime();
 };
-
-// Map fullname to user_id from current event logs data
-const userIdMap = computed(() => {
-  const map = new Map<string, string>();
-  eventLogs.value.forEach((log) => {
-    if (log.device?.owner) {
-      map.set(log.device.owner.fullname, log.device.owner.id);
-    }
-  });
-  return map;
-});
 
 // Pagination handler
 const handlePageChange = (page: number) => {
