@@ -1,5 +1,5 @@
 # Existing
-.playwright-mcp
+# .playwright-mcp
 
 # Environment files (CRITICAL)
 .env.prod

@@ -13,7 +13,20 @@
       "WebFetch(domain:vuetifyjs.com)",
       "mcp__ide__getDiagnostics",
       "Bash(npm run lint)",
-      "Bash(npm run build:*)"
+      "Bash(npm run build:*)",
+      "Bash(git add:*)",
+      "Read(C:\\Users\\Ken\\Pictures\\Screenshots/**)",
+      "Bash(pnpm format:*)",
+      "Bash(cp:*)",
+      "Bash(mv:*)",
+      "Bash(mkdir:*)",
+      "WebFetch(domain:m3.material.io)",
+      "Read(//c/Users/Ken/Pictures/Screenshots/**)",
+      "Read(//Users/ken/Desktop/**)",
+      "Bash(docker-compose:*)",
+      "Bash(cat:*)",
+      "Bash(pnpm --dir catcar_wash_service_frontend lint:fix)",
+      "Bash(pnpm -C catcar_wash_service_frontend lint:fix)"
     ],
     "deny": [],
     "ask": []
