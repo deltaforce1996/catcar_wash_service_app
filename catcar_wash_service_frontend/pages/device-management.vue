@@ -142,7 +142,11 @@
 
       <!-- Type Column -->
       <template #[`item.type`]="{ item }">
-        <v-chip :color="getDeviceTypeColor(item.type)" size="small" variant="tonal">
+        <v-chip
+          :color="getDeviceTypeColor(item.type)"
+          size="small"
+          variant="tonal"
+        >
           {{ getDeviceTypeLabel(item.type) }}
         </v-chip>
       </template>
@@ -352,19 +356,6 @@
         </v-card-actions>
       </v-card>
     </v-dialog>
-
-    <!-- Snackbar for success/error messages -->
-    <v-snackbar
-      v-model="showSnackbar"
-      :color="snackbarColor"
-      :timeout="3000"
-      location="top"
-    >
-      {{ snackbarMessage }}
-      <template #actions>
-        <v-btn variant="text" @click="showSnackbar = false"> ปิด </v-btn>
-      </template>
-    </v-snackbar>
   </div>
 </template>
 
@@ -415,11 +406,6 @@ const originalConfigs = ref<Record<string, DeviceConfig>>({});
 const deviceDetailDialogRef = ref<InstanceType<
   typeof DeviceDetailDialog
 > | null>(null);
-
-// Snackbar for messages
-const showSnackbar = ref(false);
-const snackbarMessage = ref("");
-const snackbarColor = ref("success");
 
 // Temporary filter state (before applying)
 const tempDeviceSearch = ref("");
@@ -555,18 +541,14 @@ const toggleDeviceStatus = async () => {
 
     // Refresh the devices list
     await applyFilters();
-
-    // Show success message
-    displayMessage("อัปเดตสถานะอุปกรณ์สำเร็จ", "success");
   } catch {
-    displayMessage("ไม่สามารถอัปเดตสถานะอุปกรณ์ได้", "error");
+    // Error handling
   }
 };
 
 const applySystemConfig = () => {
   // TODO: Implement system config application logic
   showApplySystemConfigDialog.value = false;
-  displayMessage("นำการตั้งค่าระบบไปใช้สำเร็จ", "success");
 };
 
 const applyDeviceConfig = async () => {
@@ -578,7 +560,6 @@ const applyDeviceConfig = async () => {
 
     // Only update if there are changes
     if (!payload.configs || Object.keys(payload.configs).length === 0) {
-      displayMessage("ไม่มีการเปลี่ยนแปลง", "info");
       return;
     }
 
@@ -601,37 +582,10 @@ const applyDeviceConfig = async () => {
 
     // Refresh the devices list
     await applyFilters();
-
-    displayMessage("บันทึกการตั้งค่าอุปกรณ์สำเร็จ", "success");
   } catch {
-    displayMessage("ไม่สามารถบันทึกการตั้งค่าอุปกรณ์ได้", "error");
+    // Error handling
   }
 };
-
-// Display message helper
-const displayMessage = (
-  message: string,
-  color: "success" | "error" | "info"
-) => {
-  snackbarMessage.value = message;
-  snackbarColor.value = color;
-  showSnackbar.value = true;
-};
-
-// Watch for API messages
-watch(apiSuccessMessage, (newMessage) => {
-  if (newMessage) {
-    displayMessage(newMessage, "success");
-    clearMessages();
-  }
-});
-
-watch(apiError, (newError) => {
-  if (newError) {
-    displayMessage(newError, "error");
-    clearMessages();
-  }
-});
 
 // Initialize on mount
 onMounted(async () => {
