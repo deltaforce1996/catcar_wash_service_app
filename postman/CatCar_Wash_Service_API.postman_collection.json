@@ -1,0 +1,1266 @@
+{
+	"info": {
+		"_postman_id": "catcar-wash-service-api",
+		"name": "CatCar Wash Service API",
+		"description": "API Collection สำหรับระบบ CatCar Wash Service - ระบบบริหารจัดการเครื่องล้างรถอัตโนมัติ",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+	},
+	"auth": {
+		"type": "bearer",
+		"bearer": [
+			{
+				"key": "token",
+				"value": "{{access_token}}",
+				"type": "string"
+			}
+		]
+	},
+	"item": [
+		{
+			"name": "Auth",
+			"description": "API สำหรับการยืนยันตัวตนและจัดการ Authentication",
+			"item": [
+				{
+					"name": "Login",
+					"request": {
+						"auth": {
+							"type": "noauth"
+						},
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"email\": \"admin@catcar.com\",\n  \"password\": \"password123\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{base_url}}/api/v1/auth/login",
+							"host": ["{{base_url}}"],
+							"path": ["api", "v1", "auth", "login"]
+						},
+						"description": "**เข้าสู่ระบบ**\n\nใช้สำหรับยืนยันตัวตนและรับ JWT Token\n\n**Request Body:**\n- `email` (string, required): อีเมลของผู้ใช้\n- `password` (string, required): รหัสผ่าน\n\n**Note:** ไม่ต้องใส่ Authorization header"
+					}
+				},
+				{
+					"name": "Get User Info (Me)",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/api/v1/auth/me",
+							"host": ["{{base_url}}"],
+							"path": ["api", "v1", "auth", "me"]
+						},
+						"description": "**ดึงข้อมูลผู้ใช้ปัจจุบัน**\n\nใช้ดึงข้อมูลของผู้ใช้ที่ล็อกอินอยู่\n\n**Authentication:** ต้องใส่ Bearer Token\n\n**Response:** ข้อมูลผู้ใช้หรือพนักงานตาม permission"
+					}
+				}
+			]
+		},
+		{
+			"name": "Dashboard",
+			"description": "API สำหรับ Dashboard และสรุปข้อมูล",
+			"item": [
+				{
+					"name": "Get Dashboard Summary",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/api/v1/dashboard/summary?date=2025-01-15&include_charts=true",
+							"host": ["{{base_url}}"],
+							"path": ["api", "v1", "dashboard", "summary"],
+							"query": [
+								{
+									"key": "user_id",
+									"value": "",
+									"description": "ID ของผู้ใช้ (optional)",
+									"disabled": true
+								},
+								{
+									"key": "device_id",
+									"value": "",
+									"description": "ID ของอุปกรณ์ (optional)",
+									"disabled": true
+								},
+								{
+									"key": "device_status",
+									"value": "",
+									"description": "สถานะอุปกรณ์: ACTIVE, INACTIVE, MAINTENANCE (optional)",
+									"disabled": true
+								},
+								{
+									"key": "device_type",
+									"value": "",
+									"description": "ประเภทอุปกรณ์: WASH, DRYING (optional)",
+									"disabled": true
+								},
+								{
+									"key": "payment_status",
+									"value": "",
+									"description": "สถานะการชำระเงิน: PENDING, SUCCEEDED, FAILED, CANCELLED (optional)",
+									"disabled": true
+								},
+								{
+									"key": "date",
+									"value": "2025-01-15",
+									"description": "วันที่ในรูปแบบ ISO 8601 (required)"
+								},
+								{
+									"key": "include_charts",
+									"value": "true",
+									"description": "รวมข้อมูลกราฟหรือไม่ (optional, default: false)"
+								}
+							]
+						},
+						"description": "**ดึงข้อมูลสรุปใน Dashboard**\n\n**Query Parameters:**\n- `user_id`: กรองตาม ID ผู้ใช้\n- `device_id`: กรองตาม ID อุปกรณ์\n- `device_status`: กรองตามสถานะอุปกรณ์\n- `device_type`: กรองตามประเภทอุปกรณ์\n- `payment_status`: กรองตามสถานะการชำระเงิน\n- `date`: วันที่ที่ต้องการดูข้อมูล (required)\n- `include_charts`: รวมข้อมูลสำหรับกราฟหรือไม่"
+					}
+				},
+				{
+					"name": "Sync Materialized Views",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/api/v1/dashboard/sync-materialized-views",
+							"host": ["{{base_url}}"],
+							"path": ["api", "v1", "dashboard", "sync-materialized-views"]
+						},
+						"description": "**รีเฟรช Materialized Views**\n\nใช้สำหรับอัพเดทข้อมูล materialized views ในฐานข้อมูล\n\n**Authentication:** ต้องใส่ Bearer Token"
+					}
+				}
+			]
+		},
+		{
+			"name": "Device Event Logs",
+			"description": "API สำหรับจัดการ Event Logs ของอุปกรณ์",
+			"item": [
+				{
+					"name": "Search Event Logs",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/api/v1/device-event-logs/search?page=1&limit=20",
+							"host": ["{{base_url}}"],
+							"path": ["api", "v1", "device-event-logs", "search"],
+							"query": [
+								{
+									"key": "page",
+									"value": "1",
+									"description": "หมายเลขหน้า (optional, default: 1)"
+								},
+								{
+									"key": "limit",
+									"value": "20",
+									"description": "จำนวนรายการต่อหน้า (optional, default: 20)"
+								},
+								{
+									"key": "device_id",
+									"value": "",
+									"description": "ID ของอุปกรณ์ (optional)",
+									"disabled": true
+								},
+								{
+									"key": "type",
+									"value": "",
+									"description": "ประเภท event: PAYMENT, INFO (optional)",
+									"disabled": true
+								},
+								{
+									"key": "status",
+									"value": "",
+									"description": "สถานะ: PENDING, SUCCEEDED, FAILED, CANCELLED (optional)",
+									"disabled": true
+								},
+								{
+									"key": "start_date",
+									"value": "",
+									"description": "วันที่เริ่มต้น (optional)",
+									"disabled": true
+								},
+								{
+									"key": "end_date",
+									"value": "",
+									"description": "วันที่สิ้นสุด (optional)",
+									"disabled": true
+								}
+							]
+						},
+						"description": "**ค้นหา Event Logs ของอุปกรณ์**\n\n**Query Parameters:**\n- `page`: หมายเลขหน้า\n- `limit`: จำนวนรายการต่อหน้า\n- `device_id`: กรองตาม ID อุปกรณ์\n- `type`: กรองตามประเภท event\n- `status`: กรองตามสถานะ\n- `start_date`: กรองตามวันที่เริ่มต้น\n- `end_date`: กรองตามวันที่สิ้นสุด"
+					}
+				},
+				{
+					"name": "Upload Logs",
+					"request": {
+						"auth": {
+							"type": "noauth"
+						},
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"device_id\": \"device-001\",\n  \"items\": [\n    {\n      \"type\": \"PAYMENT\",\n      \"status\": \"SUCCEEDED\",\n      \"timestamp\": 1705305600000,\n      \"total_amount\": 50,\n      \"qr\": {\n        \"chargeId\": \"ch_123456\",\n        \"net_amount\": 50\n      }\n    },\n    {\n      \"type\": \"PAYMENT\",\n      \"status\": \"SUCCEEDED\",\n      \"timestamp\": 1705306200000,\n      \"total_amount\": 30,\n      \"coin\": {\n        \"10\": 3\n      }\n    }\n  ]\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{base_url}}/api/v1/device-event-logs/upload",
+							"host": ["{{base_url}}"],
+							"path": ["api", "v1", "device-event-logs", "upload"]
+						},
+						"description": "**อัพโหลด Event Logs จากอุปกรณ์**\n\nใช้สำหรับอุปกรณ์ส่ง event logs มายังเซิร์ฟเวอร์\n\n**Request Body:**\n- `device_id` (string, required): ID ของอุปกรณ์\n- `items` (array, required): รายการ events\n  - `type` (string): PAYMENT หรือ INFO\n  - `status` (string): PENDING, SUCCEEDED, FAILED, CANCELLED\n  - `timestamp` (number): เวลาใน Unix timestamp (milliseconds)\n  - `total_amount` (number): จำนวนเงินรวม\n  - `qr` (object, optional): ข้อมูลการชำระผ่าน QR\n    - `chargeId` (string): Charge ID\n    - `net_amount` (number): จำนวนเงินสุทธิ\n  - `bank` (object, optional): ข้อมูลธนบัตร\n    - `20`, `50`, `100`, `500`, `1000`: จำนวนแต่ละใบ\n  - `coin` (object, optional): ข้อมูลเหรียญ\n    - `1`, `2`, `5`, `10`: จำนวนแต่ละเหรียญ\n\n**Note:** ไม่ต้องใส่ Authorization header"
+					}
+				}
+			]
+		},
+		{
+			"name": "Device States",
+			"description": "API สำหรับดูสถานะของอุปกรณ์",
+			"item": [
+				{
+					"name": "Search Device States",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/api/v1/device-states/search?page=1&limit=20",
+							"host": ["{{base_url}}"],
+							"path": ["api", "v1", "device-states", "search"],
+							"query": [
+								{
+									"key": "page",
+									"value": "1",
+									"description": "หมายเลขหน้า (optional, default: 1)"
+								},
+								{
+									"key": "limit",
+									"value": "20",
+									"description": "จำนวนรายการต่อหน้า (optional, default: 20)"
+								},
+								{
+									"key": "device_id",
+									"value": "",
+									"description": "ID ของอุปกรณ์ (optional)",
+									"disabled": true
+								},
+								{
+									"key": "start_date",
+									"value": "",
+									"description": "วันที่เริ่มต้น (optional)",
+									"disabled": true
+								},
+								{
+									"key": "end_date",
+									"value": "",
+									"description": "วันที่สิ้นสุด (optional)",
+									"disabled": true
+								}
+							]
+						},
+						"description": "**ค้นหาสถานะของอุปกรณ์**\n\n**Query Parameters:**\n- `page`: หมายเลขหน้า\n- `limit`: จำนวนรายการต่อหน้า\n- `device_id`: กรองตาม ID อุปกรณ์\n- `start_date`: กรองตามวันที่เริ่มต้น\n- `end_date`: กรองตามวันที่สิ้นสุด"
+					}
+				}
+			]
+		},
+		{
+			"name": "Devices",
+			"description": "API สำหรับจัดการอุปกรณ์",
+			"item": [
+				{
+					"name": "Search Devices",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/api/v1/devices/search?page=1&limit=20&sort_by=created_at&sort_order=desc",
+							"host": ["{{base_url}}"],
+							"path": ["api", "v1", "devices", "search"],
+							"query": [
+								{
+									"key": "query",
+									"value": "",
+									"description": "คำค้นหา (optional)",
+									"disabled": true
+								},
+								{
+									"key": "page",
+									"value": "1",
+									"description": "หมายเลขหน้า (optional, default: 1)"
+								},
+								{
+									"key": "limit",
+									"value": "20",
+									"description": "จำนวนรายการต่อหน้า (optional, default: 20)"
+								},
+								{
+									"key": "sort_by",
+									"value": "created_at",
+									"description": "เรียงตาม: created_at, updated_at, name, type, status, register_at (optional)"
+								},
+								{
+									"key": "sort_order",
+									"value": "desc",
+									"description": "เรียงลำดับ: asc, desc (optional)"
+								},
+								{
+									"key": "exclude_all_ref_table",
+									"value": "false",
+									"description": "ไม่รวมข้อมูล reference tables (optional, default: false)"
+								}
+							]
+						},
+						"description": "**ค้นหาอุปกรณ์**\n\n**Query Parameters:**\n- `query`: คำค้นหา (ชื่อ, ID)\n- `page`: หมายเลขหน้า\n- `limit`: จำนวนรายการต่อหน้า\n- `sort_by`: เรียงตามฟิลด์\n- `sort_order`: เรียงลำดับ\n- `exclude_all_ref_table`: ไม่รวมข้อมูล join tables"
+					}
+				},
+				{
+					"name": "Find Device by ID",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/api/v1/devices/find-by-id/:id",
+							"host": ["{{base_url}}"],
+							"path": ["api", "v1", "devices", "find-by-id", ":id"],
+							"variable": [
+								{
+									"key": "id",
+									"value": "device-001",
+									"description": "ID ของอุปกรณ์"
+								}
+							]
+						},
+						"description": "**ดึงข้อมูลอุปกรณ์ตาม ID**\n\n**Path Parameters:**\n- `id`: ID ของอุปกรณ์ที่ต้องการดู"
+					}
+				},
+				{
+					"name": "Create Device",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"id\": \"device-001\",\n  \"name\": \"เครื่องล้างรถ สาขา 1\",\n  \"type\": \"WASH\",\n  \"owner_id\": \"user-001\",\n  \"register_by\": \"emp-001\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{base_url}}/api/v1/devices/create",
+							"host": ["{{base_url}}"],
+							"path": ["api", "v1", "devices", "create"]
+						},
+						"description": "**สร้างอุปกรณ์ใหม่และมอบหมายให้พนักงาน**\n\n**Request Body:**\n- `id` (string, required): ID ของอุปกรณ์\n- `name` (string, required): ชื่ออุปกรณ์\n- `type` (string, required): ประเภทอุปกรณ์ (WASH, DRYING)\n- `owner_id` (string, required): ID ของเจ้าของ\n- `register_by` (string, required): ID ของผู้ลงทะเบียน"
+					}
+				},
+				{
+					"name": "Update Device Basic Info",
+					"request": {
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"name\": \"เครื่องล้างรถ สาขา 1 (ปรับปรุง)\",\n  \"type\": \"WASH\",\n  \"status\": \"ACTIVE\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{base_url}}/api/v1/devices/update-by-id-basic/:id",
+							"host": ["{{base_url}}"],
+							"path": ["api", "v1", "devices", "update-by-id-basic", ":id"],
+							"variable": [
+								{
+									"key": "id",
+									"value": "device-001",
+									"description": "ID ของอุปกรณ์"
+								}
+							]
+						},
+						"description": "**อัพเดทข้อมูลพื้นฐานของอุปกรณ์**\n\n**Path Parameters:**\n- `id`: ID ของอุปกรณ์\n\n**Request Body:**\n- `name` (string, optional): ชื่ออุปกรณ์\n- `type` (string, optional): ประเภทอุปกรณ์\n- `status` (string, optional): สถานะ (ACTIVE, INACTIVE, MAINTENANCE)"
+					}
+				},
+				{
+					"name": "Update Device Configs",
+					"request": {
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"configs\": {\n    \"system\": {\n      \"on_time\": \"06:00\",\n      \"off_time\": \"22:00\",\n      \"payment_method\": {\n        \"coin\": true,\n        \"promptpay\": true,\n        \"bank_note\": false\n      }\n    },\n    \"sale\": {\n      \"hp_water\": 15,\n      \"foam\": 20,\n      \"water\": 10\n    },\n    \"pricing\": {\n      \"base_fee\": 10,\n      \"promotion\": 5\n    }\n  }\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{base_url}}/api/v1/devices/update-configs/:id",
+							"host": ["{{base_url}}"],
+							"path": ["api", "v1", "devices", "update-configs", ":id"],
+							"variable": [
+								{
+									"key": "id",
+									"value": "device-001",
+									"description": "ID ของอุปกรณ์"
+								}
+							]
+						},
+						"description": "**อัพเดท Configuration ของอุปกรณ์**\n\n**Path Parameters:**\n- `id`: ID ของอุปกรณ์\n\n**Request Body:**\n- `configs` (object, optional): การตั้งค่าต่างๆ\n  - `system` (object): ตั้งค่าระบบ\n    - `on_time` (string): เวลาเปิด (HH:mm)\n    - `off_time` (string): เวลาปิด (HH:mm)\n    - `payment_method` (object): วิธีการชำระเงิน\n  - `sale` (object): ตั้งค่าการขาย (วินาทีต่อบาท)\n    - สำหรับ WASH: `hp_water`, `foam`, `water`, etc.\n    - สำหรับ DRYING: ใช้ `{start, end}` เช่น `{\"uv\": {\"start\": 200, \"end\": 300}}`\n  - `pricing` (object): ตั้งค่าราคา\n    - `base_fee`, `promotion`, etc."
+					}
+				},
+				{
+					"name": "Device Need Register",
+					"request": {
+						"auth": {
+							"type": "noauth"
+						},
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"chip_id\": \"ESP32-123456\",\n  \"mac_address\": \"AA:BB:CC:DD:EE:FF\",\n  \"firmware_version\": \"v1.0.0\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{base_url}}/api/v1/devices/need-register",
+							"host": ["{{base_url}}"],
+							"path": ["api", "v1", "devices", "need-register"]
+						},
+						"description": "**สร้าง Registration Session สำหรับอุปกรณ์**\n\nใช้เมื่ออุปกรณ์ต้องการลงทะเบียนครั้งแรก\n\n**Request Body:**\n- `chip_id` (string, required): Chip ID ของอุปกรณ์\n- `mac_address` (string, required): MAC Address\n- `firmware_version` (string, required): เวอร์ชันของ Firmware\n\n**Response:** PIN สำหรับการยืนยันและ device_id\n\n**Note:** ไม่ต้องใส่ Authorization header"
+					}
+				},
+				{
+					"name": "Sync Device Configs",
+					"request": {
+						"auth": {
+							"type": "noauth"
+						},
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							},
+							{
+								"key": "x-signature",
+								"value": "{{device_signature}}",
+								"description": "Device signature สำหรับยืนยันตัวตน"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"firmware_version\": \"v1.0.0\",\n  \"mac_address\": \"AA:BB:CC:DD:EE:FF\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{base_url}}/api/v1/devices/sync-configs/:device_id",
+							"host": ["{{base_url}}"],
+							"path": ["api", "v1", "devices", "sync-configs", ":device_id"],
+							"variable": [
+								{
+									"key": "device_id",
+									"value": "device-001",
+									"description": "ID ของอุปกรณ์"
+								}
+							]
+						},
+						"description": "**ซิงค์ Configuration ของอุปกรณ์**\n\nใช้สำหรับอุปกรณ์ขอข้อมูล config จากเซิร์ฟเวอร์\n\n**Path Parameters:**\n- `device_id`: ID ของอุปกรณ์\n\n**Headers:**\n- `x-signature`: Device signature สำหรับยืนยันตัวตน\n\n**Request Body:**\n- `firmware_version` (string, optional): เวอร์ชัน Firmware ปัจจุบัน\n- `mac_address` (string, optional): MAC Address"
+					}
+				},
+				{
+					"name": "Device Scan (SSE)",
+					"request": {
+						"auth": {
+							"type": "noauth"
+						},
+						"method": "GET",
+						"header": [
+							{
+								"key": "Accept",
+								"value": "text/event-stream"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/api/v1/devices/scan",
+							"host": ["{{base_url}}"],
+							"path": ["api", "v1", "devices", "scan"]
+						},
+						"description": "**Server-Sent Events สำหรับสแกนหาอุปกรณ์**\n\nใช้สำหรับรับ real-time events เมื่อมีอุปกรณ์ขอลงทะเบียน\n\n**Note:** เป็น SSE endpoint ต้องใช้ EventSource หรือเครื่องมือที่รองรับ SSE"
+					}
+				}
+			]
+		},
+		{
+			"name": "Employees",
+			"description": "API สำหรับจัดการข้อมูลพนักงาน",
+			"item": [
+				{
+					"name": "Register Employee",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"name\": \"สมชาย ใจดี\",\n  \"email\": \"somchai@catcar.com\",\n  \"phone\": \"0812345678\",\n  \"line\": \"somchai_line\",\n  \"address\": \"123 ถนนสุขุมวิท กรุงเทพฯ\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{base_url}}/api/v1/emps/register",
+							"host": ["{{base_url}}"],
+							"path": ["api", "v1", "emps", "register"]
+						},
+						"description": "**ลงทะเบียนพนักงานใหม่**\n\nเฉพาะ ADMIN เท่านั้นที่สามารถเรียกใช้ได้\n\n**Request Body:**\n- `name` (string, required): ชื่อพนักงาน\n- `email` (string, required): อีเมล\n- `phone` (string, optional): เบอร์โทรศัพท์\n- `line` (string, optional): LINE ID\n- `address` (string, optional): ที่อยู่\n\n**Authorization:** ต้องเป็น ADMIN"
+					}
+				},
+				{
+					"name": "Search Employees",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/api/v1/emps/search?page=1&limit=20",
+							"host": ["{{base_url}}"],
+							"path": ["api", "v1", "emps", "search"],
+							"query": [
+								{
+									"key": "query",
+									"value": "",
+									"description": "คำค้นหา (optional)",
+									"disabled": true
+								},
+								{
+									"key": "page",
+									"value": "1",
+									"description": "หมายเลขหน้า (optional, default: 1)"
+								},
+								{
+									"key": "limit",
+									"value": "20",
+									"description": "จำนวนรายการต่อหน้า (optional, default: 20)"
+								}
+							]
+						},
+						"description": "**ค้นหาพนักงาน**\n\nเฉพาะ ADMIN และ TECHNICIAN เท่านั้นที่สามารถเรียกใช้ได้\n\n**Query Parameters:**\n- `query`: คำค้นหา (ชื่อ, อีเมล)\n- `page`: หมายเลขหน้า\n- `limit`: จำนวนรายการต่อหน้า\n\n**Authorization:** ต้องเป็น ADMIN หรือ TECHNICIAN"
+					}
+				},
+				{
+					"name": "Find Employee by ID",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/api/v1/emps/find-by-id/:id",
+							"host": ["{{base_url}}"],
+							"path": ["api", "v1", "emps", "find-by-id", ":id"],
+							"variable": [
+								{
+									"key": "id",
+									"value": "emp-001",
+									"description": "ID ของพนักงาน"
+								}
+							]
+						},
+						"description": "**ดึงข้อมูลพนักงานตาม ID**\n\nเฉพาะ ADMIN และ TECHNICIAN เท่านั้นที่สามารถเรียกใช้ได้\n\n**Path Parameters:**\n- `id`: ID ของพนักงาน\n\n**Authorization:** ต้องเป็น ADMIN หรือ TECHNICIAN"
+					}
+				},
+				{
+					"name": "Update Employee Profile (Self)",
+					"request": {
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"name\": \"สมชาย ใจดี (แก้ไข)\",\n  \"phone\": \"0887654321\",\n  \"line\": \"somchai_new\",\n  \"address\": \"456 ถนนพระราม 4\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{base_url}}/api/v1/emps/update-profile",
+							"host": ["{{base_url}}"],
+							"path": ["api", "v1", "emps", "update-profile"]
+						},
+						"description": "**อัพเดทข้อมูลส่วนตัวของพนักงาน**\n\nพนักงานสามารถแก้ไขข้อมูลของตัวเองได้\n\n**Request Body:**\n- `name` (string, optional): ชื่อ\n- `phone` (string, optional): เบอร์โทร\n- `line` (string, optional): LINE ID\n- `address` (string, optional): ที่อยู่\n\n**Note:** ระบบจะดึง ID จาก token อัตโนมัติ"
+					}
+				},
+				{
+					"name": "Update Employee by ID (Admin)",
+					"request": {
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"name\": \"สมชาย ใจดี (แก้ไขโดย Admin)\",\n  \"email\": \"somchai.new@catcar.com\",\n  \"phone\": \"0898765432\",\n  \"line\": \"somchai_admin\",\n  \"address\": \"789 ถนนสีลม\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{base_url}}/api/v1/emps/update-by-id/:id",
+							"host": ["{{base_url}}"],
+							"path": ["api", "v1", "emps", "update-by-id", ":id"],
+							"variable": [
+								{
+									"key": "id",
+									"value": "emp-001",
+									"description": "ID ของพนักงาน"
+								}
+							]
+						},
+						"description": "**อัพเดทข้อมูลพนักงานโดย Admin**\n\nเฉพาะ ADMIN เท่านั้นที่สามารถเรียกใช้ได้\n\n**Path Parameters:**\n- `id`: ID ของพนักงาน\n\n**Request Body:**\n- `name` (string, optional): ชื่อ\n- `email` (string, optional): อีเมล\n- `phone` (string, optional): เบอร์โทร\n- `line` (string, optional): LINE ID\n- `address` (string, optional): ที่อยู่\n\n**Authorization:** ต้องเป็น ADMIN"
+					}
+				}
+			]
+		},
+		{
+			"name": "Payment Gateway",
+			"description": "API สำหรับจัดการการชำระเงิน",
+			"item": [
+				{
+					"name": "Create Payment",
+					"request": {
+						"auth": {
+							"type": "noauth"
+						},
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							},
+							{
+								"key": "x-signature",
+								"value": "{{device_signature}}",
+								"description": "Device signature สำหรับยืนยันตัวตน"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"device_id\": \"device-001\",\n  \"amount\": 50,\n  \"description\": \"ล้างรถแบบธรรมดา\",\n  \"payment_method\": \"qr\",\n  \"reference_id\": \"REF-12345\",\n  \"callback_url\": \"https://device.catcar.com/callback\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{base_url}}/api/v1/payment-gateway/payments",
+							"host": ["{{base_url}}"],
+							"path": ["api", "v1", "payment-gateway", "payments"]
+						},
+						"description": "**สร้างการชำระเงินใหม่**\n\nใช้สำหรับอุปกรณ์สร้างรายการชำระเงิน\n\n**Headers:**\n- `x-signature`: Device signature สำหรับยืนยันตัวตน\n\n**Request Body:**\n- `device_id` (string, required): ID ของอุปกรณ์\n- `amount` (number, required): จำนวนเงิน (ขั้นต่ำ 0.01)\n- `description` (string, optional): รายละเอียด\n- `payment_method` (string, optional): วิธีการชำระเงิน\n- `reference_id` (string, optional): เลขที่อ้างอิง\n- `callback_url` (string, optional): URL สำหรับ callback"
+					}
+				},
+				{
+					"name": "Get Payment Status",
+					"request": {
+						"auth": {
+							"type": "noauth"
+						},
+						"method": "GET",
+						"header": [
+							{
+								"key": "x-signature",
+								"value": "{{device_signature}}",
+								"description": "Device signature สำหรับยืนยันตัวตน"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/api/v1/payment-gateway/payments/:id/status",
+							"host": ["{{base_url}}"],
+							"path": ["api", "v1", "payment-gateway", "payments", ":id", "status"],
+							"variable": [
+								{
+									"key": "id",
+									"value": "payment-001",
+									"description": "ID ของการชำระเงิน"
+								}
+							]
+						},
+						"description": "**ตรวจสอบสถานะการชำระเงิน**\n\nใช้สำหรับอุปกรณ์ตรวจสอบสถานะการชำระเงิน\n\n**Path Parameters:**\n- `id`: ID ของการชำระเงิน\n\n**Headers:**\n- `x-signature`: Device signature สำหรับยืนยันตัวตน"
+					}
+				},
+				{
+					"name": "Create Refund",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"payment_id\": \"payment-001\",\n  \"amount\": 50,\n  \"reason\": \"เครื่องเสีย\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{base_url}}/api/v1/payment-gateway/refunds",
+							"host": ["{{base_url}}"],
+							"path": ["api", "v1", "payment-gateway", "refunds"]
+						},
+						"description": "**สร้างการคืนเงิน**\n\n**Request Body:**\n- `payment_id` (string, required): ID ของการชำระเงินที่ต้องการคืน\n- `amount` (number, required): จำนวนเงินที่ต้องการคืน\n- `reason` (string, optional): เหตุผลในการคืนเงิน"
+					}
+				},
+				{
+					"name": "Beam Webhook Handler",
+					"request": {
+						"auth": {
+							"type": "noauth"
+						},
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							},
+							{
+								"key": "x-beam-event",
+								"value": "charge.succeeded",
+								"description": "ประเภทของ event จาก Beam"
+							},
+							{
+								"key": "x-beam-signature",
+								"value": "signature_from_beam",
+								"description": "Signature จาก Beam สำหรับยืนยันตัวตน"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"event\": \"charge.succeeded\",\n  \"data\": {\n    \"chargeId\": \"ch_123456\",\n    \"amount\": 50,\n    \"status\": \"succeeded\"\n  }\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{base_url}}/api/v1/payment-gateway/webhook",
+							"host": ["{{base_url}}"],
+							"path": ["api", "v1", "payment-gateway", "webhook"]
+						},
+						"description": "**รับ Webhook จาก Beam Payment Gateway**\n\nใช้สำหรับรับการแจ้งเตือนจาก Beam\n\n**Headers:**\n- `x-beam-event`: ประเภทของ event\n- `x-beam-signature`: Signature สำหรับยืนยันตัวตน\n\n**Note:** Endpoint นี้ถูกเรียกโดย Beam เท่านั้น"
+					}
+				}
+			]
+		},
+		{
+			"name": "Users",
+			"description": "API สำหรับจัดการข้อมูลผู้ใช้",
+			"item": [
+				{
+					"name": "Search Users",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/api/v1/users/search?page=1&limit=20",
+							"host": ["{{base_url}}"],
+							"path": ["api", "v1", "users", "search"],
+							"query": [
+								{
+									"key": "query",
+									"value": "",
+									"description": "คำค้นหา (optional)",
+									"disabled": true
+								},
+								{
+									"key": "page",
+									"value": "1",
+									"description": "หมายเลขหน้า (optional, default: 1)"
+								},
+								{
+									"key": "limit",
+									"value": "20",
+									"description": "จำนวนรายการต่อหน้า (optional, default: 20)"
+								}
+							]
+						},
+						"description": "**ค้นหาผู้ใช้**\n\nเฉพาะ ADMIN และ TECHNICIAN เท่านั้นที่สามารถเรียกใช้ได้\n\n**Query Parameters:**\n- `query`: คำค้นหา (ชื่อ, อีเมล)\n- `page`: หมายเลขหน้า\n- `limit`: จำนวนรายการต่อหน้า\n\n**Authorization:** ต้องเป็น ADMIN หรือ TECHNICIAN"
+					}
+				},
+				{
+					"name": "Find User by ID",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/api/v1/users/find-by-id/:id",
+							"host": ["{{base_url}}"],
+							"path": ["api", "v1", "users", "find-by-id", ":id"],
+							"variable": [
+								{
+									"key": "id",
+									"value": "user-001",
+									"description": "ID ของผู้ใช้"
+								}
+							]
+						},
+						"description": "**ดึงข้อมูลผู้ใช้ตาม ID**\n\n**Path Parameters:**\n- `id`: ID ของผู้ใช้"
+					}
+				},
+				{
+					"name": "Update User Profile (Self)",
+					"request": {
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"fullname\": \"สมหญิง สวยงาม\",\n  \"phone\": \"0823456789\",\n  \"address\": \"123 ถนนพระราม 9\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{base_url}}/api/v1/users/update-profile",
+							"host": ["{{base_url}}"],
+							"path": ["api", "v1", "users", "update-profile"]
+						},
+						"description": "**อัพเดทข้อมูลส่วนตัวของผู้ใช้**\n\nผู้ใช้สามารถแก้ไขข้อมูลของตัวเองได้\n\n**Request Body:**\n- `fullname` (string, optional): ชื่อ-นามสกุล\n- `phone` (string, optional): เบอร์โทร\n- `address` (string, optional): ที่อยู่\n- `custom_name` (string, optional): ชื่อที่ต้องการให้เรียก\n\n**Note:** ระบบจะดึง ID จาก token อัตโนมัติ"
+					}
+				},
+				{
+					"name": "Update User by ID (Admin)",
+					"request": {
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"fullname\": \"สมหญิง สวยงาม (แก้ไขโดย Admin)\",\n  \"email\": \"somying.new@example.com\",\n  \"phone\": \"0834567890\",\n  \"address\": \"456 ถนนสุขุมวิท\",\n  \"custom_name\": \"หญิง\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{base_url}}/api/v1/users/update-by-id/:id",
+							"host": ["{{base_url}}"],
+							"path": ["api", "v1", "users", "update-by-id", ":id"],
+							"variable": [
+								{
+									"key": "id",
+									"value": "user-001",
+									"description": "ID ของผู้ใช้"
+								}
+							]
+						},
+						"description": "**อัพเดทข้อมูลผู้ใช้โดย Admin**\n\nเฉพาะ ADMIN เท่านั้นที่สามารถเรียกใช้ได้\n\n**Path Parameters:**\n- `id`: ID ของผู้ใช้\n\n**Request Body:**\n- `fullname` (string, optional): ชื่อ-นามสกุล\n- `email` (string, optional): อีเมล\n- `phone` (string, optional): เบอร์โทร\n- `address` (string, optional): ที่อยู่\n- `custom_name` (string, optional): ชื่อที่ต้องการให้เรียก\n\n**Authorization:** ต้องเป็น ADMIN"
+					}
+				},
+				{
+					"name": "Register User",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"fullname\": \"สมหญิง สวยงาม\",\n  \"email\": \"somying@example.com\",\n  \"phone\": \"0823456789\",\n  \"address\": \"123 ถนนพระราม 9\",\n  \"custom_name\": \"หญิง\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{base_url}}/api/v1/users/register",
+							"host": ["{{base_url}}"],
+							"path": ["api", "v1", "users", "register"]
+						},
+						"description": "**ลงทะเบียนผู้ใช้ใหม่**\n\nเฉพาะ ADMIN และ TECHNICIAN เท่านั้นที่สามารถเรียกใช้ได้\n\n**Request Body:**\n- `fullname` (string, required): ชื่อ-นามสกุล\n- `email` (string, required): อีเมล\n- `phone` (string, optional): เบอร์โทร\n- `address` (string, optional): ที่อยู่\n- `custom_name` (string, optional): ชื่อที่ต้องการให้เรียก\n\n**Authorization:** ต้องเป็น ADMIN หรือ TECHNICIAN"
+					}
+				}
+			]
+		},
+		{
+			"name": "Device Commands",
+			"description": "API สำหรับส่งคำสั่งไปยังอุปกรณ์ผ่าน MQTT",
+			"item": [
+				{
+					"name": "Apply Config",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/api/v1/device-commands/:deviceId/apply-config",
+							"host": ["{{base_url}}"],
+							"path": ["api", "v1", "device-commands", ":deviceId", "apply-config"],
+							"variable": [
+								{
+									"key": "deviceId",
+									"value": "device-001",
+									"description": "ID ของอุปกรณ์"
+								}
+							]
+						},
+						"description": "**ส่งคำสั่งให้อุปกรณ์ Apply Configuration**\n\n**Path Parameters:**\n- `deviceId`: ID ของอุปกรณ์ที่ต้องการส่งคำสั่ง\n\n**Note:** จะส่ง config จากฐานข้อมูลไปยังอุปกรณ์"
+					}
+				},
+				{
+					"name": "Restart Device",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"delay_seconds\": 5\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{base_url}}/api/v1/device-commands/:deviceId/restart",
+							"host": ["{{base_url}}"],
+							"path": ["api", "v1", "device-commands", ":deviceId", "restart"],
+							"variable": [
+								{
+									"key": "deviceId",
+									"value": "device-001",
+									"description": "ID ของอุปกรณ์"
+								}
+							]
+						},
+						"description": "**ส่งคำสั่งให้อุปกรณ์รีสตาร์ท**\n\n**Path Parameters:**\n- `deviceId`: ID ของอุปกรณ์\n\n**Request Body:**\n- `delay_seconds` (number, optional): ความล่าช้าก่อนรีสตาร์ท (วินาที, default: 5)"
+					}
+				},
+				{
+					"name": "Update Firmware",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"url\": \"https://firmware.catcar.com/v1.1.0.bin\",\n  \"version\": \"v1.1.0\",\n  \"sha256\": \"abc123def456...\",\n  \"size\": 1048576,\n  \"reboot_after\": true\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{base_url}}/api/v1/device-commands/:deviceId/update-firmware",
+							"host": ["{{base_url}}"],
+							"path": ["api", "v1", "device-commands", ":deviceId", "update-firmware"],
+							"variable": [
+								{
+									"key": "deviceId",
+									"value": "device-001",
+									"description": "ID ของอุปกรณ์"
+								}
+							]
+						},
+						"description": "**ส่งคำสั่งให้อุปกรณ์อัพเดท Firmware**\n\n**Path Parameters:**\n- `deviceId`: ID ของอุปกรณ์\n\n**Request Body:**\n- `url` (string, required): URL ของไฟล์ firmware\n- `version` (string, required): เวอร์ชันของ firmware\n- `sha256` (string, required): SHA256 hash สำหรับตรวจสอบความถูกต้อง\n- `size` (number, required): ขนาดไฟล์ (bytes)\n- `reboot_after` (boolean, required): รีบูตหลังอัพเดทหรือไม่"
+					}
+				},
+				{
+					"name": "Reset Config",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/api/v1/device-commands/:deviceId/reset-config",
+							"host": ["{{base_url}}"],
+							"path": ["api", "v1", "device-commands", ":deviceId", "reset-config"],
+							"variable": [
+								{
+									"key": "deviceId",
+									"value": "device-001",
+									"description": "ID ของอุปกรณ์"
+								}
+							]
+						},
+						"description": "**ส่งคำสั่งให้อุปกรณ์รีเซ็ต Configuration**\n\n**Path Parameters:**\n- `deviceId`: ID ของอุปกรณ์\n\n**Note:** จะรีเซ็ตการตั้งค่ากลับเป็นค่าเริ่มต้น"
+					}
+				},
+				{
+					"name": "Send Custom Command",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"command\": \"test_led\",\n  \"payload\": {\n    \"color\": \"red\",\n    \"duration\": 5000\n  },\n  \"require_ack\": true\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{base_url}}/api/v1/device-commands/:deviceId/custom",
+							"host": ["{{base_url}}"],
+							"path": ["api", "v1", "device-commands", ":deviceId", "custom"],
+							"variable": [
+								{
+									"key": "deviceId",
+									"value": "device-001",
+									"description": "ID ของอุปกรณ์"
+								}
+							]
+						},
+						"description": "**ส่งคำสั่งแบบกำหนดเองไปยังอุปกรณ์**\n\n**Path Parameters:**\n- `deviceId`: ID ของอุปกรณ์\n\n**Request Body:**\n- `command` (string, required): ชื่อคำสั่ง\n- `payload` (object, required): ข้อมูลที่ต้องการส่ง\n- `require_ack` (boolean, optional): ต้องการคำตอบกลับหรือไม่ (default: true)"
+					}
+				},
+				{
+					"name": "Send Manual Payment",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"amount\": 50\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{base_url}}/api/v1/device-commands/:deviceId/manual-payment",
+							"host": ["{{base_url}}"],
+							"path": ["api", "v1", "device-commands", ":deviceId", "manual-payment"],
+							"variable": [
+								{
+									"key": "deviceId",
+									"value": "device-001",
+									"description": "ID ของอุปกรณ์"
+								}
+							]
+						},
+						"description": "**ส่งคำสั่งชำระเงินแบบ Manual ไปยังอุปกรณ์**\n\n**Path Parameters:**\n- `deviceId`: ID ของอุปกรณ์\n\n**Request Body:**\n- `amount` (number, required): จำนวนเงินที่ต้องการส่งไปยังอุปกรณ์"
+					}
+				}
+			]
+		},
+		{
+			"name": "MQTT Console",
+			"description": "API สำหรับ MQTT Console - ดู MQTT messages แบบ real-time",
+			"item": [
+				{
+					"name": "Get Console Page",
+					"request": {
+						"auth": {
+							"type": "noauth"
+						},
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/mqtt-console",
+							"host": ["{{base_url}}"],
+							"path": ["mqtt-console"]
+						},
+						"description": "**ดูหน้า MQTT Console**\n\nหน้าเว็บสำหรับดู MQTT messages แบบ real-time\n\n**Note:** ไม่ต้องใส่ Authorization header"
+					}
+				},
+				{
+					"name": "Stream Messages (SSE)",
+					"request": {
+						"auth": {
+							"type": "noauth"
+						},
+						"method": "GET",
+						"header": [
+							{
+								"key": "Accept",
+								"value": "text/event-stream"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/mqtt-console/stream",
+							"host": ["{{base_url}}"],
+							"path": ["mqtt-console", "stream"]
+						},
+						"description": "**Server-Sent Events Stream สำหรับ MQTT Messages**\n\nรับ real-time MQTT messages ผ่าน SSE\n\n**Note:** เป็น SSE endpoint ต้องใช้ EventSource หรือเครื่องมือที่รองรับ SSE"
+					}
+				},
+				{
+					"name": "Get Messages",
+					"request": {
+						"auth": {
+							"type": "noauth"
+						},
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/mqtt-console/messages?limit=100",
+							"host": ["{{base_url}}"],
+							"path": ["mqtt-console", "messages"],
+							"query": [
+								{
+									"key": "limit",
+									"value": "100",
+									"description": "จำนวน messages ที่ต้องการดึง (optional)"
+								}
+							]
+						},
+						"description": "**ดึง MQTT Messages ล่าสุด**\n\n**Query Parameters:**\n- `limit`: จำนวน messages ที่ต้องการดึง (default: ทั้งหมด)\n\n**Note:** ไม่ต้องใส่ Authorization header"
+					}
+				},
+				{
+					"name": "Get Stats",
+					"request": {
+						"auth": {
+							"type": "noauth"
+						},
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/mqtt-console/stats",
+							"host": ["{{base_url}}"],
+							"path": ["mqtt-console", "stats"]
+						},
+						"description": "**ดึงสถิติของ MQTT Console**\n\nแสดงจำนวน messages และ subscribers\n\n**Note:** ไม่ต้องใส่ Authorization header"
+					}
+				}
+			]
+		}
+	],
+	"variable": [
+		{
+			"key": "base_url",
+			"value": "http://localhost:3000",
+			"type": "string"
+		},
+		{
+			"key": "access_token",
+			"value": "",
+			"type": "string"
+		},
+		{
+			"key": "device_signature",
+			"value": "",
+			"type": "string"
+		}
+	]
+}
