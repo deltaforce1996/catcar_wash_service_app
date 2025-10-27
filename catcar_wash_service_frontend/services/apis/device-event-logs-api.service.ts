@@ -71,7 +71,7 @@ export class DeviceEventLogsApiService extends BaseApiClient {
       if (
         value != null &&
         value !== "" &&
-        value.trim().toUpperCase() !== "ALL"
+        value.toString().trim().toUpperCase() !== "ALL"
       ) {
         parts.push(`${key}: {${value}}`);
       }
