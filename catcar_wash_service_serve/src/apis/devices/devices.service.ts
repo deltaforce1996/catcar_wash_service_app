@@ -1,7 +1,7 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { DeviceStatus, DeviceType, PermissionType, Prisma } from '@prisma/client';
 import { PrismaService } from 'src/database/prisma/prisma.service';
-import { ItemNotFoundException } from 'src/errors';
+import { BadRequestException, ItemNotFoundException } from 'src/errors';
 import {
   UpdateDeviceBasicDto,
   CreateDeviceDto,
@@ -13,6 +13,8 @@ import { parseKeyValueOnly } from 'src/shared/kv-parser';
 import { AuthenticatedUser, DeviceInfo, PaginatedResult } from 'src/types/internal.type';
 import { DeviceWashConfig } from 'src/shared/device-wash-config';
 import { DeviceDryingConfig } from 'src/shared/device-drying-config';
+import { MqttCommandManagerService } from 'src/services/adepters/mqtt-command-manager.service';
+import { CommandConfig } from 'src/types/mqtt-command-manager.types';
 
 export const devicePublicSelect = Prisma.validator<Prisma.tbl_devicesSelect>()({
   id: true,
@@ -72,7 +74,10 @@ const ALLOWED = ['id', 'name', 'type', 'status', 'owner', 'register', 'search'] 
 export class DevicesService {
   private readonly logger = new Logger(DevicesService.name);
 
-  constructor(private readonly prisma: PrismaService) {
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly mqttCommandManager: MqttCommandManagerService,
+  ) {
     this.logger.log('DevicesService initialized');
   }
 
@@ -441,6 +446,9 @@ export class DevicesService {
       },
       select: devicePublicSelect,
     });
+
+    const result = await this.mqttCommandManager.applyConfig(device.id, device.configs as unknown as CommandConfig);
+    if (result.status !== 'SUCCESS') throw new BadRequestException(result.error ?? 'Config Filed');
 
     return device;
   }

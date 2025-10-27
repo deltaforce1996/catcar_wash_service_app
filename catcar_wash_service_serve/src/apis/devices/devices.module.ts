@@ -6,6 +6,7 @@ import {
   DeviceRegistrationService,
   EventManagerService,
   DeviceRegistrationEventAdapter,
+  MqttCommandManagerService,
 } from 'src/services';
 import { EventEmitterModule } from '@nestjs/event-emitter';
 
@@ -17,6 +18,7 @@ import { EventEmitterModule } from '@nestjs/event-emitter';
     DeviceRegistrationService,
     EventManagerService,
     DeviceRegistrationEventAdapter,
+    MqttCommandManagerService,
   ],
   controllers: [DevicesController],
   exports: [DevicesService, DeviceRegistrationService, EventManagerService, DeviceRegistrationEventAdapter],
