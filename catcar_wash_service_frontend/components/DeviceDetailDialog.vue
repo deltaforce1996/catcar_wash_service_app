@@ -90,7 +90,7 @@
                       <v-btn
                         color="info"
                         variant="elevated"
-                        size="small"
+                        size="large"
                         @click="handleUpdateFirmware"
                       >
                         <v-icon class="mr-2">mdi-upload</v-icon>
@@ -99,7 +99,7 @@
                       <v-btn
                         color="warning"
                         variant="elevated"
-                        size="small"
+                        size="large"
                         @click="handleResetConfig"
                       >
                         <v-icon class="mr-2">mdi-restore</v-icon>
@@ -108,7 +108,7 @@
                       <v-btn
                         color="error"
                         variant="elevated"
-                        size="small"
+                        size="large"
                         @click="handleRestart"
                       >
                         <v-icon class="mr-2">mdi-restart</v-icon>
@@ -128,7 +128,7 @@
                     <v-btn
                       color="success"
                       variant="elevated"
-                      size="small"
+                      size="large"
                       block
                       @click="handleManualPayment"
                     >
@@ -1552,7 +1552,7 @@ const confirmUpdateFirmware = async () => {
     snackbarMessage.value = commandSuccessMessage.value || "อัพเดทเฟิร์มแวร์สำเร็จ";
     snackbarColor.value = "success";
     snackbar.value = true;
-  } catch {
+  } catch (_error) {
     snackbarMessage.value = commandError.value || "ไม่สามารถอัพเดทเฟิร์มแวร์ได้";
     snackbarColor.value = "error";
     snackbar.value = true;
@@ -1578,7 +1578,7 @@ const confirmResetConfig = async () => {
 
     // Emit event to parent to refresh device data
     emit("update:modelValue", false);
-  } catch {
+  } catch (_error) {
     snackbarMessage.value = commandError.value || "ไม่สามารถรีเซ็ตการตั้งค่าได้";
     snackbarColor.value = "error";
     snackbar.value = true;
@@ -1601,7 +1601,7 @@ const confirmRestart = async () => {
     snackbarMessage.value = commandSuccessMessage.value || "รีสตาร์ทอุปกรณ์สำเร็จ";
     snackbarColor.value = "success";
     snackbar.value = true;
-  } catch {
+  } catch (_error) {
     snackbarMessage.value = commandError.value || "ไม่สามารถรีสตาร์ทอุปกรณ์ได้";
     snackbarColor.value = "error";
     snackbar.value = true;
@@ -1627,7 +1627,7 @@ const confirmManualPayment = async () => {
     snackbarMessage.value = commandSuccessMessage.value || "ส่งการชำระเงินแบบแมนนวลสำเร็จ";
     snackbarColor.value = "success";
     snackbar.value = true;
-  } catch {
+  } catch (_error) {
     snackbarMessage.value = commandError.value || "ไม่สามารถส่งการชำระเงินแบบแมนนวลได้";
     snackbarColor.value = "error";
     snackbar.value = true;

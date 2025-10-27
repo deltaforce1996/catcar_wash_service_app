@@ -4,6 +4,7 @@ import { AllExceptionFilter } from 'src/common';
 import { SearchUserDto } from './dtos/search-user.dto';
 import { RegisterUserDto } from './dtos/register-user.dto';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
+import type { AuthenticatedUser } from 'src/types/internal.type';
 import { PaginatedResult } from 'src/types/internal.type';
 import { UpdateUserDto, UpdateUserProfileDto } from './dtos/update-user.dto';
 import { SuccessResponse } from 'src/types';
@@ -19,11 +20,12 @@ type UserPublicResponse = PaginatedResult<UserWithDeviceCountsRow | UserWithoutD
 export class UsersController {
   constructor(private readonly usersService: UsersService) {}
 
-  @UseGuards(RoleAuthGuard)
-  @RoleAdminAndTechnician()
   @Get('search')
-  async searchUsers(@Query() q: SearchUserDto): Promise<SuccessResponse<UserPublicResponse>> {
-    const result = await this.usersService.searchUsers(q);
+  async searchUsers(
+    @Query() q: SearchUserDto,
+    @UserAuth() user: AuthenticatedUser,
+  ): Promise<SuccessResponse<UserPublicResponse>> {
+    const result = await this.usersService.searchUsers(q, user.id, user.permission.name);
     return {
       success: true,
       data: result,

@@ -64,13 +64,22 @@ export class UsersService {
     this.logger.log('UsersService initialized');
   }
 
-  async searchUsers(q: SearchUserDto): Promise<PaginatedResult<UserWithDeviceCountsRow | UserWithoutDeviceCountsRow>> {
+  async searchUsers(
+    q: SearchUserDto,
+    userId: string,
+    userRole: string,
+  ): Promise<PaginatedResult<UserWithDeviceCountsRow | UserWithoutDeviceCountsRow>> {
     const pairs = parseKeyValueOnly(q.query ?? '', ALLOWED);
 
     const ands: Prisma.tbl_usersWhereInput['AND'] = [];
 
     // Exclude device-intial user (system placeholder user)
     ands.push({ id: { not: 'device-intial' } });
+
+    // If user role is USER, restrict search to only their own data
+    if (userRole === 'USER') {
+      ands.push({ id: userId });
+    }
 
     // Handle general search - search id, fullname, email, phone, and address fields
     const search = pairs.find((p) => p.key === 'search')?.value;
