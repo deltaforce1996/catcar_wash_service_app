@@ -12,6 +12,7 @@ const user = ref<AuthenticatedUser | null>(null);
 const isLoading = ref(false);
 const error = ref<string | null>(null);
 const successMessage = ref<string | null>(null);
+const isAuthReady = ref(false);
 
 const authApi = new AuthApiService();
 const userApi = new UserApiService();
@@ -123,14 +124,19 @@ export const useAuth = () => {
 
   // Initialize on app start
   const init = async () => {
-    if (authTokenManager.hasToken()) {
-      // Try to load user data from localStorage first
-      const storedUser = authTokenManager.getUser();
-      if (storedUser) {
-        user.value = storedUser;
+    try {
+      if (authTokenManager.hasToken()) {
+        // Try to load user data from localStorage first
+        const storedUser = authTokenManager.getUser();
+        if (storedUser) {
+          user.value = storedUser;
+        }
+        // Always fetch fresh user data from API to ensure it's up-to-date
+        await fetchUser();
       }
-      // Always fetch fresh user data from API to ensure it's up-to-date
-      await fetchUser();
+    } finally {
+      // Mark auth as ready whether successful or not
+      isAuthReady.value = true;
     }
   };
 
@@ -140,6 +146,7 @@ export const useAuth = () => {
     isLoading: readonly(isLoading),
     error: readonly(error),
     successMessage: readonly(successMessage),
+    isAuthReady: readonly(isAuthReady),
 
     // Computed
     isAuthenticated,

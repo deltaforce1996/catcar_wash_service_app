@@ -8,6 +8,9 @@ import { DeviceEventLogsApiService } from "~/services/apis/device-event-logs-api
 import type { ApiErrorResponse } from "~/types";
 
 export const useDeviceEventLogs = () => {
+  // Get auth state to check if user is USER permission
+  const { isUser, user } = useAuth();
+
   // Local state - not global
   const eventLogs = ref<DeviceEventLogResponseApi[]>([]);
   const currentEventLog = ref<DeviceEventLogResponseApi | null>(null);
@@ -54,9 +57,20 @@ export const useDeviceEventLogs = () => {
         ...searchParams,
       };
 
-      const response = await eventLogsApi.SearchDeviceEventLogs(
-        currentSearchParams.value
-      );
+      // Prepare request params
+      const requestParams: SearchDeviceEventLogsRequest = {
+        ...currentSearchParams.value,
+      };
+
+      // Automatically add user_id to query object for USER permission users
+      if (isUser.value && user.value?.id) {
+        requestParams.query = {
+          ...requestParams.query,
+          user_id: user.value.id,
+        };
+      }
+
+      const response = await eventLogsApi.SearchDeviceEventLogs(requestParams);
       if (response.success && response.data) {
         const paginatedData: PaginatedDeviceEventLogsResponse = response.data;
         eventLogs.value = paginatedData.items || [];
