@@ -62,6 +62,8 @@
                 <v-combobox
                   v-model="tempSelectedUserIds"
                   :items="userOptions"
+                  item-title="title"
+                  item-value="value"
                   label="ชื่อผู้ใช้"
                   prepend-inner-icon="mdi-account"
                   variant="outlined"
@@ -79,7 +81,7 @@
                       size="small"
                       variant="tonal"
                     >
-                      {{ item.raw }}
+                      {{ item.raw.title }}
                     </v-chip>
                   </template>
                 </v-combobox>
@@ -89,6 +91,8 @@
                   v-model="tempSelectedPaymentStatuses"
                   :items="paymentStatusOptions"
                   label="สถานะการชำระเงิน"
+                  item-title="label"
+                  item-value="value"
                   prepend-inner-icon="mdi-credit-card"
                   variant="outlined"
                   density="compact"
@@ -101,11 +105,11 @@
                   <template #chip="{ props, item }">
                     <v-chip
                       v-bind="props"
-                      :color="getPaymentStatusColor(item.raw)"
+                      :color="getPaymentStatusColor(item.raw.value)"
                       size="small"
                       variant="tonal"
                     >
-                      {{ item.raw }}
+                      {{ item.raw.label }}
                     </v-chip>
                   </template>
                 </v-combobox>
@@ -115,6 +119,8 @@
                   v-model="tempSelectedDeviceTypes"
                   :items="deviceTypeOptions"
                   label="ประเภทอุปกรณ์"
+                  item-title="label"
+                  item-value="value"
                   prepend-inner-icon="mdi-cog"
                   variant="outlined"
                   density="compact"
@@ -127,11 +133,11 @@
                   <template #chip="{ props, item }">
                     <v-chip
                       v-bind="props"
-                      :color="getDeviceTypeColor(item.raw)"
+                      :color="getDeviceTypeColor(item.raw.value)"
                       size="small"
                       variant="tonal"
                     >
-                      {{ item.raw }}
+                      {{ item.raw.label }}
                     </v-chip>
                   </template>
                 </v-combobox>
@@ -166,20 +172,54 @@
       </div>
     </div>
 
+    <!-- Error Alert -->
+    <v-alert
+      v-if="dashboardError"
+      type="error"
+      variant="tonal"
+      closable
+      class="mb-6"
+      @click:close="clearMessages"
+    >
+      <template #prepend>
+        <v-icon>mdi-alert-circle</v-icon>
+      </template>
+      <div class="text-body-2">
+        <strong>เกิดข้อผิดพลาด:</strong> {{ dashboardError }}
+      </div>
+    </v-alert>
+
     <!-- KPI Cards Section -->
-    <v-row class="mb-8">
-      <v-col v-for="(kpi, index) in kpiData" :key="index" cols="12" md="4">
-        <KPICard
-          :title="kpi.title"
-          :value="kpi.value"
-          :trend="kpi.trend"
-          :chart-data="kpi.chartData"
-          :chart-labels="kpi.chartLabels"
-          :chart-id="kpi.chartId"
-          :currency="kpi.currency"
+    <div class="position-relative mb-8">
+      <!-- Loading Overlay -->
+      <v-overlay
+        v-model="isLoading"
+        contained
+        persistent
+        class="align-center justify-center"
+      >
+        <v-progress-circular
+          color="primary"
+          indeterminate
+          size="64"
         />
-      </v-col>
-    </v-row>
+        <div class="text-body-1 mt-4">กำลังโหลดข้อมูล...</div>
+      </v-overlay>
+
+      <v-row>
+        <v-col v-for="(kpi, index) in kpiData" :key="index" cols="12" md="4">
+          <KPICard
+            :title="kpi.title"
+            :value="kpi.value"
+            :trend="kpi.trend"
+            :chart-data="kpi.chartData"
+            :chart-labels="kpi.chartLabels"
+            :chart-id="kpi.chartId"
+            :currency="kpi.currency"
+          />
+        </v-col>
+      </v-row>
+    </div>
 
     <!-- Hourly Revenue Card Section -->
     <!-- <v-row class="mb-8">
@@ -197,18 +237,22 @@
     </v-row> -->
 
     <!-- Sales Detail Table -->
-    <v-card elevation="2" rounded="lg">
-      <v-card-title class="pa-6">
-        <div class="d-flex justify-space-between align-center">
-          <h2 class="text-h5 font-weight-bold">รายละเอียดการขาย</h2>
-          <v-chip variant="tonal" color="primary">
-            {{ filteredSalesData.length }} รายการ
-          </v-chip>
-        </div>
-      </v-card-title>
-
+    <EnhancedDataTable
+      title="รายละเอียดการขาย"
+      :items="eventLogs"
+      :headers="salesHeaders"
+      :loading="isSearching"
+      :has-filter-changes="hasFilterChanges"
+      :page="currentSearchParams.page || 1"
+      :total-items="totalLogs"
+      :total-pages="totalPages"
+      expandable
+      @apply-filters="applyFilters"
+      @clear-filters="clearAllFilters"
+      @update:page="handlePageChange"
+    >
       <!-- Filter Section -->
-      <v-card-text class="pb-2">
+      <template #filters>
         <v-row>
           <!-- Search Bar -->
           <v-col cols="12" md="6">
@@ -325,137 +369,60 @@
               </v-menu>
             </div>
           </v-col>
-
-          <!-- Service Type Filter -->
-          <!-- <v-col cols="12" md="4">
-            <v-combobox
-              v-model="tempSelectedServiceTypes"
-              :items="serviceTypeOptions"
-              label="เลือกประเภทบริการ"
-              prepend-inner-icon="mdi-filter-variant"
-              variant="outlined"
-              density="compact"
-              chips
-              clearable
-              closable-chips
-              multiple
-              hide-details
-            >
-              <template #chip="{ props, item }">
-                <v-chip
-                  v-bind="props"
-                  :color="getServiceTypeColor(item.raw)"
-                  size="small"
-                  variant="tonal"
-                >
-                  {{ item.raw }}
-                </v-chip>
-              </template>
-            </v-combobox>
-          </v-col> -->
         </v-row>
+      </template>
 
-        <!-- Filter Change Alert -->
-        <v-alert
-          v-if="hasFilterChanges"
-          border
-          density="compact"
-          type="warning"
-          variant="tonal"
-          class="my-2"
-        >
-          <template #prepend>
-            <v-icon>mdi-information</v-icon>
-          </template>
-          <strong>เตือน:</strong> คุณได้เปลี่ยนแปลงตัวกรองแล้ว กรุณากดปุ่ม
-          "ยืนยันตัวกรอง" เพื่อใช้งานตัวกรองใหม่
-        </v-alert>
+      <!-- Custom Column Templates -->
+      <template #[`item.created_at`]="{ item }">
+        <div class="text-body-2">
+          {{ formatDateTime(item.created_at) }}
+        </div>
+      </template>
 
-        <!-- Filter Actions -->
-        <v-row class="mb-2">
-          <v-col cols="12" class="d-flex justify-end ga-2">
-            <v-btn
-              variant="outlined"
-              size="small"
-              prepend-icon="mdi-refresh"
-              @click="clearAllFilters"
-            >
-              ล้างตัวกรอง
-            </v-btn>
-            <v-btn
-              color="primary"
-              size="small"
-              prepend-icon="mdi-check"
-              @click="applyFilters"
-            >
-              ยืนยันตัวกรอง
-            </v-btn>
-          </v-col>
-        </v-row>
-      </v-card-text>
-      <v-data-table
-        :headers="salesHeaders"
-        :items="filteredSalesData"
-        :items-per-page="10"
-        class="elevation-0"
-        hover
-        show-expand
-        expand-on-click
-      >
-        <template #[`item.created_at`]="{ item }">
-          <div class="text-body-2">
-            {{ formatDateTime(item.created_at) }}
-          </div>
-        </template>
-        <template #[`item.device.name`]="{ item }">
-          <div class="d-flex align-center">
-            <v-icon
-              :color="getDeviceTypeColor(item.device.type)"
-              size="small"
-              class="me-2"
-            >
-              {{ getDeviceTypeIcon(item.device.type) }}
-            </v-icon>
-            <span class="text-body-2 font-weight-medium">{{
-              item.device.name
-            }}</span>
-          </div>
-        </template>
-        <template #[`item.payload.status`]="{ item }">
-          <v-chip
-            :color="getPaymentStatusColor(item.payload.status)"
-            size="small"
-            variant="tonal"
-          >
-            {{ item.payload.status }}
-          </v-chip>
-        </template>
-        <template #[`item.device.type`]="{ item }">
-          <v-chip
+      <template #[`item.device.name`]="{ item }">
+        <div class="d-flex align-center">
+          <v-icon
             :color="getDeviceTypeColor(item.device.type)"
             size="small"
-            variant="tonal"
+            class="me-2"
           >
-            {{ item.device.type }}
-          </v-chip>
-        </template>
-        <template #[`item.payload.total_amount`]="{ item }">
-          <div class="text-body-2 font-weight-bold text-success">
-            ฿{{ item.payload.total_amount.toLocaleString("th-TH") }}
-          </div>
-        </template>
+            {{ getDeviceTypeIcon(item.device.type) }}
+          </v-icon>
+          <span class="text-body-2 font-weight-medium">{{
+            item.device.name
+          }}</span>
+        </div>
+      </template>
 
-        <!-- Expandable row content -->
-        <template #expanded-row="{ columns, item }">
-          <td :colspan="columns.length" class="pa-0">
-            <v-card
-              class="ma-2 payment-details-card"
-              color="surface-container"
-              elevation="1"
-              rounded="lg"
-            >
-              <v-card-text class="pa-4">
-                <div class="payment-breakdown">
+      <template #[`item.payload.status`]="{ item }">
+        <v-chip
+          :color="getPaymentStatusColor(item.payload?.status)"
+          size="small"
+          variant="tonal"
+        >
+          {{ getPaymentStatusLabel(item.payload?.status) }}
+        </v-chip>
+      </template>
+
+      <template #[`item.device.type`]="{ item }">
+        <v-chip
+          :color="getDeviceTypeColor(item.device.type)"
+          size="small"
+          variant="tonal"
+        >
+          {{ getDeviceTypeLabel(item.device.type) }}
+        </v-chip>
+      </template>
+
+      <template #[`item.payload.total_amount`]="{ item }">
+        <div class="text-body-2 font-weight-bold text-success">
+          ฿{{ item.payload?.total_amount?.toLocaleString("th-TH") || 0 }}
+        </div>
+      </template>
+
+      <!-- Expandable Row Content -->
+      <template #expanded-content="{ item }">
+        <div class="payment-breakdown">
                   <!-- Header with transaction summary -->
                   <h3 class="text-subtitle-1 font-weight-bold">
                     รายละเอียดการชำระเงิน
@@ -701,61 +668,56 @@
                       </v-expansion-panel>
                     </v-expansion-panels>
                   </div>
-                </div>
-              </v-card-text>
-            </v-card>
-          </td>
-        </template>
-      </v-data-table>
-    </v-card>
+        </div>
+      </template>
+    </EnhancedDataTable>
   </div>
 </template>
 
 <script setup lang="ts">
-// TypeScript interfaces
-interface PaymentQR {
-  ref1: string | null;
-  ref2: string | null;
-  net_amount: number;
-  transaction_id: string;
-}
+import type { DashboardFilterRequest } from "~/services/apis/dashboard-api.service";
+import type { EnumDeviceType, EnumPaymentStatus } from "~/types";
+import EnhancedDataTable from "~/components/common/EnhancedDataTable.vue";
 
-interface PaymentPayload {
-  qr: PaymentQR;
-  bank: Record<string, number>;
-  coin: Record<string, number>;
-  type: string;
-  status: string;
-  timestemp: number;
-  total_amount: number;
-}
-
-interface Device {
-  id: string;
-  name: string;
-  type: string;
-  owner: {
-    id: string;
-    fullname: string;
-    email: string;
-  };
-}
-
-interface SaleItem {
-  id: string;
-  device_id: string;
-  payload: PaymentPayload;
-  created_at: string;
-  device: Device;
-}
-
-const { dashboardData } = useDashboardData();
+// Import enum translation composable
 const {
-  salesData: enhancedSalesData,
-  loading: _salesDataLoading,
-  error: _salesDataError,
-  refreshData: _refreshData,
-} = useEnhancedSalesData();
+  getDeviceTypeLabel,
+  getDeviceTypeColor,
+  getDeviceTypeIcon,
+  getPaymentStatusLabel,
+  getPaymentStatusColor,
+  deviceTypeOptions,
+  paymentStatusOptions,
+} = useEnumTranslation();
+
+// Dashboard KPI data using new composable
+const {
+  monthlyData,
+  dailyData,
+  hourlyData,
+  isLoading,
+  error: dashboardError,
+  fetchDashboardSummary,
+  updateFilter,
+  clearMessages,
+} = useDashboard();
+
+// Sales table data - using useDeviceEventLogs composable
+const {
+  eventLogs,
+  totalLogs,
+  totalPages,
+  currentSearchParams,
+  isSearching,
+  searchEventLogs,
+  goToPage,
+} = useDeviceEventLogs();
+
+// User data - using useUser composable
+const {
+  users,
+  searchUsers,
+} = useUser();
 
 const datePickerMenu = ref(false);
 const selectedDateObject = ref(new Date());
@@ -766,14 +728,6 @@ const selectedDate = computed(() => {
     year: "numeric",
   });
 });
-
-// Time picker object interface
-interface TimeObject {
-  hour?: number;
-  hours?: number;
-  minute?: number;
-  minutes?: number;
-}
 
 // Filter variables
 const searchQuery = ref("");
@@ -802,17 +756,15 @@ const selectedUserIds = ref<string[]>([]);
 const selectedPaymentStatuses = ref<string[]>([]);
 const selectedDeviceTypes = ref<string[]>([]);
 
-// Popover filter options
+// Popover filter options - using users from useUser composable
 const userOptions = computed(() => {
-  const users = new Set<string>();
-  salesData.value.forEach((item) => {
-    users.add(item.device.owner.fullname);
-  });
-  return Array.from(users).sort();
+  return users.value.map((user) => ({
+    title: user.fullname,
+    value: user.id,
+  }));
 });
 
-const paymentStatusOptions = ["SUCCESS", "FAILED", "PENDING"];
-const deviceTypeOptions = ["WASH", "DRYING"];
+// Popover filter options from composable (no longer hardcoded)
 
 // Filter count badge logic
 const activeFilterCount = computed(() => {
@@ -851,14 +803,44 @@ const formatTimeToString = (
 };
 
 // Main filter actions
-const applyFilters = () => {
+const applyFilters = async () => {
+  // Update applied state
   searchQuery.value = tempSearchQuery.value;
   startTimeObj.value = tempStartTimeObj.value;
   endTimeObj.value = tempEndTimeObj.value;
   selectedServiceTypes.value = [...tempSelectedServiceTypes.value];
+
+  // Build API query
+  const query: any = {};
+
+  // Search filter
+  if (searchQuery.value.trim()) {
+    query.search = searchQuery.value.trim();
+  }
+
+  // Time range filter - only add if time filters are set
+  // Combine selected date from header with the time range
+  if (startTimeObj.value || endTimeObj.value) {
+    const startTs = getTimestampFromDateTime(
+      selectedDateObject.value,
+      startTimeObj.value || { hour: 0, minute: 0 }
+    );
+    const endTs = getTimestampFromDateTime(
+      selectedDateObject.value,
+      endTimeObj.value || { hour: 23, minute: 59 }
+    );
+    query.payload_timestamp = `${startTs}-${endTs}`;
+  }
+
+  // Call API
+  await searchEventLogs({
+    query: Object.keys(query).length > 0 ? query : undefined,
+    page: 1,
+    limit: 10,
+  });
 };
 
-const clearAllFilters = () => {
+const clearAllFilters = async () => {
   // Clear both temp and actual values
   tempSearchQuery.value = "";
   tempStartTimeObj.value = null;
@@ -869,13 +851,72 @@ const clearAllFilters = () => {
   startTimeObj.value = null;
   endTimeObj.value = null;
   selectedServiceTypes.value = [];
+
+  // Reset to initial search without any filters
+  await searchEventLogs({
+    page: 1,
+    limit: 10,
+  });
 };
 
 // Popover filter functions
-const applyPopoverFilters = () => {
-  selectedUserIds.value = [...tempSelectedUserIds.value];
-  selectedPaymentStatuses.value = [...tempSelectedPaymentStatuses.value];
-  selectedDeviceTypes.value = [...tempSelectedDeviceTypes.value];
+const applyPopoverFilters = async () => {
+  // Update applied state - extract value from objects
+  selectedUserIds.value = tempSelectedUserIds.value.map((item) =>
+    typeof item === "string" ? item : item.value
+  );
+  selectedPaymentStatuses.value = tempSelectedPaymentStatuses.value.map((item) =>
+    typeof item === "string" ? item : item.value
+  );
+  selectedDeviceTypes.value = tempSelectedDeviceTypes.value.map((item) =>
+    typeof item === "string" ? item : item.value
+  );
+
+  // Build query for BOTH dashboard and event logs
+  const dashboardFilter: Partial<DashboardFilterRequest> = {};
+  const eventLogsQuery: any = {};
+
+  // Include timestamp filter only if time filters are set
+  // Combine selected date from header with the time range
+  if (startTimeObj.value || endTimeObj.value) {
+    const startTs = getTimestampFromDateTime(
+      selectedDateObject.value,
+      startTimeObj.value || { hour: 0, minute: 0 }
+    );
+    const endTs = getTimestampFromDateTime(
+      selectedDateObject.value,
+      endTimeObj.value || { hour: 23, minute: 59 }
+    );
+    eventLogsQuery.payload_timestamp = `${startTs}-${endTs}`;
+  }
+
+  // Device type filter
+  if (selectedDeviceTypes.value.length > 0) {
+    dashboardFilter.device_type = selectedDeviceTypes.value[0] as EnumDeviceType;
+    eventLogsQuery.device_type = selectedDeviceTypes.value[0];
+  }
+
+  // Payment status filter
+  if (selectedPaymentStatuses.value.length > 0) {
+    dashboardFilter.payment_status = selectedPaymentStatuses.value[0] as EnumPaymentStatus;
+    eventLogsQuery.payment_status = selectedPaymentStatuses.value[0];
+  }
+
+  // User ID filter - now directly using user_id
+  if (selectedUserIds.value.length > 0) {
+    eventLogsQuery.user_id = selectedUserIds.value[0];
+  }
+
+  // Update both dashboard and event logs
+  await Promise.all([
+    Object.keys(dashboardFilter).length > 0 ? updateFilter(dashboardFilter) : Promise.resolve(),
+    searchEventLogs({
+      query: Object.keys(eventLogsQuery).length > 0 ? eventLogsQuery : undefined,
+      page: 1,
+      limit: 10,
+    })
+  ]);
+
   filterMenu.value = false;
 };
 
@@ -890,8 +931,22 @@ const resetPopoverFilters = () => {
   selectedDeviceTypes.value = [];
 };
 
-// Initialize temp values on component mount
-onMounted(() => {
+// Initialize temp values and fetch dashboard data on component mount
+onMounted(async () => {
+  // Fetch initial data in parallel
+  await Promise.all([
+    fetchDashboardSummary(),
+    searchEventLogs({
+      page: 1,
+      limit: 10,
+    }),
+    searchUsers({
+      page: 1,
+      limit: 100, // Fetch more users for filter dropdown
+    }),
+  ]);
+
+  // Initialize temp filter values
   tempSearchQuery.value = searchQuery.value;
   tempStartTimeObj.value = startTimeObj.value;
   tempEndTimeObj.value = endTimeObj.value;
@@ -903,31 +958,63 @@ onMounted(() => {
   tempSelectedDeviceTypes.value = [...selectedDeviceTypes.value];
 });
 
+// Watch date picker changes and update dashboard filter
+watch(selectedDateObject, async (newDate) => {
+  if (newDate) {
+    const year = newDate.getFullYear();
+    const month = String(newDate.getMonth() + 1).padStart(2, "0");
+    const day = String(newDate.getDate()).padStart(2, "0");
+    const dateStr = `${year}-${month}-${day}`;
+
+    // Update dashboard KPIs for the selected date
+    await updateFilter({ date: dateStr });
+
+    // Only update event logs timestamp if time filters are currently active
+    // This keeps the time filter synchronized with the date picker
+    if (startTimeObj.value || endTimeObj.value) {
+      const startTs = getTimestampFromDateTime(
+        newDate,
+        startTimeObj.value || { hour: 0, minute: 0 }
+      );
+      const endTs = getTimestampFromDateTime(
+        newDate,
+        endTimeObj.value || { hour: 23, minute: 59 }
+      );
+
+      await searchEventLogs({
+        query: { payload_timestamp: `${startTs}-${endTs}` },
+        page: 1,
+        limit: 10
+      });
+    }
+  }
+});
+
 const kpiData = computed(() => [
   {
-    title: "รายได้รายปี",
-    value: dashboardData.monthRevenue.value,
-    trend: dashboardData.monthRevenue.trend,
-    chartData: dashboardData.monthRevenue.chartData,
-    chartLabels: dashboardData.monthRevenue.chartLabels,
+    title: "รายได้รายเดือน",
+    value: monthlyData.value?.value || 0,
+    trend: monthlyData.value?.trend || 0,
+    chartData: monthlyData.value?.chartData || [],
+    chartLabels: monthlyData.value?.chartLabels || [],
     chartId: "year-kpi",
     currency: true,
   },
   {
-    title: "รายได้รายเดือน",
-    value: dashboardData.dateRevenue.value,
-    trend: dashboardData.dateRevenue.trend,
-    chartData: dashboardData.dateRevenue.chartData,
-    chartLabels: dashboardData.dateRevenue.chartLabels,
+    title: "รายได้รายวัน",
+    value: dailyData.value?.value || 0,
+    trend: dailyData.value?.trend || 0,
+    chartData: dailyData.value?.chartData || [],
+    chartLabels: dailyData.value?.chartLabels || [],
     chartId: "month-kpi",
     currency: true,
   },
   {
-    title: "รายได้รายวัน",
-    value: dashboardData.hourlyRevenue.value,
-    trend: dashboardData.hourlyRevenue.trend,
-    chartData: dashboardData.hourlyRevenue.chartData,
-    chartLabels: dashboardData.hourlyRevenue.chartLabels,
+    title: "รายได้รายชั่วโมง",
+    value: hourlyData.value?.value || 0,
+    trend: hourlyData.value?.trend || 0,
+    chartData: hourlyData.value?.chartData || [],
+    chartLabels: hourlyData.value?.chartLabels || [],
     chartId: "date-kpi",
     currency: true,
   },
@@ -942,12 +1029,37 @@ const salesHeaders = [
   { title: "", key: "data-table-expand", sortable: false },
 ];
 
-// Using enhanced sales data from the composable instead of hardcoded data
+// Time picker object interface
+interface TimeObject {
+  hour?: number;
+  hours?: number;
+  minute?: number;
+  minutes?: number;
+}
 
-// Use enhanced sales data from composable
-const salesData = enhancedSalesData;
+// Helper function to convert date + time to Unix timestamp (ms)
+const getTimestampFromDateTime = (date: Date, timeObj: TimeObject | Date | string | null): number => {
+  const d = new Date(date);
+  if (timeObj) {
+    if (typeof timeObj === 'string') {
+      const [hour, minute] = timeObj.split(':').map(Number);
+      d.setHours(hour, minute, 0, 0);
+    } else if (timeObj instanceof Date) {
+      d.setHours(timeObj.getHours(), timeObj.getMinutes(), 0, 0);
+    } else if (typeof timeObj === 'object') {
+      const hour = timeObj.hour || timeObj.hours || 0;
+      const minute = timeObj.minute || timeObj.minutes || 0;
+      d.setHours(hour, minute, 0, 0);
+    }
+  }
+  return d.getTime();
+};
 
-// Filtered sales data
+// Pagination handler
+const handlePageChange = (page: number) => {
+  goToPage(page);
+};
+
 // Check if any filter has pending changes
 const hasFilterChanges = computed(() => {
   return (
@@ -958,75 +1070,6 @@ const hasFilterChanges = computed(() => {
     JSON.stringify([...tempSelectedServiceTypes.value].sort()) !==
       JSON.stringify([...selectedServiceTypes.value].sort())
   );
-});
-
-const filteredSalesData = computed(() => {
-  let filtered = salesData.value;
-
-  // Search filter
-  if (searchQuery.value && searchQuery.value.trim()) {
-    const query = searchQuery.value.toLowerCase();
-    filtered = filtered.filter(
-      (item) =>
-        item.device.name.toLowerCase().includes(query) ||
-        item.device.type.toLowerCase().includes(query) ||
-        item.id.toLowerCase().includes(query)
-    );
-  }
-
-  // Time range filter
-  if (startTimeObj.value || endTimeObj.value) {
-    filtered = filtered.filter((item) => {
-      const itemDate = new Date(item.created_at);
-      const itemTime =
-        itemDate.getHours().toString().padStart(2, "0") +
-        ":" +
-        itemDate.getMinutes().toString().padStart(2, "0");
-
-      const startStr = formatTimeToString(startTimeObj.value);
-      const endStr = formatTimeToString(endTimeObj.value);
-
-      if (startStr && endStr) {
-        return itemTime >= startStr && itemTime <= endStr;
-      } else if (startStr) {
-        return itemTime >= startStr;
-      } else if (endStr) {
-        return itemTime <= endStr;
-      }
-      return true;
-    });
-  }
-
-  // Service type filter (device type)
-  if (selectedServiceTypes.value.length > 0) {
-    filtered = filtered.filter((item) =>
-      selectedServiceTypes.value.includes(item.device.type)
-    );
-  }
-
-  // Popover filters
-  // User ID filter (by fullname)
-  if (selectedUserIds.value.length > 0) {
-    filtered = filtered.filter((item) =>
-      selectedUserIds.value.includes(item.device.owner.fullname)
-    );
-  }
-
-  // Payment status filter
-  if (selectedPaymentStatuses.value.length > 0) {
-    filtered = filtered.filter((item) =>
-      selectedPaymentStatuses.value.includes(item.payload.status)
-    );
-  }
-
-  // Device type filter (from popover)
-  if (selectedDeviceTypes.value.length > 0) {
-    filtered = filtered.filter((item) =>
-      selectedDeviceTypes.value.includes(item.device.type)
-    );
-  }
-
-  return filtered;
 });
 
 const formatDateTime = (dateString: string) => {
@@ -1041,42 +1084,7 @@ const formatDateTime = (dateString: string) => {
   }).format(date);
 };
 
-const getDeviceTypeColor = (deviceType: string) => {
-  switch (deviceType) {
-    case "WASH":
-      return "primary";
-    case "DRYING":
-      return "secondary";
-    default:
-      return "primary";
-  }
-};
-
-const getDeviceTypeIcon = (deviceType: string) => {
-  switch (deviceType) {
-    case "WASH":
-      return "mdi-car-wash";
-    case "DRYING":
-      return "mdi-air-filter";
-    default:
-      return "mdi-cog";
-  }
-};
-
-const getPaymentStatusColor = (status: string) => {
-  switch (status) {
-    case "SUCCESS":
-      return "success";
-    case "FAILED":
-      return "error";
-    case "PENDING":
-      return "warning";
-    default:
-      return "primary";
-  }
-};
-
-const hasQrPayment = (item: SaleItem): boolean => {
+const hasQrPayment = (item: any): boolean => {
   return (
     item.payload?.qr &&
     typeof item.payload.qr.net_amount === "number" &&
@@ -1084,17 +1092,17 @@ const hasQrPayment = (item: SaleItem): boolean => {
   );
 };
 
-const hasBankNotes = (item: SaleItem): boolean => {
+const hasBankNotes = (item: any): boolean => {
   return (
     item.payload?.bank &&
-    Object.values(item.payload.bank).some((count: number) => count > 0)
+    Object.values(item.payload.bank).some((count: any) => count > 0)
   );
 };
 
-const hasCoins = (item: SaleItem): boolean => {
+const hasCoins = (item: any): boolean => {
   return (
     item.payload?.coin &&
-    Object.values(item.payload.coin).some((count: number) => count > 0)
+    Object.values(item.payload.coin).some((count: any) => count > 0)
   );
 };
 </script>
