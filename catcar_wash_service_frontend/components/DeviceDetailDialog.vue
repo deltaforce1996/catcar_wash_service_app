@@ -1146,11 +1146,17 @@
         <v-btn
           color="grey"
           variant="text"
+          :disabled="isUpdatingFirmware"
           @click="showUpdateFirmwareDialog = false"
         >
           ยกเลิก
         </v-btn>
-        <v-btn color="info" variant="elevated" @click="confirmUpdateFirmware">
+        <v-btn
+          color="info"
+          variant="elevated"
+          :loading="isUpdatingFirmware"
+          @click="confirmUpdateFirmware"
+        >
           ยืนยัน
         </v-btn>
       </v-card-actions>
@@ -1179,11 +1185,17 @@
         <v-btn
           color="grey"
           variant="text"
+          :disabled="isResettingConfig"
           @click="showResetConfigDialog = false"
         >
           ยกเลิก
         </v-btn>
-        <v-btn color="warning" variant="elevated" @click="confirmResetConfig">
+        <v-btn
+          color="warning"
+          variant="elevated"
+          :loading="isResettingConfig"
+          @click="confirmResetConfig"
+        >
           ยืนยัน
         </v-btn>
       </v-card-actions>
@@ -1209,10 +1221,20 @@
       </v-card-text>
 
       <v-card-actions class="justify-end">
-        <v-btn color="grey" variant="text" @click="showRestartDialog = false">
+        <v-btn
+          color="grey"
+          variant="text"
+          :disabled="isRestarting"
+          @click="showRestartDialog = false"
+        >
           ยกเลิก
         </v-btn>
-        <v-btn color="error" variant="elevated" @click="confirmRestart">
+        <v-btn
+          color="error"
+          variant="elevated"
+          :loading="isRestarting"
+          @click="confirmRestart"
+        >
           ยืนยัน
         </v-btn>
       </v-card-actions>
@@ -1249,6 +1271,7 @@
         <v-btn
           color="grey"
           variant="text"
+          :disabled="isSendingManualPayment"
           @click="
             showManualPaymentDialog = false;
             manualPaymentAmount = null;
@@ -1260,6 +1283,7 @@
           color="success"
           variant="elevated"
           :disabled="!manualPaymentAmount || manualPaymentAmount <= 0"
+          :loading="isSendingManualPayment"
           @click="confirmManualPayment"
         >
           ยืนยัน
@@ -1267,6 +1291,14 @@
       </v-card-actions>
     </v-card>
   </v-dialog>
+
+  <!-- Snackbar for success/error messages -->
+  <v-snackbar v-model="snackbar" :color="snackbarColor" timeout="5000" top>
+    {{ snackbarMessage }}
+    <template #actions>
+      <v-btn variant="text" @click="snackbar = false">ปิด</v-btn>
+    </template>
+  </v-snackbar>
 </template>
 
 <script setup lang="ts">
@@ -1282,6 +1314,21 @@ const {
   getDeviceStatusLabel,
   getDeviceStatusColor,
 } = useEnumTranslation();
+
+// Import device commands composable
+const {
+  updateFirmware,
+  resetConfig,
+  restartDevice,
+  sendManualPayment,
+  isUpdatingFirmware,
+  isResettingConfig,
+  isRestarting,
+  isSendingManualPayment,
+  error: commandError,
+  successMessage: commandSuccessMessage,
+  clearMessages: clearCommandMessages,
+} = useDeviceCommands();
 
 interface SystemConfig {
   on_time?: string;
@@ -1318,6 +1365,11 @@ const showResetConfigDialog = ref(false);
 const showRestartDialog = ref(false);
 const showManualPaymentDialog = ref(false);
 const manualPaymentAmount = ref<number | null>(null);
+
+// Snackbar state
+const snackbar = ref(false);
+const snackbarMessage = ref("");
+const snackbarColor = ref<"success" | "error">("success");
 const editableConfigs = ref<Record<string, DeviceConfig>>({});
 const originalConfigs = ref<Record<string, DeviceConfig>>({});
 const editableSystemConfigs = ref<SystemConfig>({});
@@ -1490,30 +1542,72 @@ const handleUpdateFirmware = () => {
   showUpdateFirmwareDialog.value = true;
 };
 
-const confirmUpdateFirmware = () => {
-  // TODO: Implement firmware update logic
-  console.log("TODO: Update firmware for device:", props.device?.id);
-  showUpdateFirmwareDialog.value = false;
+const confirmUpdateFirmware = async () => {
+  if (!props.device?.id) return;
+
+  try {
+    clearCommandMessages();
+    await updateFirmware(props.device.id);
+
+    snackbarMessage.value = commandSuccessMessage.value || "อัพเดทเฟิร์มแวร์สำเร็จ";
+    snackbarColor.value = "success";
+    snackbar.value = true;
+  } catch {
+    snackbarMessage.value = commandError.value || "ไม่สามารถอัพเดทเฟิร์มแวร์ได้";
+    snackbarColor.value = "error";
+    snackbar.value = true;
+  } finally {
+    showUpdateFirmwareDialog.value = false;
+  }
 };
 
 const handleResetConfig = () => {
   showResetConfigDialog.value = true;
 };
 
-const confirmResetConfig = () => {
-  // TODO: Implement config reset logic
-  console.log("TODO: Reset config for device:", props.device?.id);
-  showResetConfigDialog.value = false;
+const confirmResetConfig = async () => {
+  if (!props.device?.id) return;
+
+  try {
+    clearCommandMessages();
+    await resetConfig(props.device.id);
+
+    snackbarMessage.value = commandSuccessMessage.value || "รีเซ็ตการตั้งค่าสำเร็จ";
+    snackbarColor.value = "success";
+    snackbar.value = true;
+
+    // Emit event to parent to refresh device data
+    emit("update:modelValue", false);
+  } catch {
+    snackbarMessage.value = commandError.value || "ไม่สามารถรีเซ็ตการตั้งค่าได้";
+    snackbarColor.value = "error";
+    snackbar.value = true;
+  } finally {
+    showResetConfigDialog.value = false;
+  }
 };
 
 const handleRestart = () => {
   showRestartDialog.value = true;
 };
 
-const confirmRestart = () => {
-  // TODO: Implement device restart logic
-  console.log("TODO: Restart device:", props.device?.id);
-  showRestartDialog.value = false;
+const confirmRestart = async () => {
+  if (!props.device?.id) return;
+
+  try {
+    clearCommandMessages();
+    await restartDevice(props.device.id, { delay_seconds: 5 });
+
+    snackbarMessage.value = commandSuccessMessage.value || "รีสตาร์ทอุปกรณ์สำเร็จ";
+    snackbarColor.value = "success";
+    snackbar.value = true;
+  } catch {
+    snackbarMessage.value = commandError.value || "ไม่สามารถรีสตาร์ทอุปกรณ์ได้";
+    snackbarColor.value = "error";
+    snackbar.value = true;
+  } finally {
+    showRestartDialog.value = false;
+  }
 };
 
 const handleManualPayment = () => {
@@ -1521,19 +1615,26 @@ const handleManualPayment = () => {
   showManualPaymentDialog.value = true;
 };
 
-const confirmManualPayment = () => {
-  if (!manualPaymentAmount.value || manualPaymentAmount.value <= 0) {
+const confirmManualPayment = async () => {
+  if (!props.device?.id || !manualPaymentAmount.value || manualPaymentAmount.value <= 0) {
     return;
   }
-  // TODO: Implement manual payment logic
-  console.log(
-    "TODO: Add manual payment for device:",
-    props.device?.id,
-    "Amount:",
-    manualPaymentAmount.value
-  );
-  showManualPaymentDialog.value = false;
-  manualPaymentAmount.value = null;
+
+  try {
+    clearCommandMessages();
+    await sendManualPayment(props.device.id, { amount: manualPaymentAmount.value });
+
+    snackbarMessage.value = commandSuccessMessage.value || "ส่งการชำระเงินแบบแมนนวลสำเร็จ";
+    snackbarColor.value = "success";
+    snackbar.value = true;
+  } catch {
+    snackbarMessage.value = commandError.value || "ไม่สามารถส่งการชำระเงินแบบแมนนวลได้";
+    snackbarColor.value = "error";
+    snackbar.value = true;
+  } finally {
+    showManualPaymentDialog.value = false;
+    manualPaymentAmount.value = null;
+  }
 };
 
 const resetSingleConfig = (key: string) => {

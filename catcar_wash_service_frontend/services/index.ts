@@ -1,5 +1,6 @@
 // API Services
 export * from './apis/device-api.service';
+export * from './apis/device-commands-api.service';
 export * from './apis/user-api.service';
 export * from './apis/dashboard-api.service';
 export * from './apis/device-event-logs-api.service';

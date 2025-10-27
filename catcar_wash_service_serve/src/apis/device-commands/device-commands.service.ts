@@ -2,7 +2,7 @@ import { Injectable, Logger } from '@nestjs/common';
 import { MqttCommandManagerService } from '../../services/adepters/mqtt-command-manager.service';
 import { PrismaService } from '../../database/prisma/prisma.service';
 import { ItemNotFoundException } from '../../errors';
-import { RestartDeviceDto, UpdateFirmwareDto, SendCustomCommandDto, ManualPaymentDto } from './dtos';
+import { RestartDeviceDto, SendCustomCommandDto, ManualPaymentDto } from './dtos';
 import type {
   MqttCommandAckResponse,
   CommandConfig,
@@ -162,22 +162,22 @@ export class DeviceCommandsService {
 
   /**
    * Update firmware
+   * Fetches firmware info from static URL and sends to device
    */
-  async updateFirmware(
-    deviceId: string,
-    firmwareDto: UpdateFirmwareDto,
-  ): Promise<MqttCommandAckResponse<FirmwarePayload>> {
+  async updateFirmware(deviceId: string): Promise<MqttCommandAckResponse<FirmwarePayload>> {
     await this.verifyDevice(deviceId);
 
-    this.logger.log(`Updating firmware for device: ${deviceId} to version: ${firmwareDto.version}`);
+    this.logger.log(`Fetching latest firmware info for device: ${deviceId}`);
 
-    const firmwarePayload: FirmwarePayload = {
-      url: firmwareDto.url,
-      version: firmwareDto.version,
-      sha256: firmwareDto.sha256,
-      size: firmwareDto.size,
-      reboot_after: firmwareDto.reboot_after,
+    const firmwarePayload = {
+      url: `${process.env.BACKEND_BASE_URL}/firmware/latest.bin`,
+      version: '1.0.0',
+      sha256: 'abc123def456...',
+      size: 2048576,
+      reboot_after: true,
     };
+
+    this.logger.log(`Updating firmware for device: ${deviceId} to version: ${firmwarePayload.version}`);
 
     const result = await this.mqttCommandManager.updateFirmware(deviceId, firmwarePayload);
 

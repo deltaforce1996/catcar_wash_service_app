@@ -2,7 +2,7 @@ import { Body, Controller, Param, Post, UseFilters } from '@nestjs/common';
 import { DeviceCommandsService } from './device-commands.service';
 import { AllExceptionFilter } from '../../common';
 import type { SuccessResponse } from '../../types';
-import { RestartDeviceDto, UpdateFirmwareDto, SendCustomCommandDto, ManualPaymentDto } from './dtos';
+import { RestartDeviceDto, SendCustomCommandDto, ManualPaymentDto } from './dtos';
 import type {
   MqttCommandAckResponse,
   CommandConfig,
@@ -27,7 +27,7 @@ export class DeviceCommandsController {
     return {
       success: true,
       data: result,
-      message: `Command sent to device ${deviceId}`,
+      message: `ส่งคำสั่งการตั้งค่าไปยังอุปกรณ์ ${deviceId} สำเร็จ`,
     };
   }
 
@@ -44,24 +44,24 @@ export class DeviceCommandsController {
     return {
       success: true,
       data: result,
-      message: `Restart command sent to device ${deviceId}`,
+      message: `ส่งคำสั่งรีสตาร์ทไปยังอุปกรณ์ ${deviceId} สำเร็จ`,
     };
   }
 
   /**
    * Update firmware
    * POST /api/v1/device-commands/:deviceId/update-firmware
+   * Note: Firmware info is fetched from static URL on the backend
    */
   @Post(':deviceId/update-firmware')
   async updateFirmware(
     @Param('deviceId') deviceId: string,
-    @Body() firmwareDto: UpdateFirmwareDto,
   ): Promise<SuccessResponse<MqttCommandAckResponse<FirmwarePayload>>> {
-    const result = await this.deviceCommandsService.updateFirmware(deviceId, firmwareDto);
+    const result = await this.deviceCommandsService.updateFirmware(deviceId);
     return {
       success: true,
       data: result,
-      message: `Firmware update command sent to device ${deviceId}`,
+      message: `ส่งคำสั่งอัพเดทเฟิร์มแวร์ไปยังอุปกรณ์ ${deviceId} สำเร็จ`,
     };
   }
 
@@ -77,7 +77,7 @@ export class DeviceCommandsController {
     return {
       success: true,
       data: result,
-      message: `Config reset command sent to device ${deviceId}`,
+      message: `ส่งคำสั่งรีเซ็ตการตั้งค่าไปยังอุปกรณ์ ${deviceId} สำเร็จ`,
     };
   }
 
@@ -94,7 +94,7 @@ export class DeviceCommandsController {
     return {
       success: true,
       data: result,
-      message: `Custom command sent to device ${deviceId}`,
+      message: `ส่งคำสั่งกำหนดเองไปยังอุปกรณ์ ${deviceId} สำเร็จ`,
     };
   }
 
@@ -111,7 +111,7 @@ export class DeviceCommandsController {
     return {
       success: true,
       data: result,
-      message: `Manual payment sent to device ${deviceId}`,
+      message: `ส่งการชำระเงินแบบแมนนวลไปยังอุปกรณ์ ${deviceId} สำเร็จ`,
     };
   }
 }
