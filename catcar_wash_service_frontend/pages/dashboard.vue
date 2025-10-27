@@ -6,7 +6,7 @@
         <h1 class="text-h4 font-weight-bold mb-1">แดชบอร์ดยอดขาย</h1>
       </div>
       <div class="d-flex align-center ga-3 flex-wrap">
-        <v-menu v-model="datePickerMenu">
+        <v-menu v-model="datePickerMenu" :close-on-content-click="false">
           <template #activator="{ props }">
             <v-text-field
               v-bind="props"
@@ -19,10 +19,23 @@
               class="date-picker"
             />
           </template>
-          <v-date-picker
-            v-model="selectedDateObject"
-            @update:model-value="datePickerMenu = false"
-          />
+          <v-card class="pa-4" elevation="8" rounded="lg">
+            <v-date-picker v-model="tempSelectedDateObject" hide-header />
+            <v-card-actions>
+              <v-btn variant="text" size="small" @click="cancelDateSelection">
+                ยกเลิก
+              </v-btn>
+              <v-spacer />
+              <v-btn
+                variant="elevated"
+                color="primary"
+                size="small"
+                @click="confirmDateSelection"
+              >
+                ยืนยัน
+              </v-btn>
+            </v-card-actions>
+          </v-card>
         </v-menu>
         <v-menu v-model="filterMenu" :close-on-content-click="false">
           <template #activator="{ props }">
@@ -58,8 +71,9 @@
 
             <v-card-text class="pa-0">
               <div class="d-flex flex-column ga-4">
-                <!-- User ID Filter -->
+                <!-- User ID Filter - Only show for ADMIN/TECHNICIAN -->
                 <v-combobox
+                  v-if="!isUser"
                   v-model="tempSelectedUserIds"
                   :items="userOptions"
                   item-title="title"
@@ -198,11 +212,7 @@
         persistent
         class="align-center justify-center"
       >
-        <v-progress-circular
-          color="primary"
-          indeterminate
-          size="64"
-        />
+        <v-progress-circular color="primary" indeterminate size="64" />
         <div class="text-body-1 mt-4">กำลังโหลดข้อมูล...</div>
       </v-overlay>
 
@@ -423,251 +433,239 @@
       <!-- Expandable Row Content -->
       <template #expanded-content="{ item }">
         <div class="payment-breakdown">
-                  <!-- Header with transaction summary -->
-                  <h3 class="text-subtitle-1 font-weight-bold">
-                    รายละเอียดการชำระเงิน
-                  </h3>
+          <!-- Header with transaction summary -->
+          <h3 class="text-subtitle-1 font-weight-bold">
+            รายละเอียดการชำระเงิน
+          </h3>
 
-                  <!-- Payment methods grid for desktop -->
-                  <v-row
-                    v-if="$vuetify.display.mdAndUp"
-                    no-gutters
-                    class="payment-methods-grid"
+          <!-- Payment methods grid for desktop -->
+          <v-row
+            v-if="$vuetify.display.mdAndUp"
+            no-gutters
+            class="payment-methods-grid"
+          >
+            <!-- QR Payment Section -->
+            <v-col cols="4" class="payment-section">
+              <div class="payment-method-section pa-3">
+                <div class="d-flex align-center mb-3">
+                  <v-icon color="primary" size="small" class="me-2"
+                    >mdi-qrcode</v-icon
                   >
-                    <!-- QR Payment Section -->
-                    <v-col cols="4" class="payment-section">
-                      <div class="payment-method-section pa-3">
-                        <div class="d-flex align-center mb-3">
-                          <v-icon color="primary" size="small" class="me-2"
-                            >mdi-qrcode</v-icon
-                          >
-                          <span class="text-subtitle-2 font-weight-medium"
-                            >QR Payment</span
-                          >
-                        </div>
+                  <span class="text-subtitle-2 font-weight-medium"
+                    >QR Payment</span
+                  >
+                </div>
 
-                        <div v-if="hasQrPayment(item)">
-                          <v-card class="mb-2" color="primary" variant="tonal">
-                            <v-card-text class="pa-3">
-                              <div class="text-caption text-medium-emphasis">
-                                จำนวนเงินผ่าน QR Code
-                              </div>
-                              <div class="text-h6 font-weight-bold">
-                                ฿{{ item.payload.qr.net_amount }}
-                              </div>
-                            </v-card-text>
-                          </v-card>
-                          <v-card color="primary-lighten-1" variant="tonal">
-                            <v-card-text class="pa-3">
-                              <div class="text-caption text-medium-emphasis">
-                                รหัสธุรกรรม
-                              </div>
-                              <div class="text-body-2 font-family-monospace">
-                                {{ item.payload.qr.transaction_id }}
-                              </div>
-                            </v-card-text>
-                          </v-card>
-                        </div>
-                        <div v-else class="text-caption text-medium-emphasis">
-                          ไม่มีการชำระผ่าน QR Code
-                        </div>
+                <div v-if="hasQrPayment(item)">
+                  <v-card class="mb-2" color="primary" variant="tonal">
+                    <v-card-text class="pa-3">
+                      <div class="text-caption text-medium-emphasis">
+                        จำนวนเงินผ่าน QR Code
                       </div>
-                    </v-col>
-
-                    <!-- Bank Notes Section -->
-                    <v-col cols="4" class="payment-section">
-                      <div class="payment-method-section pa-3">
-                        <div class="d-flex align-center mb-3">
-                          <v-icon color="success" size="small" class="me-2"
-                            >mdi-cash-100</v-icon
-                          >
-                          <span class="text-subtitle-2 font-weight-medium"
-                            >ธนบัตร</span
-                          >
-                        </div>
-
-                        <div v-if="hasBankNotes(item)">
-                          <v-row dense>
-                            <v-col
-                              v-for="(count, denomination) in item.payload.bank"
-                              :key="denomination"
-                              cols="6"
-                            >
-                              <v-card
-                                v-if="count > 0"
-                                class="denomination-card"
-                                color="success-lighten-1"
-                                variant="tonal"
-                              >
-                                <v-card-text class="pa-2 text-center">
-                                  <div class="text-body-2 font-weight-bold">
-                                    ฿{{ denomination }}
-                                  </div>
-                                  <div class="text-caption">{{ count }} ใบ</div>
-                                </v-card-text>
-                              </v-card>
-                            </v-col>
-                          </v-row>
-                        </div>
-                        <div v-else class="text-caption text-medium-emphasis">
-                          ไม่มีการชำระด้วยธนบัตร
-                        </div>
+                      <div class="text-h6 font-weight-bold">
+                        ฿{{ item.payload.qr.net_amount }}
                       </div>
-                    </v-col>
-
-                    <!-- Coins Section -->
-                    <v-col cols="4" class="payment-section">
-                      <div class="payment-method-section pa-3">
-                        <div class="d-flex align-center mb-3">
-                          <v-icon color="secondary" size="small" class="me-2"
-                            >mdi-circle-multiple</v-icon
-                          >
-                          <span class="text-subtitle-2 font-weight-medium"
-                            >เหรียญ</span
-                          >
-                        </div>
-
-                        <div v-if="hasCoins(item)">
-                          <v-row dense>
-                            <v-col
-                              v-for="(count, denomination) in item.payload.coin"
-                              :key="denomination"
-                              cols="6"
-                            >
-                              <v-card
-                                v-if="count > 0"
-                                class="denomination-card"
-                                color="secondary-lighten-1"
-                                variant="tonal"
-                              >
-                                <v-card-text class="pa-2 text-center">
-                                  <div class="text-body-2 font-weight-bold">
-                                    ฿{{ denomination }}
-                                  </div>
-                                  <div class="text-caption">
-                                    {{ count }} เหรียญ
-                                  </div>
-                                </v-card-text>
-                              </v-card>
-                            </v-col>
-                          </v-row>
-                        </div>
-                        <div v-else class="text-caption text-medium-emphasis">
-                          ไม่มีการชำระด้วยเหรียญ
-                        </div>
+                    </v-card-text>
+                  </v-card>
+                  <v-card color="primary-lighten-1" variant="tonal">
+                    <v-card-text class="pa-3">
+                      <div class="text-caption text-medium-emphasis">
+                        รหัสธุรกรรม
                       </div>
+                      <div class="text-body-2 font-family-monospace">
+                        {{ item.payload.qr.transaction_id }}
+                      </div>
+                    </v-card-text>
+                  </v-card>
+                </div>
+                <div v-else class="text-caption text-medium-emphasis">
+                  ไม่มีการชำระผ่าน QR Code
+                </div>
+              </div>
+            </v-col>
+
+            <!-- Bank Notes Section -->
+            <v-col cols="4" class="payment-section">
+              <div class="payment-method-section pa-3">
+                <div class="d-flex align-center mb-3">
+                  <v-icon color="success" size="small" class="me-2"
+                    >mdi-cash-100</v-icon
+                  >
+                  <span class="text-subtitle-2 font-weight-medium">ธนบัตร</span>
+                </div>
+
+                <div v-if="hasBankNotes(item)">
+                  <v-row dense>
+                    <v-col
+                      v-for="(count, denomination) in item.payload.bank"
+                      :key="denomination"
+                      cols="6"
+                    >
+                      <v-card
+                        v-if="count > 0"
+                        class="denomination-card"
+                        color="success-lighten-1"
+                        variant="tonal"
+                      >
+                        <v-card-text class="pa-2 text-center">
+                          <div class="text-body-2 font-weight-bold">
+                            ฿{{ denomination }}
+                          </div>
+                          <div class="text-caption">{{ count }} ใบ</div>
+                        </v-card-text>
+                      </v-card>
                     </v-col>
                   </v-row>
+                </div>
+                <div v-else class="text-caption text-medium-emphasis">
+                  ไม่มีการชำระด้วยธนบัตร
+                </div>
+              </div>
+            </v-col>
 
-                  <!-- Mobile layout with expansion panels -->
-                  <div v-else class="mobile-payment-layout">
-                    <v-expansion-panels variant="accordion" multiple>
-                      <v-expansion-panel
-                        v-if="hasQrPayment(item)"
-                        title="QR Payment"
-                        expand-icon="mdi-qrcode"
-                      >
-                        <v-expansion-panel-text>
-                          <div class="pa-2">
-                            <v-card
-                              class="mb-2"
-                              color="primary-lighten-1"
-                              variant="tonal"
-                            >
-                              <v-card-text class="pa-3">
-                                <div class="text-caption text-medium-emphasis">
-                                  Net Amount
-                                </div>
-                                <div class="text-h6 font-weight-bold">
-                                  ฿{{ item.payload.qr.net_amount }}
-                                </div>
-                              </v-card-text>
-                            </v-card>
-                            <v-card color="primary-lighten-2" variant="tonal">
-                              <v-card-text class="pa-3">
-                                <div class="text-caption text-medium-emphasis">
-                                  Transaction ID
-                                </div>
-                                <div class="text-body-2 font-family-monospace">
-                                  {{ item.payload.qr.transaction_id }}
-                                </div>
-                              </v-card-text>
-                            </v-card>
-                          </div>
-                        </v-expansion-panel-text>
-                      </v-expansion-panel>
+            <!-- Coins Section -->
+            <v-col cols="4" class="payment-section">
+              <div class="payment-method-section pa-3">
+                <div class="d-flex align-center mb-3">
+                  <v-icon color="secondary" size="small" class="me-2"
+                    >mdi-circle-multiple</v-icon
+                  >
+                  <span class="text-subtitle-2 font-weight-medium">เหรียญ</span>
+                </div>
 
-                      <v-expansion-panel
-                        v-if="hasBankNotes(item)"
-                        title="ธนบัตร"
-                        expand-icon="mdi-cash-100"
+                <div v-if="hasCoins(item)">
+                  <v-row dense>
+                    <v-col
+                      v-for="(count, denomination) in item.payload.coin"
+                      :key="denomination"
+                      cols="6"
+                    >
+                      <v-card
+                        v-if="count > 0"
+                        class="denomination-card"
+                        color="secondary-lighten-1"
+                        variant="tonal"
                       >
-                        <v-expansion-panel-text>
-                          <div class="pa-2">
-                            <v-row dense>
-                              <v-col
-                                v-for="(count, denomination) in item.payload
-                                  .bank"
-                                :key="denomination"
-                                cols="6"
-                              >
-                                <v-card
-                                  v-if="count > 0"
-                                  class="denomination-card"
-                                  color="success-lighten-1"
-                                  variant="tonal"
-                                >
-                                  <v-card-text class="pa-2 text-center">
-                                    <div class="text-body-2 font-weight-bold">
-                                      ฿{{ denomination }}
-                                    </div>
-                                    <div class="text-caption">
-                                      {{ count }} ใบ
-                                    </div>
-                                  </v-card-text>
-                                </v-card>
-                              </v-col>
-                            </v-row>
+                        <v-card-text class="pa-2 text-center">
+                          <div class="text-body-2 font-weight-bold">
+                            ฿{{ denomination }}
                           </div>
-                        </v-expansion-panel-text>
-                      </v-expansion-panel>
+                          <div class="text-caption">{{ count }} เหรียญ</div>
+                        </v-card-text>
+                      </v-card>
+                    </v-col>
+                  </v-row>
+                </div>
+                <div v-else class="text-caption text-medium-emphasis">
+                  ไม่มีการชำระด้วยเหรียญ
+                </div>
+              </div>
+            </v-col>
+          </v-row>
 
-                      <v-expansion-panel
-                        v-if="hasCoins(item)"
-                        title="เหรียญ"
-                        expand-icon="mdi-circle-multiple"
-                      >
-                        <v-expansion-panel-text>
-                          <div class="pa-2">
-                            <v-row dense>
-                              <v-col
-                                v-for="(count, denomination) in item.payload
-                                  .coin"
-                                :key="denomination"
-                                cols="6"
-                              >
-                                <v-card
-                                  v-if="count > 0"
-                                  class="denomination-card"
-                                  color="secondary-lighten-1"
-                                  variant="tonal"
-                                >
-                                  <v-card-text class="pa-2 text-center">
-                                    <div class="text-body-2 font-weight-bold">
-                                      ฿{{ denomination }}
-                                    </div>
-                                    <div class="text-caption">
-                                      {{ count }} เหรียญ
-                                    </div>
-                                  </v-card-text>
-                                </v-card>
-                              </v-col>
-                            </v-row>
-                          </div>
-                        </v-expansion-panel-text>
-                      </v-expansion-panel>
-                    </v-expansion-panels>
+          <!-- Mobile layout with expansion panels -->
+          <div v-else class="mobile-payment-layout">
+            <v-expansion-panels variant="accordion" multiple>
+              <v-expansion-panel
+                v-if="hasQrPayment(item)"
+                title="QR Payment"
+                expand-icon="mdi-qrcode"
+              >
+                <v-expansion-panel-text>
+                  <div class="pa-2">
+                    <v-card
+                      class="mb-2"
+                      color="primary-lighten-1"
+                      variant="tonal"
+                    >
+                      <v-card-text class="pa-3">
+                        <div class="text-caption text-medium-emphasis">
+                          Net Amount
+                        </div>
+                        <div class="text-h6 font-weight-bold">
+                          ฿{{ item.payload.qr.net_amount }}
+                        </div>
+                      </v-card-text>
+                    </v-card>
+                    <v-card color="primary-lighten-2" variant="tonal">
+                      <v-card-text class="pa-3">
+                        <div class="text-caption text-medium-emphasis">
+                          Transaction ID
+                        </div>
+                        <div class="text-body-2 font-family-monospace">
+                          {{ item.payload.qr.transaction_id }}
+                        </div>
+                      </v-card-text>
+                    </v-card>
                   </div>
+                </v-expansion-panel-text>
+              </v-expansion-panel>
+
+              <v-expansion-panel
+                v-if="hasBankNotes(item)"
+                title="ธนบัตร"
+                expand-icon="mdi-cash-100"
+              >
+                <v-expansion-panel-text>
+                  <div class="pa-2">
+                    <v-row dense>
+                      <v-col
+                        v-for="(count, denomination) in item.payload.bank"
+                        :key="denomination"
+                        cols="6"
+                      >
+                        <v-card
+                          v-if="count > 0"
+                          class="denomination-card"
+                          color="success-lighten-1"
+                          variant="tonal"
+                        >
+                          <v-card-text class="pa-2 text-center">
+                            <div class="text-body-2 font-weight-bold">
+                              ฿{{ denomination }}
+                            </div>
+                            <div class="text-caption">{{ count }} ใบ</div>
+                          </v-card-text>
+                        </v-card>
+                      </v-col>
+                    </v-row>
+                  </div>
+                </v-expansion-panel-text>
+              </v-expansion-panel>
+
+              <v-expansion-panel
+                v-if="hasCoins(item)"
+                title="เหรียญ"
+                expand-icon="mdi-circle-multiple"
+              >
+                <v-expansion-panel-text>
+                  <div class="pa-2">
+                    <v-row dense>
+                      <v-col
+                        v-for="(count, denomination) in item.payload.coin"
+                        :key="denomination"
+                        cols="6"
+                      >
+                        <v-card
+                          v-if="count > 0"
+                          class="denomination-card"
+                          color="secondary-lighten-1"
+                          variant="tonal"
+                        >
+                          <v-card-text class="pa-2 text-center">
+                            <div class="text-body-2 font-weight-bold">
+                              ฿{{ denomination }}
+                            </div>
+                            <div class="text-caption">{{ count }} เหรียญ</div>
+                          </v-card-text>
+                        </v-card>
+                      </v-col>
+                    </v-row>
+                  </div>
+                </v-expansion-panel-text>
+              </v-expansion-panel>
+            </v-expansion-panels>
+          </div>
         </div>
       </template>
     </EnhancedDataTable>
@@ -689,6 +687,9 @@ const {
   deviceTypeOptions,
   paymentStatusOptions,
 } = useEnumTranslation();
+
+// Import auth composable to check user permission
+const { isUser, isAuthReady } = useAuth();
 
 // Dashboard KPI data using new composable
 const {
@@ -714,13 +715,11 @@ const {
 } = useDeviceEventLogs();
 
 // User data - using useUser composable
-const {
-  users,
-  searchUsers,
-} = useUser();
+const { users, searchUsers } = useUser();
 
 const datePickerMenu = ref(false);
 const selectedDateObject = ref(new Date());
+const tempSelectedDateObject = ref(new Date());
 const selectedDate = computed(() => {
   return selectedDateObject.value.toLocaleDateString("th-TH", {
     day: "numeric",
@@ -818,23 +817,12 @@ const applyFilters = async () => {
     query.search = searchQuery.value.trim();
   }
 
-  // Time range filter - only add if time filters are set
-  // Combine selected date from header with the time range
-  if (startTimeObj.value || endTimeObj.value) {
-    const startTs = getTimestampFromDateTime(
-      selectedDateObject.value,
-      startTimeObj.value || { hour: 0, minute: 0 }
-    );
-    const endTs = getTimestampFromDateTime(
-      selectedDateObject.value,
-      endTimeObj.value || { hour: 23, minute: 59 }
-    );
-    query.payload_timestamp = `${startTs}-${endTs}`;
-  }
+  // Always include timestamp for the selected date
+  query.payload_timestamp = buildTimestampQuery();
 
   // Call API
   await searchEventLogs({
-    query: Object.keys(query).length > 0 ? query : undefined,
+    query,
     page: 1,
     limit: 10,
   });
@@ -852,8 +840,11 @@ const clearAllFilters = async () => {
   endTimeObj.value = null;
   selectedServiceTypes.value = [];
 
-  // Reset to initial search without any filters
+  // Reset to initial search with full day timestamp
   await searchEventLogs({
+    query: {
+      payload_timestamp: buildTimestampQuery(),
+    },
     page: 1,
     limit: 10,
   });
@@ -865,8 +856,8 @@ const applyPopoverFilters = async () => {
   selectedUserIds.value = tempSelectedUserIds.value.map((item) =>
     typeof item === "string" ? item : item.value
   );
-  selectedPaymentStatuses.value = tempSelectedPaymentStatuses.value.map((item) =>
-    typeof item === "string" ? item : item.value
+  selectedPaymentStatuses.value = tempSelectedPaymentStatuses.value.map(
+    (item) => (typeof item === "string" ? item : item.value)
   );
   selectedDeviceTypes.value = tempSelectedDeviceTypes.value.map((item) =>
     typeof item === "string" ? item : item.value
@@ -876,29 +867,20 @@ const applyPopoverFilters = async () => {
   const dashboardFilter: Partial<DashboardFilterRequest> = {};
   const eventLogsQuery: any = {};
 
-  // Include timestamp filter only if time filters are set
-  // Combine selected date from header with the time range
-  if (startTimeObj.value || endTimeObj.value) {
-    const startTs = getTimestampFromDateTime(
-      selectedDateObject.value,
-      startTimeObj.value || { hour: 0, minute: 0 }
-    );
-    const endTs = getTimestampFromDateTime(
-      selectedDateObject.value,
-      endTimeObj.value || { hour: 23, minute: 59 }
-    );
-    eventLogsQuery.payload_timestamp = `${startTs}-${endTs}`;
-  }
+  // Always include timestamp for the selected date
+  eventLogsQuery.payload_timestamp = buildTimestampQuery();
 
   // Device type filter
   if (selectedDeviceTypes.value.length > 0) {
-    dashboardFilter.device_type = selectedDeviceTypes.value[0] as EnumDeviceType;
+    dashboardFilter.device_type = selectedDeviceTypes
+      .value[0] as EnumDeviceType;
     eventLogsQuery.device_type = selectedDeviceTypes.value[0];
   }
 
   // Payment status filter
   if (selectedPaymentStatuses.value.length > 0) {
-    dashboardFilter.payment_status = selectedPaymentStatuses.value[0] as EnumPaymentStatus;
+    dashboardFilter.payment_status = selectedPaymentStatuses
+      .value[0] as EnumPaymentStatus;
     eventLogsQuery.payment_status = selectedPaymentStatuses.value[0];
   }
 
@@ -909,12 +891,14 @@ const applyPopoverFilters = async () => {
 
   // Update both dashboard and event logs
   await Promise.all([
-    Object.keys(dashboardFilter).length > 0 ? updateFilter(dashboardFilter) : Promise.resolve(),
+    Object.keys(dashboardFilter).length > 0
+      ? updateFilter(dashboardFilter)
+      : Promise.resolve(),
     searchEventLogs({
-      query: Object.keys(eventLogsQuery).length > 0 ? eventLogsQuery : undefined,
+      query: eventLogsQuery,
       page: 1,
       limit: 10,
-    })
+    }),
   ]);
 
   filterMenu.value = false;
@@ -931,20 +915,46 @@ const resetPopoverFilters = () => {
   selectedDeviceTypes.value = [];
 };
 
-// Initialize temp values and fetch dashboard data on component mount
-onMounted(async () => {
-  // Fetch initial data in parallel
-  await Promise.all([
+// Date picker actions
+const confirmDateSelection = async () => {
+  // Apply the temporary date selection
+  selectedDateObject.value = new Date(tempSelectedDateObject.value);
+  datePickerMenu.value = false;
+  // The watcher on selectedDateObject will handle the API refetch
+};
+
+const cancelDateSelection = () => {
+  // Revert to the current selected date
+  tempSelectedDateObject.value = new Date(selectedDateObject.value);
+  datePickerMenu.value = false;
+};
+
+// Function to initialize dashboard data
+const initializeDashboardData = async () => {
+  // Build promises array - only fetch users for ADMIN/TECHNICIAN
+  const promises = [
     fetchDashboardSummary(),
     searchEventLogs({
+      query: {
+        payload_timestamp: buildTimestampQuery(),
+      },
       page: 1,
       limit: 10,
     }),
-    searchUsers({
-      page: 1,
-      limit: 100, // Fetch more users for filter dropdown
-    }),
-  ]);
+  ];
+
+  // Only fetch users if not a USER permission (they can't use the filter anyway)
+  if (!isUser.value) {
+    promises.push(
+      searchUsers({
+        page: 1,
+        limit: 100, // Fetch more users for filter dropdown
+      })
+    );
+  }
+
+  // Fetch initial data in parallel
+  await Promise.all(promises);
 
   // Initialize temp filter values
   tempSearchQuery.value = searchQuery.value;
@@ -956,6 +966,32 @@ onMounted(async () => {
   tempSelectedUserIds.value = [...selectedUserIds.value];
   tempSelectedPaymentStatuses.value = [...selectedPaymentStatuses.value];
   tempSelectedDeviceTypes.value = [...selectedDeviceTypes.value];
+
+  // Initialize temp date picker value
+  tempSelectedDateObject.value = new Date(selectedDateObject.value);
+};
+
+// Wait for auth to be ready before initializing dashboard
+onMounted(() => {
+  // If auth is already ready, initialize immediately
+  if (isAuthReady.value) {
+    initializeDashboardData();
+  } else {
+    // Otherwise, watch for auth to become ready
+    const unwatch = watch(isAuthReady, (ready) => {
+      if (ready) {
+        initializeDashboardData();
+        unwatch(); // Stop watching after initialization
+      }
+    });
+  }
+});
+
+// Watch date picker menu to sync temp value when opened
+watch(datePickerMenu, (isOpen) => {
+  if (isOpen) {
+    tempSelectedDateObject.value = new Date(selectedDateObject.value);
+  }
 });
 
 // Watch date picker changes and update dashboard filter
@@ -966,27 +1002,15 @@ watch(selectedDateObject, async (newDate) => {
     const day = String(newDate.getDate()).padStart(2, "0");
     const dateStr = `${year}-${month}-${day}`;
 
-    // Update dashboard KPIs for the selected date
-    await updateFilter({ date: dateStr });
-
-    // Only update event logs timestamp if time filters are currently active
-    // This keeps the time filter synchronized with the date picker
-    if (startTimeObj.value || endTimeObj.value) {
-      const startTs = getTimestampFromDateTime(
-        newDate,
-        startTimeObj.value || { hour: 0, minute: 0 }
-      );
-      const endTs = getTimestampFromDateTime(
-        newDate,
-        endTimeObj.value || { hour: 23, minute: 59 }
-      );
-
-      await searchEventLogs({
-        query: { payload_timestamp: `${startTs}-${endTs}` },
+    // Update both dashboard KPIs and event logs for the selected date
+    await Promise.all([
+      updateFilter({ date: dateStr }),
+      searchEventLogs({
+        query: { payload_timestamp: buildTimestampQuery() },
         page: 1,
-        limit: 10
-      });
-    }
+        limit: 10,
+      }),
+    ]);
   }
 });
 
@@ -1021,11 +1045,11 @@ const kpiData = computed(() => [
 ]);
 
 const salesHeaders = [
-  { title: "เวลา", key: "created_at", sortable: true },
-  { title: "ชื่ออุปกรณ์", key: "device.name", sortable: true },
-  { title: "สถานะ", key: "payload.status", sortable: true },
+  { title: "เวลา", key: "payload.datetime", sortable: false },
+  { title: "ชื่ออุปกรณ์", key: "device.name", sortable: false },
+  { title: "สถานะ", key: "payload.status", sortable: false },
   { title: "ประเภท", key: "device.type", sortable: true },
-  { title: "จำนวนเงิน", key: "payload.total_amount", sortable: true },
+  { title: "จำนวนเงิน", key: "payload.total_amount", sortable: false },
   { title: "", key: "data-table-expand", sortable: false },
 ];
 
@@ -1038,21 +1062,38 @@ interface TimeObject {
 }
 
 // Helper function to convert date + time to Unix timestamp (ms)
-const getTimestampFromDateTime = (date: Date, timeObj: TimeObject | Date | string | null): number => {
+const getTimestampFromDateTime = (
+  date: Date,
+  timeObj: TimeObject | Date | string | null
+): number => {
   const d = new Date(date);
   if (timeObj) {
-    if (typeof timeObj === 'string') {
-      const [hour, minute] = timeObj.split(':').map(Number);
+    if (typeof timeObj === "string") {
+      const [hour, minute] = timeObj.split(":").map(Number);
       d.setHours(hour, minute, 0, 0);
     } else if (timeObj instanceof Date) {
       d.setHours(timeObj.getHours(), timeObj.getMinutes(), 0, 0);
-    } else if (typeof timeObj === 'object') {
+    } else if (typeof timeObj === "object") {
       const hour = timeObj.hour || timeObj.hours || 0;
       const minute = timeObj.minute || timeObj.minutes || 0;
       d.setHours(hour, minute, 0, 0);
     }
   }
   return d.getTime();
+};
+
+// Helper function to build timestamp query for the selected date
+// Uses time filters if set, otherwise uses full day (00:00-23:59)
+const buildTimestampQuery = (): string => {
+  const startTs = getTimestampFromDateTime(
+    selectedDateObject.value,
+    startTimeObj.value || { hour: 0, minute: 0 }
+  );
+  const endTs = getTimestampFromDateTime(
+    selectedDateObject.value,
+    endTimeObj.value || { hour: 23, minute: 59 }
+  );
+  return `${startTs}-${endTs}`;
 };
 
 // Pagination handler
