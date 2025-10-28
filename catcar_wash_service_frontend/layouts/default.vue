@@ -261,6 +261,12 @@ const allManagementMenuItems = [
     to: "/employee-management",
     roles: ["ADMIN"],
   },
+  {
+    title: "จัดการ Firmware",
+    icon: "mdi-update",
+    to: "/admin/firmware-management",
+    roles: ["ADMIN"],
+  },
 ];
 
 // Filtered menu items based on user role
