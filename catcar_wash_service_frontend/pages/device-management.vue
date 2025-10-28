@@ -344,16 +344,36 @@
             คุณต้องการบันทึกการตั้งค่าของอุปกรณ์
             {{ selectedDevice?.name }} หรือไม่?
           </p>
+          <v-alert
+            v-if="applyDeviceConfigError"
+            color="error"
+            variant="tonal"
+            class="mt-4"
+          >
+            <v-icon class="mr-1">mdi-alert-circle</v-icon>
+            {{ applyDeviceConfigError }}
+          </v-alert>
         </v-card-text>
         <v-card-actions class="pa-6 pt-0">
           <v-spacer />
           <v-btn
             variant="outlined"
-            @click="showApplyDeviceConfigDialog = false"
+            :disabled="isUpdating"
+            @click="
+              showApplyDeviceConfigDialog = false;
+              applyDeviceConfigError = '';
+            "
           >
-            ยกเลิก
+            {{ applyDeviceConfigError ? 'ปิด' : 'ยกเลิก' }}
           </v-btn>
-          <v-btn color="primary" @click="applyDeviceConfig"> ยืนยัน </v-btn>
+          <v-btn
+            v-if="!applyDeviceConfigError"
+            color="primary"
+            :loading="isUpdating"
+            @click="applyDeviceConfig"
+          >
+            ยืนยัน
+          </v-btn>
         </v-card-actions>
       </v-card>
     </v-dialog>
@@ -383,7 +403,7 @@ const {
   currentDevice,
   isSearching,
   isUpdating,
-  error: _apiError,
+  error: apiError,
   successMessage: _apiSuccessMessage,
   totalDevices,
   totalPages,
@@ -398,6 +418,7 @@ const selectedDevices = ref<DeviceResponseApi[]>([]);
 const showApplySystemConfigDialog = ref(false);
 const showDeviceDetailDialog = ref(false);
 const showApplyDeviceConfigDialog = ref(false);
+const applyDeviceConfigError = ref<string>("");
 const selectedDevice = ref<DeviceResponseApi | null>(null);
 const isEditMode = ref(false);
 const editableConfigs = ref<Record<string, DeviceConfig>>({});
@@ -555,6 +576,9 @@ const applySystemConfig = () => {
 const applyDeviceConfig = async () => {
   if (!selectedDevice.value || !deviceDetailDialogRef.value) return;
 
+  // Clear previous error
+  applyDeviceConfigError.value = "";
+
   try {
     // Get both status and config payloads from the dialog component
     const statusPayload = deviceDetailDialogRef.value.getStatusChangePayload();
@@ -600,7 +624,10 @@ const applyDeviceConfig = async () => {
     // Refresh the devices list
     await applyFilters();
   } catch {
-    // Error handling
+    // Use the error from useDevice composable (already formatted in Thai)
+    applyDeviceConfigError.value =
+      apiError.value ||
+      "ไม่สามารถบันทึกการตั้งค่าอุปกรณ์ได้ กรุณาลองใหม่อีกครั้ง";
   }
 };
 
