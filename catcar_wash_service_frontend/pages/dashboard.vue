@@ -76,6 +76,7 @@
                   v-if="!isUser"
                   v-model="tempSelectedUserIds"
                   :items="userOptions"
+                  :loading="isUserSearching"
                   item-title="title"
                   item-value="value"
                   label="ชื่อผู้ใช้"
@@ -87,6 +88,7 @@
                   closable-chips
                   multiple
                   hide-details
+                  @update:search="handleUserSearch"
                 >
                   <template #chip="{ props, item }">
                     <v-chip
@@ -715,7 +717,7 @@ const {
 } = useDeviceEventLogs();
 
 // User data - using useUser composable
-const { users, searchUsers } = useUser();
+const { users, isSearching: isUserSearching, searchUsers } = useUser();
 
 const datePickerMenu = ref(false);
 const selectedDateObject = ref(new Date());
@@ -755,6 +757,10 @@ const selectedUserIds = ref<string[]>([]);
 const selectedPaymentStatuses = ref<string[]>([]);
 const selectedDeviceTypes = ref<string[]>([]);
 
+// User search debounce state
+const userSearchDebounceTimer = ref<number | null>(null);
+const userSearchRequestId = ref(0);
+
 // Popover filter options - using users from useUser composable
 const userOptions = computed(() => {
   return users.value.map((user) => ({
@@ -773,6 +779,42 @@ const activeFilterCount = computed(() => {
   if (selectedDeviceTypes.value.length > 0) count++;
   return count;
 });
+
+// Handle user search with debounce
+const handleUserSearch = (searchQuery: string) => {
+  // Clear existing timer
+  if (userSearchDebounceTimer.value !== null) {
+    clearTimeout(userSearchDebounceTimer.value);
+  }
+
+  // Increment request ID to track this search
+  userSearchRequestId.value++;
+  const currentRequestId = userSearchRequestId.value;
+
+  // Set new timer for 500ms debounce
+  userSearchDebounceTimer.value = window.setTimeout(async () => {
+    // Check if this is still the latest request
+    if (currentRequestId !== userSearchRequestId.value) {
+      return;
+    }
+
+    if (searchQuery && searchQuery.trim()) {
+      // Search with query
+      await searchUsers({
+        query: { search: searchQuery.trim() },
+        page: 1,
+        limit: 100,
+      });
+    } else {
+      // Clear search - explicitly pass empty query object
+      await searchUsers({
+        query: {},
+        page: 1,
+        limit: 100,
+      });
+    }
+  }, 500);
+};
 
 // Helper function to format time object to HH:mm string
 const formatTimeToString = (
@@ -984,6 +1026,13 @@ onMounted(() => {
         unwatch(); // Stop watching after initialization
       }
     });
+  }
+});
+
+// Cleanup debounce timer on unmount
+onUnmounted(() => {
+  if (userSearchDebounceTimer.value !== null) {
+    clearTimeout(userSearchDebounceTimer.value);
   }
 });
 
