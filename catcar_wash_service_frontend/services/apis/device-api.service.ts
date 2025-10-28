@@ -116,6 +116,7 @@ export interface CreateDevicePayload {
 
 export interface UpdateDeviceBasicPayload {
   name?: string;
+  status?: EnumDeviceStatus;
 }
 
 export interface UpdateDeviceConfigsPayload {
@@ -217,17 +218,6 @@ export class DeviceApiService extends BaseApiClient {
   ): Promise<ApiSuccessResponse<DeviceResponseApi>> {
     const response = await this.put<ApiSuccessResponse<DeviceResponseApi>>(
       `api/v1/devices/update-configs/${id}`,
-      payload
-    );
-    return response;
-  }
-
-  async SetDeviceStatus(
-    id: string,
-    payload: SetDeviceStatePayload
-  ): Promise<ApiSuccessResponse<null>> {
-    const response = await this.put<ApiSuccessResponse<null>>(
-      `api/v1/devices/set-status/${id}`,
       payload
     );
     return response;
