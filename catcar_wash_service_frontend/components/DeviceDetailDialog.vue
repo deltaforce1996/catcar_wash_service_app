@@ -1092,15 +1092,91 @@
                   </v-tabs-window-item>
 
                   <!-- State Tab -->
-                  <v-tabs-window-item value="state" class="pa-6">
-                    <div class="text-center py-12">
+                  <v-tabs-window-item value="state">
+                    <EnhancedDataTable
+                      title="บันทึกสถานะระบบ"
+                      :items="deviceStates"
+                      :headers="stateHeaders"
+                      :loading="isLoadingStates"
+                      :has-filter-changes="false"
+                      :show-filter-actions="false"
+                      :show-filters="false"
+                      :total-items="totalStates"
+                      :total-pages="stateTotalPages"
+                      :page="statePage"
+                      :items-per-page="stateItemsPerPage"
+                      :expandable="true"
+                      :selectable="false"
+                      card-class="elevation-0"
+                      @update:page="handleStatePageChange"
+                    >
+                      <!-- State At Column -->
+                      <template #[`item.state_data.state_at`]="{ item }">
+                        <div class="text-body-2">
+                          {{ item.state_data?.state_at || "-" }}
+                        </div>
+                      </template>
+
+                      <!-- Status Column -->
+                      <template #[`item.state_data.status`]="{ item }">
+                        <v-chip
+                          v-if="item.state_data?.status"
+                          :color="getStatusColor(item.state_data.status)"
+                          size="small"
+                          variant="tonal"
+                        >
+                          {{ getStatusLabel(item.state_data.status) }}
+                        </v-chip>
+                        <span v-else class="text-body-2">-</span>
+                      </template>
+
+                      <!-- Expanded Content with v-treeview -->
+                      <template #expanded-content="{ item }">
+                        <div class="pa-4">
+                          <h4 class="text-subtitle-2 font-weight-bold mb-4">
+                            ข้อมูลสถานะระบบแบบเต็ม
+                          </h4>
+                          <v-treeview
+                            v-if="item.state_data && Object.keys(item.state_data).length > 0"
+                            :items="buildTreeItems(item.state_data)"
+                            item-value="id"
+                            item-title="title"
+                            density="compact"
+                            open-all
+                          />
+                          <div
+                            v-else
+                            class="text-body-2 text-medium-emphasis py-4"
+                          >
+                            ไม่มีข้อมูลสถานะ
+                          </div>
+                        </div>
+                      </template>
+                    </EnhancedDataTable>
+
+                    <!-- Error Alert -->
+                    <v-alert
+                      v-if="statesError"
+                      type="error"
+                      variant="tonal"
+                      class="ma-4"
+                    >
+                      {{ statesError }}
+                    </v-alert>
+
+                    <!-- Empty State -->
+                    <div
+                      v-if="!isLoadingStates && deviceStates.length === 0 && !statesError"
+                      class="text-center py-12"
+                    >
                       <v-icon size="80" color="grey-lighten-1" class="mb-4">
-                        mdi-chart-line
+                        mdi-information-outline
                       </v-icon>
-                      <h3 class="text-h6 text-grey-darken-1 mb-2">สถานะระบบ</h3>
+                      <h3 class="text-h6 text-grey-darken-1 mb-2">
+                        ไม่พบข้อมูลสถานะระบบ
+                      </h3>
                       <p class="text-body-2 text-grey-darken-1">
-                        ส่วนนี้จะแสดงสถานะการทำงานของอุปกรณ์แบบเรียลไทม์<br >
-                        (อยู่ในระหว่างการพัฒนา)
+                        ยังไม่มีบันทึกสถานะการทำงานของอุปกรณ์นี้
                       </p>
                     </div>
                   </v-tabs-window-item>
@@ -1412,6 +1488,7 @@ import type {
   DeviceResponseApi,
   DeviceConfig,
 } from "~/services/apis/device-api.service";
+import EnhancedDataTable from "~/components/common/EnhancedDataTable.vue";
 
 // Import enum translation composable
 const {
@@ -1444,6 +1521,17 @@ const {
   successMessage: deviceSuccessMessage,
   clearMessages: clearDeviceMessages,
 } = useDevice();
+
+// Import device states composable
+const {
+  deviceStates,
+  totalStates,
+  totalPages: stateTotalPages,
+  isSearching: isLoadingStates,
+  error: statesError,
+  searchDeviceStates,
+  resetState: resetDeviceStates,
+} = useDeviceStates();
 
 interface SystemConfig {
   on_time?: string;
@@ -1489,6 +1577,14 @@ const manualPaymentAmount = ref<number | null>(null);
 
 // Firmware update state
 const selectedFirmwareVersion = ref<string | undefined>(undefined);
+
+// Device states pagination and display
+const statePage = ref(1);
+const stateItemsPerPage = ref(10);
+const stateHeaders = [
+  { title: "เวลา", key: "state_data.datetime", sortable: false },
+  { title: "สถานะ", key: "state_data.status", sortable: false },
+];
 
 // Status editing state
 const editableStatus = ref<string>("");
@@ -2004,6 +2100,61 @@ const getConfigDescription = (configKey: string) => {
   }
 };
 
+// Device States Helper Functions
+const buildTreeItems = (obj: any, parentId = ""): any[] => {
+  if (!obj || typeof obj !== "object") return [];
+
+  return Object.entries(obj).map(([key, value]) => {
+    const id = parentId ? `${parentId}-${key}` : key;
+    const item: any = {
+      id,
+      title: `${key}: ${formatTreeValue(value)}`,
+      value: id,
+    };
+
+    if (value && typeof value === "object" && !Array.isArray(value)) {
+      item.children = buildTreeItems(value, id);
+    }
+
+    return item;
+  });
+};
+
+const formatTreeValue = (value: unknown): string => {
+  if (value === null || value === undefined) return "-";
+  if (typeof value === "boolean") return value ? "true" : "false";
+  if (typeof value === "object") {
+    if (Array.isArray(value)) return `[${value.length} items]`;
+    return `{${Object.keys(value).length} properties}`;
+  }
+  return String(value);
+};
+
+const loadDeviceStates = async () => {
+  if (!props.device?.id) return;
+
+  await searchDeviceStates({
+    query: { device_id: props.device.id },
+    page: statePage.value,
+    limit: stateItemsPerPage.value,
+    sort_by: "created_at",
+    sort_order: "desc",
+  });
+};
+
+const handleStatePageChange = async (newPage: number) => {
+  statePage.value = newPage;
+  await loadDeviceStates();
+};
+
+const getStatusColor = (status: string) => {
+  return status === "normal" ? "success" : "error";
+};
+
+const getStatusLabel = (status: string) => {
+  return status === "normal" ? "ปกติ" : "ผิดพลาด";
+};
+
 // Watch for device changes to initialize configs
 watch(
   () => props.device,
@@ -2086,9 +2237,20 @@ watch(
       } else {
         editablePricingConfigs.value = {};
       }
+
+      // Reset device states
+      resetDeviceStates();
+      statePage.value = 1;
     }
   }
 );
+
+// Watch for tab changes to load device states
+watch(currentTab, async (newTab) => {
+  if (newTab === "state" && props.device?.id) {
+    await loadDeviceStates();
+  }
+});
 
 // Method to reset all edit modes back to view mode
 const resetToViewMode = () => {
