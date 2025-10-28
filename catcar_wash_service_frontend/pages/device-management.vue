@@ -330,6 +330,7 @@
       :device="selectedDevice"
       @save="showApplyDeviceConfigDialog = true"
       @toggle-status="toggleDeviceStatus"
+      @device-updated="handleDeviceUpdated"
     />
 
     <!-- Apply Device Config Confirmation Dialog -->
@@ -382,14 +383,14 @@ const {
   currentDevice,
   isSearching,
   isUpdating,
-  error: apiError,
-  successMessage: apiSuccessMessage,
+  error: _apiError,
+  successMessage: _apiSuccessMessage,
   totalDevices,
   totalPages,
   searchDevices,
   updateDeviceConfigs,
   setDeviceStatus,
-  clearMessages,
+  clearMessages: _clearMessages,
 } = useDevice();
 
 // Reactive state
@@ -555,19 +556,35 @@ const applyDeviceConfig = async () => {
   if (!selectedDevice.value || !deviceDetailDialogRef.value) return;
 
   try {
-    // Get the save payload from the dialog component
-    const payload = deviceDetailDialogRef.value.getSavePayload();
+    // Get both status and config payloads from the dialog component
+    const statusPayload = deviceDetailDialogRef.value.getStatusChangePayload();
+    const configPayload = deviceDetailDialogRef.value.getSavePayload();
 
-    // Only update if there are changes
-    if (!payload.configs || Object.keys(payload.configs).length === 0) {
+    // Check if there are any changes at all
+    const hasConfigChanges = configPayload.configs && Object.keys(configPayload.configs).length > 0;
+    const hasStatusChange = statusPayload !== null;
+
+    if (!hasConfigChanges && !hasStatusChange) {
       return;
     }
 
-    // Update device configs and capture the response
-    const updatedDevice = await updateDeviceConfigs(
-      selectedDevice.value.id,
-      payload
-    );
+    let updatedDevice = null;
+
+    // First, update status if it changed
+    if (hasStatusChange && statusPayload) {
+      updatedDevice = await setDeviceStatus(
+        selectedDevice.value.id,
+        statusPayload
+      );
+    }
+
+    // Then, update configs if they changed
+    if (hasConfigChanges) {
+      updatedDevice = await updateDeviceConfigs(
+        selectedDevice.value.id,
+        configPayload
+      );
+    }
 
     // Refresh selectedDevice with the API response to update dialog
     if (updatedDevice) {
@@ -585,6 +602,15 @@ const applyDeviceConfig = async () => {
   } catch {
     // Error handling
   }
+};
+
+// Handle device updated event (e.g., when device name is changed)
+const handleDeviceUpdated = async (updatedDevice: DeviceResponseApi) => {
+  // Update selectedDevice with the device data received from event
+  selectedDevice.value = updatedDevice;
+
+  // Refresh the devices list
+  await applyFilters();
 };
 
 // Initialize on mount
