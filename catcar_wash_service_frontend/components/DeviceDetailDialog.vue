@@ -1474,13 +1474,6 @@
     </v-card>
   </v-dialog>
 
-  <!-- Snackbar for success/error messages -->
-  <v-snackbar v-model="snackbar" :color="snackbarColor" timeout="5000" top>
-    {{ snackbarMessage }}
-    <template #actions>
-      <v-btn variant="text" @click="snackbar = false">ปิด</v-btn>
-    </template>
-  </v-snackbar>
 </template>
 
 <script setup lang="ts">
@@ -1590,10 +1583,6 @@ const stateHeaders = [
 const editableStatus = ref<string>("");
 const originalStatus = ref<string>("");
 
-// Snackbar state
-const snackbar = ref(false);
-const snackbarMessage = ref("");
-const snackbarColor = ref<"success" | "error">("success");
 const editableConfigs = ref<Record<string, DeviceConfig>>({});
 const originalConfigs = ref<Record<string, DeviceConfig>>({});
 const editableSystemConfigs = ref<SystemConfig>({});
@@ -1824,9 +1813,6 @@ const saveDeviceName = async () => {
     clearDeviceMessages();
     const updatedDevice = await updateDeviceBasic(props.device.id, { name: editableName.value.trim() });
 
-    snackbarMessage.value = deviceSuccessMessage.value || "อัปเดตชื่ออุปกรณ์สำเร็จ";
-    snackbarColor.value = "success";
-    snackbar.value = true;
     isEditingName.value = false;
 
     // Emit event to parent with updated device data
@@ -1834,9 +1820,7 @@ const saveDeviceName = async () => {
       emit("deviceUpdated", updatedDevice);
     }
   } catch {
-    snackbarMessage.value = deviceError.value || "ไม่สามารถอัปเดตชื่ออุปกรณ์ได้";
-    snackbarColor.value = "error";
-    snackbar.value = true;
+    // Error handling - errors will be handled by parent component
   }
 };
 
@@ -1864,14 +1848,8 @@ const confirmUpdateFirmware = async () => {
     clearCommandMessages();
     // Pass selected version to updateFirmware (undefined means use latest)
     await updateFirmware(props.device.id, selectedFirmwareVersion.value);
-
-    snackbarMessage.value = commandSuccessMessage.value || "อัพเดทเฟิร์มแวร์สำเร็จ";
-    snackbarColor.value = "success";
-    snackbar.value = true;
   } catch {
-    snackbarMessage.value = commandError.value || "ไม่สามารถอัพเดทเฟิร์มแวร์ได้";
-    snackbarColor.value = "error";
-    snackbar.value = true;
+    // Error handling - errors will be handled by parent component or shown in dialog
   } finally {
     showUpdateFirmwareDialog.value = false;
   }
@@ -1888,16 +1866,10 @@ const confirmResetConfig = async () => {
     clearCommandMessages();
     await resetConfig(props.device.id);
 
-    snackbarMessage.value = commandSuccessMessage.value || "รีเซ็ตการตั้งค่าสำเร็จ";
-    snackbarColor.value = "success";
-    snackbar.value = true;
-
     // Emit event to parent to refresh device data
     emit("update:modelValue", false);
   } catch {
-    snackbarMessage.value = commandError.value || "ไม่สามารถรีเซ็ตการตั้งค่าได้";
-    snackbarColor.value = "error";
-    snackbar.value = true;
+    // Error handling - errors will be handled by parent component
   } finally {
     showResetConfigDialog.value = false;
   }
@@ -1913,14 +1885,8 @@ const confirmRestart = async () => {
   try {
     clearCommandMessages();
     await restartDevice(props.device.id, { delay_seconds: 5 });
-
-    snackbarMessage.value = commandSuccessMessage.value || "รีสตาร์ทอุปกรณ์สำเร็จ";
-    snackbarColor.value = "success";
-    snackbar.value = true;
   } catch {
-    snackbarMessage.value = commandError.value || "ไม่สามารถรีสตาร์ทอุปกรณ์ได้";
-    snackbarColor.value = "error";
-    snackbar.value = true;
+    // Error handling - errors will be handled by parent component
   } finally {
     showRestartDialog.value = false;
   }
@@ -1939,14 +1905,8 @@ const confirmManualPayment = async () => {
   try {
     clearCommandMessages();
     await sendManualPayment(props.device.id, { amount: manualPaymentAmount.value });
-
-    snackbarMessage.value = commandSuccessMessage.value || "ส่งการชำระเงินแบบแมนนวลสำเร็จ";
-    snackbarColor.value = "success";
-    snackbar.value = true;
   } catch {
-    snackbarMessage.value = commandError.value || "ไม่สามารถส่งการชำระเงินแบบแมนนวลได้";
-    snackbarColor.value = "error";
-    snackbar.value = true;
+    // Error handling - errors will be handled by parent component
   } finally {
     showManualPaymentDialog.value = false;
     manualPaymentAmount.value = null;
