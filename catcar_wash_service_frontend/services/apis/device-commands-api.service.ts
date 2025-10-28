@@ -138,14 +138,18 @@ export class DeviceCommandsApiService extends BaseApiClient {
   /**
    * Update firmware
    * POST /api/v1/device-commands/:deviceId/update-firmware
-   * Note: Firmware info is fetched from static URL on the backend
+   * Note: Firmware info is fetched from firmwares service on the backend
+   * @param version - Optional firmware version (defaults to latest on backend)
    */
   async updateFirmware(
-    deviceId: string
+    deviceId: string,
+    version?: string
   ): Promise<ApiSuccessResponse<MqttCommandAckResponse<FirmwarePayload>>> {
     const response = await this.post<
       ApiSuccessResponse<MqttCommandAckResponse<FirmwarePayload>>
-    >(`api/v1/device-commands/${deviceId}/update-firmware`);
+    >(`api/v1/device-commands/${deviceId}/update-firmware`, {
+      version,
+    });
     return response;
   }
 

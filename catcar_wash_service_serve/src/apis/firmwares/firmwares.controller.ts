@@ -106,22 +106,46 @@ export class FirmwaresController {
   }
 
   /**
-   * Get latest firmware (Public endpoint for ESP32 devices)
-   * GET /api/v1/firmwares/latest?type=carwash
-   * GET /api/v1/firmwares/latest?type=helmet
+   * Get list of all firmware versions
+   * GET /api/v1/firmwares/list?type=carwash
+   * GET /api/v1/firmwares/list?type=helmet
    */
-  @Get('latest')
-  async getLatest(@Query('type') type: string): Promise<SuccessResponse<any>> {
+  @Get('list')
+  async getVersionsList(@Query('type') type: string): Promise<SuccessResponse<any>> {
     if (!type || (type !== 'carwash' && type !== 'helmet')) {
       throw new BadRequestException("Type parameter is required and must be 'carwash' or 'helmet'");
     }
 
-    const result = await this.firmwaresService.getLastFirmware(type);
+    const result = await this.firmwaresService.getAllVersions(type);
 
     return {
       success: true,
       data: result,
-      message: `Latest ${type} firmware retrieved successfully`,
+      message: `${type} firmware versions retrieved successfully`,
+    };
+  }
+
+  /**
+   * Get latest firmware (Public endpoint for ESP32 devices)
+   * GET /api/v1/firmwares/latest?type=carwash&version=1.2.3
+   * GET /api/v1/firmwares/latest?type=helmet
+   */
+  @Get('latest')
+  async getLatest(@Query('type') type: string, @Query('version') version?: string): Promise<SuccessResponse<any>> {
+    if (!type || (type !== 'carwash' && type !== 'helmet')) {
+      throw new BadRequestException("Type parameter is required and must be 'carwash' or 'helmet'");
+    }
+
+    const result = await this.firmwaresService.getLastFirmware(type, version);
+
+    const message = version
+      ? `${type} firmware version ${version} retrieved successfully`
+      : `Latest ${type} firmware retrieved successfully`;
+
+    return {
+      success: true,
+      data: result,
+      message,
     };
   }
 }

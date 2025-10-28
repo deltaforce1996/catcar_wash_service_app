@@ -130,29 +130,6 @@ export class RestartDeviceDto {
 }
 
 /**
- * DTO for updating firmware
- */
-export class UpdateFirmwareDto {
-  @IsString()
-  @IsNotEmpty()
-  url: string;
-
-  @IsString()
-  @IsNotEmpty()
-  version: string;
-
-  @IsString()
-  @IsNotEmpty()
-  sha256: string;
-
-  @IsNumber()
-  size: number;
-
-  @IsBoolean()
-  reboot_after: boolean;
-}
-
-/**
  * DTO for sending custom command
  */
 export class SendCustomCommandDto {

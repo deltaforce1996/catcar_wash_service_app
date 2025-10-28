@@ -1136,6 +1136,48 @@
         <p class="text-body-1">
           คุณต้องการอัปเดตเฟิร์มแวร์สำหรับอุปกรณ์นี้หรือไม่?
         </p>
+
+        <!-- Firmware Version Selector -->
+        <v-select
+          v-model="selectedFirmwareVersion"
+          :items="availableFirmwareVersions"
+          :loading="isLoadingFirmwareVersions"
+          label="เวอร์ชันเฟิร์มแวร์"
+          hint="เลือกเวอร์ชันเฟิร์มแวร์ที่ต้องการอัปเดต (เว้นว่างเพื่อใช้เวอร์ชันล่าสุด)"
+          persistent-hint
+          clearable
+          variant="outlined"
+          density="compact"
+          class="mt-4"
+        >
+          <template #item="{ props: itemProps, item }">
+            <v-list-item v-bind="itemProps">
+              <template #append>
+                <v-chip
+                  v-if="item.index === 0"
+                  color="primary"
+                  variant="tonal"
+                  size="x-small"
+                >
+                  ล่าสุด
+                </v-chip>
+              </template>
+            </v-list-item>
+          </template>
+          <template #selection="{ item }">
+            <span>v{{ item.value }}</span>
+            <v-chip
+              v-if="item.index === 0"
+              color="primary"
+              variant="tonal"
+              size="x-small"
+              class="ml-2"
+            >
+              ล่าสุด
+            </v-chip>
+          </template>
+        </v-select>
+
         <v-alert color="info" variant="tonal" density="compact" class="mt-3">
           <v-icon class="mr-1">mdi-information</v-icon>
           กระบวนการอัปเดตอาจใช้เวลาสักครู่ กรุณาอย่าปิดอุปกรณ์ระหว่างการอัปเดต
@@ -1330,6 +1372,16 @@ const {
   clearMessages: clearCommandMessages,
 } = useDeviceCommands();
 
+// Import firmware composable
+const {
+  carwashVersions,
+  helmetVersions,
+  isLoadingCarwashVersions,
+  isLoadingHelmetVersions,
+  getAllCarwashVersions,
+  getAllHelmetVersions,
+} = useFirmware();
+
 interface SystemConfig {
   on_time?: string;
   off_time?: string;
@@ -1366,6 +1418,9 @@ const showRestartDialog = ref(false);
 const showManualPaymentDialog = ref(false);
 const manualPaymentAmount = ref<number | null>(null);
 
+// Firmware update state
+const selectedFirmwareVersion = ref<string | undefined>(undefined);
+
 // Snackbar state
 const snackbar = ref(false);
 const snackbarMessage = ref("");
@@ -1381,6 +1436,18 @@ const originalPricingConfigs = ref<Record<string, DeviceConfig>>({});
 const showDialog = computed({
   get: () => props.modelValue,
   set: (value) => emit("update:modelValue", value),
+});
+
+// Firmware versions based on device type
+const availableFirmwareVersions = computed(() => {
+  if (!props.device) return [];
+  // WASH devices use carwash firmware, DRYING devices use helmet firmware
+  return props.device.type === "WASH" ? carwashVersions.value : helmetVersions.value;
+});
+
+const isLoadingFirmwareVersions = computed(() => {
+  if (!props.device) return false;
+  return props.device.type === "WASH" ? isLoadingCarwashVersions.value : isLoadingHelmetVersions.value;
 });
 
 // Unified change detection
@@ -1538,7 +1605,19 @@ const cancelCancelAction = () => {
 };
 
 // Device action handlers
-const handleUpdateFirmware = () => {
+const handleUpdateFirmware = async () => {
+  if (!props.device) return;
+
+  // Reset selected version
+  selectedFirmwareVersion.value = undefined;
+
+  // Load firmware versions based on device type
+  if (props.device.type === "WASH") {
+    await getAllCarwashVersions();
+  } else {
+    await getAllHelmetVersions();
+  }
+
   showUpdateFirmwareDialog.value = true;
 };
 
@@ -1547,12 +1626,13 @@ const confirmUpdateFirmware = async () => {
 
   try {
     clearCommandMessages();
-    await updateFirmware(props.device.id);
+    // Pass selected version to updateFirmware (undefined means use latest)
+    await updateFirmware(props.device.id, selectedFirmwareVersion.value);
 
     snackbarMessage.value = commandSuccessMessage.value || "อัพเดทเฟิร์มแวร์สำเร็จ";
     snackbarColor.value = "success";
     snackbar.value = true;
-  } catch (_error) {
+  } catch {
     snackbarMessage.value = commandError.value || "ไม่สามารถอัพเดทเฟิร์มแวร์ได้";
     snackbarColor.value = "error";
     snackbar.value = true;
@@ -1578,7 +1658,7 @@ const confirmResetConfig = async () => {
 
     // Emit event to parent to refresh device data
     emit("update:modelValue", false);
-  } catch (_error) {
+  } catch {
     snackbarMessage.value = commandError.value || "ไม่สามารถรีเซ็ตการตั้งค่าได้";
     snackbarColor.value = "error";
     snackbar.value = true;
@@ -1601,7 +1681,7 @@ const confirmRestart = async () => {
     snackbarMessage.value = commandSuccessMessage.value || "รีสตาร์ทอุปกรณ์สำเร็จ";
     snackbarColor.value = "success";
     snackbar.value = true;
-  } catch (_error) {
+  } catch {
     snackbarMessage.value = commandError.value || "ไม่สามารถรีสตาร์ทอุปกรณ์ได้";
     snackbarColor.value = "error";
     snackbar.value = true;
@@ -1627,7 +1707,7 @@ const confirmManualPayment = async () => {
     snackbarMessage.value = commandSuccessMessage.value || "ส่งการชำระเงินแบบแมนนวลสำเร็จ";
     snackbarColor.value = "success";
     snackbar.value = true;
-  } catch (_error) {
+  } catch {
     snackbarMessage.value = commandError.value || "ไม่สามารถส่งการชำระเงินแบบแมนนวลได้";
     snackbarColor.value = "error";
     snackbar.value = true;

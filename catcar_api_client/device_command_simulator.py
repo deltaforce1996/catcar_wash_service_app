@@ -289,36 +289,48 @@ class DeviceCommandSimulator:
     def _handle_update_firmware(self, payload: dict) -> tuple:
         """
         Handle UPDATE_FIRMWARE command
-        
+
         Returns:
             tuple: (success: bool, result_data: dict, error: str)
         """
         print("📦 Handling UPDATE_FIRMWARE command...")
-        
+
         firmware = payload.get('payload', {})
-        url = firmware.get('url', '')
         version = firmware.get('version', '')
-        sha256 = firmware.get('sha256', '')
-        size = firmware.get('size', 0)
-        
-        print(f"   URL: {url}")
+        reboot_after = firmware.get('reboot_after', True)
+
+        # Extract HW and QR firmware variants
+        hw_firmware = firmware.get('HW', {})
+        qr_firmware = firmware.get('QR', {})
+
         print(f"   Version: {version}")
-        print(f"   SHA256: {sha256}")
-        print(f"   Size: {size} bytes")
-        
-        # Simulate download and verification time
-        print("   ⏳ Downloading firmware...")
-        time.sleep(random.uniform(1.0, 2.0))
-        
+        print(f"   Reboot After: {reboot_after}")
+        print(f"\n   📦 HW Firmware:")
+        print(f"      URL: {hw_firmware.get('url', '')}")
+        print(f"      SHA256: {hw_firmware.get('sha256', '')[:16]}...")
+        print(f"      Size: {hw_firmware.get('size', 0)} bytes")
+        print(f"\n   📦 QR Firmware:")
+        print(f"      URL: {qr_firmware.get('url', '')}")
+        print(f"      SHA256: {qr_firmware.get('sha256', '')[:16]}...")
+        print(f"      Size: {qr_firmware.get('size', 0)} bytes")
+
+        # Simulate download and verification time for both variants
+        print("\n   ⏳ Downloading HW firmware...")
+        time.sleep(random.uniform(1.0, 1.5))
+        print("   ⏳ Downloading QR firmware...")
+        time.sleep(random.uniform(1.0, 1.5))
+
         # Check if should fail based on failure mode
         should_fail = self._should_fail('UPDATE_FIRMWARE')
-        
+
         if not should_fail:
-            print("✅ Firmware update started")
+            print("✅ Firmware update started for both HW and QR variants")
             return True, {
                 "version": version,
                 "download_started": True,
-                "estimated_time": 300  # 5 minutes
+                "hw_firmware": hw_firmware.get('url', '').split('/')[-1],
+                "qr_firmware": qr_firmware.get('url', '').split('/')[-1],
+                "estimated_time": 600  # 10 minutes (longer for dual firmware)
             }, None
         else:
             error = "Failed to update firmware: Download failed"

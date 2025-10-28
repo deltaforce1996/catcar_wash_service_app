@@ -12,7 +12,7 @@
             <p class="dialog-subtitle">Upload 2 files (HW & QR) with matching versions</p>
           </div>
         </div>
-        <button class="close-btn" @click="closeDialog" :disabled="isUploading">
+        <button class="close-btn" :disabled="isUploading" @click="closeDialog">
           <v-icon size="20">mdi-close</v-icon>
         </button>
       </div>
@@ -84,7 +84,7 @@
 
       <!-- Footer -->
       <div class="dialog-footer">
-        <button class="cancel-btn" @click="closeDialog" :disabled="isUploading">
+        <button class="cancel-btn" :disabled="isUploading" @click="closeDialog">
           Cancel
         </button>
         <button class="upload-btn" :disabled="!canUpload" @click="handleUpload">

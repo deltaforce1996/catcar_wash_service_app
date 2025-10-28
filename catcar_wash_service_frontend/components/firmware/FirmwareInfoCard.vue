@@ -2,19 +2,37 @@
   <div class="firmware-card">
     <!-- Card Header -->
     <div class="card-header">
-      <div class="d-flex align-center">
+      <div class="d-flex align-center flex-grow-1">
         <div class="icon-wrapper">
           <v-icon :icon="icon" size="24" />
         </div>
-        <div class="ml-3">
+        <div class="ml-3 flex-grow-1">
           <h3 class="card-title">{{ title }}</h3>
           <p v-if="firmware" class="card-version">v{{ firmware.version }}</p>
           <p v-else class="card-version text-grey">No firmware</p>
         </div>
       </div>
 
-      <div class="d-flex ga-2">
-        <button class="icon-btn" @click="$emit('refresh')" :disabled="loading">
+      <!-- Version Selector -->
+      <div v-if="versions.length > 0" class="version-selector ml-4">
+        <v-select
+          :model-value="selectedVersion"
+          :items="versionItems"
+          label="เลือกเวอร์ชัน"
+          variant="outlined"
+          density="compact"
+          hide-details
+          style="min-width: 160px"
+          @update:model-value="$emit('version-change', $event)"
+        >
+          <template #prepend-inner>
+            <v-icon size="18">mdi-tag</v-icon>
+          </template>
+        </v-select>
+      </div>
+
+      <div class="d-flex ga-2 ml-4">
+        <button class="icon-btn" :disabled="loading" @click="$emit('refresh')">
           <v-icon :class="{ 'rotate-animation': loading }" size="20">mdi-refresh</v-icon>
         </button>
         <button class="primary-btn" @click="$emit('upload')">
@@ -74,7 +92,7 @@
       </div>
 
       <!-- Divider -->
-      <div class="divider"></div>
+      <div class="divider"/>
 
       <!-- QR Variant -->
       <div class="firmware-section">
@@ -112,20 +130,34 @@
 </template>
 
 <script setup lang="ts">
+import { computed } from "vue";
 import type { FirmwareLatestResponse } from "~/types/firmware.type";
 
-defineProps<{
+const props = defineProps<{
   title: string;
   icon: string;
   firmware: FirmwareLatestResponse | null;
   loading: boolean;
+  versions: string[];
+  selectedVersion: string;
   formatFileSize: (bytes: number) => string;
 }>();
 
 defineEmits<{
   refresh: [];
   upload: [];
+  "version-change": [version: string];
 }>();
+
+// Computed property สำหรับ dropdown items
+const versionItems = computed(() => {
+  if (props.versions.length === 0) return [];
+
+  return props.versions.map((version, index) => ({
+    title: index === 0 ? `v${version} (ล่าสุด)` : `v${version}`,
+    value: version,
+  }));
+});
 </script>
 
 <style scoped>

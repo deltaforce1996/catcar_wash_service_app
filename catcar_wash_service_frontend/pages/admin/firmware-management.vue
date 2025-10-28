@@ -46,9 +46,12 @@
           icon="mdi-car-wash"
           :firmware="carwashFirmware"
           :loading="isLoadingCarwash"
+          :versions="carwashVersions"
+          :selected-version="selectedCarwashVersion"
           :format-file-size="formatFileSize"
-          @refresh="getLatestCarwashFirmware"
+          @refresh="handleCarwashRefresh"
           @upload="openUploadDialog('carwash')"
+          @version-change="handleCarwashVersionChange"
         />
       </v-col>
 
@@ -59,9 +62,12 @@
           icon="mdi-helmet-safety"
           :firmware="helmetFirmware"
           :loading="isLoadingHelmet"
+          :versions="helmetVersions"
+          :selected-version="selectedHelmetVersion"
           :format-file-size="formatFileSize"
-          @refresh="getLatestHelmetFirmware"
+          @refresh="handleHelmetRefresh"
           @upload="openUploadDialog('helmet')"
+          @version-change="handleHelmetVersionChange"
         />
       </v-col>
     </v-row>
@@ -88,6 +94,10 @@ import FirmwareInfoCard from "~/components/firmware/FirmwareInfoCard.vue";
 const {
   carwashFirmware,
   helmetFirmware,
+  carwashVersions,
+  helmetVersions,
+  selectedCarwashVersion,
+  selectedHelmetVersion,
   isLoadingCarwash,
   isLoadingHelmet,
   isUploading,
@@ -95,6 +105,10 @@ const {
   successMessage,
   getLatestCarwashFirmware,
   getLatestHelmetFirmware,
+  getAllCarwashVersions,
+  getAllHelmetVersions,
+  getCarwashFirmwareByVersion,
+  getHelmetFirmwareByVersion,
   uploadFirmware,
   clearMessages,
   formatFileSize,
@@ -114,7 +128,31 @@ const handleUpload = async (files: File[]) => {
   const result = await uploadFirmware(files, selectedFirmwareType.value);
   if (result) {
     showUploadDialog.value = false;
+    // Refresh versions list
+    if (selectedFirmwareType.value === "carwash") {
+      await getAllCarwashVersions();
+    } else {
+      await getAllHelmetVersions();
+    }
   }
+};
+
+const handleCarwashRefresh = async () => {
+  await getLatestCarwashFirmware();
+  await getAllCarwashVersions();
+};
+
+const handleHelmetRefresh = async () => {
+  await getLatestHelmetFirmware();
+  await getAllHelmetVersions();
+};
+
+const handleCarwashVersionChange = async (version: string) => {
+  await getCarwashFirmwareByVersion(version);
+};
+
+const handleHelmetVersionChange = async (version: string) => {
+  await getHelmetFirmwareByVersion(version);
 };
 
 // Load data on mount
@@ -122,6 +160,8 @@ onMounted(async () => {
   await Promise.all([
     getLatestCarwashFirmware(),
     getLatestHelmetFirmware(),
+    getAllCarwashVersions(),
+    getAllHelmetVersions(),
   ]);
 });
 </script>

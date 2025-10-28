@@ -576,12 +576,18 @@ Content-Type: application/json
   "command": "UPDATE_FIRMWARE",
   "require_ack": true,
   "payload": {
-    "url": "https://example.com/firmware/esp32-v1.2.3.bin",
     "version": "1.2.3",
-    "sha256": "3f5a8f1b...<HEX 64 ตัว>...c9d1e0ab",   // ตรวจสอบกับไฟล์จริง
-    "size": 972800,                               // ไบต์ (ทราบได้ล่วงหน้า หรือปล่อยว่างกรณี chunked)
-    "reboot_after": true,                         // รีบูตหลังแฟลชสำเร็จ
-    "timeout_sec": 120,                           // กันค้าง
+    "reboot_after": true,
+    "HW": {
+      "url": "https://example.com/firmwares/v1.2.3/carwash_v1.2.3_hw0.1.0_HW.bin",
+      "sha256": "3f5a8f1b...<HEX 64 ตัว>...c9d1e0ab",
+      "size": 972800
+    },
+    "QR": {
+      "url": "https://example.com/firmwares/v1.2.3/carwash_v1.2.3_hw0.1.0_QR.bin",
+      "sha256": "7c2d9e3f...<HEX 64 ตัว>...a1b8f2cd",
+      "size": 974336
+    }
   },
   "timestamp": 1758358335794
 }

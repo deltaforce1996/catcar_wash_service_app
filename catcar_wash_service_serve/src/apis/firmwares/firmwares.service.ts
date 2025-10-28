@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-unused-vars */
 import { Injectable, Logger, NotFoundException } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import * as fs from 'fs/promises';
@@ -10,7 +11,13 @@ import {
   validateVariants,
   getLatestVersion,
 } from './utils/filename-parser.util';
-import { ManifestJson, FirmwareVariants, FirmwareLatestResponse, UploadFirmwareResponse } from './dtos';
+import {
+  ManifestJson,
+  FirmwareVariants,
+  FirmwareLatestResponse,
+  FirmwareVersionsResponse,
+  UploadFirmwareResponse,
+} from './dtos';
 
 @Injectable()
 export class FirmwaresService {
@@ -111,7 +118,14 @@ export class FirmwaresService {
   /**
    * Get latest firmware for a specific type
    */
-  async getLastFirmware(type: 'carwash' | 'helmet'): Promise<FirmwareLatestResponse> {
+  async getLastFirmware(type: 'carwash' | 'helmet', version?: string): Promise<FirmwareLatestResponse> {
+    // If version is specified, get that specific version
+    if (version) {
+      this.logger.log(`Getting ${type} firmware version ${version}`);
+      return await this.getFirmwareByVersion(type, version);
+    }
+
+    // Otherwise, get latest version
     this.logger.log(`Getting latest ${type} firmware`);
 
     // Get latest version that has this firmware type
@@ -143,6 +157,99 @@ export class FirmwaresService {
         throw new NotFoundException(`Manifest not found for version ${latestVersion}`);
       }
       throw error;
+    }
+  }
+
+  /**
+   * Get firmware for a specific version
+   */
+  private async getFirmwareByVersion(type: 'carwash' | 'helmet', version: string): Promise<FirmwareLatestResponse> {
+    const versionFolder = path.join(this.firmwaresPath, `v${version}`);
+
+    // Check if version folder exists
+    try {
+      await fs.access(versionFolder);
+    } catch (error) {
+      throw new NotFoundException(`Firmware version ${version} not found`);
+    }
+
+    // Read manifest
+    const manifestPath = path.join(versionFolder, 'manifest.json');
+
+    try {
+      const manifestContent = await fs.readFile(manifestPath, 'utf-8');
+      const manifest: ManifestJson = JSON.parse(manifestContent);
+
+      // Ensure the firmware type exists in manifest
+      const firmwareFiles = manifest[type];
+      if (!firmwareFiles) {
+        throw new NotFoundException(`No ${type} firmware found in version ${version}`);
+      }
+
+      return {
+        version: version,
+        files: firmwareFiles,
+      };
+    } catch (error) {
+      if (error.code === 'ENOENT') {
+        throw new NotFoundException(`Manifest not found for version ${version}`);
+      }
+      throw error;
+    }
+  }
+
+  /**
+   * Get all available versions for a specific firmware type
+   */
+  async getAllVersions(type: 'carwash' | 'helmet'): Promise<FirmwareVersionsResponse> {
+    this.logger.log(`Getting all ${type} firmware versions`);
+
+    try {
+      const entries = await fs.readdir(this.firmwaresPath, {
+        withFileTypes: true,
+      });
+
+      // Get all version folders (format: v1.0.0)
+      const versionFolders = entries
+        .filter((entry) => entry.isDirectory() && entry.name.startsWith('v'))
+        .map((entry) => entry.name.substring(1)); // Remove 'v' prefix
+
+      // Filter versions that have the requested firmware type
+      const versionsWithType: string[] = [];
+
+      for (const version of versionFolders) {
+        try {
+          const manifestPath = path.join(this.firmwaresPath, `v${version}`, 'manifest.json');
+          const manifestContent = await fs.readFile(manifestPath, 'utf-8');
+          const manifest: ManifestJson = JSON.parse(manifestContent);
+
+          // Check if this version has the requested type
+          if (manifest[type]) {
+            versionsWithType.push(version);
+          }
+        } catch (error) {
+          // Skip versions with missing or invalid manifests
+          this.logger.warn(`Skipping version ${version}: ${error.message}`);
+        }
+      }
+
+      // Sort versions from newest to oldest
+      const sortedVersions = versionsWithType.sort((a, b) => {
+        const [aMajor, aMinor, aPatch] = a.split('.').map(Number);
+        const [bMajor, bMinor, bPatch] = b.split('.').map(Number);
+
+        if (aMajor !== bMajor) return bMajor - aMajor;
+        if (aMinor !== bMinor) return bMinor - aMinor;
+        return bPatch - aPatch;
+      });
+
+      return {
+        type,
+        versions: sortedVersions,
+      };
+    } catch (error) {
+      this.logger.error(`Error reading firmwares directory for type ${type}`, error);
+      throw new NotFoundException(`Could not read firmware versions for type ${type}`);
     }
   }
 

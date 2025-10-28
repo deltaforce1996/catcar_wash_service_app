@@ -16,6 +16,11 @@ export interface FirmwareLatestResponse {
   files: FirmwareVariants;
 }
 
+export interface FirmwareVersionsResponse {
+  type: FirmwareType;
+  versions: string[];
+}
+
 export interface UploadFirmwareResponse {
   version: string;
   type: "carwash" | "helmet";

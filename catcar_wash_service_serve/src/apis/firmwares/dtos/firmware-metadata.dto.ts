@@ -23,3 +23,8 @@ export interface FirmwareLatestResponse {
   version: string;
   files: FirmwareVariants;
 }
+
+export interface FirmwareVersionsResponse {
+  type: 'carwash' | 'helmet';
+  versions: string[];
+}

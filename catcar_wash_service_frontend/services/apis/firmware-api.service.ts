@@ -1,6 +1,7 @@
 import type { ApiSuccessResponse } from "~/types";
 import type {
   FirmwareLatestResponse,
+  FirmwareVersionsResponse,
   UploadFirmwareResponse,
   FirmwareType,
 } from "~/types/firmware.type";
@@ -56,6 +57,20 @@ export class FirmwareApiService extends BaseApiClient {
   }
 
   /**
+   * Get list of all firmware versions by type
+   * GET /api/v1/firmwares/list?type=carwash
+   * GET /api/v1/firmwares/list?type=helmet
+   */
+  async getAllVersions(
+    type: FirmwareType
+  ): Promise<ApiSuccessResponse<FirmwareVersionsResponse>> {
+    const response = await this.get<ApiSuccessResponse<FirmwareVersionsResponse>>(
+      `api/v1/firmwares/list?type=${type}`
+    );
+    return response;
+  }
+
+  /**
    * Get latest firmware by type
    * GET /api/v1/firmwares/latest?type=carwash
    * GET /api/v1/firmwares/latest?type=helmet
@@ -65,6 +80,21 @@ export class FirmwareApiService extends BaseApiClient {
   ): Promise<ApiSuccessResponse<FirmwareLatestResponse>> {
     const response = await this.get<ApiSuccessResponse<FirmwareLatestResponse>>(
       `api/v1/firmwares/latest?type=${type}`
+    );
+    return response;
+  }
+
+  /**
+   * Get firmware by type and specific version
+   * GET /api/v1/firmwares/latest?type=carwash&version=1.2.3
+   * GET /api/v1/firmwares/latest?type=helmet&version=1.2.3
+   */
+  async getFirmwareByVersion(
+    type: FirmwareType,
+    version: string
+  ): Promise<ApiSuccessResponse<FirmwareLatestResponse>> {
+    const response = await this.get<ApiSuccessResponse<FirmwareLatestResponse>>(
+      `api/v1/firmwares/latest?type=${type}&version=${version}`
     );
     return response;
   }
