@@ -8,7 +8,8 @@
       "Read(//d/Repo/catcar_wash_service_app/catcar_wash_service_frontend/composables/**)",
       "Read(//d/Repo/catcar_wash_service_app/catcar_wash_service_frontend/pages/**)",
       "Read(//d/Repo/catcar_wash_service_app/catcar_wash_service_frontend/**)",
-      "Read(//d/Repo/catcar_wash_service_app/**)"
+      "Read(//d/Repo/catcar_wash_service_app/**)",
+      "Bash(if not exist \"src\\services\\listeners\" mkdir \"src\\services\\listeners\")"
     ],
     "deny": [],
     "ask": []

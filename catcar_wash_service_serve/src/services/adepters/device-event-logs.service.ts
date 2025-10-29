@@ -4,8 +4,9 @@ import { DeviceType, EventType, PaymentApiStatus, PermissionType, Prisma } from 
 import { PrismaService } from 'src/database/prisma/prisma.service';
 import { parseKeyValueOnly } from 'src/shared/kv-parser';
 import { AuthenticatedUser, PaginatedResult } from 'src/types/internal.type';
-import { SearchDeviceEventLogsDto } from './dtos/search-devcie-event.dto';
-import { UploadLogsDto } from './dtos/upload-logs.dto';
+import { SearchDeviceEventLogsDto } from 'src/apis/device-event-logs/dtos/search-devcie-event.dto';
+import { UploadLogsDto } from 'src/apis/device-event-logs/dtos/upload-logs.dto';
+import { IDeviceEventLogsEventAdapter } from './device-event-logs-event.adapter';
 
 export const deviceEventLogsPublicSelect = Prisma.validator<Prisma.tbl_devices_eventsSelect>()({
   id: true,
@@ -41,6 +42,7 @@ export type DeviceEventLogRow = DeviceEventLogRowBase;
 @Injectable()
 export class DeviceEventLogsService {
   private readonly logger = new Logger(DeviceEventLogsService.name);
+  private adapter: IDeviceEventLogsEventAdapter | null = null;
   private readonly allowed = [
     'id',
     'device_id',
@@ -55,6 +57,14 @@ export class DeviceEventLogsService {
 
   constructor(private readonly prisma: PrismaService) {
     this.logger.log('DeviceEventLogsService initialized');
+  }
+
+  /**
+   * Set the adapter for event emission (called by adapter to avoid circular dependency)
+   */
+  setAdapter(adapter: IDeviceEventLogsEventAdapter): void {
+    this.adapter = adapter;
+    this.logger.log('DeviceEventLogsEventAdapter has been set');
   }
 
   async searchDeviceEventLogs(
@@ -251,6 +261,15 @@ export class DeviceEventLogsService {
     this.logger.log(
       `Successfully created ${createdEvents.length} device event logs for device: ${uploadLogsDto.device_id}`,
     );
+
+    // Emit event through adapter for materialized view refresh
+    const eventPayload = {
+      device_id: uploadLogsDto.device_id,
+      count: createdEvents.length,
+      timestamp: new Date(),
+    };
+
+    this.adapter?.emitEventsUploaded(eventPayload);
 
     return {
       created_count: createdEvents.length,

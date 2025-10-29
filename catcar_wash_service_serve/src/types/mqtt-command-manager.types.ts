@@ -69,9 +69,9 @@ export interface CommandConfig {
     };
   };
   pricing?: {
-    BASE_FEE: number;
+    BASE_FEE?: number;
     PROMOTION: number;
-    WORK_PERIOD: number;
+    WORK_PERIOD?: number;
   };
   function_start?: {
     DUST_BLOW: number;

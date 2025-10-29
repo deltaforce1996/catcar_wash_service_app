@@ -111,7 +111,10 @@ export class MqttCommandManagerService implements OnModuleInit, OnModuleDestroy 
   /**
    * Send RESET_CONFIG command to device
    */
-  async resetConfig(deviceId: string, configs: CommandConfig): Promise<MqttCommandAckResponse<CommandConfig>> {
+  async resetConfig(
+    deviceId: string,
+    configs: { delay_seconds: number },
+  ): Promise<MqttCommandAckResponse<CommandConfig>> {
     return this.sendCommand(deviceId, 'RESET_CONFIG', configs, {
       require_ack: true,
     });

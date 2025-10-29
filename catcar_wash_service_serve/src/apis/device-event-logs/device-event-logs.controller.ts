@@ -1,6 +1,6 @@
 import { Controller, Get, Post, Query, Body, UseFilters, UseGuards } from '@nestjs/common';
 import { PaginatedResult } from 'src/types/internal.type';
-import { DeviceEventLogsService, DeviceEventLogRow } from './device-event-logs.service';
+import { DeviceEventLogsService, DeviceEventLogRow } from 'src/services/adepters/device-event-logs.service';
 import { SearchDeviceEventLogsDto } from './dtos/search-devcie-event.dto';
 import { UploadLogsDto } from './dtos/upload-logs.dto';
 import { SuccessResponse } from 'src/types/success-response.type';

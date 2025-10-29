@@ -1,11 +1,17 @@
 import { Module } from '@nestjs/common';
-import { DeviceEventLogsService } from './device-event-logs.service';
 import { DeviceEventLogsController } from './device-event-logs.controller';
-import { ErrorLoggerService } from 'src/services';
+import { ErrorLoggerService, SqlScriptService, EventManagerService, DeviceEventLogsService } from 'src/services';
+import { DeviceEventLogsEventAdapter } from 'src/services/adepters/device-event-logs-event.adapter';
 
 @Module({
-  providers: [DeviceEventLogsService, ErrorLoggerService],
+  providers: [
+    DeviceEventLogsService,
+    ErrorLoggerService,
+    SqlScriptService,
+    EventManagerService,
+    DeviceEventLogsEventAdapter,
+  ],
   controllers: [DeviceEventLogsController],
-  exports: [DeviceEventLogsService],
+  exports: [DeviceEventLogsService, DeviceEventLogsEventAdapter],
 })
 export class DeviceEventLogsModule {}

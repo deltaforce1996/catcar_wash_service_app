@@ -222,9 +222,9 @@ export class DeviceCommandsService {
 
     this.logger.log(`Resetting config for device: ${deviceId} (type: ${device.type})`);
 
-    const commandConfig = this.mapToCommandConfig(device.configs, device.type);
+    // const commandConfig = this.mapToCommandConfig(device.configs, device.type);
 
-    const result = await this.mqttCommandManager.resetConfig(deviceId, commandConfig);
+    const result = await this.mqttCommandManager.resetConfig(deviceId, { delay_seconds: 30 });
 
     this.logger.log(`Config reset result for device ${deviceId}: ${result.status} (command_id: ${result.command_id})`);
 

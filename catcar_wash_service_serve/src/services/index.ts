@@ -9,3 +9,5 @@ export * from './event-manager.service';
 export * from './adepters/device-registration-event.adapter';
 export * from './adepters/mqtt-command-manager.service';
 export * from './adepters/mqtt-command-event-adepter';
+export * from './adepters/device-event-logs.service';
+export * from './adepters/device-event-logs-event.adapter';

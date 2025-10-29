@@ -475,10 +475,76 @@ export class DevicesService {
       select: devicePublicSelect,
     });
 
-    const result = await this.mqttCommandManager.applyConfig(device.id, device.configs as unknown as CommandConfig);
+    // Convert structured config back to raw CommandConfig format for MQTT
+    const rawConfig = this.convertToRawConfig(device.configs as any, device.type);
+    const result = await this.mqttCommandManager.applyConfig(device.id, rawConfig);
     if (result.status !== 'SUCCESS') throw new BadRequestException(result.error ?? 'Config Filed');
 
     return device;
+  }
+
+  /**
+   * Convert structured config (stored in DB) back to raw CommandConfig format for MQTT
+   */
+  private convertToRawConfig(structuredConfig: any, deviceType: DeviceType): CommandConfig {
+    const config: CommandConfig = {
+      machine: {
+        ACTIVE: structuredConfig.system?.payment_method ? true : false,
+        BANKNOTE: structuredConfig.system?.payment_method?.bank_note ?? false,
+        COIN: structuredConfig.system?.payment_method?.coin ?? false,
+        QR: structuredConfig.system?.payment_method?.promptpay ?? false,
+        ON_TIME: structuredConfig.system?.on_time ?? '00:00',
+        OFF_TIME: structuredConfig.system?.off_time ?? '23:59',
+        SAVE_STATE: structuredConfig.system?.save_state ?? false,
+      },
+    };
+
+    if (deviceType === DeviceType.WASH) {
+      // Convert WASH config
+      const sale = structuredConfig.sale || {};
+      config.function = {
+        sec_per_baht: {
+          HP_WATER: sale.hp_water?.value ?? 0,
+          FOAM: sale.foam?.value ?? 0,
+          AIR: sale.air?.value ?? 0,
+          WATER: sale.water?.value ?? 0,
+          VACUUM: sale.vacuum?.value ?? 0,
+          BLACK_TIRE: sale.black_tire?.value ?? 0,
+          WAX: sale.wax?.value ?? 0,
+          AIR_FRESHENER: sale.air_conditioner?.value ?? 0,
+          PARKING_FEE: sale.parking_fee?.value ?? 0,
+        },
+      };
+      config.pricing = {
+        PROMOTION: structuredConfig.pricing?.promotion?.value ?? 0,
+      };
+    } else if (deviceType === DeviceType.DRYING) {
+      // Convert DRYING config
+      const sale = structuredConfig.sale || {};
+      config.function_start = {
+        DUST_BLOW: sale.blow_dust?.start ?? 0,
+        SANITIZE: sale.sterilize?.start ?? 0,
+        UV: sale.uv?.start ?? 0,
+        OZONE: sale.ozone?.start ?? 0,
+        DRY_BLOW: sale.drying?.start ?? 0,
+        PERFUME: sale.perfume?.start ?? 0,
+      };
+      config.function_end = {
+        DUST_BLOW: sale.blow_dust?.end ?? 0,
+        SANITIZE: sale.sterilize?.end ?? 0,
+        UV: sale.uv?.end ?? 0,
+        OZONE: sale.ozone?.end ?? 0,
+        DRY_BLOW: sale.drying?.end ?? 0,
+        PERFUME: sale.perfume?.end ?? 0,
+      };
+      config.pricing = {
+        BASE_FEE: structuredConfig.pricing?.base_fee?.value ?? 0,
+        PROMOTION: structuredConfig.pricing?.promotion?.value ?? 0,
+        WORK_PERIOD: structuredConfig.pricing?.work_period?.value ?? 0,
+      };
+    }
+
+    return config;
   }
 
   async syncConfigsById(device_id: string, data: SyncDeviceConfigsDto): Promise<void> {
