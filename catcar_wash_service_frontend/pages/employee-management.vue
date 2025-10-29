@@ -5,7 +5,7 @@
       <div>
         <h1 class="text-h4 font-weight-bold mb-1">จัดการพนักงาน</h1>
       </div>
-      <div class="d-flex align-center ga-3 flex-wrap">
+      <div v-if="isAdmin" class="d-flex align-center ga-3 flex-wrap">
         <v-btn
           color="primary"
           prepend-icon="mdi-account-plus"
@@ -334,6 +334,9 @@ import { useEmployee } from "~/composables/useEmployee";
 import EnhancedDataTable from "~/components/common/EnhancedDataTable.vue";
 import AddEmployeeDialog from "~/components/employee/AddEmployeeDialog.vue";
 import EditEmployeeDialog from "~/components/employee/EditEmployeeDialog.vue";
+import { useAuth } from "~/composables/useAuth";
+
+const { isAdmin , user} = useAuth();
 
 // Import enum translation composable
 const {

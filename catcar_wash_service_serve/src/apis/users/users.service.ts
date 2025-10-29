@@ -138,8 +138,8 @@ export class UsersService {
       return { items: [], total, page, limit, totalPages: Math.max(1, Math.ceil(total / limit)) };
     }
 
-    // If exclude_device_counts is true, return users without device counts
-    if (q.exclude_device_counts) {
+    // If is_minimal is 'true', return users without device counts
+    if (q.is_minimal === 'true') {
       return {
         items: users as UserWithoutDeviceCountsRow[],
         total,

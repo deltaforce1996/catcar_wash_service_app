@@ -117,6 +117,14 @@ const generate = async () => {
   // Create SuperAdmin employee
   console.log('Creating SuperAdmin employee...');
 
+  const technicianPermission = await prisma.tbl_permissions.findUnique({
+    where: { name: PermissionType.TECHNICIAN },
+  });
+
+  if (!technicianPermission) {
+    throw new Error('Technician permission not found');
+  }
+
   const hashedPassword = await bcrypt.hash('password!', 12);
   const userPermission = await prisma.tbl_permissions.findUnique({
     where: { name: PermissionType.USER },
@@ -160,7 +168,7 @@ const generate = async () => {
       line: '@technician_th',
       password: hashedPassword,
       address: '456 ถนนรัชดาภิเษก แขวงห้วยขวาง เขตห้วยขวาง กรุงเทพมหานคร 10310',
-      permission_id: adminPermission.id,
+      permission_id: technicianPermission.id,
       status: 'ACTIVE',
     },
     create: {
@@ -171,7 +179,7 @@ const generate = async () => {
       line: '@technician_th',
       password: hashedPassword,
       address: '456 ถนนรัชดาภิเษก แขวงห้วยขวาง เขตห้วยขวาง กรุงเทพมหานคร 10310',
-      permission_id: adminPermission.id,
+      permission_id: technicianPermission.id,
       status: 'ACTIVE',
     },
   });

@@ -1,4 +1,4 @@
-import { IsBoolean, IsIn, IsNumber, IsOptional, IsString } from 'class-validator';
+import { IsIn, IsNumber, IsOptional, IsString } from 'class-validator';
 
 export class SearchUserDto {
   @IsString()
@@ -24,10 +24,6 @@ export class SearchUserDto {
   @IsOptional()
   @IsIn(['asc', 'desc'], { message: 'sort_order must be either "asc" or "desc"' })
   sort_order?: 'asc' | 'desc';
-
-  @IsBoolean()
-  @IsOptional()
-  exclude_device_counts?: boolean = false;
 
   @IsString()
   @IsOptional()
