@@ -116,16 +116,6 @@
         </div>
       </template>
 
-      <template #[`item.position`]="{ item }">
-        <v-chip
-          :color="getPositionColor(item.position)"
-          size="small"
-          variant="tonal"
-        >
-          {{ item.position }}
-        </v-chip>
-      </template>
-
       <template #[`item.status`]="{ item }">
         <v-chip
           :color="getEmpStatusColor(item.status)"
@@ -431,22 +421,6 @@ const formatDateTime = (dateString: string) => {
   });
 };
 
-const getPositionColor = (position: string) => {
-  switch (position?.toLowerCase()) {
-    case "manager":
-    case "ผู้จัดการ":
-      return "purple";
-    case "supervisor":
-    case "หัวหน้างาน":
-      return "orange";
-    case "employee":
-    case "พนักงาน":
-      return "blue";
-    default:
-      return "grey";
-  }
-};
-
 // Select status filter function
 const selectStatusFilter = (status: EnumUserStatus) => {
   tempStatusFilter.value = status;
@@ -493,7 +467,6 @@ const employeeHeaders = [
   { title: "ชื่อพนักงาน", key: "name", sortable: true },
   { title: "อีเมล", key: "email", sortable: true },
   { title: "เบอร์โทร", key: "phone", sortable: true },
-  { title: "ตำแหน่ง", key: "position", sortable: true },
   { title: "สถานะ", key: "status", sortable: true },
   { title: "วันที่เริ่มงาน", key: "created_at", sortable: true },
   { title: "", key: "data-table-expand", sortable: false },

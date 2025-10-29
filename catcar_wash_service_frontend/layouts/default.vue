@@ -74,7 +74,8 @@
               :prepend-avatar="profileData.avatar"
               :title="profileData.name"
               :subtitle="profileData.email"
-              class="pa-4"
+              class="pa-4 profile-section"
+              @click="goToProfile"
             >
               <template #append>
                 <v-menu>
@@ -309,5 +310,15 @@ const handleLogout = () => {
 
 .v-theme--light .v-navigation-drawer {
   background: linear-gradient(180deg, #ffffff 0%, #f8f9fa 100%);
+}
+
+/* Profile section clickable styling */
+.profile-section {
+  cursor: pointer;
+  transition: background-color 0.2s ease;
+}
+
+.profile-section:hover {
+  background-color: rgba(var(--v-theme-primary), var(--v-hover-opacity)) !important;
 }
 </style>

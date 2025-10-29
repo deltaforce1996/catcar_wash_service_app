@@ -137,9 +137,42 @@ export abstract class BaseApiClient {
           this.log.error("🔥 Server error: Please try again later");
         }
 
-        return Promise.reject(error.response?.data);
+        // If error has response data, use it
+        if (error.response?.data) {
+          return Promise.reject(error.response.data);
+        }
+
+        // If no response (timeout, network error), create proper error structure
+        const errorResponse: ApiErrorResponse = {
+          success: false,
+          errorCode: error.code || "UNKNOWN_ERROR",
+          message: this.getErrorMessage(error),
+          statusCode: 0,
+          timestamp: new Date().toISOString(),
+          path: error.config?.url || "",
+        };
+
+        return Promise.reject(errorResponse);
       }
     );
+  }
+
+  /**
+   * Get user-friendly error message based on error type
+   */
+  private getErrorMessage(error: AxiosError): string {
+    // Timeout errors
+    if (error.code === "ECONNABORTED") {
+      return "การเชื่อมต่อหมดเวลา กรุณาลองใหม่อีกครั้ง";
+    }
+
+    // Network errors
+    if (error.message === "Network Error" || error.code === "ERR_NETWORK") {
+      return "ไม่สามารถเชื่อมต่อกับเซิร์ฟเวอร์ได้ กรุณาตรวจสอบการเชื่อมต่ออินเทอร์เน็ต";
+    }
+
+    // Other errors
+    return error.message || "เกิดข้อผิดพลาดที่ไม่ทราบสาเหตุ";
   }
 
   /**
