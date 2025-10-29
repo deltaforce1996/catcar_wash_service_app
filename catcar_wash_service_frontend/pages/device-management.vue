@@ -330,6 +330,7 @@
       :device="selectedDevice"
       @save="showApplyDeviceConfigDialog = true"
       @toggle-status="toggleDeviceStatus"
+      @device-updated="handleDeviceUpdated"
     />
 
     <!-- Apply Device Config Confirmation Dialog -->
@@ -343,16 +344,36 @@
             คุณต้องการบันทึกการตั้งค่าของอุปกรณ์
             {{ selectedDevice?.name }} หรือไม่?
           </p>
+          <v-alert
+            v-if="applyDeviceConfigError"
+            color="error"
+            variant="tonal"
+            class="mt-4"
+          >
+            <v-icon class="mr-1">mdi-alert-circle</v-icon>
+            {{ applyDeviceConfigError }}
+          </v-alert>
         </v-card-text>
         <v-card-actions class="pa-6 pt-0">
           <v-spacer />
           <v-btn
             variant="outlined"
-            @click="showApplyDeviceConfigDialog = false"
+            :disabled="isUpdating"
+            @click="
+              showApplyDeviceConfigDialog = false;
+              applyDeviceConfigError = '';
+            "
           >
-            ยกเลิก
+            {{ applyDeviceConfigError ? 'ปิด' : 'ยกเลิก' }}
           </v-btn>
-          <v-btn color="primary" @click="applyDeviceConfig"> ยืนยัน </v-btn>
+          <v-btn
+            v-if="!applyDeviceConfigError"
+            color="primary"
+            :loading="isUpdating"
+            @click="applyDeviceConfig"
+          >
+            ยืนยัน
+          </v-btn>
         </v-card-actions>
       </v-card>
     </v-dialog>
@@ -383,13 +404,13 @@ const {
   isSearching,
   isUpdating,
   error: apiError,
-  successMessage: apiSuccessMessage,
+  successMessage: _apiSuccessMessage,
   totalDevices,
   totalPages,
   searchDevices,
   updateDeviceConfigs,
   setDeviceStatus,
-  clearMessages,
+  clearMessages: _clearMessages,
 } = useDevice();
 
 // Reactive state
@@ -397,6 +418,7 @@ const selectedDevices = ref<DeviceResponseApi[]>([]);
 const showApplySystemConfigDialog = ref(false);
 const showDeviceDetailDialog = ref(false);
 const showApplyDeviceConfigDialog = ref(false);
+const applyDeviceConfigError = ref<string>("");
 const selectedDevice = ref<DeviceResponseApi | null>(null);
 const isEditMode = ref(false);
 const editableConfigs = ref<Record<string, DeviceConfig>>({});
@@ -554,20 +576,39 @@ const applySystemConfig = () => {
 const applyDeviceConfig = async () => {
   if (!selectedDevice.value || !deviceDetailDialogRef.value) return;
 
-  try {
-    // Get the save payload from the dialog component
-    const payload = deviceDetailDialogRef.value.getSavePayload();
+  // Clear previous error
+  applyDeviceConfigError.value = "";
 
-    // Only update if there are changes
-    if (!payload.configs || Object.keys(payload.configs).length === 0) {
+  try {
+    // Get both status and config payloads from the dialog component
+    const statusPayload = deviceDetailDialogRef.value.getStatusChangePayload();
+    const configPayload = deviceDetailDialogRef.value.getSavePayload();
+
+    // Check if there are any changes at all
+    const hasConfigChanges = configPayload.configs && Object.keys(configPayload.configs).length > 0;
+    const hasStatusChange = statusPayload !== null;
+
+    if (!hasConfigChanges && !hasStatusChange) {
       return;
     }
 
-    // Update device configs and capture the response
-    const updatedDevice = await updateDeviceConfigs(
-      selectedDevice.value.id,
-      payload
-    );
+    let updatedDevice = null;
+
+    // First, update status if it changed
+    if (hasStatusChange && statusPayload) {
+      updatedDevice = await setDeviceStatus(
+        selectedDevice.value.id,
+        statusPayload
+      );
+    }
+
+    // Then, update configs if they changed
+    if (hasConfigChanges) {
+      updatedDevice = await updateDeviceConfigs(
+        selectedDevice.value.id,
+        configPayload
+      );
+    }
 
     // Refresh selectedDevice with the API response to update dialog
     if (updatedDevice) {
@@ -583,8 +624,20 @@ const applyDeviceConfig = async () => {
     // Refresh the devices list
     await applyFilters();
   } catch {
-    // Error handling
+    // Use the error from useDevice composable (already formatted in Thai)
+    applyDeviceConfigError.value =
+      apiError.value ||
+      "ไม่สามารถบันทึกการตั้งค่าอุปกรณ์ได้ กรุณาลองใหม่อีกครั้ง";
   }
+};
+
+// Handle device updated event (e.g., when device name is changed)
+const handleDeviceUpdated = async (updatedDevice: DeviceResponseApi) => {
+  // Update selectedDevice with the device data received from event
+  selectedDevice.value = updatedDevice;
+
+  // Refresh the devices list
+  await applyFilters();
 };
 
 // Initialize on mount

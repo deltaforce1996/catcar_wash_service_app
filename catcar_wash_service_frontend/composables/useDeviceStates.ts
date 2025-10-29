@@ -1,20 +1,17 @@
 import { ref, readonly } from "vue";
 import type {
-  DeviceEventLogResponseApi,
-  PaginatedDeviceEventLogsResponse,
-  SearchDeviceEventLogsRequest,
-} from "~/services/apis/device-event-logs-api.service";
-import { DeviceEventLogsApiService } from "~/services/apis/device-event-logs-api.service";
+  DeviceStateResponseApi,
+  PaginatedDeviceStatesResponse,
+  SearchDeviceStatesRequest,
+} from "~/services/apis/device-states-api.service";
+import { DeviceStatesApiService } from "~/services/apis/device-states-api.service";
 import type { ApiErrorResponse } from "~/types";
 
-export const useDeviceEventLogs = () => {
-  // Get auth state to check if user is USER permission
-  const { isUser, user } = useAuth();
-
+export const useDeviceStates = () => {
   // Local state - not global
-  const eventLogs = ref<DeviceEventLogResponseApi[]>([]);
-  const currentEventLog = ref<DeviceEventLogResponseApi | null>(null);
-  const currentSearchParams = ref<SearchDeviceEventLogsRequest>({
+  const deviceStates = ref<DeviceStateResponseApi[]>([]);
+  const currentDeviceState = ref<DeviceStateResponseApi | null>(null);
+  const currentSearchParams = ref<SearchDeviceStatesRequest>({
     page: 1,
     limit: 10,
     sort_by: "created_at",
@@ -22,7 +19,7 @@ export const useDeviceEventLogs = () => {
   });
 
   // Pagination info from API response
-  const totalLogs = ref(0);
+  const totalStates = ref(0);
   const totalPages = ref(1);
 
   // Loading State
@@ -33,7 +30,7 @@ export const useDeviceEventLogs = () => {
   const error = ref<string | null>(null);
   const successMessage = ref<string | null>(null);
 
-  const eventLogsApi = new DeviceEventLogsApiService();
+  const deviceStatesApi = new DeviceStatesApiService();
 
   const clearMessages = () => {
     error.value = null;
@@ -41,12 +38,12 @@ export const useDeviceEventLogs = () => {
   };
 
   const clearPagination = () => {
-    totalLogs.value = 0;
+    totalStates.value = 0;
     totalPages.value = 1;
   };
 
-  const searchEventLogs = async (
-    searchParams: SearchDeviceEventLogsRequest = {}
+  const searchDeviceStates = async (
+    searchParams: SearchDeviceStatesRequest = {}
   ) => {
     try {
       isSearching.value = true;
@@ -57,24 +54,13 @@ export const useDeviceEventLogs = () => {
         ...searchParams,
       };
 
-      // Prepare request params
-      const requestParams: SearchDeviceEventLogsRequest = {
-        ...currentSearchParams.value,
-      };
-
-      // Automatically add user_id to query object for USER permission users
-      if (isUser.value && user.value?.id) {
-        requestParams.query = {
-          ...requestParams.query,
-          user_id: user.value.id,
-        };
-      }
-
-      const response = await eventLogsApi.SearchDeviceEventLogs(requestParams);
+      const response = await deviceStatesApi.SearchDeviceStates(
+        currentSearchParams.value
+      );
       if (response.success && response.data) {
-        const paginatedData: PaginatedDeviceEventLogsResponse = response.data;
-        eventLogs.value = paginatedData.items || [];
-        totalLogs.value = paginatedData.total || 0;
+        const paginatedData: PaginatedDeviceStatesResponse = response.data;
+        deviceStates.value = paginatedData.items || [];
+        totalStates.value = paginatedData.total || 0;
         totalPages.value = paginatedData.totalPages || 1;
         currentSearchParams.value = {
           ...currentSearchParams.value,
@@ -85,8 +71,8 @@ export const useDeviceEventLogs = () => {
       }
     } catch (err: unknown) {
       const errorAxios = err as ApiErrorResponse;
-      error.value = errorAxios.message || "ไม่สามารถค้นหาบันทึกเหตุการณ์ได้";
-      eventLogs.value = [];
+      error.value = errorAxios.message || "ไม่สามารถค้นหาสถานะอุปกรณ์ได้";
+      deviceStates.value = [];
       clearPagination();
     } finally {
       isSearching.value = false;
@@ -94,7 +80,7 @@ export const useDeviceEventLogs = () => {
   };
 
   const goToPage = async (page: number) => {
-    await searchEventLogs({ page });
+    await searchDeviceStates({ page });
   };
 
   const nextPage = async () => {
@@ -112,23 +98,23 @@ export const useDeviceEventLogs = () => {
   };
 
   const refreshSearch = async () => {
-    await searchEventLogs({});
+    await searchDeviceStates({});
   };
 
   const resetState = () => {
-    eventLogs.value = [];
-    currentEventLog.value = null;
+    deviceStates.value = [];
+    currentDeviceState.value = null;
     currentSearchParams.value = {};
     clearPagination();
     clearMessages();
   };
 
   return {
-    eventLogs: readonly(eventLogs),
-    currentEventLog: readonly(currentEventLog),
+    deviceStates: readonly(deviceStates),
+    currentDeviceState: readonly(currentDeviceState),
     currentSearchParams: readonly(currentSearchParams),
 
-    totalLogs: readonly(totalLogs),
+    totalStates: readonly(totalStates),
     totalPages: readonly(totalPages),
 
     isLoading: readonly(isLoading),
@@ -137,7 +123,7 @@ export const useDeviceEventLogs = () => {
     error: readonly(error),
     successMessage: readonly(successMessage),
 
-    searchEventLogs,
+    searchDeviceStates,
     goToPage,
     nextPage,
     previousPage,

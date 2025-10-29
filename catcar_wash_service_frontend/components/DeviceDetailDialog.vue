@@ -36,7 +36,56 @@
                       }}
                     </v-icon>
                   </v-avatar>
-                  <h3 class="text-h5 font-weight-bold">{{ device?.name }}</h3>
+
+                  <!-- Device Name - View Mode -->
+                  <div v-if="!isEditingName" class="d-flex align-center justify-center mb-2">
+                    <h3 class="text-h5 font-weight-bold">{{ device?.name }}</h3>
+                    <v-btn
+                      icon="mdi-pencil"
+                      size="x-small"
+                      variant="text"
+                      color="primary"
+                      class="ml-2"
+                      @click="startEditingName"
+                    />
+                  </div>
+
+                  <!-- Device Name - Edit Mode -->
+                  <div v-else class="mb-2">
+                    <v-text-field
+                      v-model="editableName"
+                      variant="outlined"
+                      density="compact"
+                      hide-details="auto"
+                      :rules="[(v) => !!v || 'กรุณากรอกชื่ออุปกรณ์']"
+                      autofocus
+                      placeholder="ชื่ออุปกรณ์"
+                      class="mb-2"
+                    />
+                    <div class="d-flex justify-center ga-2">
+                      <v-btn
+                        color="grey"
+                        variant="outlined"
+                        size="small"
+                        @click="cancelNameEdit"
+                      >
+                        <v-icon class="mr-1">mdi-close</v-icon>
+                        ยกเลิก
+                      </v-btn>
+                      <v-btn
+                        color="success"
+                        variant="elevated"
+                        size="small"
+                        :disabled="!editableName || editableName.trim() === ''"
+                        :loading="isUpdatingDevice"
+                        @click="saveDeviceName"
+                      >
+                        <v-icon class="mr-1">mdi-check</v-icon>
+                        บันทึก
+                      </v-btn>
+                    </div>
+                  </div>
+
                   <v-chip
                     :color="getDeviceTypeColor(device?.type || '')"
                     size="small"
@@ -238,20 +287,22 @@
                           <div class="d-flex align-center">
                             <span class="text-body-2 mr-3">
                               {{
-                                device?.status === "DEPLOYED"
+                                (isEditMode ? editableStatus : device?.status) === "DEPLOYED"
                                   ? "เปิดใช้งาน"
                                   : "ปิดใช้งาน"
                               }}
                             </span>
                             <v-switch
-                              :model-value="device?.status === 'DEPLOYED'"
+                              v-model="editableStatus"
+                              true-value="DEPLOYED"
+                              false-value="DISABLED"
                               :color="
-                                device?.status === 'DEPLOYED'
+                                editableStatus === 'DEPLOYED'
                                   ? 'success'
                                   : 'error'
                               "
+                              :disabled="!isEditMode"
                               hide-details
-                              @update:model-value="$emit('toggleStatus')"
                             />
                           </div>
                         </div>
@@ -265,6 +316,19 @@
                         >
                           <v-icon class="mr-1">mdi-alert</v-icon>
                           เมื่อปิดใช้งาน ลูกค้าจะไม่สามารถใช้บริการอุปกรณ์นี้ได้
+                        </v-alert>
+
+                        <v-alert
+                          v-if="isEditMode && isStatusChanged()"
+                          color="warning"
+                          variant="tonal"
+                          class="mt-4"
+                          density="compact"
+                        >
+                          <v-icon class="mr-1">mdi-information</v-icon>
+                          โปรดกดบันทึก การเปลี่ยนแปลงสถานะจาก
+                          {{ getDeviceStatusLabel(originalStatus) }} เป็น
+                          {{ getDeviceStatusLabel(editableStatus) }}
                         </v-alert>
                       </v-card-text>
                     </v-card>
@@ -1028,15 +1092,91 @@
                   </v-tabs-window-item>
 
                   <!-- State Tab -->
-                  <v-tabs-window-item value="state" class="pa-6">
-                    <div class="text-center py-12">
+                  <v-tabs-window-item value="state">
+                    <EnhancedDataTable
+                      title="บันทึกสถานะระบบ"
+                      :items="deviceStates"
+                      :headers="stateHeaders"
+                      :loading="isLoadingStates"
+                      :has-filter-changes="false"
+                      :show-filter-actions="false"
+                      :show-filters="false"
+                      :total-items="totalStates"
+                      :total-pages="stateTotalPages"
+                      :page="statePage"
+                      :items-per-page="stateItemsPerPage"
+                      :expandable="true"
+                      :selectable="false"
+                      card-class="elevation-0"
+                      @update:page="handleStatePageChange"
+                    >
+                      <!-- State At Column -->
+                      <template #[`item.state_data.state_at`]="{ item }">
+                        <div class="text-body-2">
+                          {{ item.state_data?.state_at || "-" }}
+                        </div>
+                      </template>
+
+                      <!-- Status Column -->
+                      <template #[`item.state_data.status`]="{ item }">
+                        <v-chip
+                          v-if="item.state_data?.status"
+                          :color="getStatusColor(item.state_data.status)"
+                          size="small"
+                          variant="tonal"
+                        >
+                          {{ getStatusLabel(item.state_data.status) }}
+                        </v-chip>
+                        <span v-else class="text-body-2">-</span>
+                      </template>
+
+                      <!-- Expanded Content with v-treeview -->
+                      <template #expanded-content="{ item }">
+                        <div class="pa-4">
+                          <h4 class="text-subtitle-2 font-weight-bold mb-4">
+                            ข้อมูลสถานะระบบแบบเต็ม
+                          </h4>
+                          <v-treeview
+                            v-if="item.state_data && Object.keys(item.state_data).length > 0"
+                            :items="buildTreeItems(item.state_data)"
+                            item-value="id"
+                            item-title="title"
+                            density="compact"
+                            open-all
+                          />
+                          <div
+                            v-else
+                            class="text-body-2 text-medium-emphasis py-4"
+                          >
+                            ไม่มีข้อมูลสถานะ
+                          </div>
+                        </div>
+                      </template>
+                    </EnhancedDataTable>
+
+                    <!-- Error Alert -->
+                    <v-alert
+                      v-if="statesError"
+                      type="error"
+                      variant="tonal"
+                      class="ma-4"
+                    >
+                      {{ statesError }}
+                    </v-alert>
+
+                    <!-- Empty State -->
+                    <div
+                      v-if="!isLoadingStates && deviceStates.length === 0 && !statesError"
+                      class="text-center py-12"
+                    >
                       <v-icon size="80" color="grey-lighten-1" class="mb-4">
-                        mdi-chart-line
+                        mdi-information-outline
                       </v-icon>
-                      <h3 class="text-h6 text-grey-darken-1 mb-2">สถานะระบบ</h3>
+                      <h3 class="text-h6 text-grey-darken-1 mb-2">
+                        ไม่พบข้อมูลสถานะระบบ
+                      </h3>
                       <p class="text-body-2 text-grey-darken-1">
-                        ส่วนนี้จะแสดงสถานะการทำงานของอุปกรณ์แบบเรียลไทม์<br >
-                        (อยู่ในระหว่างการพัฒนา)
+                        ยังไม่มีบันทึกสถานะการทำงานของอุปกรณ์นี้
                       </p>
                     </div>
                   </v-tabs-window-item>
@@ -1136,6 +1276,48 @@
         <p class="text-body-1">
           คุณต้องการอัปเดตเฟิร์มแวร์สำหรับอุปกรณ์นี้หรือไม่?
         </p>
+
+        <!-- Firmware Version Selector -->
+        <v-select
+          v-model="selectedFirmwareVersion"
+          :items="availableFirmwareVersions"
+          :loading="isLoadingFirmwareVersions"
+          label="เวอร์ชันเฟิร์มแวร์"
+          hint="เลือกเวอร์ชันเฟิร์มแวร์ที่ต้องการอัปเดต (เว้นว่างเพื่อใช้เวอร์ชันล่าสุด)"
+          persistent-hint
+          clearable
+          variant="outlined"
+          density="compact"
+          class="mt-4"
+        >
+          <template #item="{ props: itemProps, item }">
+            <v-list-item v-bind="itemProps">
+              <template #append>
+                <v-chip
+                  v-if="item.index === 0"
+                  color="primary"
+                  variant="tonal"
+                  size="x-small"
+                >
+                  ล่าสุด
+                </v-chip>
+              </template>
+            </v-list-item>
+          </template>
+          <template #selection="{ item }">
+            <span>v{{ item.value }}</span>
+            <v-chip
+              v-if="item.index === 0"
+              color="primary"
+              variant="tonal"
+              size="x-small"
+              class="ml-2"
+            >
+              ล่าสุด
+            </v-chip>
+          </template>
+        </v-select>
+
         <v-alert color="info" variant="tonal" density="compact" class="mt-3">
           <v-icon class="mr-1">mdi-information</v-icon>
           กระบวนการอัปเดตอาจใช้เวลาสักครู่ กรุณาอย่าปิดอุปกรณ์ระหว่างการอัปเดต
@@ -1292,13 +1474,6 @@
     </v-card>
   </v-dialog>
 
-  <!-- Snackbar for success/error messages -->
-  <v-snackbar v-model="snackbar" :color="snackbarColor" timeout="5000" top>
-    {{ snackbarMessage }}
-    <template #actions>
-      <v-btn variant="text" @click="snackbar = false">ปิด</v-btn>
-    </template>
-  </v-snackbar>
 </template>
 
 <script setup lang="ts">
@@ -1306,6 +1481,7 @@ import type {
   DeviceResponseApi,
   DeviceConfig,
 } from "~/services/apis/device-api.service";
+import EnhancedDataTable from "~/components/common/EnhancedDataTable.vue";
 
 // Import enum translation composable
 const {
@@ -1330,6 +1506,26 @@ const {
   clearMessages: clearCommandMessages,
 } = useDeviceCommands();
 
+// Import device composable for updating device basic info
+const {
+  updateDeviceBasic,
+  isUpdating: isUpdatingDevice,
+  error: deviceError,
+  successMessage: deviceSuccessMessage,
+  clearMessages: clearDeviceMessages,
+} = useDevice();
+
+// Import device states composable
+const {
+  deviceStates,
+  totalStates,
+  totalPages: stateTotalPages,
+  isSearching: isLoadingStates,
+  error: statesError,
+  searchDeviceStates,
+  resetState: resetDeviceStates,
+} = useDeviceStates();
+
 interface SystemConfig {
   on_time?: string;
   off_time?: string;
@@ -1349,6 +1545,7 @@ interface Props {
 interface Emits {
   (e: "update:modelValue", value: boolean): void;
   (e: "save" | "toggleStatus"): void;
+  (e: "deviceUpdated", device: DeviceResponseApi): void;
 }
 
 const props = defineProps<Props>();
@@ -1359,6 +1556,11 @@ const isEditMode = ref(false);
 const showCancelConfirmDialog = ref(false);
 const currentTab = ref("setup");
 
+// Name editing state
+const isEditingName = ref(false);
+const editableName = ref("");
+const originalName = ref("");
+
 // Device action dialogs
 const showUpdateFirmwareDialog = ref(false);
 const showResetConfigDialog = ref(false);
@@ -1366,10 +1568,21 @@ const showRestartDialog = ref(false);
 const showManualPaymentDialog = ref(false);
 const manualPaymentAmount = ref<number | null>(null);
 
-// Snackbar state
-const snackbar = ref(false);
-const snackbarMessage = ref("");
-const snackbarColor = ref<"success" | "error">("success");
+// Firmware update state
+const selectedFirmwareVersion = ref<string | undefined>(undefined);
+
+// Device states pagination and display
+const statePage = ref(1);
+const stateItemsPerPage = ref(10);
+const stateHeaders = [
+  { title: "เวลา", key: "state_data.datetime", sortable: false },
+  { title: "สถานะ", key: "state_data.status", sortable: false },
+];
+
+// Status editing state
+const editableStatus = ref<string>("");
+const originalStatus = ref<string>("");
+
 const editableConfigs = ref<Record<string, DeviceConfig>>({});
 const originalConfigs = ref<Record<string, DeviceConfig>>({});
 const editableSystemConfigs = ref<SystemConfig>({});
@@ -1383,6 +1596,18 @@ const showDialog = computed({
   set: (value) => emit("update:modelValue", value),
 });
 
+// Firmware versions based on device type
+const availableFirmwareVersions = computed(() => {
+  if (!props.device) return [];
+  // WASH devices use carwash firmware, DRYING devices use helmet firmware
+  return props.device.type === "WASH" ? carwashVersions.value : helmetVersions.value;
+});
+
+const isLoadingFirmwareVersions = computed(() => {
+  if (!props.device) return false;
+  return props.device.type === "WASH" ? isLoadingCarwashVersions.value : isLoadingHelmetVersions.value;
+});
+
 // Unified change detection
 const hasAnyChanges = computed(() => {
   const hasSaleChanges = Object.keys(editableConfigs.value).some((key) =>
@@ -1392,7 +1617,8 @@ const hasAnyChanges = computed(() => {
   const hasPricingChanges = Object.keys(editablePricingConfigs.value).some(
     (key) => isPricingConfigChanged(key)
   );
-  return hasSaleChanges || hasSystemChanges || hasPricingChanges;
+  const hasStatusChange = isStatusChanged();
+  return hasSaleChanges || hasSystemChanges || hasPricingChanges || hasStatusChange;
 });
 
 const _configChangeCount = computed(() => {
@@ -1452,12 +1678,30 @@ const getSavePayload = () => {
   return payload;
 };
 
+// Get status change payload if status has changed
+const getStatusChangePayload = () => {
+  if (isStatusChanged()) {
+    return { status: editableStatus.value };
+  }
+  return null;
+};
+
 // Methods
 const closeDialog = () => {
   showDialog.value = false;
   isEditMode.value = false;
   showCancelConfirmDialog.value = false;
   currentTab.value = "setup";
+
+  // Reset name editing state
+  isEditingName.value = false;
+  editableName.value = "";
+  originalName.value = "";
+
+  // Reset status state
+  editableStatus.value = "";
+  originalStatus.value = "";
+
   editableConfigs.value = {};
   originalConfigs.value = {};
   editableSystemConfigs.value = {};
@@ -1469,6 +1713,12 @@ const closeDialog = () => {
 // Unified edit mode management
 const enterEditMode = () => {
   isEditMode.value = true;
+
+  // Initialize status
+  if (props.device?.status) {
+    originalStatus.value = props.device.status;
+    editableStatus.value = props.device.status;
+  }
 
   // Initialize sale configs
   if (props.device?.configs?.sale) {
@@ -1503,6 +1753,10 @@ const enterEditMode = () => {
 const exitEditMode = () => {
   isEditMode.value = false;
   // Reset to original configs (discard changes)
+
+  // Reset status
+  editableStatus.value = originalStatus.value;
+
   if (Object.keys(originalConfigs.value).length > 0) {
     editableConfigs.value = JSON.parse(JSON.stringify(originalConfigs.value));
   }
@@ -1537,8 +1791,53 @@ const cancelCancelAction = () => {
   showCancelConfirmDialog.value = false;
 };
 
+// Name editing handlers
+const startEditingName = () => {
+  if (!props.device?.name) return;
+  originalName.value = props.device.name;
+  editableName.value = props.device.name;
+  isEditingName.value = true;
+};
+
+const cancelNameEdit = () => {
+  editableName.value = originalName.value;
+  isEditingName.value = false;
+};
+
+const saveDeviceName = async () => {
+  if (!props.device?.id || !editableName.value || editableName.value.trim() === '') {
+    return;
+  }
+
+  try {
+    clearDeviceMessages();
+    const updatedDevice = await updateDeviceBasic(props.device.id, { name: editableName.value.trim() });
+
+    isEditingName.value = false;
+
+    // Emit event to parent with updated device data
+    if (updatedDevice) {
+      emit("deviceUpdated", updatedDevice);
+    }
+  } catch {
+    // Error handling - errors will be handled by parent component
+  }
+};
+
 // Device action handlers
-const handleUpdateFirmware = () => {
+const handleUpdateFirmware = async () => {
+  if (!props.device) return;
+
+  // Reset selected version
+  selectedFirmwareVersion.value = undefined;
+
+  // Load firmware versions based on device type
+  if (props.device.type === "WASH") {
+    await getAllCarwashVersions();
+  } else {
+    await getAllHelmetVersions();
+  }
+
   showUpdateFirmwareDialog.value = true;
 };
 
@@ -1547,15 +1846,10 @@ const confirmUpdateFirmware = async () => {
 
   try {
     clearCommandMessages();
-    await updateFirmware(props.device.id);
-
-    snackbarMessage.value = commandSuccessMessage.value || "อัพเดทเฟิร์มแวร์สำเร็จ";
-    snackbarColor.value = "success";
-    snackbar.value = true;
-  } catch (_error) {
-    snackbarMessage.value = commandError.value || "ไม่สามารถอัพเดทเฟิร์มแวร์ได้";
-    snackbarColor.value = "error";
-    snackbar.value = true;
+    // Pass selected version to updateFirmware (undefined means use latest)
+    await updateFirmware(props.device.id, selectedFirmwareVersion.value);
+  } catch {
+    // Error handling - errors will be handled by parent component or shown in dialog
   } finally {
     showUpdateFirmwareDialog.value = false;
   }
@@ -1572,16 +1866,10 @@ const confirmResetConfig = async () => {
     clearCommandMessages();
     await resetConfig(props.device.id);
 
-    snackbarMessage.value = commandSuccessMessage.value || "รีเซ็ตการตั้งค่าสำเร็จ";
-    snackbarColor.value = "success";
-    snackbar.value = true;
-
     // Emit event to parent to refresh device data
     emit("update:modelValue", false);
-  } catch (_error) {
-    snackbarMessage.value = commandError.value || "ไม่สามารถรีเซ็ตการตั้งค่าได้";
-    snackbarColor.value = "error";
-    snackbar.value = true;
+  } catch {
+    // Error handling - errors will be handled by parent component
   } finally {
     showResetConfigDialog.value = false;
   }
@@ -1597,14 +1885,8 @@ const confirmRestart = async () => {
   try {
     clearCommandMessages();
     await restartDevice(props.device.id, { delay_seconds: 5 });
-
-    snackbarMessage.value = commandSuccessMessage.value || "รีสตาร์ทอุปกรณ์สำเร็จ";
-    snackbarColor.value = "success";
-    snackbar.value = true;
-  } catch (_error) {
-    snackbarMessage.value = commandError.value || "ไม่สามารถรีสตาร์ทอุปกรณ์ได้";
-    snackbarColor.value = "error";
-    snackbar.value = true;
+  } catch {
+    // Error handling - errors will be handled by parent component
   } finally {
     showRestartDialog.value = false;
   }
@@ -1623,14 +1905,8 @@ const confirmManualPayment = async () => {
   try {
     clearCommandMessages();
     await sendManualPayment(props.device.id, { amount: manualPaymentAmount.value });
-
-    snackbarMessage.value = commandSuccessMessage.value || "ส่งการชำระเงินแบบแมนนวลสำเร็จ";
-    snackbarColor.value = "success";
-    snackbar.value = true;
-  } catch (_error) {
-    snackbarMessage.value = commandError.value || "ไม่สามารถส่งการชำระเงินแบบแมนนวลได้";
-    snackbarColor.value = "error";
-    snackbar.value = true;
+  } catch {
+    // Error handling - errors will be handled by parent component
   } finally {
     showManualPaymentDialog.value = false;
     manualPaymentAmount.value = null;
@@ -1719,6 +1995,10 @@ const isSystemConfigChanged = () => {
   );
 };
 
+const isStatusChanged = () => {
+  return originalStatus.value !== editableStatus.value;
+};
+
 const _getDeviceDescription = (type: string) => {
   switch (type) {
     case "WASH":
@@ -1780,10 +2060,70 @@ const getConfigDescription = (configKey: string) => {
   }
 };
 
+// Device States Helper Functions
+const buildTreeItems = (obj: any, parentId = ""): any[] => {
+  if (!obj || typeof obj !== "object") return [];
+
+  return Object.entries(obj).map(([key, value]) => {
+    const id = parentId ? `${parentId}-${key}` : key;
+    const item: any = {
+      id,
+      title: `${key}: ${formatTreeValue(value)}`,
+      value: id,
+    };
+
+    if (value && typeof value === "object" && !Array.isArray(value)) {
+      item.children = buildTreeItems(value, id);
+    }
+
+    return item;
+  });
+};
+
+const formatTreeValue = (value: unknown): string => {
+  if (value === null || value === undefined) return "-";
+  if (typeof value === "boolean") return value ? "true" : "false";
+  if (typeof value === "object") {
+    if (Array.isArray(value)) return `[${value.length} items]`;
+    return `{${Object.keys(value).length} properties}`;
+  }
+  return String(value);
+};
+
+const loadDeviceStates = async () => {
+  if (!props.device?.id) return;
+
+  await searchDeviceStates({
+    query: { device_id: props.device.id },
+    page: statePage.value,
+    limit: stateItemsPerPage.value,
+    sort_by: "created_at",
+    sort_order: "desc",
+  });
+};
+
+const handleStatePageChange = async (newPage: number) => {
+  statePage.value = newPage;
+  await loadDeviceStates();
+};
+
+const getStatusColor = (status: string) => {
+  return status === "normal" ? "success" : "error";
+};
+
+const getStatusLabel = (status: string) => {
+  return status === "normal" ? "ปกติ" : "ผิดพลาด";
+};
+
 // Watch for device changes to initialize configs
 watch(
   () => props.device,
   (newDevice) => {
+    // Initialize status
+    if (newDevice?.status) {
+      originalStatus.value = newDevice.status;
+      editableStatus.value = newDevice.status;
+    }
     // Initialize sale configs
     if (newDevice?.configs?.sale) {
       originalConfigs.value = JSON.parse(
@@ -1825,6 +2165,14 @@ watch(
       showCancelConfirmDialog.value = false;
       currentTab.value = "setup";
 
+      // Reset name editing state
+      isEditingName.value = false;
+      editableName.value = "";
+      originalName.value = "";
+
+      // Reset status state
+      editableStatus.value = originalStatus.value || "";
+
       // Discard any unsaved changes by resetting to original configs
       if (Object.keys(originalConfigs.value).length > 0) {
         editableConfigs.value = JSON.parse(
@@ -1849,9 +2197,20 @@ watch(
       } else {
         editablePricingConfigs.value = {};
       }
+
+      // Reset device states
+      resetDeviceStates();
+      statePage.value = 1;
     }
   }
 );
+
+// Watch for tab changes to load device states
+watch(currentTab, async (newTab) => {
+  if (newTab === "state" && props.device?.id) {
+    await loadDeviceStates();
+  }
+});
 
 // Method to reset all edit modes back to view mode
 const resetToViewMode = () => {
@@ -1861,6 +2220,7 @@ const resetToViewMode = () => {
 // Expose methods for parent component
 defineExpose({
   getSavePayload,
+  getStatusChangePayload,
   resetToViewMode,
 });
 </script>

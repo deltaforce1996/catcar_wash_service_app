@@ -229,7 +229,35 @@ export class DevicesService {
       return existingDevice;
     }
 
-    const tempDeviceId = `device-${information.chip_id}`;
+    // Generate auto-incrementing device ID with random suffix to prevent duplicates
+    const allDevices = await this.prisma.tbl_devices.findMany({
+      where: {
+        id: {
+          startsWith: 'DEVICE-',
+        },
+      },
+      select: {
+        id: true,
+      },
+    });
+
+    // Extract numbers from device IDs and find the maximum
+    const deviceNumbers = allDevices
+      .map((device) => {
+        const match = device.id.match(/^DEVICE-(\d+)(?:-[A-Z]{4})?$/);
+        return match ? parseInt(match[1], 10) : 0;
+      })
+      .filter((num) => !isNaN(num));
+
+    const maxNumber = deviceNumbers.length > 0 ? Math.max(...deviceNumbers) : 0;
+    const nextNumber = maxNumber + 1;
+
+    // Generate 4 random uppercase letters to prevent duplicates
+    const randomSuffix = Array.from({ length: 4 }, () => String.fromCharCode(65 + Math.floor(Math.random() * 26))).join(
+      '',
+    );
+
+    const tempDeviceId = `DEVICE-${nextNumber.toString().padStart(7, '0')}-${randomSuffix}`;
 
     // Create new device if chip_id doesn't exist
     const device = await this.prisma.tbl_devices.create({

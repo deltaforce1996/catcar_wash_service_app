@@ -160,9 +160,8 @@ export class DeviceEventLogsService {
         }
         case 'user_id': {
           ands.push({
-            payload: {
-              path: ['user_id'],
-              string_contains: value,
+            device: {
+              owner_id: { equals: value },
             },
           });
           break;

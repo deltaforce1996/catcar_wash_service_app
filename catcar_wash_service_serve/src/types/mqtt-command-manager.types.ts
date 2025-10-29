@@ -31,11 +31,18 @@ export interface ManualPaymentPayload {
 }
 
 export interface FirmwarePayload {
-  url: string;
   version: string;
-  sha256: string;
-  size: number;
   reboot_after: boolean;
+  HW: {
+    url: string;
+    sha256: string;
+    size: number;
+  };
+  QR: {
+    url: string;
+    sha256: string;
+    size: number;
+  };
 }
 
 export interface CommandConfig {

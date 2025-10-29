@@ -1,0 +1,20 @@
+{
+  "version": "1.1.0",
+  "uploaded_at": "2025-10-28T12:49:38.639Z",
+  "carwash": {
+    "hw": {
+      "filename": "carwash_HW_1.0_V1.1.0.bin",
+      "url": "http://localhost:3000/firmwares/v1.1.0/carwash_HW_1.0_V1.1.0.bin",
+      "sha256": "2870a0de1d7127bbc27944b294350c363a2386aa73cc6168959723edab3cd9bc",
+      "size": 4,
+      "hw_version": "1.0"
+    },
+    "qr": {
+      "filename": "carwash_QR_HW_1.0_V1.1.0.bin",
+      "url": "http://localhost:3000/firmwares/v1.1.0/carwash_QR_HW_1.0_V1.1.0.bin",
+      "sha256": "a9c45e6de10d81eb8f7ef4db2ec40a9adeab1238c79f62ca571082f3090f8d31",
+      "size": 4,
+      "hw_version": "1.0"
+    }
+  }
+}

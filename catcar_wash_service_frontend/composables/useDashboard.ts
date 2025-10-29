@@ -53,6 +53,9 @@ const getTodayDate = (): string => {
 };
 
 export const useDashboard = () => {
+  // Get auth state to check if user is USER permission
+  const { isUser, user } = useAuth();
+
   // Local state - not global
   const dashboardSummary = ref<DashboardSummaryResponse | null>(null);
   const currentFilter = ref<DashboardFilterRequest>({
@@ -150,9 +153,16 @@ export const useDashboard = () => {
         };
       }
 
-      const response = await dashboardApi.GetDashboardSummary(
-        currentFilter.value
-      );
+      // Automatically add user_id for USER permission users
+      const requestFilter: DashboardFilterRequest = {
+        ...currentFilter.value,
+      };
+
+      if (isUser.value && user.value?.id) {
+        requestFilter.user_id = user.value.id;
+      }
+
+      const response = await dashboardApi.GetDashboardSummary(requestFilter);
 
       if (response.success && response.data) {
         dashboardSummary.value = response.data;

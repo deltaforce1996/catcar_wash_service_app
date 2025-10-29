@@ -1,0 +1,16 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(npm install:*)",
+      "Bash(pnpm install:*)",
+      "Bash(dir:*)",
+      "Read(//d/Repo/catcar_wash_service_app/catcar_wash_service_frontend/services/**)",
+      "Read(//d/Repo/catcar_wash_service_app/catcar_wash_service_frontend/composables/**)",
+      "Read(//d/Repo/catcar_wash_service_app/catcar_wash_service_frontend/pages/**)",
+      "Read(//d/Repo/catcar_wash_service_app/catcar_wash_service_frontend/**)",
+      "Read(//d/Repo/catcar_wash_service_app/**)"
+    ],
+    "deny": [],
+    "ask": []
+  }
+}

@@ -5,12 +5,16 @@ import { Logger, ValidationPipe } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { DateTimeTransformInterceptor } from './common';
 import { DateTimeService } from './services';
+import { join } from 'path';
 
 async function bootstrap() {
   const app = await NestFactory.create<NestExpressApplication>(AppModule);
   const logger = new Logger(AppModule.name);
 
   app.enableCors();
+
+  // Serve static files from public directory
+  app.useStaticAssets(join(process.cwd(), 'public'));
 
   app.useGlobalPipes(
     new ValidationPipe({

@@ -94,16 +94,18 @@ export const useDeviceCommands = () => {
 
   /**
    * Update firmware
-   * Note: Firmware info is fetched from static URL on the backend
+   * Note: Firmware info is fetched from firmwares service on the backend
+   * @param version - Optional firmware version (defaults to latest on backend)
    */
   const updateFirmware = async (
-    deviceId: string
+    deviceId: string,
+    version?: string
   ): Promise<MqttCommandAckResponse<FirmwarePayload> | undefined> => {
     try {
       isUpdatingFirmware.value = true;
       clearMessages();
 
-      const response = await deviceCommandsApi.updateFirmware(deviceId);
+      const response = await deviceCommandsApi.updateFirmware(deviceId, version);
 
       if (response.success && response.data) {
         lastCommandResponse.value = response.data;

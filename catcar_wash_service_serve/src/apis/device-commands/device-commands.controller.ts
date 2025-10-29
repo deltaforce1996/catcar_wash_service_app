@@ -2,7 +2,7 @@ import { Body, Controller, Param, Post, UseFilters } from '@nestjs/common';
 import { DeviceCommandsService } from './device-commands.service';
 import { AllExceptionFilter } from '../../common';
 import type { SuccessResponse } from '../../types';
-import { RestartDeviceDto, SendCustomCommandDto, ManualPaymentDto } from './dtos';
+import { RestartDeviceDto, SendCustomCommandDto, ManualPaymentDto, UpdateFirmwareDto } from './dtos';
 import type {
   MqttCommandAckResponse,
   CommandConfig,
@@ -51,13 +51,14 @@ export class DeviceCommandsController {
   /**
    * Update firmware
    * POST /api/v1/device-commands/:deviceId/update-firmware
-   * Note: Firmware info is fetched from static URL on the backend
+   * Body: { version?: string } - Optional firmware version, defaults to latest
    */
   @Post(':deviceId/update-firmware')
   async updateFirmware(
     @Param('deviceId') deviceId: string,
+    @Body() updateFirmwareDto: UpdateFirmwareDto,
   ): Promise<SuccessResponse<MqttCommandAckResponse<FirmwarePayload>>> {
-    const result = await this.deviceCommandsService.updateFirmware(deviceId);
+    const result = await this.deviceCommandsService.updateFirmware(deviceId, updateFirmwareDto.version);
     return {
       success: true,
       data: result,

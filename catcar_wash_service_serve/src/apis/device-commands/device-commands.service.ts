@@ -1,6 +1,7 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { MqttCommandManagerService } from '../../services/adepters/mqtt-command-manager.service';
 import { PrismaService } from '../../database/prisma/prisma.service';
+import { FirmwaresService } from '../firmwares/firmwares.service';
 import { ItemNotFoundException } from '../../errors';
 import { RestartDeviceDto, SendCustomCommandDto, ManualPaymentDto } from './dtos';
 import type {
@@ -18,6 +19,7 @@ export class DeviceCommandsService {
   constructor(
     private readonly mqttCommandManager: MqttCommandManagerService,
     private readonly prisma: PrismaService,
+    private readonly firmwaresService: FirmwaresService,
   ) {
     this.logger.log('DeviceCommandsService initialized');
   }
@@ -162,19 +164,43 @@ export class DeviceCommandsService {
 
   /**
    * Update firmware
-   * Fetches firmware info from static URL and sends to device
+   * Fetches firmware info from firmwares service and sends to device
    */
-  async updateFirmware(deviceId: string): Promise<MqttCommandAckResponse<FirmwarePayload>> {
-    await this.verifyDevice(deviceId);
+  async updateFirmware(deviceId: string, version?: string): Promise<MqttCommandAckResponse<FirmwarePayload>> {
+    // Get device to determine firmware type
+    const device = await this.prisma.tbl_devices.findUnique({
+      where: { id: deviceId },
+      select: { id: true, type: true },
+    });
 
-    this.logger.log(`Fetching latest firmware info for device: ${deviceId}`);
+    if (!device) {
+      throw new ItemNotFoundException(`Device ${deviceId} not found`);
+    }
 
-    const firmwarePayload = {
-      url: `${process.env.BACKEND_BASE_URL}/firmware/latest.bin`,
-      version: '1.0.0',
-      sha256: 'abc123def456...',
-      size: 2048576,
+    // Map device type to firmware type
+    const firmwareType = device.type === DeviceType.WASH ? 'carwash' : 'helmet';
+
+    this.logger.log(
+      `Fetching ${version ? `version ${version}` : 'latest'} ${firmwareType} firmware for device: ${deviceId} (type: ${device.type})`,
+    );
+
+    // Get firmware from firmwares service (specific version or latest)
+    const latestFirmware = await this.firmwaresService.getLastFirmware(firmwareType, version);
+
+    // Build firmware payload with both HW and QR variants
+    const firmwarePayload: FirmwarePayload = {
+      version: latestFirmware.version,
       reboot_after: true,
+      HW: {
+        url: latestFirmware.files.hw.url,
+        sha256: latestFirmware.files.hw.sha256,
+        size: latestFirmware.files.hw.size,
+      },
+      QR: {
+        url: latestFirmware.files.qr.url,
+        sha256: latestFirmware.files.qr.sha256,
+        size: latestFirmware.files.qr.size,
+      },
     };
 
     this.logger.log(`Updating firmware for device: ${deviceId} to version: ${firmwarePayload.version}`);

@@ -189,19 +189,24 @@ export const useDevice = () => {
     try {
       isUpdating.value = true;
       clearMessages();
-      const response = await deviceApi.SetDeviceStatus(id, statusData);
-      if (response.success) {
-        // Refresh the device data to get updated status
-        await getDeviceById(id);
+      const response = await deviceApi.UpdateDeviceBasicById(id, {
+        status: statusData.status,
+      });
+      if (response.success && response.data) {
+        // Update the current device if it's the same one
+        if (currentDevice.value?.id === id) {
+          currentDevice.value = response.data;
+        }
         // Also update in the devices list if present
         const deviceIndex = devices.value.findIndex(
           (device) => device.id === id
         );
-        if (deviceIndex !== -1 && currentDevice.value) {
-          devices.value[deviceIndex] = currentDevice.value;
+        if (deviceIndex !== -1) {
+          devices.value[deviceIndex] = response.data;
         }
         successMessage.value =
           response.message || "อัปเดตสถานะอุปกรณ์สำเร็จ";
+        return response.data;
       }
     } catch (err: unknown) {
       const errorAxios = err as ApiErrorResponse;

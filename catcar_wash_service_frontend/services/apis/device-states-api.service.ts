@@ -1,34 +1,29 @@
 import type {
   ApiSuccessResponse,
   EnumDeviceType,
-  EnumEventType,
-  EnumPaymentStatus,
+  EnumDeviceStatus,
   EnumSortOrder,
 } from "~/types";
 import { BaseApiClient } from "../bases/base-api-client";
 
-export interface DeviceEventLogResponseApi {
+export interface DeviceStateResponseApi {
   id: string;
   device_id: string;
-  payload: {
-    qr?: {
-      net_amount?: number;
-      chargeId?: string;
-    };
-    bank?: Record<string, number>;
-    coin?: Record<string, number>;
-    type?: EnumEventType;
-    status?: EnumPaymentStatus;
+  state_data: {
+    rssi?: number;
+    status?: "normal" | "error";
+    uptime?: number;
     timestamp?: number;
-    total_amount?: number;
     datetime?: string;
     [key: string]: unknown;
-  } | null;
+  };
+  hash_state: string;
   created_at: string;
   device: {
     id: string;
     name: string;
     type: EnumDeviceType;
+    status: EnumDeviceStatus;
     owner: {
       id: string;
       fullname: string;
@@ -37,32 +32,31 @@ export interface DeviceEventLogResponseApi {
   };
 }
 
-export interface PaginatedDeviceEventLogsResponse {
-  items: DeviceEventLogResponseApi[];
+export interface PaginatedDeviceStatesResponse {
+  items: DeviceStateResponseApi[];
   total: number;
   page: number;
   limit: number;
   totalPages: number;
 }
 
-export interface SearchDeviceEventLogsRequest {
+export interface SearchDeviceStatesRequest {
   query?: {
-    user_id?: string;
-    device_id?: string; // Dashboard not implement device_id
-    device_type?: EnumDeviceType;
-    payment_status?: EnumPaymentStatus;
+    id?: string;
+    device_id?: string;
+    device_name?: string;
+    status?: "normal" | "error";
     payload_timestamp?: string; // timestamp or start-end range
-    search?: string; // Search device_id, device_name fields
   };
   page?: number;
   limit?: number;
-  sort_by?: "created_at" | "type" | "device_id";
+  sort_by?: "created_at" | "device_id";
   sort_order?: EnumSortOrder;
 }
 
-export class DeviceEventLogsApiService extends BaseApiClient {
+export class DeviceStatesApiService extends BaseApiClient {
   private convertQueryToParams(
-    query: SearchDeviceEventLogsRequest["query"]
+    query: SearchDeviceStatesRequest["query"]
   ): string {
     if (!query) return "";
 
@@ -71,19 +65,20 @@ export class DeviceEventLogsApiService extends BaseApiClient {
       if (
         value != null &&
         value !== "" &&
-        value.toString().trim().toUpperCase() !== "ALL"
+        value.trim().toUpperCase() !== "ALL"
       ) {
         parts.push(`${key}: {${value}}`);
       }
     }
     return parts.join(" ");
   }
-  async SearchDeviceEventLogs(
-    payload: SearchDeviceEventLogsRequest
-  ): Promise<ApiSuccessResponse<PaginatedDeviceEventLogsResponse>> {
+
+  async SearchDeviceStates(
+    payload: SearchDeviceStatesRequest
+  ): Promise<ApiSuccessResponse<PaginatedDeviceStatesResponse>> {
     const response = await this.get<
-      ApiSuccessResponse<PaginatedDeviceEventLogsResponse>
-    >("api/v1/device-event-logs/search", {
+      ApiSuccessResponse<PaginatedDeviceStatesResponse>
+    >("api/v1/device-states/search", {
       params: {
         query: this.convertQueryToParams(payload.query),
         page: payload.page,
