@@ -926,8 +926,9 @@ const applyPopoverFilters = async () => {
     eventLogsQuery.payment_status = selectedPaymentStatuses.value[0];
   }
 
-  // User ID filter - now directly using user_id
+  // User ID filter - now included in both dashboard and event logs
   if (selectedUserIds.value.length > 0) {
+    dashboardFilter.user_id = selectedUserIds.value[0];
     eventLogsQuery.user_id = selectedUserIds.value[0];
   }
 
