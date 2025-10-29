@@ -209,7 +209,7 @@ class DeviceLifecycleSimulator:
             }
         }
     
-    def register_device(self, device_type: DeviceType, silent: bool = False) -> Optional[str]:
+    def register_device(self, device_type: DeviceType, silent: bool = False, chip_id: Optional[str] = None) -> Optional[str]:
         """
         Step 1: Register device
         POST /api/v1/devices/need-register
@@ -217,6 +217,7 @@ class DeviceLifecycleSimulator:
         Args:
             device_type: WASH หรือ DRYING
             silent: ไม่แสดง message (สำหรับ bulk operations)
+            chip_id: Chip ID ที่ต้องการระบุเอง (optional, ถ้าไม่ระบุจะ random)
             
         Returns:
             str: device_id หรือ None ถ้าไม่สำเร็จ
@@ -224,6 +225,10 @@ class DeviceLifecycleSimulator:
         try:
             # สร้าง random device info
             device_info = self._generate_random_device_info(device_type)
+            
+            # ถ้าระบุ chip_id มา ให้ใช้ตามที่ระบุ
+            if chip_id:
+                device_info['chip_id'] = chip_id
             
             url = f"{self.api_base_url}/devices/need-register"
             
@@ -486,6 +491,47 @@ class DeviceLifecycleSimulator:
         
         print(f"🛑 หยุด streaming สำหรับ Device: {device_id}")
     
+    def add_existing_device(self, device_id: str, device_type: DeviceType, silent: bool = False) -> bool:
+        """
+        เพิ่ม device ที่ register ไว้แล้ว (จาก session ก่อนหน้า)
+        
+        Args:
+            device_id: Device ID ที่มีอยู่แล้ว
+            device_type: WASH หรือ DRYING
+            silent: ไม่แสดง message
+            
+        Returns:
+            bool: True ถ้าสำเร็จ
+        """
+        if device_id in self.devices:
+            if not silent:
+                print(f"⚠️  Device {device_id} มีอยู่ในระบบแล้ว")
+            return False
+        
+        if not silent:
+            print(f"\n➕ เพิ่ม Device ที่มีอยู่: {device_id}")
+            print(f"   Type: {device_type.value}")
+        
+        # เพิ่ม device เข้าระบบ
+        self.devices[device_id] = {
+            "type": device_type,
+            "info": {},
+            "pin": "",
+            "status": DeviceStatus.NORMAL,
+            "uptime": 0,
+            "message_count": 0,
+            "start_time": time.time(),
+            "last_rssi": random.randint(-90, -40),
+            "client": None,
+            "registered": True,
+            "synced": False
+        }
+        
+        if not silent:
+            print(f"✅ เพิ่ม Device {device_id} สำเร็จ!")
+        
+        return True
+    
     def run_full_lifecycle(self, device_type: DeviceType, interval: int = 60, silent: bool = False) -> Optional[str]:
         """
         รัน lifecycle แบบสมบูรณ์: Register → Sync Configs → Stream
@@ -512,6 +558,52 @@ class DeviceLifecycleSimulator:
             print(f"✅ Device {device_id} พร้อมสำหรับ streaming!")
         
         return device_id
+    
+    def start_streaming_for_device(self, device_id: str, interval: int = 60) -> bool:
+        """
+        เริ่ม streaming สำหรับ device ที่ระบุ
+        
+        Args:
+            device_id: Device ID
+            interval: Streaming interval (seconds)
+            
+        Returns:
+            bool: True ถ้าสำเร็จ
+        """
+        if device_id not in self.devices:
+            print(f"❌ ไม่พบ Device ID: {device_id}")
+            return False
+        
+        device = self.devices[device_id]
+        
+        if not device.get('synced', False):
+            print(f"❌ Device {device_id} ยังไม่ได้ sync configs")
+            return False
+        
+        # Check if already streaming
+        if ('client' in device and 
+            device['client'] is not None and 
+            device['client'].is_connected()):
+            print(f"⚠️  Device {device_id} กำลัง stream อยู่แล้ว")
+            return False
+        
+        if not self.running:
+            self.running = True
+            self.threads = []
+        
+        print(f"\n🚀 เริ่ม Streaming สำหรับ Device: {device_id}")
+        
+        # Start thread for this device
+        thread = threading.Thread(
+            target=self._device_streaming_thread,
+            args=(device_id, interval),
+            daemon=True
+        )
+        thread.start()
+        self.threads.append(thread)
+        
+        print("✅ เริ่ม Streaming แล้ว!")
+        return True
     
     def start_all_streaming(self, interval: int = 60):
         """
@@ -638,7 +730,11 @@ def show_menu():
     print("5. 🛑 หยุด Streaming")
     print("6. 📊 ดูสถิติ")
     print("7. 📋 ดูรายการ Devices")
-    print("8. ❌ ออกจากโปรแกรม")
+    print("8. 🆔 เพิ่ม Device โดยระบุ Device ID")
+    print("9. 🔄 Sync Config โดยระบุ Device ID")
+    print("10. 📡 เริ่ม Streaming โดยระบุ Device ID")
+    print("11. 🔧 Register Device โดยระบุ Chip ID")
+    print("12. ❌ ออกจากโปรแกรม")
     print("=" * 60)
 
 def handle_add_wash_device(simulator: DeviceLifecycleSimulator):
@@ -727,6 +823,94 @@ def handle_list_devices(simulator: DeviceLifecycleSimulator):
         print(f"   Uptime: {uptime} min")
         print(f"   Status: {status} {connected}")
 
+def handle_add_existing_device(simulator: DeviceLifecycleSimulator):
+    """Handle add existing device by device_id"""
+    print("\n🆔 เพิ่ม Device โดยระบุ Device ID")
+    print("-" * 40)
+    
+    device_id = input("📝 Device ID: ").strip()
+    if not device_id:
+        print("❌ กรุณาระบุ Device ID")
+        return
+    
+    print("\n📋 เลือก Device Type:")
+    print("1. WASH")
+    print("2. DRYING")
+    choice = input("👉 เลือก (1-2): ").strip()
+    
+    if choice == "1":
+        device_type = DeviceType.WASH
+    elif choice == "2":
+        device_type = DeviceType.DRYING
+    else:
+        print("❌ กรุณาเลือก 1 หรือ 2")
+        return
+    
+    simulator.add_existing_device(device_id, device_type)
+
+def handle_sync_config_by_id(simulator: DeviceLifecycleSimulator):
+    """Handle sync config for specific device_id"""
+    print("\n🔄 Sync Config โดยระบุ Device ID")
+    print("-" * 40)
+    
+    device_id = input("📝 Device ID: ").strip()
+    if not device_id:
+        print("❌ กรุณาระบุ Device ID")
+        return
+    
+    simulator.sync_device_configs(device_id)
+
+def handle_start_streaming_by_id(simulator: DeviceLifecycleSimulator):
+    """Handle start streaming for specific device_id"""
+    print("\n📡 เริ่ม Streaming โดยระบุ Device ID")
+    print("-" * 40)
+    
+    device_id = input("📝 Device ID: ").strip()
+    if not device_id:
+        print("❌ กรุณาระบุ Device ID")
+        return
+    
+    try:
+        interval = int(input("⏱️  Interval (วินาที, default: 60): ").strip() or "60")
+        if interval < 1:
+            interval = 60
+    except ValueError:
+        interval = 60
+    
+    simulator.start_streaming_for_device(device_id, interval)
+
+def handle_register_device_with_chip_id(simulator: DeviceLifecycleSimulator):
+    """Handle register device with custom chip_id"""
+    print("\n🔧 Register Device โดยระบุ Chip ID")
+    print("-" * 40)
+    
+    chip_id = input("📝 Chip ID: ").strip()
+    if not chip_id:
+        print("❌ กรุณาระบุ Chip ID")
+        return
+    
+    print("\n📋 เลือก Device Type:")
+    print("1. WASH")
+    print("2. DRYING")
+    choice = input("👉 เลือก (1-2): ").strip()
+    
+    if choice == "1":
+        device_type = DeviceType.WASH
+    elif choice == "2":
+        device_type = DeviceType.DRYING
+    else:
+        print("❌ กรุณาเลือก 1 หรือ 2")
+        return
+    
+    # Register device with custom chip_id
+    device_id = simulator.register_device(device_type, chip_id=chip_id)
+    
+    if device_id:
+        # Ask if want to sync configs
+        sync_choice = input("\n🔄 ต้องการ Sync Configs เลยไหม? (y/n, default: y): ").strip().lower()
+        if sync_choice != 'n':
+            simulator.sync_device_configs(device_id)
+
 def main():
     """Main function"""
     print("🚗 CatCar Wash Service - Device Lifecycle Simulator")
@@ -754,7 +938,7 @@ def main():
     try:
         while True:
             show_menu()
-            choice = input("👉 เลือกคำสั่ง (1-8): ").strip()
+            choice = input("👉 เลือกคำสั่ง (1-12): ").strip()
             
             if choice == "1":
                 handle_add_wash_device(simulator)
@@ -771,13 +955,21 @@ def main():
             elif choice == "7":
                 handle_list_devices(simulator)
             elif choice == "8":
+                handle_add_existing_device(simulator)
+            elif choice == "9":
+                handle_sync_config_by_id(simulator)
+            elif choice == "10":
+                handle_start_streaming_by_id(simulator)
+            elif choice == "11":
+                handle_register_device_with_chip_id(simulator)
+            elif choice == "12":
                 print("👋 ออกจากโปรแกรม")
                 break
             else:
-                print("❌ กรุณาเลือกหมายเลข 1-8")
+                print("❌ กรุณาเลือกหมายเลข 1-12")
             
             # Pause before showing menu again
-            if choice not in ["4", "5"] and not simulator.running:
+            if choice not in ["4", "5", "10"] and not simulator.running:
                 input("\n⏸️  กด Enter เพื่อกลับไปเมนูหลัก...")
     
     except KeyboardInterrupt:
