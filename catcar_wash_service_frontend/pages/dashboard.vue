@@ -947,7 +947,7 @@ const applyPopoverFilters = async () => {
   filterMenu.value = false;
 };
 
-const resetPopoverFilters = () => {
+const resetPopoverFilters = async () => {
   // Clear both temp and actual values for popover filters
   tempSelectedUserIds.value = [];
   tempSelectedPaymentStatuses.value = [];
@@ -956,6 +956,18 @@ const resetPopoverFilters = () => {
   selectedUserIds.value = [];
   selectedPaymentStatuses.value = [];
   selectedDeviceTypes.value = [];
+
+  // Re-fetch both dashboard and event logs with cleared filters
+  await Promise.all([
+    updateFilter({}),
+    searchEventLogs({
+      query: { payload_timestamp: buildTimestampQuery() },
+      page: 1,
+      limit: 10,
+    }),
+  ]);
+
+  filterMenu.value = false;
 };
 
 // Date picker actions
@@ -1041,6 +1053,24 @@ onUnmounted(() => {
 watch(datePickerMenu, (isOpen) => {
   if (isOpen) {
     tempSelectedDateObject.value = new Date(selectedDateObject.value);
+  }
+});
+
+// Watch filter menu to sync temp values when opened
+watch(filterMenu, (isOpen) => {
+  if (isOpen) {
+    // Reconstruct full objects from stored IDs/values
+    tempSelectedUserIds.value = selectedUserIds.value
+      .map((id) => userOptions.value.find((opt) => opt.value === id))
+      .filter(Boolean);
+
+    tempSelectedPaymentStatuses.value = selectedPaymentStatuses.value
+      .map((val) => paymentStatusOptions.value.find((opt) => opt.value === val))
+      .filter(Boolean);
+
+    tempSelectedDeviceTypes.value = selectedDeviceTypes.value
+      .map((val) => deviceTypeOptions.value.find((opt) => opt.value === val))
+      .filter(Boolean);
   }
 });
 
