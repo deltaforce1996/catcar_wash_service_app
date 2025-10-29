@@ -1483,6 +1483,17 @@ import type {
 } from "~/services/apis/device-api.service";
 import EnhancedDataTable from "~/components/common/EnhancedDataTable.vue";
 
+
+// Import firmware composable
+const {
+  carwashVersions,
+  helmetVersions,
+  isLoadingCarwashVersions,
+  isLoadingHelmetVersions,
+  getAllCarwashVersions,
+  getAllHelmetVersions,
+} = useFirmware();
+
 // Import enum translation composable
 const {
   getDeviceTypeLabel,
