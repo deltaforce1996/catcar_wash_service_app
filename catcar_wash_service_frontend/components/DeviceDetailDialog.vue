@@ -38,7 +38,10 @@
                   </v-avatar>
 
                   <!-- Device Name - View Mode -->
-                  <div v-if="!isEditingName" class="d-flex align-center justify-center mb-2">
+                  <div
+                    v-if="!isEditingName"
+                    class="d-flex align-center justify-center mb-2"
+                  >
                     <h3 class="text-h5 font-weight-bold">{{ device?.name }}</h3>
                     <v-btn
                       icon="mdi-pencil"
@@ -287,7 +290,9 @@
                           <div class="d-flex align-center">
                             <span class="text-body-2 mr-3">
                               {{
-                                (isEditMode ? editableStatus : device?.status) === "DEPLOYED"
+                                (isEditMode
+                                  ? editableStatus
+                                  : device?.status) === "DEPLOYED"
                                   ? "เปิดใช้งาน"
                                   : "ปิดใช้งาน"
                               }}
@@ -1137,7 +1142,10 @@
                             ข้อมูลสถานะระบบแบบเต็ม
                           </h4>
                           <v-treeview
-                            v-if="item.state_data && Object.keys(item.state_data).length > 0"
+                            v-if="
+                              item.state_data &&
+                              Object.keys(item.state_data).length > 0
+                            "
                             :items="buildTreeItems(item.state_data)"
                             item-value="id"
                             item-title="title"
@@ -1166,7 +1174,11 @@
 
                     <!-- Empty State -->
                     <div
-                      v-if="!isLoadingStates && deviceStates.length === 0 && !statesError"
+                      v-if="
+                        !isLoadingStates &&
+                        deviceStates.length === 0 &&
+                        !statesError
+                      "
                       class="text-center py-12"
                     >
                       <v-icon size="80" color="grey-lighten-1" class="mb-4">
@@ -1359,7 +1371,8 @@
         </p>
         <v-alert color="warning" variant="tonal" density="compact" class="mt-3">
           <v-icon class="mr-1">mdi-alert</v-icon>
-          การตั้งค่าทั้งหมดจะถูกรีเซ็ตเป็นค่าเริ่มต้น การกระทำนี้ไม่สามารถย้อนกลับได้
+          การตั้งค่าทั้งหมดจะถูกรีเซ็ตเป็นค่าเริ่มต้น
+          การกระทำนี้ไม่สามารถย้อนกลับได้
         </v-alert>
       </v-card-text>
 
@@ -1393,10 +1406,8 @@
       </v-card-title>
 
       <v-card-text>
-        <p class="text-body-1">
-          คุณต้องการรีสตาร์ทอุปกรณ์นี้หรือไม่?
-        </p>
-        <v-alert color="error" variant="tonal" density="compact" class="mt-3">
+        <p class="text-body-1">คุณต้องการรีสตาร์ทอุปกรณ์นี้หรือไม่?</p>
+        <v-alert color="warning" variant="tonal" density="compact" class="mt-3">
           <v-icon class="mr-1">mdi-alert</v-icon>
           อุปกรณ์จะหยุดทำงานชั่วคราวระหว่างการรีสตาร์ท
         </v-alert>
@@ -1432,9 +1443,7 @@
       </v-card-title>
 
       <v-card-text>
-        <p class="text-body-2 mb-4">
-          กรุณากรอกจำนวนเงินที่ต้องการเพิ่ม
-        </p>
+        <p class="text-body-2 mb-4">กรุณากรอกจำนวนเงินที่ต้องการเพิ่ม</p>
         <v-text-field
           v-model.number="manualPaymentAmount"
           type="number"
@@ -1474,6 +1483,44 @@
     </v-card>
   </v-dialog>
 
+  <!-- Result Dialog (Success/Error) -->
+  <v-dialog v-model="showResultDialog" max-width="500">
+    <v-card>
+      <v-card-title class="d-flex align-center">
+        <v-icon
+          :color="resultDialogType === 'success' ? 'success' : 'error'"
+          class="mr-2"
+        >
+          {{
+            resultDialogType === "success"
+              ? "mdi-check-circle"
+              : "mdi-alert-circle"
+          }}
+        </v-icon>
+        {{ resultDialogTitle }}
+      </v-card-title>
+
+      <v-card-text>
+        <v-alert
+          :color="resultDialogType === 'success' ? 'success' : 'error'"
+          variant="tonal"
+          density="comfortable"
+        >
+          {{ resultDialogMessage }}
+        </v-alert>
+      </v-card-text>
+
+      <v-card-actions class="justify-end">
+        <v-btn
+          color="primary"
+          variant="elevated"
+          @click="showResultDialog = false"
+        >
+          ตกลง
+        </v-btn>
+      </v-card-actions>
+    </v-card>
+  </v-dialog>
 </template>
 
 <script setup lang="ts">
@@ -1482,7 +1529,6 @@ import type {
   DeviceConfig,
 } from "~/services/apis/device-api.service";
 import EnhancedDataTable from "~/components/common/EnhancedDataTable.vue";
-
 
 // Import firmware composable
 const {
@@ -1521,8 +1567,8 @@ const {
 const {
   updateDeviceBasic,
   isUpdating: isUpdatingDevice,
-  error: deviceError,
-  successMessage: deviceSuccessMessage,
+  error: _deviceError,
+  successMessage: _deviceSuccessMessage,
   clearMessages: clearDeviceMessages,
 } = useDevice();
 
@@ -1579,6 +1625,12 @@ const showRestartDialog = ref(false);
 const showManualPaymentDialog = ref(false);
 const manualPaymentAmount = ref<number | null>(null);
 
+// Result dialog state
+const showResultDialog = ref(false);
+const resultDialogType = ref<'success' | 'error'>('success');
+const resultDialogTitle = ref('');
+const resultDialogMessage = ref('');
+
 // Firmware update state
 const selectedFirmwareVersion = ref<string | undefined>(undefined);
 
@@ -1611,12 +1663,16 @@ const showDialog = computed({
 const availableFirmwareVersions = computed(() => {
   if (!props.device) return [];
   // WASH devices use carwash firmware, DRYING devices use helmet firmware
-  return props.device.type === "WASH" ? carwashVersions.value : helmetVersions.value;
+  return props.device.type === "WASH"
+    ? carwashVersions.value
+    : helmetVersions.value;
 });
 
 const isLoadingFirmwareVersions = computed(() => {
   if (!props.device) return false;
-  return props.device.type === "WASH" ? isLoadingCarwashVersions.value : isLoadingHelmetVersions.value;
+  return props.device.type === "WASH"
+    ? isLoadingCarwashVersions.value
+    : isLoadingHelmetVersions.value;
 });
 
 // Unified change detection
@@ -1629,7 +1685,9 @@ const hasAnyChanges = computed(() => {
     (key) => isPricingConfigChanged(key)
   );
   const hasStatusChange = isStatusChanged();
-  return hasSaleChanges || hasSystemChanges || hasPricingChanges || hasStatusChange;
+  return (
+    hasSaleChanges || hasSystemChanges || hasPricingChanges || hasStatusChange
+  );
 });
 
 const _configChangeCount = computed(() => {
@@ -1816,13 +1874,19 @@ const cancelNameEdit = () => {
 };
 
 const saveDeviceName = async () => {
-  if (!props.device?.id || !editableName.value || editableName.value.trim() === '') {
+  if (
+    !props.device?.id ||
+    !editableName.value ||
+    editableName.value.trim() === ""
+  ) {
     return;
   }
 
   try {
     clearDeviceMessages();
-    const updatedDevice = await updateDeviceBasic(props.device.id, { name: editableName.value.trim() });
+    const updatedDevice = await updateDeviceBasic(props.device.id, {
+      name: editableName.value.trim(),
+    });
 
     isEditingName.value = false;
 
@@ -1842,14 +1906,16 @@ const handleUpdateFirmware = async () => {
   // Reset selected version
   selectedFirmwareVersion.value = undefined;
 
+  // Open dialog immediately for better UX
+  showUpdateFirmwareDialog.value = true;
+
   // Load firmware versions based on device type
+  // The v-select will show loading state while fetching
   if (props.device.type === "WASH") {
     await getAllCarwashVersions();
   } else {
     await getAllHelmetVersions();
   }
-
-  showUpdateFirmwareDialog.value = true;
 };
 
 const confirmUpdateFirmware = async () => {
@@ -1859,10 +1925,22 @@ const confirmUpdateFirmware = async () => {
     clearCommandMessages();
     // Pass selected version to updateFirmware (undefined means use latest)
     await updateFirmware(props.device.id, selectedFirmwareVersion.value);
-  } catch {
-    // Error handling - errors will be handled by parent component or shown in dialog
-  } finally {
+
+    // Close confirmation dialog
     showUpdateFirmwareDialog.value = false;
+
+    // Show result dialog
+    if (commandSuccessMessage.value) {
+      showResult("success", "อัปเดตเฟิร์มแวร์สำเร็จ", commandSuccessMessage.value);
+    }
+  } catch {
+    // Close confirmation dialog
+    showUpdateFirmwareDialog.value = false;
+
+    // Show error result dialog
+    if (commandError.value) {
+      showResult("error", "อัปเดตเฟิร์มแวร์ไม่สำเร็จ", commandError.value);
+    }
   }
 };
 
@@ -1877,12 +1955,21 @@ const confirmResetConfig = async () => {
     clearCommandMessages();
     await resetConfig(props.device.id);
 
-    // Emit event to parent to refresh device data
-    emit("update:modelValue", false);
-  } catch {
-    // Error handling - errors will be handled by parent component
-  } finally {
+    // Close confirmation dialog
     showResetConfigDialog.value = false;
+
+    // Show result dialog
+    if (commandSuccessMessage.value) {
+      showResult("success", "รีเซ็ตการตั้งค่าสำเร็จ", commandSuccessMessage.value);
+    }
+  } catch {
+    // Close confirmation dialog
+    showResetConfigDialog.value = false;
+
+    // Show error result dialog
+    if (commandError.value) {
+      showResult("error", "รีเซ็ตการตั้งค่าไม่สำเร็จ", commandError.value);
+    }
   }
 };
 
@@ -1896,10 +1983,22 @@ const confirmRestart = async () => {
   try {
     clearCommandMessages();
     await restartDevice(props.device.id, { delay_seconds: 5 });
-  } catch {
-    // Error handling - errors will be handled by parent component
-  } finally {
+
+    // Close confirmation dialog
     showRestartDialog.value = false;
+
+    // Show result dialog
+    if (commandSuccessMessage.value) {
+      showResult("success", "รีสตาร์ทอุปกรณ์สำเร็จ", commandSuccessMessage.value);
+    }
+  } catch {
+    // Close confirmation dialog
+    showRestartDialog.value = false;
+
+    // Show error result dialog
+    if (commandError.value) {
+      showResult("error", "รีสตาร์ทอุปกรณ์ไม่สำเร็จ", commandError.value);
+    }
   }
 };
 
@@ -1909,19 +2008,58 @@ const handleManualPayment = () => {
 };
 
 const confirmManualPayment = async () => {
-  if (!props.device?.id || !manualPaymentAmount.value || manualPaymentAmount.value <= 0) {
+  if (
+    !props.device?.id ||
+    !manualPaymentAmount.value ||
+    manualPaymentAmount.value <= 0
+  ) {
     return;
   }
 
   try {
     clearCommandMessages();
-    await sendManualPayment(props.device.id, { amount: manualPaymentAmount.value });
-  } catch {
-    // Error handling - errors will be handled by parent component
-  } finally {
+    await sendManualPayment(props.device.id, {
+      amount: manualPaymentAmount.value,
+    });
+
+    // Close confirmation dialog
     showManualPaymentDialog.value = false;
     manualPaymentAmount.value = null;
+
+    // Show result dialog
+    if (commandSuccessMessage.value) {
+      showResult(
+        "success",
+        "เพิ่มการชำระเงินแบบแมนนวลสำเร็จ",
+        commandSuccessMessage.value
+      );
+    }
+  } catch {
+    // Close confirmation dialog
+    showManualPaymentDialog.value = false;
+    manualPaymentAmount.value = null;
+
+    // Show error result dialog
+    if (commandError.value) {
+      showResult(
+        "error",
+        "เพิ่มการชำระเงินแบบแมนนวลไม่สำเร็จ",
+        commandError.value
+      );
+    }
   }
+};
+
+// Helper function to show result dialog
+const showResult = (
+  type: "success" | "error",
+  title: string,
+  message: string
+) => {
+  resultDialogType.value = type;
+  resultDialogTitle.value = title;
+  resultDialogMessage.value = message;
+  showResultDialog.value = true;
 };
 
 const resetSingleConfig = (key: string) => {
@@ -2123,7 +2261,7 @@ const getStatusColor = (status: string) => {
 };
 
 const getStatusLabel = (status: string) => {
-  return status === "normal" ? "ปกติ" : "ผิดพลาด";
+  return status?.toLowerCase() === "normal" ? "ปกติ" : "ผิดพลาด";
 };
 
 // Watch for device changes to initialize configs
