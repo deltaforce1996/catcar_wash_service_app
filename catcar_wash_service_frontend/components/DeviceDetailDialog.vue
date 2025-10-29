@@ -226,10 +226,6 @@
               <v-card-title class="pb-0">
                 <div class="d-flex align-center w-100">
                   <v-tabs v-model="currentTab" color="primary">
-                    <v-tab value="logging">
-                      <v-icon class="mr-2">mdi-file-document-outline</v-icon>
-                      บันทึกการใช้งาน
-                    </v-tab>
                     <v-tab value="state">
                       <v-icon class="mr-2">mdi-chart-line</v-icon>
                       สถานะระบบ
@@ -262,6 +258,103 @@
 
               <v-card-text class="pa-4 overflow-y-auto">
                 <v-tabs-window v-model="currentTab">
+                  <!-- State Tab -->
+                  <v-tabs-window-item value="state">
+                    <EnhancedDataTable
+                      title="บันทึกสถานะระบบ"
+                      :items="deviceStates"
+                      :headers="stateHeaders"
+                      :loading="isLoadingStates"
+                      :has-filter-changes="false"
+                      :show-filter-actions="false"
+                      :show-filters="false"
+                      :total-items="totalStates"
+                      :total-pages="stateTotalPages"
+                      :page="statePage"
+                      :items-per-page="stateItemsPerPage"
+                      :expandable="true"
+                      :selectable="false"
+                      card-class="elevation-0"
+                      @update:page="handleStatePageChange"
+                    >
+                      <!-- State At Column -->
+                      <template #[`item.state_data.state_at`]="{ item }">
+                        <div class="text-body-2">
+                          {{ item.state_data?.state_at || "-" }}
+                        </div>
+                      </template>
+
+                      <!-- Status Column -->
+                      <template #[`item.state_data.status`]="{ item }">
+                        <v-chip
+                          v-if="item.state_data?.status"
+                          :color="getStatusColor(item.state_data.status)"
+                          size="small"
+                          variant="tonal"
+                        >
+                          {{ getStatusLabel(item.state_data.status) }}
+                        </v-chip>
+                        <span v-else class="text-body-2">-</span>
+                      </template>
+
+                      <!-- Expanded Content with v-treeview -->
+                      <template #expanded-content="{ item }">
+                        <div class="pa-4">
+                          <h4 class="text-subtitle-2 font-weight-bold mb-4">
+                            ข้อมูลสถานะระบบแบบเต็ม
+                          </h4>
+                          <v-treeview
+                            v-if="
+                              item.state_data &&
+                              Object.keys(item.state_data).length > 0
+                            "
+                            :items="buildTreeItems(item.state_data)"
+                            item-value="id"
+                            item-title="title"
+                            density="compact"
+                            open-all
+                          />
+                          <div
+                            v-else
+                            class="text-body-2 text-medium-emphasis py-4"
+                          >
+                            ไม่มีข้อมูลสถานะ
+                          </div>
+                        </div>
+                      </template>
+                    </EnhancedDataTable>
+
+                    <!-- Error Alert -->
+                    <v-alert
+                      v-if="statesError"
+                      type="error"
+                      variant="tonal"
+                      class="ma-4"
+                    >
+                      {{ statesError }}
+                    </v-alert>
+
+                    <!-- Empty State -->
+                    <div
+                      v-if="
+                        !isLoadingStates &&
+                        deviceStates.length === 0 &&
+                        !statesError
+                      "
+                      class="text-center py-12"
+                    >
+                      <v-icon size="80" color="grey-lighten-1" class="mb-4">
+                        mdi-information-outline
+                      </v-icon>
+                      <h3 class="text-h6 text-grey-darken-1 mb-2">
+                        ไม่พบข้อมูลสถานะระบบ
+                      </h3>
+                      <p class="text-body-2 text-grey-darken-1">
+                        ยังไม่มีบันทึกสถานะการทำงานของอุปกรณ์นี้
+                      </p>
+                    </div>
+                  </v-tabs-window-item>
+
                   <!-- Setup Tab -->
                   <v-tabs-window-item value="setup">
                     <!-- Edit Mode Toggle -->
@@ -1079,119 +1172,6 @@
                         </div>
                       </v-card-text>
                     </v-card>
-                  </v-tabs-window-item>
-
-                  <!-- Logging Tab -->
-                  <v-tabs-window-item value="logging" class="pa-6">
-                    <div class="text-center py-12">
-                      <v-icon size="80" color="grey-lighten-1" class="mb-4">
-                        mdi-file-document-outline
-                      </v-icon>
-                      <h3 class="text-h6 text-grey-darken-1 mb-2">
-                        บันทึกการใช้งาน
-                      </h3>
-                      <p class="text-body-2 text-grey-darken-1">
-                        ส่วนนี้จะแสดงประวัติการใช้งานอุปกรณ์<br >
-                        (อยู่ในระหว่างการพัฒนา)
-                      </p>
-                    </div>
-                  </v-tabs-window-item>
-
-                  <!-- State Tab -->
-                  <v-tabs-window-item value="state">
-                    <EnhancedDataTable
-                      title="บันทึกสถานะระบบ"
-                      :items="deviceStates"
-                      :headers="stateHeaders"
-                      :loading="isLoadingStates"
-                      :has-filter-changes="false"
-                      :show-filter-actions="false"
-                      :show-filters="false"
-                      :total-items="totalStates"
-                      :total-pages="stateTotalPages"
-                      :page="statePage"
-                      :items-per-page="stateItemsPerPage"
-                      :expandable="true"
-                      :selectable="false"
-                      card-class="elevation-0"
-                      @update:page="handleStatePageChange"
-                    >
-                      <!-- State At Column -->
-                      <template #[`item.state_data.state_at`]="{ item }">
-                        <div class="text-body-2">
-                          {{ item.state_data?.state_at || "-" }}
-                        </div>
-                      </template>
-
-                      <!-- Status Column -->
-                      <template #[`item.state_data.status`]="{ item }">
-                        <v-chip
-                          v-if="item.state_data?.status"
-                          :color="getStatusColor(item.state_data.status)"
-                          size="small"
-                          variant="tonal"
-                        >
-                          {{ getStatusLabel(item.state_data.status) }}
-                        </v-chip>
-                        <span v-else class="text-body-2">-</span>
-                      </template>
-
-                      <!-- Expanded Content with v-treeview -->
-                      <template #expanded-content="{ item }">
-                        <div class="pa-4">
-                          <h4 class="text-subtitle-2 font-weight-bold mb-4">
-                            ข้อมูลสถานะระบบแบบเต็ม
-                          </h4>
-                          <v-treeview
-                            v-if="
-                              item.state_data &&
-                              Object.keys(item.state_data).length > 0
-                            "
-                            :items="buildTreeItems(item.state_data)"
-                            item-value="id"
-                            item-title="title"
-                            density="compact"
-                            open-all
-                          />
-                          <div
-                            v-else
-                            class="text-body-2 text-medium-emphasis py-4"
-                          >
-                            ไม่มีข้อมูลสถานะ
-                          </div>
-                        </div>
-                      </template>
-                    </EnhancedDataTable>
-
-                    <!-- Error Alert -->
-                    <v-alert
-                      v-if="statesError"
-                      type="error"
-                      variant="tonal"
-                      class="ma-4"
-                    >
-                      {{ statesError }}
-                    </v-alert>
-
-                    <!-- Empty State -->
-                    <div
-                      v-if="
-                        !isLoadingStates &&
-                        deviceStates.length === 0 &&
-                        !statesError
-                      "
-                      class="text-center py-12"
-                    >
-                      <v-icon size="80" color="grey-lighten-1" class="mb-4">
-                        mdi-information-outline
-                      </v-icon>
-                      <h3 class="text-h6 text-grey-darken-1 mb-2">
-                        ไม่พบข้อมูลสถานะระบบ
-                      </h3>
-                      <p class="text-body-2 text-grey-darken-1">
-                        ยังไม่มีบันทึกสถานะการทำงานของอุปกรณ์นี้
-                      </p>
-                    </div>
                   </v-tabs-window-item>
                 </v-tabs-window>
               </v-card-text>
