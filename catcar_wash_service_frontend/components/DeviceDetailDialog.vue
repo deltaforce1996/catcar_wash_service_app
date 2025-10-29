@@ -140,6 +140,7 @@
                     </div>
                     <div class="d-flex flex-column ga-2">
                       <v-btn
+                        v-if="!isUser"
                         color="info"
                         variant="elevated"
                         size="large"
@@ -1582,6 +1583,9 @@ const {
   searchDeviceStates,
   resetState: resetDeviceStates,
 } = useDeviceStates();
+
+// Import auth composable to check user permissions
+const { isUser } = useAuth();
 
 interface SystemConfig {
   on_time?: string;
