@@ -13,7 +13,7 @@ export class DashboardService {
     const whereConditions = this.buildWhereConditions(filter, user);
 
     // Query ข้อมูลรายได้รายเดือน
-    const monthlyRevenue = await this.getMonthlyRevenue(whereConditions);
+    const monthlyRevenue = await this.getMonthlyRevenue(whereConditions, filter);
 
     // Query ข้อมูลรายได้รายวัน
     const dailyRevenue = await this.getDailyRevenue(whereConditions, filter);
@@ -87,21 +87,25 @@ export class DashboardService {
     return '';
   }
 
-  private async getMonthlyRevenue(whereConditions: string) {
+  private async getMonthlyRevenue(whereConditions: string, filter?: DashboardFilterDto) {
+    // Filter by year - default to current year if no date specified
+    const year = filter?.date ? `EXTRACT(YEAR FROM DATE('${filter.date}'))` : 'EXTRACT(YEAR FROM NOW())';
+    const yearCondition = whereConditions ? `AND EXTRACT(YEAR FROM mv.month_start) = ${year}` : `WHERE EXTRACT(YEAR FROM mv.month_start) = ${year}`;
+
     const query = `
       WITH months AS (
         SELECT generate_series(1, 12) as month_num
       ),
       monthly_data AS (
-        SELECT 
+        SELECT
           EXTRACT(MONTH FROM mv.month_start) as month_num,
           COALESCE(SUM(mv.total_amount), 0) as total_amount
         FROM mv_device_payments_month mv
         INNER JOIN tbl_devices d ON mv.device_id = d.id
-        ${whereConditions}
+        ${whereConditions} ${yearCondition}
         GROUP BY EXTRACT(MONTH FROM mv.month_start)
       )
-      SELECT 
+      SELECT
         m.month_num,
         COALESCE(md.total_amount, 0) as total_amount
       FROM months m
