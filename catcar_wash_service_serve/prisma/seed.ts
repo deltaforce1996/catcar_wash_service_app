@@ -78,17 +78,40 @@ const generateDeviceLastStates = (deviceIds: string[], deviceTypes: DeviceType[]
 };
 
 const main = async () => {
-  // console.log('starting...');
-  // const payloads = generateDeviceEvents(['device-0001'], EventType.PAYMENT, 2);
-  // console.log(JSON.stringify(payloads, null, 2));
-  await generate();
+  const isProduction = process.env.NODE_ENV === 'production';
+
+  console.log('='.repeat(60));
+  console.log(`Starting database seeding in ${isProduction ? 'PRODUCTION' : 'DEVELOPMENT'} mode`);
+  console.log('='.repeat(60));
+
+  await seedEssentialData();
+
+  if (!isProduction) {
+    console.log('\n' + '-'.repeat(60));
+    console.log('Seeding demo data (development mode only)...');
+    console.log('-'.repeat(60));
+    await seedDemoData();
+  } else {
+    console.log('\n' + '-'.repeat(60));
+    console.log('Skipping demo data in production mode');
+    console.log('-'.repeat(60));
+  }
+
+  console.log('\n' + '='.repeat(60));
+  console.log('Database seeding completed successfully!');
+  console.log('='.repeat(60));
 };
 
-const generate = async () => {
-  console.log('Starting database seeding...');
-
-  // Seed permissions
-  console.log('Seeding permissions...');
+/**
+ * Seeds essential data required for both production and development
+ * - Permissions
+ * - Super Admin employee
+ * - Technician employee
+ * - System user for device initialization
+ * - System employee for device registration
+ */
+const seedEssentialData = async () => {
+  console.log('\n[Essential Data] Seeding permissions...');
 
   const permissions = [
     { id: 'PERM-0001', name: PermissionType.ADMIN },
@@ -102,7 +125,7 @@ const generate = async () => {
       update: {},
       create: permission,
     });
-    console.log(`Permission ${permission.name} created/updated`);
+    console.log(`[Essential Data] Permission ${permission.name} created/updated`);
   }
 
   // Get the ADMIN permission for the SuperAdmin
@@ -115,7 +138,7 @@ const generate = async () => {
   }
 
   // Create SuperAdmin employee
-  console.log('Creating SuperAdmin employee...');
+  console.log('[Essential Data] Creating SuperAdmin employee...');
 
   const technicianPermission = await prisma.tbl_permissions.findUnique({
     where: { name: PermissionType.TECHNICIAN },
@@ -159,6 +182,7 @@ const generate = async () => {
     },
   });
 
+  console.log('[Essential Data] Creating Technician employee...');
   const technician = await prisma.tbl_emps.upsert({
     where: { email: 'technician@catcarwash.com' },
     update: {
@@ -184,12 +208,106 @@ const generate = async () => {
     },
   });
 
+  // Create system user for initial device registration
+  const deviceInitialUser = await prisma.tbl_users.upsert({
+    where: { email: 'device-initial@system.catcarwash.com' },
+    update: {
+      id: 'device-intial',
+      fullname: 'System - Device Initial Owner',
+      email: 'device-initial@system.catcarwash.com',
+      password: hashedPassword,
+      permission_id: userPermission.id,
+      status: 'ACTIVE',
+      custom_name: 'ระบบ - อุปกรณ์รอการกำหนดเจ้าของ',
+      address: 'System Address',
+    },
+    create: {
+      id: 'device-intial',
+      fullname: 'System - Device Initial Owner',
+      email: 'device-initial@system.catcarwash.com',
+      password: hashedPassword,
+      permission_id: userPermission.id,
+      status: 'ACTIVE',
+      custom_name: 'ระบบ - อุปกรณ์รอการกำหนดเจ้าของ',
+      address: 'System Address',
+    },
+  });
+
+  // Create system employee for initial device registration
+  console.log('[Essential Data] Creating system employee for device registration...');
+  const deviceInitialEmp = await prisma.tbl_emps.upsert({
+    where: { email: 'device-initial-emp@system.catcarwash.com' },
+    update: {
+      id: 'device-intial',
+      name: 'System - Device Initial Registrar',
+      email: 'device-initial-emp@system.catcarwash.com',
+      password: hashedPassword,
+      permission_id: adminPermission.id,
+      status: 'ACTIVE',
+      address: 'System Address',
+    },
+    create: {
+      id: 'device-intial',
+      name: 'System - Device Initial Registrar',
+      email: 'device-initial-emp@system.catcarwash.com',
+      password: hashedPassword,
+      permission_id: adminPermission.id,
+      status: 'ACTIVE',
+      address: 'System Address',
+    },
+  });
+
+  console.log(`[Essential Data] SuperAdmin employee: ${superAdmin.id} (${superAdmin.email})`);
+  console.log(`[Essential Data] Technician employee: ${technician.id} (${technician.email})`);
+  console.log(`[Essential Data] Device Initial System User: ${deviceInitialUser.id} (${deviceInitialUser.email})`);
+  console.log(`[Essential Data] Device Initial System Employee: ${deviceInitialEmp.id} (${deviceInitialEmp.email})`);
+  console.log('[Essential Data] ✓ Essential data seeding completed');
+
+  return {
+    superAdmin,
+    technician,
+    deviceInitialUser,
+    deviceInitialEmp,
+    adminPermission,
+    userPermission,
+    hashedPassword,
+  };
+};
+
+/**
+ * Seeds demo/development data
+ * - Demo users
+ * - Demo devices
+ * - Device events (payment logs)
+ * - Device states (historical and current)
+ * - Materialized view refresh
+ */
+const seedDemoData = async () => {
+  const hashedPassword = await bcrypt.hash('password!', 12);
+
+  const userPermission = await prisma.tbl_permissions.findUnique({
+    where: { name: PermissionType.USER },
+  });
+
+  if (!userPermission) {
+    throw new Error('User permission not found');
+  }
+
+  const technician = await prisma.tbl_emps.findUnique({
+    where: { email: 'technician@catcarwash.com' },
+  });
+
+  if (!technician) {
+    throw new Error('Technician not found');
+  }
+
   const paymentInfo = {
     merchant_id: 'catcarwash',
     api_key: 'S1Isu8/kUiLX8N9PK21mppKZsKkC9wpW9anyiFI1H6s=',
     HMAC_key: 'abcdefghijklmnopqrstuvwxyz',
   };
 
+  console.log('[Demo Data] Creating demo users...');
   const user = await prisma.tbl_users.upsert({
     where: { email: 'user@catcarwash.com' },
     update: {
@@ -245,53 +363,8 @@ const generate = async () => {
     },
   });
 
-  // Create system user for initial device registration
-  const deviceInitialUser = await prisma.tbl_users.upsert({
-    where: { email: 'device-initial@system.catcarwash.com' },
-    update: {
-      id: 'device-intial',
-      fullname: 'System - Device Initial Owner',
-      email: 'device-initial@system.catcarwash.com',
-      password: hashedPassword,
-      permission_id: userPermission.id,
-      status: 'ACTIVE',
-      custom_name: 'ระบบ - อุปกรณ์รอการกำหนดเจ้าของ',
-      address: 'System Address',
-    },
-    create: {
-      id: 'device-intial',
-      fullname: 'System - Device Initial Owner',
-      email: 'device-initial@system.catcarwash.com',
-      password: hashedPassword,
-      permission_id: userPermission.id,
-      status: 'ACTIVE',
-      custom_name: 'ระบบ - อุปกรณ์รอการกำหนดเจ้าของ',
-      address: 'System Address',
-    },
-  });
-
-  // Create system employee for initial device registration
-  const deviceInitialEmp = await prisma.tbl_emps.upsert({
-    where: { email: 'device-initial-emp@system.catcarwash.com' },
-    update: {
-      id: 'device-intial',
-      name: 'System - Device Initial Registrar',
-      email: 'device-initial-emp@system.catcarwash.com',
-      password: hashedPassword,
-      permission_id: adminPermission.id,
-      status: 'ACTIVE',
-      address: 'System Address',
-    },
-    create: {
-      id: 'device-intial',
-      name: 'System - Device Initial Registrar',
-      email: 'device-initial-emp@system.catcarwash.com',
-      password: hashedPassword,
-      permission_id: adminPermission.id,
-      status: 'ACTIVE',
-      address: 'System Address',
-    },
-  });
+  console.log(`[Demo Data] User 1 created: ${user.id} (${user.email})`);
+  console.log(`[Demo Data] User 2 created: ${user2.id} (${user2.email})`);
 
   const washConfig = new DeviceWashConfig({
     configs: {
@@ -358,6 +431,7 @@ const generate = async () => {
     },
   });
 
+  console.log('[Demo Data] Creating demo devices...');
   const devicesUser = await prisma.tbl_devices.createMany({
     data: [
       {
@@ -497,18 +571,21 @@ const generate = async () => {
   const deviceTypes = devices.map((device) => device.type);
 
   // Generate device events
+  console.log('[Demo Data] Generating device events (payment logs)...');
   const logs_events = generateDeviceEvents(deviceIds, EventType.PAYMENT, 5);
   const newLogsEvents = await prisma.tbl_devices_events.createMany({
     data: logs_events,
   });
 
   // Generate device states (historical data)
+  console.log('[Demo Data] Generating device states (historical data)...');
   const device_states = generateDeviceStates(deviceIds, deviceTypes, 10); // 10 state records per device
   const newDeviceStates = await prisma.tbl_devices_state.createMany({
     data: device_states,
   });
 
   // Generate device last states (current state)
+  console.log('[Demo Data] Generating device last states (current state)...');
   const device_last_states = generateDeviceLastStates(deviceIds, deviceTypes);
 
   // Insert last states using raw SQL since Prisma client might not be updated yet
@@ -523,29 +600,25 @@ const generate = async () => {
     `;
   }
 
-  console.log(`SuperAdmin employee created with ID: ${superAdmin.id}`);
-  console.log(`Technician employee created with ID: ${technician.id}`);
-  console.log(`User created with ID: ${user.id}`);
-  console.log(`User 2 created with ID: ${user2.id}`);
-  console.log(`Device Initial System User created with ID: ${deviceInitialUser.id}`);
-  console.log(`Device Initial System Employee created with ID: ${deviceInitialEmp.id}`);
-  console.log(`Devices created: ${devicesUser.count}`);
-  console.log(`Devices created: ${devicesUser2.count}`);
-  console.log(`Logs events created: ${newLogsEvents.count}`);
-  console.log(`Device states created: ${newDeviceStates.count}`);
-  console.log(`Device last states created: ${device_last_states.length}`);
-  console.log('Database seeding completed successfully!');
+  console.log(`[Demo Data] Devices for user 1: ${devicesUser.count}`);
+  console.log(`[Demo Data] Devices for user 2: ${devicesUser2.count}`);
+  console.log(`[Demo Data] Device events (payments): ${newLogsEvents.count}`);
+  console.log(`[Demo Data] Device states (historical): ${newDeviceStates.count}`);
+  console.log(`[Demo Data] Device last states: ${device_last_states.length}`);
 
+  // Refresh materialized views after a delay to ensure data is committed
   void setTimeout(() => {
     void (async () => {
-      console.log('Refreshing materialized views...');
+      console.log('[Demo Data] Refreshing materialized views...');
       await prisma.$executeRaw`REFRESH MATERIALIZED VIEW CONCURRENTLY mv_device_payments_day`;
       await prisma.$executeRaw`REFRESH MATERIALIZED VIEW CONCURRENTLY mv_device_payments_month`;
       await prisma.$executeRaw`REFRESH MATERIALIZED VIEW CONCURRENTLY mv_device_payments_year`;
       await prisma.$executeRaw`REFRESH MATERIALIZED VIEW CONCURRENTLY mv_device_payments_hour`;
-      console.log('Materialized views refreshed successfully!');
+      console.log('[Demo Data] ✓ Materialized views refreshed successfully!');
     })();
   }, 5000);
+
+  console.log('[Demo Data] ✓ Demo data seeding completed');
 };
 
 const generateDeviceEvents = (deviceIds: string[], type: EventType, count: number): any[] => {

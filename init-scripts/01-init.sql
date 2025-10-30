@@ -45,7 +45,7 @@ CREATE EXTENSION IF NOT EXISTS "pgcrypto";
 
 -- Set default timezone for this database
 -- Using ALTER DATABASE instead of SET for persistence
-ALTER DATABASE :"POSTGRES_DB" SET timezone = 'UTC';
+-- ALTER DATABASE :"POSTGRES_DB" SET timezone = 'UTC';
 
 -- Optional: Set default privileges for future objects
 -- (Usually not needed since POSTGRES_USER is the database owner)

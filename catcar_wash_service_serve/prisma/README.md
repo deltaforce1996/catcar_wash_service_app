@@ -535,9 +535,13 @@ const analytics = await prisma.$queryRaw`
 
 ## 🌱 Database Seeding
 
-The `seed.ts` file populates the database with essential initial data:
+The `seed.ts` file populates the database with initial data. The seeding behavior depends on the `NODE_ENV` environment variable:
 
-### Default Data Created
+### Seeding Modes
+
+#### 🔴 Production Mode (`NODE_ENV=production`)
+
+Seeds **essential data only** - the minimum required to run the application:
 
 1. **Permission Types**:
    - `ADMIN` - Full administrative access
@@ -546,28 +550,52 @@ The `seed.ts` file populates the database with essential initial data:
 
 2. **Super Admin Account**:
    - **Email**: `superadmin@catcarwash.com`
-   - **Password**: `SuperAdmin123!`
-   - **Name**: Super Admin
+   - **Password**: `password!`
    - **Permission**: ADMIN
    - **Status**: ACTIVE
+
+3. **Technician Account**:
+   - **Email**: `technician@catcarwash.com`
+   - **Password**: `password!`
+   - **Permission**: ADMIN
+   - **Status**: ACTIVE
+
+4. **System Accounts** (for device management):
+   - System User: `device-initial@system.catcarwash.com`
+   - System Employee: `device-initial-emp@system.catcarwash.com`
+
+**No demo users, devices, or test data are created in production mode.**
+
+#### 🟢 Development Mode (`NODE_ENV=development` or not set)
+
+Seeds **all data** including:
+- All essential data (above)
+- 2 demo users with payment information
+- 7 demo devices (wash and drying machines)
+- Device events (payment logs)
+- Device states (historical and current)
+- Materialized view refresh
 
 ### Running the Seed
 
 ```bash
-# Method 1: Using npm script
-npm run db:seed
+# Production mode (essential data only)
+NODE_ENV=production npx prisma db seed
 
-# Method 2: Using Prisma CLI
+# Development mode (all data including demos)
 npx prisma db seed
+# or
+NODE_ENV=development npx prisma db seed
 ```
 
 ### Important Security Notes
 
-⚠️ **CRITICAL**: Change the default SuperAdmin password immediately after first deployment!
+⚠️ **CRITICAL**: Change the default admin passwords immediately after first deployment!
 
-- Password is hashed with bcrypt (12 salt rounds)
+- All passwords are hashed with bcrypt (12 salt rounds)
 - Seed uses `upsert` operations (safe to run multiple times)
-- Always change default credentials in production
+- **Always change default credentials in production**
+- Consider using environment variables for production passwords
 
 ### Complete Setup Sequence
 
