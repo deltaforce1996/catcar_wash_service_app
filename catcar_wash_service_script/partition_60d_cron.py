@@ -29,7 +29,7 @@ PARENT_TABLES = [
         "name": "tbl_devices_events",
         "index_sqls": [
             'CREATE INDEX IF NOT EXISTS {part}_created_at_idx ON "public"."{part}"("created_at");',
-            'CREATE INDEX IF NOT EXISTS {part}_dev_type_created_idx ON "public"."{part}"("device_id","type","created_at");',
+            'CREATE INDEX IF NOT EXISTS {part}_dev_created_idx ON "public"."{part}"("device_id","created_at");',
         ],
     },
 ]

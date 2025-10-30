@@ -22,19 +22,11 @@ services:
     networks:
       - catcar_wash_network
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:?POSTGRES_USER is required} -d ${POSTGRES_DB:?POSTGRES_DB is required}"]
+      test: [ "CMD-SHELL", "pg_isready -U ${POSTGRES_USER:?POSTGRES_USER is required} -d ${POSTGRES_DB:?POSTGRES_DB is required}" ]
       interval: 30s
       timeout: 10s
       retries: 5
       start_period: 40s
-    # deploy:
-    #   resources:
-    #     limits:
-    #       cpus: '2'
-    #       memory: 2G
-    #     reservations:
-    #       cpus: '0.5'
-    #       memory: 512M
     logging:
       driver: "json-file"
       options:
@@ -63,11 +55,6 @@ services:
     depends_on:
       postgres:
         condition: service_healthy
-    # deploy:
-    #   resources:
-    #     limits:
-    #       cpus: '0.5'
-    #       memory: 512M
     logging:
       driver: "json-file"
       options:
@@ -80,34 +67,32 @@ services:
     container_name: catcar_wash_emqx_prod
     restart: always
     ports:
-      - "1883:1883"      # MQTT TCP
-      - "8083:8083"      # MQTT over WebSocket
-      - "18083:18083"  # EMQX Dashboard
+      - "1883:1883" # MQTT TCP
+      - "8083:8083" # MQTT over WebSocket
+      - "18083:18083" # EMQX Dashboard
     environment:
       - EMQX_DASHBOARD__DEFAULT_USERNAME=${EMQX_DASHBOARD_USER:?EMQX_DASHBOARD_USER is required}
       - EMQX_DASHBOARD__DEFAULT_PASSWORD=${EMQX_DASHBOARD_PASSWORD:?EMQX_DASHBOARD_PASSWORD is required}
       - EMQX_LOG__CONSOLE_HANDLER__LEVEL=warning
+
+      #  ถ้าไม่ปิด ทุกคนจะ connect ได้แม้ไม่มี user/pass ❌
       - EMQX_ALLOW_ANONYMOUS=false
+
+      # ✅ ใช้ user/password เดียวทุกอุปกรณ์
+      - EMQX_AUTH__USER__1__USERNAME=${DEVICE_SECRET_KEY:?DEVICE_SECRET_KEY is required}
+      - EMQX_AUTH__USER__1__PASSWORD=${DEVICE_SECRET_KEY:?DEVICE_SECRET_KEY is required}
     volumes:
       - ./backups/prod/emqx_data:/opt/emqx/data
       - ./backups/prod/emqx_log:/opt/emqx/log
     networks:
       - catcar_wash_network
-    # deploy:
-    #   resources:
-    #     limits:
-    #       cpus: '1'
-    #       memory: 1G
-    #     reservations:
-    #       cpus: '0.25'
-    #       memory: 256M
     logging:
       driver: "json-file"
       options:
         max-size: "10m"
         max-file: "3"
     healthcheck:
-      test: ["CMD", "emqx", "ping"]
+      test: [ "CMD", "emqx", "ping" ]
       interval: 30s
       timeout: 10s
       retries: 3
@@ -123,8 +108,9 @@ services:
     image: catcar_wash_backend:${VERSION:-1.0.0}
     container_name: catcar_wash_backend_prod
     restart: always
-    ports:
-      - "${BACKEND_PORT:-3000}:3000"
+    # Port only accessible within Docker network (Nginx will proxy)
+    expose:
+      - "3000"
     environment:
       # Application
       - NODE_ENV=production
@@ -132,19 +118,19 @@ services:
       - API_PREFIX=${API_PREFIX:-api}
       - VERSION=${VERSION:-1.0.0}
       - LOG_LEVEL=${LOG_LEVEL:-info}
-      
+
       # Database
       - DATABASE_URL=postgresql://${POSTGRES_USER:?POSTGRES_USER is required and must be set}:${POSTGRES_PASSWORD:?POSTGRES_PASSWORD is required and must be set}@postgres:5432/${POSTGRES_DB:?POSTGRES_DB is required and must be set}?schema=public&connect_timeout=30&pool_timeout=30
-      
+
       # JWT
       - JWT_SECRET=${JWT_SECRET:?JWT_SECRET is required}
       - JWT_EXPIRES_IN=${JWT_EXPIRES_IN:-24h}
 
       - DEVICE_SECRET_KEY=${DEVICE_SECRET_KEY:-your-device-secret-key}
-      
+
       # External APIs
       - BEAM_API_URL=${BEAM_API_URL:-https://api.beamcheckout.com}
-      
+
       # MQTT
       - MQTT_BROKER_URL=mqtt://emqx:1883
       # - MQTT_USERNAME=${MQTT_USERNAME:-admin}
@@ -156,25 +142,102 @@ services:
         condition: service_healthy
     networks:
       - catcar_wash_network
-    # deploy:
-    #   resources:
-    #     limits:
-    #       cpus: '2'
-    #       memory: 2G
-    #     reservations:
-    #       cpus: '0.5'
-    #       memory: 512M
     logging:
       driver: "json-file"
       options:
         max-size: "20m"
         max-file: "5"
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:3000/api/health"]
+      test: [ "CMD", "curl", "-f", "http://localhost:3000/api/health" ]
       interval: 30s
       timeout: 10s
       retries: 3
       start_period: 60s
+
+  # Frontend Service (Nuxt 3)
+  frontend:
+    build:
+      context: ./catcar_wash_service_frontend
+      dockerfile: Dockerfile.prod
+    image: catcar_wash_frontend:${VERSION:-1.0.0}
+    container_name: catcar_wash_frontend_prod
+    restart: always
+    # Port only accessible within Docker network (Nginx will proxy)
+    expose:
+      - "3000"
+    environment:
+      # Application
+      - NODE_ENV=production
+      - NITRO_HOST=0.0.0.0
+      - NITRO_PORT=3000
+
+      # API Configuration
+      # Use relative path since Nginx proxies both frontend and backend
+      - NUXT_PUBLIC_API_URL=${NUXT_PUBLIC_API_URL:-/api}
+      - NUXT_PUBLIC_API_TIMEOUT=${NUXT_PUBLIC_API_TIMEOUT:-30000}
+      - NUXT_PUBLIC_API_RETRY_ATTEMPTS=${NUXT_PUBLIC_API_RETRY_ATTEMPTS:-3}
+      - NUXT_PUBLIC_API_RETRY_DELAY=${NUXT_PUBLIC_API_RETRY_DELAY:-1000}
+
+      # Debugging and Logging
+      - NUXT_PUBLIC_DEBUG_ENABLED=${NUXT_PUBLIC_DEBUG_ENABLED:-false}
+      - NUXT_PUBLIC_LOG_LEVEL=${NUXT_PUBLIC_LOG_LEVEL:-info}
+
+      # Application Info
+      - NUXT_PUBLIC_APP_NAME=${NUXT_PUBLIC_APP_NAME:-CatCar Wash Service}
+      - NUXT_PUBLIC_APP_VERSION=${VERSION:-1.0.0}
+    depends_on:
+      backend:
+        condition: service_healthy
+    networks:
+      - catcar_wash_network
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+    healthcheck:
+      test: [ "CMD", "curl", "-f", "http://localhost:3000/" ]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+  # # Nginx Reverse Proxy
+  # nginx:
+  #   image: nginx:alpine
+  #   container_name: catcar_wash_nginx_prod
+  #   restart: always
+  #   ports:
+  #     # Main HTTP port - single entry point for all services
+  #     - "${NGINX_PORT:-80}:80"
+  #     # HTTPS port (for future SSL/TLS setup)
+  #     # - "${NGINX_SSL_PORT:-443}:443"
+  #   volumes:
+  #     # Mount nginx configuration files
+  #     - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+  #     - ./nginx/conf.d:/etc/nginx/conf.d:ro
+  #     # Mount logs directory to host for persistence
+  #     - ./nginx/logs:/var/log/nginx
+  #   environment:
+  #     - TZ=Asia/Bangkok
+  #   depends_on:
+  #     frontend:
+  #       condition: service_healthy
+  #     backend:
+  #       condition: service_healthy
+  #   networks:
+  #     - catcar_wash_network
+  #   logging:
+  #     driver: "json-file"
+  #     options:
+  #       max-size: "10m"
+  #       max-file: "3"
+  #   healthcheck:
+  #     test: [ "CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost/nginx-health" ]
+  #     interval: 30s
+  #     timeout: 10s
+  #     retries: 3
+  #     start_period: 10s
 
 networks:
   catcar_wash_network:

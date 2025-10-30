@@ -1,14 +1,14 @@
 # =============================================================================
-# Production Multi-stage Dockerfile for NestJS Backend with Prisma
+# Production Multi-stage Dockerfile for Nuxt 3 Frontend
 # =============================================================================
 # This Dockerfile creates an optimized production image with:
-# - Prisma migrations (migrate deploy)
-# - Production database seeding (essential data only)
+# - Nuxt 3 SSR disabled (SPA mode) for static generation
 # - Minimal security footprint with non-root user
 # - Alpine Linux for minimal image size
+# - Runtime configuration support via environment variables
 
 # =============================================================================
-# BUILD STAGE - Compile and build the application
+# BUILD STAGE - Compile and build the Nuxt application
 # =============================================================================
 FROM node:20-alpine AS base
 
@@ -24,16 +24,11 @@ COPY package.json pnpm-lock.yaml ./
 # Install all dependencies (including dev dependencies needed for building)
 RUN pnpm install --frozen-lockfile
 
-# Copy Prisma schema and migration files
-COPY prisma ./prisma
-
 # Copy source code
 COPY . .
 
-# Generate Prisma client based on schema
-RUN pnpm prisma generate
-
-# Build the NestJS application for production
+# Build the Nuxt application for production
+# This generates the .output directory with the production build
 RUN pnpm run build
 
 # =============================================================================
@@ -41,8 +36,16 @@ RUN pnpm run build
 # =============================================================================
 FROM node:20-alpine AS production
 
+# Add image metadata
+LABEL maintainer="CatCar Wash Service"
+LABEL description="Nuxt 3 Frontend for CatCar Wash Service - Production"
+LABEL version="1.0.0"
+
 # Install pnpm globally in production image
 RUN npm install -g pnpm
+
+# Install curl for healthcheck
+RUN apk add --no-cache curl
 
 # Set working directory for production stage
 WORKDIR /app
@@ -50,29 +53,15 @@ WORKDIR /app
 # Copy package files to install production dependencies
 COPY package.json pnpm-lock.yaml ./
 
-# Install production dependencies plus ts-node and typescript for seed script
-# ts-node and typescript are required to run the TypeScript seed file
-RUN pnpm install --frozen-lockfile --prod && \
-    pnpm add ts-node typescript @types/node --save-dev
-
-# Copy Prisma schema and source files (needed for seeding)
-COPY --from=base /app/prisma ./prisma
-COPY --from=base /app/src ./src
-COPY --from=base /app/tsconfig.json ./tsconfig.json
-
-# Generate Prisma client for production runtime
-RUN pnpm prisma generate
+# Install production dependencies only
+RUN pnpm install --frozen-lockfile --prod
 
 # Copy the built application from build stage
-COPY --from=base /app/dist ./dist
+# Nuxt 3 builds everything into .output directory
+COPY --from=base /app/.output ./.output
 
-# Copy public directory containing static files
+# Copy public directory (static assets)
 COPY --from=base /app/public ./public
-
-# Copy production startup script
-# This script runs migrations and production seeding before starting the app
-COPY start.sh /app/start.sh
-RUN chmod +x /app/start.sh
 
 # =============================================================================
 # SECURITY CONFIGURATION
@@ -81,13 +70,13 @@ RUN chmod +x /app/start.sh
 RUN addgroup -g 1001 -S nodejs
 
 # Create a non-root user for running the application
-RUN adduser -S nestjs -u 1001
+RUN adduser -S nuxt -u 1001
 
-# Change ownership of the application directory to the nestjs user
-RUN chown -R nestjs:nodejs /app
+# Change ownership of the application directory to the nuxt user
+RUN chown -R nuxt:nodejs /app
 
 # Switch to the non-root user for running the application
-USER nestjs
+USER nuxt
 
 # =============================================================================
 # RUNTIME CONFIGURATION
@@ -95,9 +84,18 @@ USER nestjs
 # Expose port 3000 for external connections
 EXPOSE 3000
 
-# Note: NODE_ENV is set via docker-compose environment variables
-# This allows flexibility while the seed script ensures production mode
+# Set environment to production
+ENV NODE_ENV=production
 
-# Start the application with migrations and seeding
-CMD ["/app/start.sh"]
+# Set Nuxt host to listen on all interfaces (required for Docker)
+ENV NITRO_HOST=0.0.0.0
+ENV NITRO_PORT=3000
 
+# Healthcheck to verify the application is running
+# Nuxt doesn't have a default health endpoint, so we check the root
+HEALTHCHECK --interval=30s --timeout=10s --retries=3 --start-period=40s \
+  CMD curl -f http://localhost:3000/ || exit 1
+
+# Start the Nuxt application
+# Nuxt 3 builds a standalone server in .output/server/index.mjs
+CMD ["node", ".output/server/index.mjs"]

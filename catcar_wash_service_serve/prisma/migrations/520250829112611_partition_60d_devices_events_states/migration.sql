@@ -118,6 +118,28 @@ SELECT "id","device_id","payload","created_at"
 FROM "public"."tbl_devices_events";
 
 -- ---------------------------------------------------------
+-- Validate row count (safety check)
+-- ---------------------------------------------------------
+DO $$
+DECLARE
+  old_count INTEGER;
+  new_count INTEGER;
+BEGIN
+  SELECT COUNT(*) INTO old_count FROM "public"."tbl_devices_events";
+  SELECT COUNT(*) INTO new_count FROM "public"."tbl_devices_events_p";
+
+  RAISE NOTICE '=== DATA VALIDATION ===';
+  RAISE NOTICE 'Old table row count: %', old_count;
+  RAISE NOTICE 'New table row count: %', new_count;
+
+  IF old_count != new_count THEN
+    RAISE EXCEPTION 'Row count mismatch! Old: %, New: %. Migration aborted.', old_count, new_count;
+  ELSE
+    RAISE NOTICE 'Row count validation PASSED ✓';
+  END IF;
+END$$;
+
+-- ---------------------------------------------------------
 -- สลับชื่อ (downtime ช่วงสั้น ๆ)
 -- ---------------------------------------------------------
 BEGIN;
@@ -147,9 +169,12 @@ COMMIT;
 
 
 -- ---------------------------------------------------------
--- (ทางเลือก) เก็บตารางเดิมไว้ชั่วคราว หรือจะลบทิ้งก็ได้หลังตรวจสอบครบ
-DROP TABLE IF EXISTS "public"."tbl_devices_events_old";
+-- (SAFETY) เก็บตารางเดิมไว้เป็น backup สำหรับตรวจสอบและ rollback
+-- แนะนำให้เก็บไว้อย่างน้อย 30-90 วัน หลังจากตรวจสอบข้อมูลครบถ้วนแล้ว
+-- สามารถลบด้วยมือได้ทีหลังด้วยคำสั่ง:
+--   DROP TABLE IF EXISTS "public"."tbl_devices_events_old";
 -- ---------------------------------------------------------
+-- DROP TABLE IF EXISTS "public"."tbl_devices_events_old";
 
 
 
