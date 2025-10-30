@@ -1,3 +1,4 @@
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 import { PrismaClient, PermissionType, EventType, DeviceType, PaymentApiStatus } from '@prisma/client';
 import * as bcrypt from 'bcrypt';
 import { DeviceDryingConfig } from '../src/shared/device-drying-config';
@@ -496,11 +497,11 @@ const generate = async () => {
   const deviceIds = devices.map((device) => device.id);
   const deviceTypes = devices.map((device) => device.type);
 
-  // Generate device events
-  const logs_events = generateDeviceEvents(deviceIds, EventType.PAYMENT, 5);
-  const newLogsEvents = await prisma.tbl_devices_events.createMany({
-    data: logs_events,
-  });
+  // // Generate device events
+  // const logs_events = generateDeviceEvents(deviceIds, EventType.PAYMENT, 5);
+  // const newLogsEvents = await prisma.tbl_devices_events.createMany({
+  //   data: logs_events,
+  // });
 
   // Generate device states (historical data)
   const device_states = generateDeviceStates(deviceIds, deviceTypes, 10); // 10 state records per device
@@ -531,7 +532,7 @@ const generate = async () => {
   console.log(`Device Initial System Employee created with ID: ${deviceInitialEmp.id}`);
   console.log(`Devices created: ${devicesUser.count}`);
   console.log(`Devices created: ${devicesUser2.count}`);
-  console.log(`Logs events created: ${newLogsEvents.count}`);
+  // console.log(`Logs events created: ${newLogsEvents.count}`);
   console.log(`Device states created: ${newDeviceStates.count}`);
   console.log(`Device last states created: ${device_last_states.length}`);
   console.log('Database seeding completed successfully!');
@@ -548,59 +549,59 @@ const generate = async () => {
   }, 5000);
 };
 
-const generateDeviceEvents = (deviceIds: string[], type: EventType, count: number): any[] => {
-  console.log(`Generating ${count} events for ${deviceIds.length} devices`);
-  const payloads: any[] = [];
+// const generateDeviceEvents = (deviceIds: string[], type: EventType, count: number): any[] => {
+//   console.log(`Generating ${count} events for ${deviceIds.length} devices`);
+//   const payloads: any[] = [];
 
-  // Ensure timestamps fall within partition range (120 days back to 180 days forward)
-  // Use a safer range: 90 days back to 90 days forward from now
-  const now = Date.now();
-  const maxPastDays = 90;
-  const maxFutureDays = 90;
-  const maxPastMs = maxPastDays * 24 * 60 * 60 * 1000;
-  const maxFutureMs = maxFutureDays * 24 * 60 * 60 * 1000;
+//   // Ensure timestamps fall within partition range (120 days back to 180 days forward)
+//   // Use a safer range: 90 days back to 90 days forward from now
+//   const now = Date.now();
+//   const maxPastDays = 90;
+//   const maxFutureDays = 90;
+//   const maxPastMs = maxPastDays * 24 * 60 * 60 * 1000;
+//   const maxFutureMs = maxFutureDays * 24 * 60 * 60 * 1000;
 
-  deviceIds.forEach((deviceId) => {
-    for (let i = 0; i < count; i++) {
-      // Generate random timestamp within safe partition range
-      const randomOffset = randomInt(-maxPastMs, maxFutureMs);
-      const timestamp = now + randomOffset;
+//   deviceIds.forEach((deviceId) => {
+//     for (let i = 0; i < count; i++) {
+//       // Generate random timestamp within safe partition range
+//       const randomOffset = randomInt(-maxPastMs, maxFutureMs);
+//       const timestamp = now + randomOffset;
 
-      const payload = {
-        type: type,
-        timestamp: timestamp,
-        coin: {
-          1: randomInt(0, 10),
-          2: 0.0,
-          5: 0.0,
-          10: 0.0,
-        },
-        bank: {
-          20: 0.0,
-          50: 0.0,
-          100: 0.0,
-          500: 0.0,
-          1000: 0.0,
-        },
-        qr: { net_amount: 0.0, chargeId: 'ACB-1152-1152' },
-      };
+//       const payload = {
+//         type: type,
+//         timestamp: timestamp,
+//         coin: {
+//           1: randomInt(0, 10),
+//           2: 0.0,
+//           5: 0.0,
+//           10: 0.0,
+//         },
+//         bank: {
+//           20: 0.0,
+//           50: 0.0,
+//           100: 0.0,
+//           500: 0.0,
+//           1000: 0.0,
+//         },
+//         qr: { net_amount: 0.0, chargeId: 'ACB-1152-1152' },
+//       };
 
-      const totalAmount =
-        Object.entries(payload.coin as Record<string, number>).reduce((acc, [k, v]) => acc + Number(k) * v, 0) +
-        Object.entries(payload.bank as Record<string, number>).reduce((acc, [k, v]) => acc + Number(k) * v, 0) +
-        (payload.qr as { net_amount: number }).net_amount;
+//       const totalAmount =
+//         Object.entries(payload.coin as Record<string, number>).reduce((acc, [k, v]) => acc + Number(k) * v, 0) +
+//         Object.entries(payload.bank as Record<string, number>).reduce((acc, [k, v]) => acc + Number(k) * v, 0) +
+//         (payload.qr as { net_amount: number }).net_amount;
 
-      payload['total_amount'] = totalAmount;
-      payload['status'] = PaymentApiStatus.SUCCEEDED;
+//       payload['total_amount'] = totalAmount;
+//       payload['status'] = PaymentApiStatus.SUCCEEDED;
 
-      payloads.push({
-        device_id: deviceId,
-        payload: payload,
-      });
-    }
-  });
-  return payloads;
-};
+//       payloads.push({
+//         device_id: deviceId,
+//         payload: payload,
+//       });
+//     }
+//   });
+//   return payloads;
+// };
 
 try {
   void main();

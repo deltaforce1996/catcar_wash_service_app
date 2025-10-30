@@ -1,4 +1,6 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, Inject } from '@nestjs/common';
+import type { ConfigType } from '@nestjs/config';
+import timezoneConfig from 'src/configs/timezone.config';
 import * as fs from 'fs';
 import * as path from 'path';
 
@@ -12,13 +14,18 @@ export interface MqttLogEntry {
 
 @Injectable()
 export class MqttLoggerService {
+  constructor(
+    @Inject(timezoneConfig.KEY)
+    private readonly tzConfig: ConfigType<typeof timezoneConfig>,
+  ) {}
+
   /**
    * Log MQTT connection issues to file
    */
   logMqttIssueToFile(entry: MqttLogEntry): void {
-    // Use Thailand timezone (UTC+7)
+    // Use configured timezone (default: Asia/Bangkok UTC+7)
     const now = new Date();
-    const thailandTime = new Date(now.getTime() + 7 * 60 * 60 * 1000);
+    const thailandTime = new Date(now.getTime() + this.tzConfig.offsetMs);
     const timestamp = thailandTime.toISOString().replace('T', ' ').replace('Z', ' +07:00');
 
     // Format log entry

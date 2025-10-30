@@ -1,12 +1,16 @@
 import { Injectable } from '@nestjs/common';
 import { PaymentApiStatus, PermissionType, Prisma } from '@prisma/client';
 import { PrismaService } from 'src/database/prisma/prisma.service';
+import { DateTimeService } from 'src/services/datetime.service';
 import { DashboardFilterDto } from './dto/dashboard.dto';
 import { AuthenticatedUser } from 'src/types/internal.type';
 
 @Injectable()
 export class DashboardService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly dateTimeService: DateTimeService,
+  ) {}
 
   async getDashboardSummary(filter: DashboardFilterDto, user?: AuthenticatedUser) {
     // สร้าง WHERE conditions สำหรับ filter
@@ -88,9 +92,14 @@ export class DashboardService {
   }
 
   private async getMonthlyRevenue(whereConditions: string, filter?: DashboardFilterDto) {
-    // Filter by year - default to current year if no date specified
-    const year = filter?.date ? `EXTRACT(YEAR FROM DATE('${filter.date}'))` : 'EXTRACT(YEAR FROM NOW())';
-    const yearCondition = whereConditions ? `AND EXTRACT(YEAR FROM mv.month_start) = ${year}` : `WHERE EXTRACT(YEAR FROM mv.month_start) = ${year}`;
+    // Filter by year - default to current year in configured timezone if no date specified
+    const timezone = this.dateTimeService.getTimezoneName();
+    const year = filter?.date
+      ? `EXTRACT(YEAR FROM DATE('${filter.date}'))`
+      : `EXTRACT(YEAR FROM NOW() AT TIME ZONE '${timezone}')`;
+    const yearCondition = whereConditions
+      ? `AND EXTRACT(YEAR FROM mv.month_start) = ${year}`
+      : `WHERE EXTRACT(YEAR FROM mv.month_start) = ${year}`;
 
     const query = `
       WITH months AS (
@@ -211,12 +220,18 @@ export class DashboardService {
 
     if (period === 'month') {
       // Monthly - เปรียบเทียบกับปีที่แล้ว
+      // Use filter date or default to current year in configured timezone
+      const timezone = this.dateTimeService.getTimezoneName();
+      const currentYear = filter?.date
+        ? `EXTRACT(YEAR FROM DATE('${filter.date}'))`
+        : `EXTRACT(YEAR FROM NOW() AT TIME ZONE '${timezone}')`;
+
       currentQuery = `
         SELECT COALESCE(SUM(mv.total_amount), 0) as current_total
         FROM mv_device_payments_month mv
         INNER JOIN tbl_devices d ON mv.device_id = d.id
         ${whereConditions}
-        AND EXTRACT(YEAR FROM mv.month_start) = EXTRACT(YEAR FROM NOW())
+        AND EXTRACT(YEAR FROM mv.month_start) = ${currentYear}
       `;
 
       previousQuery = `
@@ -224,7 +239,7 @@ export class DashboardService {
         FROM mv_device_payments_month mv
         INNER JOIN tbl_devices d ON mv.device_id = d.id
         ${whereConditions}
-        AND EXTRACT(YEAR FROM mv.month_start) = EXTRACT(YEAR FROM NOW()) - 1
+        AND EXTRACT(YEAR FROM mv.month_start) = ${currentYear} - 1
       `;
     } else if (period === 'day') {
       // Daily - เปรียบเทียบกับเดือนก่อนหน้า
