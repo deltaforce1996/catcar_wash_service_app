@@ -32,7 +32,7 @@ export class DeviceStateProcessorService implements OnModuleInit {
   private isProcessingBatch = false;
 
   // Offline Detection Configuration
-  private readonly OFFLINE_TIMEOUT = 10000; // 10 seconds in milliseconds
+  private readonly OFFLINE_TIMEOUT = 30 * 60 * 1000; // 30 minutes in milliseconds
   private deviceLastSeen = new Map<string, number>(); // deviceId -> lastSeen timestamp
   private offlineCheckInterval: NodeJS.Timeout | null = null;
 

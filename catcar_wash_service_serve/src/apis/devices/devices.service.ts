@@ -476,7 +476,7 @@ export class DevicesService {
     });
 
     // Convert structured config back to raw CommandConfig format for MQTT
-    const rawConfig = this.convertToRawConfig(device.configs as any, device.type);
+    const rawConfig = this.convertToRawConfig(device.configs as any, device.type, device.status);
     const result = await this.mqttCommandManager.applyConfig(device.id, rawConfig);
     if (result.status !== 'SUCCESS') throw new BadRequestException(result.error ?? 'Config Filed');
 
@@ -486,10 +486,10 @@ export class DevicesService {
   /**
    * Convert structured config (stored in DB) back to raw CommandConfig format for MQTT
    */
-  private convertToRawConfig(structuredConfig: any, deviceType: DeviceType): CommandConfig {
+  private convertToRawConfig(structuredConfig: any, deviceType: DeviceType, status: DeviceStatus): CommandConfig {
     const config: CommandConfig = {
       machine: {
-        ACTIVE: structuredConfig.system?.payment_method ? true : false,
+        ACTIVE: status === DeviceStatus.DEPLOYED ? true : false,
         BANKNOTE: structuredConfig.system?.payment_method?.bank_note ?? false,
         COIN: structuredConfig.system?.payment_method?.coin ?? false,
         QR: structuredConfig.system?.payment_method?.promptpay ?? false,

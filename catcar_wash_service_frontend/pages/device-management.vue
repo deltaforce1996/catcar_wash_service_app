@@ -162,6 +162,17 @@
         </v-chip>
       </template>
 
+      <!-- Last Online Column -->
+      <template #[`item.last_online`]="{ item }">
+        <v-chip
+          :color="getLastOnlineStatus(item).color"
+          size="small"
+          variant="tonal"
+        >
+          {{ getLastOnlineStatus(item).text }}
+        </v-chip>
+      </template>
+
       <!-- Owner Column -->
       <template #[`item.owner.fullname`]="{ item }">
         <div class="text-body-2">
@@ -386,6 +397,8 @@ import type {
   DeviceConfig,
 } from "~/services/apis/device-api.service";
 import EnhancedDataTable from "~/components/common/EnhancedDataTable.vue";
+import DeviceDetailDialog from "~/components/DeviceDetailDialog.vue";
+import { getLastOnlineStatus } from "~/utils/device-utils";
 
 // Import enum translation composable
 const {
@@ -444,6 +457,7 @@ const deviceHeaders = [
   { title: "ชื่ออุปกรณ์", key: "name", sortable: true },
   { title: "ประเภท", key: "type", sortable: true },
   { title: "สถานะ", key: "status", sortable: true },
+  { title: "ออนไลน์ล่าสุด", key: "last_online", sortable: false },
   { title: "เจ้าของ", key: "owner.fullname", sortable: true },
   { title: "ลงทะเบียนโดย", key: "registered_by.name", sortable: true },
 ];
