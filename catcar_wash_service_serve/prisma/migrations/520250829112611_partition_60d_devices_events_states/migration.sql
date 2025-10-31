@@ -5,19 +5,51 @@
 
 DO $$
 DECLARE
-  _exists_partitioned boolean;
+  _is_partitioned boolean;
+  _old_table_exists boolean;
+  _temp_table_exists boolean;
 BEGIN
-  -- ถ้าเป็น partitioned อยู่แล้ว (relkind = 'p') ให้ข้ามส่วน convert
+  -- Check if migration is already completed
+  -- Conditions: tbl_devices_events is partitioned, _old exists, _p doesn't exist
+
+  -- Check if tbl_devices_events is partitioned
   SELECT (c.relkind = 'p')
-  INTO _exists_partitioned
+  INTO _is_partitioned
   FROM pg_class c
   JOIN pg_namespace n ON n.oid = c.relnamespace
   WHERE n.nspname = 'public' AND c.relname = 'tbl_devices_events';
 
-  IF coalesce(_exists_partitioned, false) THEN
-    RAISE NOTICE 'tbl_devices_events is already partitioned. Skipping convert.';
+  -- Check if tbl_devices_events_old exists
+  SELECT EXISTS (
+    SELECT 1 FROM pg_class c
+    JOIN pg_namespace n ON n.oid = c.relnamespace
+    WHERE n.nspname = 'public' AND c.relname = 'tbl_devices_events_old'
+  ) INTO _old_table_exists;
+
+  -- Check if tbl_devices_events_p exists (temp table)
+  SELECT EXISTS (
+    SELECT 1 FROM pg_class c
+    JOIN pg_namespace n ON n.oid = c.relnamespace
+    WHERE n.nspname = 'public' AND c.relname = 'tbl_devices_events_p'
+  ) INTO _temp_table_exists;
+
+  -- If main table is partitioned AND old table exists AND temp table doesn't exist
+  -- Then migration is complete, skip everything
+  IF coalesce(_is_partitioned, false)
+     AND coalesce(_old_table_exists, false)
+     AND NOT coalesce(_temp_table_exists, false) THEN
+    RAISE NOTICE '=== MIGRATION ALREADY COMPLETED ===';
+    RAISE NOTICE 'tbl_devices_events is partitioned: %', _is_partitioned;
+    RAISE NOTICE 'tbl_devices_events_old exists: %', _old_table_exists;
+    RAISE NOTICE 'tbl_devices_events_p exists: %', _temp_table_exists;
+    RAISE NOTICE 'Skipping migration - already applied successfully.';
     RETURN;
   END IF;
+
+  RAISE NOTICE '=== STARTING MIGRATION ===';
+  RAISE NOTICE 'tbl_devices_events is partitioned: %', coalesce(_is_partitioned, false);
+  RAISE NOTICE 'tbl_devices_events_old exists: %', coalesce(_old_table_exists, false);
+  RAISE NOTICE 'tbl_devices_events_p exists: %', coalesce(_temp_table_exists, false);
 END$$;
 
 -- ---------------------------------------------------------
@@ -91,19 +123,43 @@ DECLARE
   v_max TIMESTAMPTZ;
   v_from DATE;
   v_to   DATE;
+  _source_table TEXT;
+  _old_exists boolean;
 BEGIN
-  SELECT min(created_at), max(created_at)
-  INTO v_min, v_max
-  FROM "public"."tbl_devices_events";
+  -- Determine which table to read data range from
+  -- Prefer tbl_devices_events if it's not partitioned yet
+  -- Otherwise use tbl_devices_events_old if it exists
+
+  SELECT EXISTS (
+    SELECT 1 FROM pg_class c
+    JOIN pg_namespace n ON n.oid = c.relnamespace
+    WHERE n.nspname = 'public' AND c.relname = 'tbl_devices_events_old'
+  ) INTO _old_exists;
+
+  -- If old table exists, table swap happened, read from it
+  -- Otherwise read from main table (not swapped yet)
+  IF _old_exists THEN
+    _source_table := 'tbl_devices_events_old';
+    RAISE NOTICE 'Reading date range from tbl_devices_events_old';
+  ELSE
+    _source_table := 'tbl_devices_events';
+    RAISE NOTICE 'Reading date range from tbl_devices_events';
+  END IF;
+
+  -- Read min/max dates from the source table
+  EXECUTE format('SELECT min(created_at), max(created_at) FROM "public"."%I"', _source_table)
+  INTO v_min, v_max;
 
   IF v_min IS NULL OR v_max IS NULL THEN
     -- ไม่มีข้อมูล: seed ช่วงปกติ (ปรับได้ตามต้องการ)
     v_from := date_trunc('day', now() AT TIME ZONE 'UTC')::date;
     v_to   := (v_from + interval '365 days')::date;
+    RAISE NOTICE 'No data found. Creating partitions for 1 year from today.';
   ELSE
     v_from := date_trunc('day', v_min AT TIME ZONE 'UTC')::date;
     -- บวก buffer เพื่อครอบคลุมพาร์ทิชันสุดท้าย
     v_to   := (date_trunc('day', v_max AT TIME ZONE 'UTC') + interval '60 days')::date;
+    RAISE NOTICE 'Creating partitions from % to % based on existing data', v_from, v_to;
   END IF;
 
   PERFORM "public"."create_tbl_devices_events_partitions"(v_from, v_to);
@@ -113,9 +169,24 @@ END$$;
 -- คัดลอกข้อมูลจากตารางเดิม → ตารางใหม่ (ตัดคอลัมน์ type ออก)
 -- หมายเหตุ: ถ้าตารางเดิมไม่มีคอลัมน์ type จะไม่ error เพราะเราเจาะคอลัมน์เป้าหมาย
 -- ---------------------------------------------------------
-INSERT INTO "public"."tbl_devices_events_p" ("id","device_id","payload","created_at")
-SELECT "id","device_id","payload","created_at"
-FROM "public"."tbl_devices_events";
+DO $$
+DECLARE
+  _p_table_count INTEGER;
+BEGIN
+  -- Check if tbl_devices_events_p already has data
+  SELECT COUNT(*) INTO _p_table_count
+  FROM "public"."tbl_devices_events_p";
+
+  IF _p_table_count > 0 THEN
+    RAISE NOTICE 'tbl_devices_events_p already contains % rows. Skipping data copy.', _p_table_count;
+  ELSE
+    RAISE NOTICE 'Copying data from tbl_devices_events to tbl_devices_events_p...';
+    INSERT INTO "public"."tbl_devices_events_p" ("id","device_id","payload","created_at")
+    SELECT "id","device_id","payload","created_at"
+    FROM "public"."tbl_devices_events";
+    RAISE NOTICE 'Data copy completed.';
+  END IF;
+END$$;
 
 -- ---------------------------------------------------------
 -- Validate row count (safety check)
@@ -142,29 +213,78 @@ END$$;
 -- ---------------------------------------------------------
 -- สลับชื่อ (downtime ช่วงสั้น ๆ)
 -- ---------------------------------------------------------
-BEGIN;
-  -- ล็อกตารางเดิมแบบสั้น ๆ เพื่อความสม่ำเสมอ
-  LOCK TABLE "public"."tbl_devices_events" IN ACCESS EXCLUSIVE MODE;
+DO $$
+DECLARE
+  _swap_needed boolean := false;
+  _p_exists boolean;
+  _old_exists boolean;
+  _main_is_partitioned boolean;
+BEGIN
+  -- Check if table swap is needed
+  -- Swap is needed if: _p exists, _old doesn't exist, main is not partitioned
 
-  -- เปลี่ยนชื่อของเดิมเก็บไว้เผื่อ rollback manual
-  ALTER TABLE "public"."tbl_devices_events" RENAME TO "tbl_devices_events_old";
+  -- Check if tbl_devices_events_p exists
+  SELECT EXISTS (
+    SELECT 1 FROM pg_class c
+    JOIN pg_namespace n ON n.oid = c.relnamespace
+    WHERE n.nspname = 'public' AND c.relname = 'tbl_devices_events_p'
+  ) INTO _p_exists;
 
-  -- เปลี่ยนชื่อตารางใหม่ให้เป็นชื่อเดิม
-  ALTER TABLE "public"."tbl_devices_events_p" RENAME TO "tbl_devices_events";
+  -- Check if tbl_devices_events_old exists
+  SELECT EXISTS (
+    SELECT 1 FROM pg_class c
+    JOIN pg_namespace n ON n.oid = c.relnamespace
+    WHERE n.nspname = 'public' AND c.relname = 'tbl_devices_events_old'
+  ) INTO _old_exists;
 
-  -- ย้ายชื่อ constraint FK ให้กลับมาเป็นรูปเดิม (ไม่บังคับ ถ้าไม่มี dependency ชื่อ)
-  DO $$
-  BEGIN
-    IF EXISTS (
-      SELECT 1 FROM pg_constraint
-      WHERE conname = 'tbl_devices_events_p_device_id_fkey'
-    ) THEN
-      ALTER TABLE "public"."tbl_devices_events"
-        RENAME CONSTRAINT "tbl_devices_events_p_device_id_fkey"
-        TO "tbl_devices_events_device_id_fkey";
-    END IF;
-  END$$;
-COMMIT;
+  -- Check if main table is partitioned
+  SELECT (c.relkind = 'p')
+  INTO _main_is_partitioned
+  FROM pg_class c
+  JOIN pg_namespace n ON n.oid = c.relnamespace
+  WHERE n.nspname = 'public' AND c.relname = 'tbl_devices_events';
+
+  -- Determine if swap is needed
+  _swap_needed := coalesce(_p_exists, false)
+                  AND NOT coalesce(_old_exists, false)
+                  AND NOT coalesce(_main_is_partitioned, false);
+
+  IF NOT _swap_needed THEN
+    RAISE NOTICE '=== TABLE SWAP ALREADY COMPLETED ===';
+    RAISE NOTICE 'tbl_devices_events_p exists: %', coalesce(_p_exists, false);
+    RAISE NOTICE 'tbl_devices_events_old exists: %', coalesce(_old_exists, false);
+    RAISE NOTICE 'tbl_devices_events is partitioned: %', coalesce(_main_is_partitioned, false);
+    RAISE NOTICE 'Skipping table swap - already done.';
+    RETURN;
+  END IF;
+
+  RAISE NOTICE '=== PERFORMING TABLE SWAP ===';
+
+  -- Perform the swap in a transaction-like manner
+  -- Note: We can't use BEGIN/COMMIT inside DO block, so we rely on idempotency checks
+
+  -- Lock the main table
+  EXECUTE 'LOCK TABLE "public"."tbl_devices_events" IN ACCESS EXCLUSIVE MODE';
+
+  -- Rename old table
+  EXECUTE 'ALTER TABLE "public"."tbl_devices_events" RENAME TO "tbl_devices_events_old"';
+  RAISE NOTICE 'Renamed tbl_devices_events -> tbl_devices_events_old';
+
+  -- Rename new partitioned table
+  EXECUTE 'ALTER TABLE "public"."tbl_devices_events_p" RENAME TO "tbl_devices_events"';
+  RAISE NOTICE 'Renamed tbl_devices_events_p -> tbl_devices_events';
+
+  -- Rename FK constraint if exists
+  IF EXISTS (
+    SELECT 1 FROM pg_constraint
+    WHERE conname = 'tbl_devices_events_p_device_id_fkey'
+  ) THEN
+    EXECUTE 'ALTER TABLE "public"."tbl_devices_events" RENAME CONSTRAINT "tbl_devices_events_p_device_id_fkey" TO "tbl_devices_events_device_id_fkey"';
+    RAISE NOTICE 'Renamed FK constraint';
+  END IF;
+
+  RAISE NOTICE '=== TABLE SWAP COMPLETED ===';
+END$$;
 
 
 
@@ -178,8 +298,23 @@ COMMIT;
 
 
 
--- AlterTable
-ALTER TABLE "public"."tbl_devices_events" ADD CONSTRAINT "tbl_devices_events_pkey" PRIMARY KEY ("id", "created_at");
+-- AlterTable - Add PRIMARY KEY with idempotency check
+DO $$
+BEGIN
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_constraint
+    WHERE conrelid = 'public.tbl_devices_events'::regclass
+      AND conname = 'tbl_devices_events_pkey'
+  ) THEN
+    ALTER TABLE "public"."tbl_devices_events"
+      ADD CONSTRAINT "tbl_devices_events_pkey"
+      PRIMARY KEY ("id", "created_at");
+    RAISE NOTICE 'PRIMARY KEY created';
+  ELSE
+    RAISE NOTICE 'PRIMARY KEY already exists, skipping';
+  END IF;
+END$$;
 
--- CreateIndex
-CREATE INDEX "tbl_devices_events_device_id_created_at_idx" ON "public"."tbl_devices_events"("device_id", "created_at");
+-- CreateIndex - Use IF NOT EXISTS for idempotency
+CREATE INDEX IF NOT EXISTS "tbl_devices_events_device_id_created_at_idx"
+  ON "public"."tbl_devices_events"("device_id", "created_at");

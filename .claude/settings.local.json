@@ -13,7 +13,12 @@
       "WebFetch(domain:vuetifyjs.com)",
       "mcp__ide__getDiagnostics",
       "Bash(npm run lint)",
-      "Bash(npm run build:*)"
+      "Bash(npm run build:*)",
+      "Bash(docker ps:*)",
+      "Bash(docker logs:*)",
+      "Bash(docker exec:*)",
+      "Bash(docker stop:*)",
+      "Bash(DATABASE_URL=\"postgresql://admin%40catcarwash.com:QdQ3UIwh5z@localhost:5432/catcar_wash_db_prod?schema=public&connect_timeout=30&pool_timeout=30\" npx prisma migrate resolve:*)"
     ],
     "deny": [],
     "ask": []

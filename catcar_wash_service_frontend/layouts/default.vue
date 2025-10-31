@@ -1,5 +1,6 @@
 <template>
-  <v-app>
+  <client-only>
+    <v-app>
     <v-navigation-drawer
       v-model="drawer"
       :permanent="$vuetify.display.lgAndUp"
@@ -66,16 +67,16 @@
         </template>
       </v-list>
 
-      <v-list nav class="px-4">
+      <v-list v-if="debuggingMenuItems.length > 0" nav class="px-4">
         <v-list-subheader class="text-uppercase font-weight-bold text-caption text-on-surface-variant mb-2">
           Debugging
         </v-list-subheader>
 
-        <template v-if="allDebuggingMenuItems.length > 0">
+        <template v-if="debuggingMenuItems.length > 0">
           <v-divider class="my-4" />
 
           <v-list-item
-            v-for="item in allDebuggingMenuItems"
+            v-for="item in debuggingMenuItems"
             :key="item.title"
             :to="item.to"
             :prepend-icon="item.icon"
@@ -205,6 +206,8 @@
       </v-container>
     </v-main>
   </v-app>
+  </client-only>
+ 
 </template>
 
 <script setup lang="ts">
@@ -317,6 +320,12 @@ const managementMenuItems = computed(() => {
   if (!user.value) return [];
   const userRole = user.value.permission.name;
   return allManagementMenuItems.filter((item) => item.roles.includes(userRole));
+});
+
+const debuggingMenuItems = computed(() => {
+  if (!user.value) return [];
+  const userRole = user.value.permission.name;
+  return allDebuggingMenuItems.filter((item) => item.roles.includes(userRole));
 });
 
 // Methods

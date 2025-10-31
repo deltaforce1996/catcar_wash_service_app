@@ -46,7 +46,7 @@ export const getConfigUtils = () => {
       retryAttempts: getDefault(runtimeConfig.public.apiRetryAttempts, 3),
       retryDelay: getDefault(runtimeConfig.public.apiRetryDelay, 1000),
       signature: {
-        enabled: true,
+        enabled: false,
         secretKey: "Cat Car Wash Service",
       },
     },

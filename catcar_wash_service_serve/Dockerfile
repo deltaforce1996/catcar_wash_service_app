@@ -50,9 +50,9 @@ RUN pnpm run build
 # This ensures no build tools or dev dependencies are included
 FROM node:20-alpine AS production
 
-# Install pnpm globally in the production image
+# Install pnpm globally and wget for healthchecks
 # Required to manage the production dependencies
-RUN npm install -g pnpm
+RUN npm install -g pnpm && apk add --no-cache wget
 
 # Set the working directory for the production stage
 WORKDIR /app

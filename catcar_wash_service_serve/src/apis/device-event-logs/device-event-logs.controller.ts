@@ -8,6 +8,7 @@ import { AllExceptionFilter } from 'src/common';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { UserAuth } from '../auth/decorators';
 import type { AuthenticatedUser } from 'src/types/internal.type';
+import { DeviceSignatureGuard } from '../payment-gateway/guards/device-signature.guard';
 
 type DeviceEventLogsPublicResponse = PaginatedResult<DeviceEventLogRow>;
 
@@ -30,6 +31,7 @@ export class DeviceEventLogsController {
     };
   }
 
+  @UseGuards(DeviceSignatureGuard)
   @Post('upload')
   async uploadDeviceEventLogs(
     @Body() uploadLogsDto: UploadLogsDto,

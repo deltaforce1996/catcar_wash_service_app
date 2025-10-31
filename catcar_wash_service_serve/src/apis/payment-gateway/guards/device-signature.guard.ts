@@ -20,7 +20,7 @@ export class DeviceSignatureGuard implements CanActivate {
   private readonly SECRET_KEY: string;
 
   constructor(private readonly configService: ConfigService) {
-    this.SECRET_KEY = this.configService.get<string>('app.deviceSecretKey', 'modernchabackdoor');
+    this.SECRET_KEY = this.configService.get<string>('app.deviceSecretKey', 'device-secret-key');
     this.logger.log(`Device signature guard initialized with centralized SECRET_KEY from config`);
   }
 

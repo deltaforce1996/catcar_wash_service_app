@@ -29,7 +29,7 @@ export class MqttCommandManagerService implements OnModuleInit, OnModuleDestroy 
     private readonly mqttService: MqttService,
     private readonly configService: ConfigService,
   ) {
-    this.secretKey = this.configService.get<string>('app.deviceSecretKey', 'modernchabackdoor');
+    this.secretKey = this.configService.get<string>('app.deviceSecretKey', 'device-secret-key');
   }
 
   async onModuleInit() {

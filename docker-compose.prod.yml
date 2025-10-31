@@ -109,8 +109,10 @@ services:
     container_name: catcar_wash_backend_prod
     restart: always
     # Port only accessible within Docker network (Nginx will proxy)
-    expose:
-      - "3000"
+    # expose:
+    #   - "3000"
+    ports:
+      - "3000:3000"
     environment:
       # Application
       - NODE_ENV=production
@@ -149,7 +151,7 @@ services:
         max-size: "20m"
         max-file: "5"
     healthcheck:
-      test: [ "CMD", "curl", "-f", "http://localhost:3000/api/health" ]
+      test: [ "CMD-SHELL", "wget --quiet --tries=1 --spider http://localhost:3000/health || exit 1" ]
       interval: 30s
       timeout: 10s
       retries: 3
@@ -164,20 +166,24 @@ services:
     container_name: catcar_wash_frontend_prod
     restart: always
     # Port only accessible within Docker network (Nginx will proxy)
-    expose:
-      - "3000"
+    # expose:
+    #   - "3000"
+    ports:
+      - "3001:3000"
     environment:
       # Application
       - NODE_ENV=production
-      - NITRO_HOST=0.0.0.0
-      - NITRO_PORT=3000
+      # - NITRO_HOST=0.0.0.0
+      # - NITRO_PORT=3000
 
       # API Configuration
-      # Use relative path since Nginx proxies both frontend and backend
-      - NUXT_PUBLIC_API_URL=${NUXT_PUBLIC_API_URL:-/api}
-      - NUXT_PUBLIC_API_TIMEOUT=${NUXT_PUBLIC_API_TIMEOUT:-30000}
-      - NUXT_PUBLIC_API_RETRY_ATTEMPTS=${NUXT_PUBLIC_API_RETRY_ATTEMPTS:-3}
-      - NUXT_PUBLIC_API_RETRY_DELAY=${NUXT_PUBLIC_API_RETRY_DELAY:-1000}
+      # Use external URL since browser needs to access backend directly
+      # IMPORTANT: Set NUXT_PUBLIC_API_URL in .env.prod to your server's external URL
+      # Example: http://your-server-ip:3000 or https://api.yourdomain.com
+      - NUXT_PUBLIC_API_URL=${NUXT_PUBLIC_API_URL:-http://localhost:3000}
+      # - NUXT_PUBLIC_API_TIMEOUT=${NUXT_PUBLIC_API_TIMEOUT:-15}
+      # - NUXT_PUBLIC_API_RETRY_ATTEMPTS=${NUXT_PUBLIC_API_RETRY_ATTEMPTS:-3}
+      # - NUXT_PUBLIC_API_RETRY_DELAY=${NUXT_PUBLIC_API_RETRY_DELAY:-1000}
 
       # Debugging and Logging
       - NUXT_PUBLIC_DEBUG_ENABLED=${NUXT_PUBLIC_DEBUG_ENABLED:-false}
@@ -196,12 +202,12 @@ services:
       options:
         max-size: "10m"
         max-file: "3"
-    healthcheck:
-      test: [ "CMD", "curl", "-f", "http://localhost:3000/" ]
-      interval: 30s
-      timeout: 10s
-      retries: 3
-      start_period: 40s
+    # healthcheck:
+    #   test: [ "CMD", "curl", "-f", "http://localhost:3001/" ]
+    #   interval: 30s
+    #   timeout: 10s
+    #   retries: 3
+    #   start_period: 40s
 
   # # Nginx Reverse Proxy
   # nginx:

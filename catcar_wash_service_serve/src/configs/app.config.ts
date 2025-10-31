@@ -7,7 +7,7 @@ export default registerAs('app', () => ({
   apiPrefix: process.env.API_PREFIX ?? 'api',
   version: process.env.VERSION ?? '1.0.0',
   logLevel: process.env.LOG_LEVEL ?? 'info',
-  deviceSecretKey: process.env.DEVICE_SECRET_KEY ?? 'modernchabackdoor',
+  deviceSecretKey: process.env.DEVICE_SECRET_KEY ?? 'device-secret-key',
   mqttBrokerUrl: process.env.MQTT_BROKER_URL ?? 'mqtt://localhost:1883',
   mqttClientId: process.env.MQTT_CLIENT_ID ?? `catcar-wash-${Date.now()}`,
   mqttUsername: process.env.MQTT_USERNAME,

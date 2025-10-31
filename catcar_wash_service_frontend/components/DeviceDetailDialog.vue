@@ -2310,7 +2310,7 @@ const handleStatePageChange = async (newPage: number) => {
 };
 
 const getStatusColor = (status: string) => {
-  return status === "normal" ? "success" : "error";
+  return status.toLowerCase() === "normal" ? "success" : "error";
 };
 
 const getStatusLabel = (status: string) => {

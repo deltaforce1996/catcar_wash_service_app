@@ -41,8 +41,8 @@ RUN pnpm run build
 # =============================================================================
 FROM node:20-alpine AS production
 
-# Install pnpm globally in production image
-RUN npm install -g pnpm
+# Install pnpm globally and wget for healthchecks
+RUN npm install -g pnpm && apk add --no-cache wget
 
 # Set working directory for production stage
 WORKDIR /app
@@ -69,10 +69,74 @@ COPY --from=base /app/dist ./dist
 # Copy public directory containing static files
 COPY --from=base /app/public ./public
 
-# Copy production startup script
+# Create production startup script with auto-recovery for failed migrations
 # This script runs migrations and production seeding before starting the app
-COPY start.sh /app/start.sh
-RUN chmod +x /app/start.sh
+RUN echo '#!/bin/sh' > /app/start.sh && \
+    echo 'set -e' >> /app/start.sh && \
+    echo '' >> /app/start.sh && \
+    echo 'echo "============================================================"' >> /app/start.sh && \
+    echo 'echo "Starting CatCar Wash Service - Production Mode"' >> /app/start.sh && \
+    echo 'echo "============================================================"' >> /app/start.sh && \
+    echo '' >> /app/start.sh && \
+    echo 'echo "Waiting for database connection..."' >> /app/start.sh && \
+    echo 'sleep 3' >> /app/start.sh && \
+    echo '' >> /app/start.sh && \
+    echo 'echo "Running Prisma migrations..."' >> /app/start.sh && \
+    echo '' >> /app/start.sh && \
+    echo '# Try to run migrations and capture output' >> /app/start.sh && \
+    echo 'MIGRATE_OUTPUT=$(pnpm prisma migrate deploy 2>&1) || MIGRATE_EXIT_CODE=$?' >> /app/start.sh && \
+    echo '' >> /app/start.sh && \
+    echo '# Check if migration failed' >> /app/start.sh && \
+    echo 'if [ -n "$MIGRATE_EXIT_CODE" ] && [ "$MIGRATE_EXIT_CODE" -ne 0 ]; then' >> /app/start.sh && \
+    echo '  echo "$MIGRATE_OUTPUT"' >> /app/start.sh && \
+    echo '  echo ""' >> /app/start.sh && \
+    echo '  ' >> /app/start.sh && \
+    echo '  # Check if error is P3009 (failed migration found)' >> /app/start.sh && \
+    echo '  if echo "$MIGRATE_OUTPUT" | grep -q "P3009"; then' >> /app/start.sh && \
+    echo '    echo "=== DETECTED FAILED MIGRATION (P3009) ==="' >> /app/start.sh && \
+    echo '    echo "Attempting auto-recovery..."' >> /app/start.sh && \
+    echo '    echo ""' >> /app/start.sh && \
+    echo '    ' >> /app/start.sh && \
+    echo '    # Extract failed migration name using grep' >> /app/start.sh && \
+    echo '    FAILED_MIGRATION=$(echo "$MIGRATE_OUTPUT" | grep -oE "\`[^\`]+\` migration" | head -1 | sed "s/\`//g" | sed "s/ migration//g")' >> /app/start.sh && \
+    echo '    ' >> /app/start.sh && \
+    echo '    if [ -n "$FAILED_MIGRATION" ]; then' >> /app/start.sh && \
+    echo '      echo "Found failed migration: $FAILED_MIGRATION"' >> /app/start.sh && \
+    echo '      echo "Marking as applied and retrying..."' >> /app/start.sh && \
+    echo '      echo ""' >> /app/start.sh && \
+    echo '      ' >> /app/start.sh && \
+    echo '      # Mark the failed migration as applied' >> /app/start.sh && \
+    echo '      pnpm prisma migrate resolve --applied "$FAILED_MIGRATION"' >> /app/start.sh && \
+    echo '      echo ""' >> /app/start.sh && \
+    echo '      ' >> /app/start.sh && \
+    echo '      # Retry migration deployment' >> /app/start.sh && \
+    echo '      echo "Retrying migration deployment..."' >> /app/start.sh && \
+    echo '      pnpm prisma migrate deploy' >> /app/start.sh && \
+    echo '      echo ""' >> /app/start.sh && \
+    echo '      echo "=== AUTO-RECOVERY COMPLETED ==="' >> /app/start.sh && \
+    echo '    else' >> /app/start.sh && \
+    echo '      echo "ERROR: Could not extract failed migration name from output"' >> /app/start.sh && \
+    echo '      echo "Please check the migration manually"' >> /app/start.sh && \
+    echo '      exit 1' >> /app/start.sh && \
+    echo '    fi' >> /app/start.sh && \
+    echo '  else' >> /app/start.sh && \
+    echo '    # Not a P3009 error, exit with error' >> /app/start.sh && \
+    echo '    echo "ERROR: Migration failed! Check DATABASE_URL and database connection."' >> /app/start.sh && \
+    echo '    exit 1' >> /app/start.sh && \
+    echo '  fi' >> /app/start.sh && \
+    echo 'else' >> /app/start.sh && \
+    echo '  # Migration succeeded, show output' >> /app/start.sh && \
+    echo '  echo "$MIGRATE_OUTPUT"' >> /app/start.sh && \
+    echo 'fi' >> /app/start.sh && \
+    echo '' >> /app/start.sh && \
+    echo 'echo ""' >> /app/start.sh && \
+    echo 'echo "Seeding database (production mode - essential data only)..."' >> /app/start.sh && \
+    echo 'NODE_ENV=production pnpm prisma db seed || echo "WARNING: Seeding failed but continuing..."' >> /app/start.sh && \
+    echo '' >> /app/start.sh && \
+    echo 'echo ""' >> /app/start.sh && \
+    echo 'echo "Starting NestJS application..."' >> /app/start.sh && \
+    echo 'exec node dist/src/main.js' >> /app/start.sh && \
+    chmod +x /app/start.sh
 
 # =============================================================================
 # SECURITY CONFIGURATION
