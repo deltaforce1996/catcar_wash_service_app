@@ -1,7 +1,30 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, Inject } from '@nestjs/common';
+import type { ConfigType } from '@nestjs/config';
+import timezoneConfig from 'src/configs/timezone.config';
 
 @Injectable()
 export class DateTimeService {
+  constructor(
+    @Inject(timezoneConfig.KEY)
+    private readonly tzConfig: ConfigType<typeof timezoneConfig>,
+  ) {}
+
+  /**
+   * Get timezone name for SQL queries
+   * @returns Timezone name (e.g., 'Asia/Bangkok')
+   */
+  getTimezoneName(): string {
+    return this.tzConfig.name;
+  }
+
+  /**
+   * Get timezone offset in milliseconds
+   * @returns Offset in milliseconds
+   */
+  getTimezoneOffsetMs(): number {
+    return this.tzConfig.offsetMs;
+  }
+
   /**
    * Convert datetime to Thailand timezone (UTC+7)
    * @param date - Date object or ISO string
@@ -16,8 +39,8 @@ export class DateTimeService {
       return null;
     }
 
-    // Convert to Thailand timezone (UTC+7)
-    const thailandTime = new Date(dateObj.getTime() + 7 * 60 * 60 * 1000);
+    // Convert to configured timezone using offset from config
+    const thailandTime = new Date(dateObj.getTime() + this.tzConfig.offsetMs);
 
     const year = thailandTime.getUTCFullYear();
     const month = String(thailandTime.getUTCMonth() + 1).padStart(2, '0');

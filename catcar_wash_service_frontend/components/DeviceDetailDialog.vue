@@ -131,6 +131,72 @@
                   </v-card-text>
                 </v-card>
 
+                <!-- Last Online Card -->
+                <v-card flat color="surface-container" class="mt-4">
+                  <v-card-text class="pa-3">
+                    <div class="font-weight-medium mb-3">
+                      <v-icon class="mr-1" size="20">mdi-wifi</v-icon>
+                      การเชื่อมต่อ
+                    </div>
+
+                    <!-- Online Status -->
+                    <div class="mb-3">
+                      <v-chip
+                        :color="getLastOnlineStatus(device).color"
+                        variant="tonal"
+                        size="default"
+                        class="font-weight-medium"
+                      >
+                        <v-icon
+                          :icon="isOffline(device) ? 'mdi-wifi-off' : 'mdi-wifi'"
+                          class="mr-1"
+                        />
+                        {{ getLastOnlineStatus(device).text }}
+                      </v-chip>
+                    </div>
+
+                    <!-- Last Online Timestamp -->
+                    <div class="d-flex justify-space-between align-center mb-2">
+                      <span class="text-body-2 text-medium-emphasis">
+                        เวลาล่าสุด:
+                      </span>
+                      <span class="text-body-2 font-weight-medium">
+                        {{
+                          device?.last_state?.state_data?.datetime
+                            ? new Date(
+                                device.last_state.state_data.datetime
+                              ).toLocaleString("th-TH", {
+                                year: "numeric",
+                                month: "short",
+                                day: "numeric",
+                                hour: "2-digit",
+                                minute: "2-digit",
+                                second: "2-digit",
+                              })
+                            : "ไม่มีข้อมูล"
+                        }}
+                      </span>
+                    </div>
+
+                    <!-- Time Ago -->
+                    <div class="d-flex justify-space-between align-center">
+                      <span class="text-body-2 text-medium-emphasis">
+                        ระยะเวลา:
+                      </span>
+                      <span class="text-body-2 font-weight-medium">
+                        {{
+                          getLastTimestampMs(device)
+                            ? formatTimeAgoTh(
+                                getLastTimestampMs(device)!,
+                                Date.now()
+                              )
+                            : "ไม่ทราบ"
+                        }}
+                      </span>
+                    </div>
+                  </v-card-text>
+                </v-card>
+
                 <!-- Device Management Actions -->
                 <v-card flat color="surface-container" class="mt-4">
                   <v-card-text class="pa-3">
@@ -1510,6 +1576,12 @@ import type {
   DeviceConfig,
 } from "~/services/apis/device-api.service";
 import EnhancedDataTable from "~/components/common/EnhancedDataTable.vue";
+import {
+  getLastTimestampMs,
+  formatTimeAgoTh,
+  isOffline,
+  getLastOnlineStatus,
+} from "~/utils/device-utils";
 
 // Import firmware composable
 const {
@@ -1731,12 +1803,9 @@ const getSavePayload = () => {
   return payload;
 };
 
-// Get status change payload if status has changed
+// Get status change payload - always return current status from switch
 const getStatusChangePayload = () => {
-  if (isStatusChanged()) {
-    return { status: editableStatus.value };
-  }
-  return null;
+  return { status: editableStatus.value };
 };
 
 // Methods

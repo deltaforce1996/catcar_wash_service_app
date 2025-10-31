@@ -162,6 +162,17 @@
         </v-chip>
       </template>
 
+      <!-- Last Online Column -->
+      <template #[`item.last_online`]="{ item }">
+        <v-chip
+          :color="getLastOnlineStatus(item).color"
+          size="small"
+          variant="tonal"
+        >
+          {{ getLastOnlineStatus(item).text }}
+        </v-chip>
+      </template>
+
       <!-- Owner Column -->
       <template #[`item.owner.fullname`]="{ item }">
         <div class="text-body-2">
@@ -386,6 +397,8 @@ import type {
   DeviceConfig,
 } from "~/services/apis/device-api.service";
 import EnhancedDataTable from "~/components/common/EnhancedDataTable.vue";
+import DeviceDetailDialog from "~/components/DeviceDetailDialog.vue";
+import { getLastOnlineStatus } from "~/utils/device-utils";
 
 // Import enum translation composable
 const {
@@ -409,7 +422,6 @@ const {
   totalPages,
   searchDevices,
   updateDeviceConfigs,
-  setDeviceStatus,
   clearMessages: _clearMessages,
 } = useDevice();
 
@@ -444,6 +456,7 @@ const deviceHeaders = [
   { title: "ชื่ออุปกรณ์", key: "name", sortable: true },
   { title: "ประเภท", key: "type", sortable: true },
   { title: "สถานะ", key: "status", sortable: true },
+  { title: "ออนไลน์ล่าสุด", key: "last_online", sortable: false },
   { title: "เจ้าของ", key: "owner.fullname", sortable: true },
   { title: "ลงทะเบียนโดย", key: "registered_by.name", sortable: true },
 ];
@@ -549,12 +562,12 @@ const openDeviceDetailDialog = async (device: DeviceResponseApi) => {
 const toggleDeviceStatus = async () => {
   if (!selectedDevice.value) return;
 
-  const deviceId = selectedDevice.value.id;
-  const newStatus =
-    selectedDevice.value.status === "DEPLOYED" ? "DISABLED" : "DEPLOYED";
+  // const deviceId = selectedDevice.value.id;
+  // const newStatus =
+  //   selectedDevice.value.status === "DEPLOYED" ? "DISABLED" : "DEPLOYED";
 
   try {
-    await setDeviceStatus(deviceId, { status: newStatus });
+    // await setDeviceStatus(deviceId, { status: newStatus });
 
     // Refresh device data from API response (setDeviceStatus updates currentDevice)
     if (currentDevice.value) {
@@ -586,7 +599,7 @@ const applyDeviceConfig = async () => {
 
     // Check if there are any changes at all
     const hasConfigChanges = configPayload.configs && Object.keys(configPayload.configs).length > 0;
-    const hasStatusChange = statusPayload !== null;
+    const hasStatusChange = statusPayload.status !== selectedDevice.value.status;
 
     if (!hasConfigChanges && !hasStatusChange) {
       return;
@@ -594,21 +607,12 @@ const applyDeviceConfig = async () => {
 
     let updatedDevice = null;
 
-    // First, update status if it changed
-    if (hasStatusChange && statusPayload) {
-      updatedDevice = await setDeviceStatus(
-        selectedDevice.value.id,
-        statusPayload
-      );
-    }
-
-    // Then, update configs if they changed
-    if (hasConfigChanges) {
-      updatedDevice = await updateDeviceConfigs(
-        selectedDevice.value.id,
-        configPayload
-      );
-    }
+    // Update device with config changes and current status
+    updatedDevice = await updateDeviceConfigs(
+      selectedDevice.value.id,
+      configPayload,
+      statusPayload.status as EnumDeviceStatus
+    );
 
     // Refresh selectedDevice with the API response to update dialog
     if (updatedDevice) {

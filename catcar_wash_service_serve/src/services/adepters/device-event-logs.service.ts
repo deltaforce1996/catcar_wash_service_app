@@ -249,10 +249,14 @@ export class DeviceEventLogsService {
           coin: item.coin,
         };
 
+        // Convert timestamp to Date for created_at to match payload timestamp
+        const eventDate = new Date(item.timestamp);
+
         return this.prisma.tbl_devices_events.create({
           data: {
             device_id: uploadLogsDto.device_id,
             payload: payload as any,
+            created_at: eventDate, // Use event timestamp instead of NOW()
           },
         });
       }),

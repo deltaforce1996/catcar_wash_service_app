@@ -4,7 +4,7 @@ import { EventEmitterModule } from '@nestjs/event-emitter';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { PrismaModule } from './database/prisma/prisma.module';
-import { appConfig, jwtConfig, beamCheckoutConfig } from './configs';
+import { appConfig, jwtConfig, beamCheckoutConfig, timezoneConfig } from './configs';
 import { AuthModule } from './apis/auth';
 import { JwtGlobalModule } from './apis/auth/jwt-global.module';
 import { EmpsModule } from './apis/emps/emps.module';
@@ -25,7 +25,7 @@ import { DateTimeService } from './services';
   imports: [
     ConfigModule.forRoot({
       isGlobal: true,
-      load: [appConfig, jwtConfig, beamCheckoutConfig],
+      load: [appConfig, jwtConfig, beamCheckoutConfig, timezoneConfig],
     }),
     EventEmitterModule.forRoot(),
     PrismaModule,

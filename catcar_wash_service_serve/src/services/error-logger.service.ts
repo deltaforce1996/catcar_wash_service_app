@@ -1,14 +1,21 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, Inject } from '@nestjs/common';
+import type { ConfigType } from '@nestjs/config';
+import timezoneConfig from 'src/configs/timezone.config';
 import { Request } from 'express';
 import * as fs from 'fs';
 import * as path from 'path';
 
 @Injectable()
 export class ErrorLoggerService {
+  constructor(
+    @Inject(timezoneConfig.KEY)
+    private readonly tzConfig: ConfigType<typeof timezoneConfig>,
+  ) {}
+
   logErrorToFile(error: Error, request: Request): void {
-    // Use Thailand timezone (UTC+7)
+    // Use configured timezone (default: Asia/Bangkok UTC+7)
     const now = new Date();
-    const thailandTime = new Date(now.getTime() + 7 * 60 * 60 * 1000);
+    const thailandTime = new Date(now.getTime() + this.tzConfig.offsetMs);
     const timestamp = thailandTime.toISOString().replace('T', ' ').replace('Z', ' +07:00');
 
     const userAgent = request.get('User-Agent') || '-';

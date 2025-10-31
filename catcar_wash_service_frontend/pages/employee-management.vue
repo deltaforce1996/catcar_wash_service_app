@@ -326,7 +326,7 @@ import AddEmployeeDialog from "~/components/employee/AddEmployeeDialog.vue";
 import EditEmployeeDialog from "~/components/employee/EditEmployeeDialog.vue";
 import { useAuth } from "~/composables/useAuth";
 
-const { isAdmin , user} = useAuth();
+const { isAdmin, user: _user } = useAuth();
 
 // Import enum translation composable
 const {

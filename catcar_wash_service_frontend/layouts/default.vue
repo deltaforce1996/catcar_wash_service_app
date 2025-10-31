@@ -66,6 +66,27 @@
         </template>
       </v-list>
 
+      <v-list nav class="px-4">
+        <v-list-subheader class="text-uppercase font-weight-bold text-caption text-on-surface-variant mb-2">
+          Debugging
+        </v-list-subheader>
+
+        <template v-if="allDebuggingMenuItems.length > 0">
+          <v-divider class="my-4" />
+
+          <v-list-item
+            v-for="item in allDebuggingMenuItems"
+            :key="item.title"
+            :to="item.to"
+            :prepend-icon="item.icon"
+            :title="item.title"
+            class="mb-1"
+            rounded="lg"
+            color="primary"
+          />
+        </template>
+      </v-list>
+
       <!-- Profile Section at Bottom -->
       <template #append>
         <v-sheet class="border-t" color="surface-container-low">
@@ -267,6 +288,21 @@ const allManagementMenuItems = [
     icon: "mdi-update",
     to: "/admin/firmware-management",
     roles: ["ADMIN"],
+  },
+  {
+    title: "โปรไฟล์",
+    icon: "mdi-account-outline",
+    to: "/profile",
+    roles: ["USER", "TECHNICIAN", "ADMIN"],
+  },
+];
+
+const allDebuggingMenuItems = [
+  {
+    title: "เครื่องมือดีบัก MQTT",
+    icon: "mdi-web",
+    to: "/mqtt-debuggin",
+    roles: ["TECHNICIAN", "ADMIN"],
   },
 ];
 

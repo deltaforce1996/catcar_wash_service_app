@@ -116,7 +116,6 @@ export interface CreateDevicePayload {
 
 export interface UpdateDeviceBasicPayload {
   name?: string;
-  status?: EnumDeviceStatus;
 }
 
 export interface UpdateDeviceConfigsPayload {
@@ -134,6 +133,7 @@ export interface UpdateDeviceConfigsPayload {
       [config_name: string]: number;
     };
   };
+  status?: EnumDeviceStatus;
 }
 
 export interface SetDeviceStatePayload {
