@@ -657,6 +657,7 @@ import { useDevicePairing } from "~/composables/useDevicePairing";
 import { useDevice } from "~/composables/useDevice";
 import { useUser } from "~/composables/useUser";
 import { useAuth } from "~/composables/useAuth";
+const config = useRuntimeConfig()
 
 // Define page metadata
 definePageMeta({
@@ -664,7 +665,7 @@ definePageMeta({
   title: "จับคู่อุปกรณ์",
 });
 
-const baseURL: string = "http://localhost:3000";
+const baseURL: string = config.public.apiUrl ?? 'http://localhost:3000';
 
 // Composables
 const {
