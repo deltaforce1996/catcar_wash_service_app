@@ -82,8 +82,10 @@ services:
       # - EMQX_AUTH__USER__1__USERNAME=${DEVICE_SECRET_KEY:?DEVICE_SECRET_KEY is required}
       # - EMQX_AUTH__USER__1__PASSWORD=${DEVICE_SECRET_KEY:?DEVICE_SECRET_KEY is required}
     volumes:
-      - ./backups/prod/emqx_data:/opt/emqx/data
-      - ./backups/prod/emqx_log:/opt/emqx/log
+      # - ./backups/prod/emqx_data:/opt/emqx/data
+      # - ./backups/prod/emqx_log:/opt/emqx/log
+      - emqx_data:/opt/emqx/data
+      - emqx_log:/opt/emqx/log
     networks:
       - catcar_wash_network
     logging:
@@ -245,7 +247,12 @@ services:
   #     timeout: 10s
   #     retries: 3
   #     start_period: 10s
-
+volumes:
+  emqx_data:
+    driver: local
+  emqx_log:
+    driver: local
+    
 networks:
   catcar_wash_network:
     driver: bridge
