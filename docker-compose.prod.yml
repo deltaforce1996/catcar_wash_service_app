@@ -78,9 +78,9 @@ services:
       #  ถ้าไม่ปิด ทุกคนจะ connect ได้แม้ไม่มี user/pass ❌
       - EMQX_ALLOW_ANONYMOUS=false
 
-      # ✅ ใช้ user/password เดียวทุกอุปกรณ์
-      - EMQX_AUTH__USER__1__USERNAME=${DEVICE_SECRET_KEY:?DEVICE_SECRET_KEY is required}
-      - EMQX_AUTH__USER__1__PASSWORD=${DEVICE_SECRET_KEY:?DEVICE_SECRET_KEY is required}
+      # # ✅ ใช้ user/password เดียวทุกอุปกรณ์
+      # - EMQX_AUTH__USER__1__USERNAME=${DEVICE_SECRET_KEY:?DEVICE_SECRET_KEY is required}
+      # - EMQX_AUTH__USER__1__PASSWORD=${DEVICE_SECRET_KEY:?DEVICE_SECRET_KEY is required}
     volumes:
       - ./backups/prod/emqx_data:/opt/emqx/data
       - ./backups/prod/emqx_log:/opt/emqx/log
@@ -126,6 +126,7 @@ services:
       - JWT_SECRET=${JWT_SECRET:?JWT_SECRET is required}
       - JWT_EXPIRES_IN=${JWT_EXPIRES_IN:-24h}
 
+      - BASE_URL=${BASE_URL:?BASE_URL is required}
       - DEVICE_SECRET_KEY=${DEVICE_SECRET_KEY:-your-device-secret-key}
 
       # External APIs

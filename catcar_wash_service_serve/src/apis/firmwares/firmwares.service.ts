@@ -30,7 +30,7 @@ export class FirmwaresService {
     this.firmwaresPath = path.join(process.cwd(), 'public', 'firmwares');
 
     // Base URL for accessing files
-    this.baseUrl = this.configService.get<string>('BASE_URL') || 'http://localhost:3000';
+    this.baseUrl = this.configService.get<string>('app.baseUrl') ?? 'http://localhost:3000';
 
     this.logger.log('FirmwaresService initialized');
     this.logger.log(`Firmwares path: ${this.firmwaresPath}`);
