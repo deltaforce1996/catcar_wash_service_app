@@ -32,7 +32,8 @@
 import { ref } from 'vue'
 
 const iframeRef = ref<HTMLIFrameElement | null>(null)
-const currentUrl = ref<string>('http://localhost:3000/mqtt-console')
+const config = useRuntimeConfig()
+const currentUrl = ref<string>(`${config.public.apiUrl ?? 'http://localhost:3000'}/mqtt-console`)
 </script>
 
 <style scoped>
