@@ -422,7 +422,6 @@ const {
   totalPages,
   searchDevices,
   updateDeviceConfigs,
-  setDeviceStatus,
   clearMessages: _clearMessages,
 } = useDevice();
 
@@ -563,12 +562,12 @@ const openDeviceDetailDialog = async (device: DeviceResponseApi) => {
 const toggleDeviceStatus = async () => {
   if (!selectedDevice.value) return;
 
-  const deviceId = selectedDevice.value.id;
-  const newStatus =
-    selectedDevice.value.status === "DEPLOYED" ? "DISABLED" : "DEPLOYED";
+  // const deviceId = selectedDevice.value.id;
+  // const newStatus =
+  //   selectedDevice.value.status === "DEPLOYED" ? "DISABLED" : "DEPLOYED";
 
   try {
-    await setDeviceStatus(deviceId, { status: newStatus });
+    // await setDeviceStatus(deviceId, { status: newStatus });
 
     // Refresh device data from API response (setDeviceStatus updates currentDevice)
     if (currentDevice.value) {
@@ -600,7 +599,7 @@ const applyDeviceConfig = async () => {
 
     // Check if there are any changes at all
     const hasConfigChanges = configPayload.configs && Object.keys(configPayload.configs).length > 0;
-    const hasStatusChange = statusPayload !== null;
+    const hasStatusChange = statusPayload.status !== selectedDevice.value.status;
 
     if (!hasConfigChanges && !hasStatusChange) {
       return;
@@ -608,21 +607,12 @@ const applyDeviceConfig = async () => {
 
     let updatedDevice = null;
 
-    // First, update status if it changed
-    if (hasStatusChange && statusPayload) {
-      updatedDevice = await setDeviceStatus(
-        selectedDevice.value.id,
-        statusPayload
-      );
-    }
-
-    // Then, update configs if they changed
-    if (hasConfigChanges) {
-      updatedDevice = await updateDeviceConfigs(
-        selectedDevice.value.id,
-        configPayload
-      );
-    }
+    // Update device with config changes and current status
+    updatedDevice = await updateDeviceConfigs(
+      selectedDevice.value.id,
+      configPayload,
+      statusPayload.status as EnumDeviceStatus
+    );
 
     // Refresh selectedDevice with the API response to update dialog
     if (updatedDevice) {

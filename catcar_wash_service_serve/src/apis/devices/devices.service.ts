@@ -471,6 +471,7 @@ export class DevicesService {
       where: { id },
       data: {
         configs: updatedConfigs,
+        status: data.status,
       },
       select: devicePublicSelect,
     });
@@ -487,6 +488,7 @@ export class DevicesService {
    * Convert structured config (stored in DB) back to raw CommandConfig format for MQTT
    */
   private convertToRawConfig(structuredConfig: any, deviceType: DeviceType, status: DeviceStatus): CommandConfig {
+    // console.log('status', status);
     const config: CommandConfig = {
       machine: {
         ACTIVE: status === DeviceStatus.DEPLOYED ? true : false,

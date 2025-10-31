@@ -1803,12 +1803,9 @@ const getSavePayload = () => {
   return payload;
 };
 
-// Get status change payload if status has changed
+// Get status change payload - always return current status from switch
 const getStatusChangePayload = () => {
-  if (isStatusChanged()) {
-    return { status: editableStatus.value };
-  }
-  return null;
+  return { status: editableStatus.value };
 };
 
 // Methods

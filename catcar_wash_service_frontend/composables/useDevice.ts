@@ -6,10 +6,9 @@ import type {
   CreateDevicePayload,
   UpdateDeviceBasicPayload,
   UpdateDeviceConfigsPayload,
-  SetDeviceStatePayload,
 } from "~/services/apis/device-api.service";
 import { DeviceApiService as DeviceApi } from "~/services/apis/device-api.service";
-import type { ApiErrorResponse } from "~/types";
+import type { ApiErrorResponse, EnumDeviceStatus } from "~/types";
 
 export const useDevice = () => {
   // Local state - not global
@@ -152,12 +151,16 @@ export const useDevice = () => {
 
   const updateDeviceConfigs = async (
     id: string,
-    configData: UpdateDeviceConfigsPayload
+    configData: UpdateDeviceConfigsPayload,
+    statusData: EnumDeviceStatus
   ) => {
     try {
       isUpdating.value = true;
       clearMessages();
-      const response = await deviceApi.UpdateDeviceConfigsById(id, configData);
+      const response = await deviceApi.UpdateDeviceConfigsById(id, {
+        ...configData,
+        status: statusData,
+      });
       if (response.success && response.data) {
         if (currentDevice.value?.id === id) {
           currentDevice.value = response.data;
@@ -182,41 +185,41 @@ export const useDevice = () => {
     }
   };
 
-  const setDeviceStatus = async (
-    id: string,
-    statusData: SetDeviceStatePayload
-  ) => {
-    try {
-      isUpdating.value = true;
-      clearMessages();
-      const response = await deviceApi.UpdateDeviceBasicById(id, {
-        status: statusData.status,
-      });
-      if (response.success && response.data) {
-        // Update the current device if it's the same one
-        if (currentDevice.value?.id === id) {
-          currentDevice.value = response.data;
-        }
-        // Also update in the devices list if present
-        const deviceIndex = devices.value.findIndex(
-          (device) => device.id === id
-        );
-        if (deviceIndex !== -1) {
-          devices.value[deviceIndex] = response.data;
-        }
-        successMessage.value =
-          response.message || "อัปเดตสถานะอุปกรณ์สำเร็จ";
-        return response.data;
-      }
-    } catch (err: unknown) {
-      const errorAxios = err as ApiErrorResponse;
-      error.value =
-        errorAxios.message || "ไม่สามารถอัปเดตสถานะอุปกรณ์ได้";
-      throw err;
-    } finally {
-      isUpdating.value = false;
-    }
-  };
+  // const setDeviceStatus = async (
+  //   id: string,
+  //   statusData: SetDeviceStatePayload
+  // ) => {
+  //   try {
+  //     isUpdating.value = true;
+  //     clearMessages();
+  //     const response = await deviceApi.UpdateDeviceBasicById(id, {
+  //       status: statusData.status,
+  //     });
+  //     if (response.success && response.data) {
+  //       // Update the current device if it's the same one
+  //       if (currentDevice.value?.id === id) {
+  //         currentDevice.value = response.data;
+  //       }
+  //       // Also update in the devices list if present
+  //       const deviceIndex = devices.value.findIndex(
+  //         (device) => device.id === id
+  //       );
+  //       if (deviceIndex !== -1) {
+  //         devices.value[deviceIndex] = response.data;
+  //       }
+  //       successMessage.value =
+  //         response.message || "อัปเดตสถานะอุปกรณ์สำเร็จ";
+  //       return response.data;
+  //     }
+  //   } catch (err: unknown) {
+  //     const errorAxios = err as ApiErrorResponse;
+  //     error.value =
+  //       errorAxios.message || "ไม่สามารถอัปเดตสถานะอุปกรณ์ได้";
+  //     throw err;
+  //   } finally {
+  //     isUpdating.value = false;
+  //   }
+  // };
 
   const goToPage = async (page: number) => {
     await searchDevices({ page });
@@ -279,7 +282,6 @@ export const useDevice = () => {
     createDevice,
     updateDeviceBasic,
     updateDeviceConfigs,
-    setDeviceStatus,
     goToPage,
     nextPage,
     previousPage,
