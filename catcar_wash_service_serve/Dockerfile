@@ -82,6 +82,9 @@ COPY --from=base /app/dist ./dist
 # Copy the public directory containing static files like mqtt-console.html
 COPY --from=base /app/public ./public
 
+# Copy HTTPS certificates if they exist
+COPY --from=base /app/https ./https
+
 # Create startup script that runs migrations before starting the app
 RUN echo '#!/bin/sh' > /app/start.sh && \
     echo 'echo "Waiting for database to be ready..."' >> /app/start.sh && \
@@ -115,8 +118,8 @@ USER nestjs
 # =============================================================================
 # RUNTIME CONFIGURATION
 # =============================================================================
-# Expose port 3000 to allow external connections
-# This is the default port for NestJS applications
+# Expose ports for HTTP and HTTPS connections
+# Port 3000: HTTP, Port 3005: HTTPS
 EXPOSE 3000
 EXPOSE 3005
 
