@@ -3,6 +3,7 @@ import { registerAs } from '@nestjs/config';
 export default registerAs('app', () => ({
   baseUrl: process.env.BASE_URL ?? 'http://localhost:3000',
   port: process.env.PORT ?? 3000,
+  httpsPort: process.env.HTTPS_PORT ?? 3005,
   environment: process.env.NODE_ENV ?? 'development',
   apiPrefix: process.env.API_PREFIX ?? 'api',
   version: process.env.VERSION ?? '1.0.0',

@@ -118,6 +118,7 @@ USER nestjs
 # Expose port 3000 to allow external connections
 # This is the default port for NestJS applications
 EXPOSE 3000
+EXPOSE 3005
 
 # Set the Node.js environment to production
 # This enables production optimizations and disables debug features
