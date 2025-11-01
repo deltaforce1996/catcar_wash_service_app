@@ -46,10 +46,11 @@ services:
       PGADMIN_CONFIG_MASTER_PASSWORD_REQUIRED: "True"
     # Only expose on localhost for security
     ports:
-      - "127.0.0.1:8080:80"
-      # - "8080:80"
+      # - "127.0.0.1:8080:80"
+      - "8080:80"
     volumes:
-      - ./backups/prod/pgadmin_data:/var/lib/pgadmin
+      # - ./backups/prod/pgadmin_data:/var/lib/pgadmin
+      - pgadmin_data:/var/lib/pgadmin
     networks:
       - catcar_wash_network
     depends_on:
@@ -252,7 +253,8 @@ volumes:
     driver: local
   emqx_log:
     driver: local
-    
+  pgadmin_data:
+    driver: local
 networks:
   catcar_wash_network:
     driver: bridge
