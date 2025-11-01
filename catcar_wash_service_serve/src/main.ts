@@ -49,8 +49,10 @@ async function bootstrap() {
     };
 
     const server = https.createServer(httpsOptions, app.getHttpAdapter().getInstance());
-    await server.listen(httpsPort ?? 3005);
-    logger.log(`HTTPS Server is running on port ${httpsPort ?? 3005} in ${configService.get<string>('app.environment')} mode`);
+    server.listen(httpsPort ?? 3005);
+    logger.log(
+      `HTTPS Server is running on port ${httpsPort ?? 3005} in ${configService.get<string>('app.environment')} mode`,
+    );
   } catch (error) {
     logger.warn('HTTPS server could not start. Make sure certificates exist in the https folder.');
     logger.error(error.message);

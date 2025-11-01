@@ -31,6 +31,8 @@ export class BeamWebhookSignatureGuard implements CanActivate {
     const signature = request.headers['x-beam-signature'] as string;
     const eventType = request.headers['x-beam-event'] as string;
 
+    this.logger.log(`Webhook received - Event: ${eventType}, Signature: ${signature ? 'Present' : 'Missing'}`);
+
     // Get raw body for signature verification
     const rawBody = request.body;
     if (!rawBody) {

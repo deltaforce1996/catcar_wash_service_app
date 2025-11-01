@@ -87,7 +87,7 @@ export class DeviceStateProcessorService implements OnModuleInit {
         this.handleDeviceStreamingMessage(message);
       });
 
-      this.logger.log('Device state processor initialized with MQTT subscriptions');
+      // this.logger.log('Device state processor initialized with MQTT subscriptions');
     } catch (error) {
       this.logger.error('Failed to initialize device state processor:', error);
       throw error;
@@ -103,11 +103,11 @@ export class DeviceStateProcessorService implements OnModuleInit {
 
     for (let i = 0; i < maxRetries; i++) {
       if (this.mqttService.isConnected()) {
-        this.logger.log('MQTT connection established');
+        // this.logger.log('MQTT connection established');
         return;
       }
 
-      this.logger.log(`Waiting for MQTT connection... (${i + 1}/${maxRetries})`);
+      // this.logger.log(`Waiting for MQTT connection... (${i + 1}/${maxRetries})`);
       await new Promise((resolve) => setTimeout(resolve, retryInterval));
     }
 
@@ -121,13 +121,13 @@ export class DeviceStateProcessorService implements OnModuleInit {
     try {
       const parsedMessage = this.parseDeviceMessage(message);
       if (!parsedMessage) {
-        this.logger.warn(`⚠️ Invalid device message format for topic: ${message.topic}`);
+        // this.logger.warn(`⚠️ Invalid device message format for topic: ${message.topic}`);
         return;
       }
 
-      this.logger.debug(
-        `📥 [Device ${parsedMessage.deviceId}] ==> [Server] streaming message: ${JSON.stringify(parsedMessage.payload)}`,
-      );
+      // this.logger.debug(
+      //   `📥 [Device ${parsedMessage.deviceId}] ==> [Server] streaming message: ${JSON.stringify(parsedMessage.payload)}`,
+      // );
 
       this.stats.totalMessages++;
 
@@ -137,14 +137,14 @@ export class DeviceStateProcessorService implements OnModuleInit {
       // ตรวจสอบ rate limiting
       if (!this.isWithinSlidingWindowLimit(parsedMessage.deviceId)) {
         this.stats.rateLimitedMessages++;
-        this.logger.warn(`⚠️ Rate limited: Device ${parsedMessage.deviceId} - skipping message`);
+        // this.logger.warn(`⚠️ Rate limited: Device ${parsedMessage.deviceId} - skipping message`);
         return;
       }
 
       // เพิ่มเข้า batch
       this.messageBatch.push(parsedMessage);
 
-      this.logger.debug(`✅ Message queued for batch processing: ${parsedMessage.deviceId}`);
+      // this.logger.debug(`✅ Message queued for batch processing: ${parsedMessage.deviceId}`);
     } catch (error) {
       this.logger.error(`❌ Error processing device streaming message from topic ${message.topic}:`, error);
     }
@@ -202,7 +202,7 @@ export class DeviceStateProcessorService implements OnModuleInit {
       // สกัด unique deviceIds จาก batch
       const uniqueDeviceIds = [...new Set(batch.map((msg) => msg.deviceId))];
 
-      this.logger.log(`⚙️ Processing batch of ${batch.length} messages from ${uniqueDeviceIds.length} unique devices`);
+      // this.logger.log(`⚙️ Processing batch of ${batch.length} messages from ${uniqueDeviceIds.length} unique devices`);
 
       // Query unique devices ทั้งหมดพร้อมกันครั้งเดียว
       const devices = await this.prisma.tbl_devices.findMany({
@@ -213,7 +213,7 @@ export class DeviceStateProcessorService implements OnModuleInit {
       // สร้าง Map สำหรับการค้นหาแบบ O(1)
       const deviceMap = new Map(devices.map((d) => [d.id, d]));
 
-      this.logger.debug(`🔍 Found ${devices.length}/${uniqueDeviceIds.length} devices in database`);
+      // this.logger.debug(`🔍 Found ${devices.length}/${uniqueDeviceIds.length} devices in database`);
 
       // กรอง messages ที่มี device อยู่จริง
       const validMessages: ParsedDeviceMessage[] = [];
@@ -221,14 +221,14 @@ export class DeviceStateProcessorService implements OnModuleInit {
         const device = deviceMap.get(message.deviceId);
         if (!device) {
           this.stats.skippedNonExistentDevices++;
-          this.logger.warn(`❌ Device not found: ${message.deviceId} - skipping message`);
+          // this.logger.warn(`❌ Device not found: ${message.deviceId} - skipping message`);
         } else {
           validMessages.push(message);
         }
       }
 
       if (validMessages.length === 0) {
-        this.logger.log('No valid messages to process in this batch');
+        // this.logger.log('No valid messages to process in this batch');
         return;
       }
 
@@ -243,7 +243,7 @@ export class DeviceStateProcessorService implements OnModuleInit {
         await this.batchUpsertLastStates(lastMessagePerDevice);
 
         this.stats.processedMessages += validMessages.length;
-        this.logger.log(`✅ Successfully processed ${validMessages.length} messages`);
+        // this.logger.log(`✅ Successfully processed ${validMessages.length} messages`);
       } catch (error) {
         this.stats.droppedMessages += validMessages.length;
         this.logger.error('Error in batch processing:', error);
@@ -254,7 +254,7 @@ export class DeviceStateProcessorService implements OnModuleInit {
         (this.stats.averageProcessingTime * (this.stats.batchProcessingCount - 1) + processingTime) /
         this.stats.batchProcessingCount;
 
-      this.logger.log(`⏱️ Batch processed in ${processingTime}ms`);
+      // this.logger.log(`⏱️ Batch processed in ${processingTime}ms`);
     } finally {
       this.isProcessingBatch = false;
     }
@@ -278,7 +278,7 @@ export class DeviceStateProcessorService implements OnModuleInit {
       skipDuplicates: false,
     });
 
-    this.logger.debug(`💾 Batch inserted ${stateRecords.length} device states`);
+    // this.logger.debug(`💾 Batch inserted ${stateRecords.length} device states`);
   }
 
   /**
@@ -296,7 +296,7 @@ export class DeviceStateProcessorService implements OnModuleInit {
       }
     }
 
-    this.logger.debug(`📊 Extracted ${lastMessages.size} last messages from ${messages.length} total messages`);
+    // this.logger.debug(`📊 Extracted ${lastMessages.size} last messages from ${messages.length} total messages`);
     return lastMessages;
   }
 
@@ -323,7 +323,7 @@ export class DeviceStateProcessorService implements OnModuleInit {
     });
 
     await Promise.all(upsertPromises);
-    this.logger.debug(`🔄 Batch upserted ${lastMessages.size} last device states`);
+    // this.logger.debug(`🔄 Batch upserted ${lastMessages.size} last device states`);
   }
 
   /**
@@ -360,7 +360,7 @@ export class DeviceStateProcessorService implements OnModuleInit {
     }
 
     if (cleanedDevices > 0) {
-      this.logger.log(`🧹 Cleaned up ${cleanedDevices} inactive devices from rate limiting cache`);
+      // this.logger.log(`🧹 Cleaned up ${cleanedDevices} inactive devices from rate limiting cache`);
     }
   }
 
@@ -381,23 +381,22 @@ export class DeviceStateProcessorService implements OnModuleInit {
    * แสดงสถิติ
    */
   private logStats(): void {
-    const rateLimitStats = this.getRateLimitStats();
-
-    this.logger.log(`📊 === Device State Processor Stats ===`);
-    this.logger.log(`Total Messages: ${this.stats.totalMessages}`);
-    this.logger.log(`Processed Messages: ${this.stats.processedMessages}`);
-    this.logger.log(`Dropped Messages: ${this.stats.droppedMessages}`);
-    this.logger.log(`Rate Limited Messages: ${this.stats.rateLimitedMessages}`);
-    this.logger.log(`Skipped Non-Existent Devices: ${this.stats.skippedNonExistentDevices}`);
-    this.logger.log(`Batch Processing Count: ${this.stats.batchProcessingCount}`);
-    this.logger.log(`Average Processing Time: ${this.stats.averageProcessingTime.toFixed(2)}ms`);
-    this.logger.log(`Queue Size: ${this.messageBatch.length}`);
-    this.logger.log(`Active Devices: ${rateLimitStats.totalDevices}`);
-    this.logger.log(`Devices Near Limit: ${rateLimitStats.devicesNearLimit}`);
-    this.logger.log(`Devices At Limit: ${rateLimitStats.devicesAtLimit}`);
-    this.logger.log(`Tracked Devices: ${this.deviceLastSeen.size}`);
-    this.logger.log(`Offline Devices Detected: ${this.stats.offlineDevicesDetected}`);
-    this.logger.log(`=====================================`);
+    // const rateLimitStats = this.getRateLimitStats();
+    // this.logger.log(`📊 === Device State Processor Stats ===`);
+    // this.logger.log(`Total Messages: ${this.stats.totalMessages}`);
+    // this.logger.log(`Processed Messages: ${this.stats.processedMessages}`);
+    // this.logger.log(`Dropped Messages: ${this.stats.droppedMessages}`);
+    // this.logger.log(`Rate Limited Messages: ${this.stats.rateLimitedMessages}`);
+    // this.logger.log(`Skipped Non-Existent Devices: ${this.stats.skippedNonExistentDevices}`);
+    // this.logger.log(`Batch Processing Count: ${this.stats.batchProcessingCount}`);
+    // this.logger.log(`Average Processing Time: ${this.stats.averageProcessingTime.toFixed(2)}ms`);
+    // this.logger.log(`Queue Size: ${this.messageBatch.length}`);
+    // this.logger.log(`Active Devices: ${rateLimitStats.totalDevices}`);
+    // this.logger.log(`Devices Near Limit: ${rateLimitStats.devicesNearLimit}`);
+    // this.logger.log(`Devices At Limit: ${rateLimitStats.devicesAtLimit}`);
+    // this.logger.log(`Tracked Devices: ${this.deviceLastSeen.size}`);
+    // this.logger.log(`Offline Devices Detected: ${this.stats.offlineDevicesDetected}`);
+    // this.logger.log(`=====================================`);
   }
 
   /**
@@ -434,7 +433,7 @@ export class DeviceStateProcessorService implements OnModuleInit {
       void this.checkForOfflineDevices();
     }, 5000);
 
-    this.logger.log('Offline check interval started');
+    // this.logger.log('Offline check interval started');
   }
 
   /**
@@ -459,7 +458,7 @@ export class DeviceStateProcessorService implements OnModuleInit {
     }
 
     if (offlineDevices.length > 0) {
-      this.logger.log(`🔴 Detected ${offlineDevices.length} offline devices`);
+      // this.logger.log(`🔴 Detected ${offlineDevices.length} offline devices`);
     }
   }
 
@@ -475,7 +474,7 @@ export class DeviceStateProcessorService implements OnModuleInit {
       });
 
       if (!device) {
-        this.logger.warn(`⚠️ Device not found for offline marking: ${deviceId}`);
+        // this.logger.warn(`⚠️ Device not found for offline marking: ${deviceId}`);
         return;
       }
 
@@ -516,7 +515,7 @@ export class DeviceStateProcessorService implements OnModuleInit {
         });
       });
 
-      this.logger.log(`🔴 Device marked as offline: ${deviceId}`);
+      // this.logger.log(`🔴 Device marked as offline: ${deviceId}`);
     } catch (error) {
       this.logger.error(`❌ Error marking device as offline ${deviceId}:`, error);
     }
@@ -529,7 +528,7 @@ export class DeviceStateProcessorService implements OnModuleInit {
     if (this.offlineCheckInterval) {
       clearInterval(this.offlineCheckInterval);
       this.offlineCheckInterval = null;
-      this.logger.log('Offline check interval stopped');
+      // this.logger.log('Offline check interval stopped');
     }
   }
 
@@ -553,7 +552,7 @@ export class DeviceStateProcessorService implements OnModuleInit {
 
       // Validate payload structure
       if (!this.validatePayload(payload)) {
-        this.logger.warn(`⚠️ Invalid payload structure for device ${deviceId}:`, payload);
+        // this.logger.warn(`⚠️ Invalid payload structure for device ${deviceId}:`, payload);
         return null;
       }
 
