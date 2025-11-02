@@ -48,27 +48,72 @@ export class MqttConsoleController {
     return new Observable((observer) => {
       this.logger.log('New SSE client connected');
 
+      let isClientConnected = true;
+      let cleanupCalled = false;
+      let unsubscribe: (() => void) | null = null;
+      let heartbeatInterval: NodeJS.Timeout | null = null;
+
+      // Helper function to safely cleanup
+      const performCleanup = () => {
+        if (cleanupCalled) return;
+        cleanupCalled = true;
+        isClientConnected = false;
+        try {
+          if (heartbeatInterval) {
+            clearInterval(heartbeatInterval);
+            heartbeatInterval = null;
+          }
+          if (unsubscribe) {
+            unsubscribe();
+            unsubscribe = null;
+          }
+          this.logger.log('SSE client disconnected - cleanup performed');
+        } catch (error) {
+          this.logger.error('Error during SSE cleanup:', error);
+        }
+      };
+
       // Send recent messages on connect
       const recentMessages = this.mqttConsoleService.getRecentMessages(100);
       recentMessages.forEach((message) => {
-        observer.next({
-          data: JSON.stringify(message),
-        } as MessageEvent);
-      });
-
-      // Subscribe to new messages
-      const unsubscribe = this.mqttConsoleService.subscribe((message: MqttConsoleMessage) => {
+        if (!isClientConnected) return;
         try {
           observer.next({
             data: JSON.stringify(message),
           } as MessageEvent);
         } catch (error) {
-          this.logger.error('Error sending SSE message:', error);
+          // Connection closed while sending initial messages
+          this.logger.warn('Client disconnected while sending initial messages', error);
+          performCleanup();
+          observer.complete();
+          return;
+        }
+      });
+
+      // Subscribe to new messages
+      unsubscribe = this.mqttConsoleService.subscribe((message: MqttConsoleMessage) => {
+        if (!isClientConnected) return;
+        try {
+          observer.next({
+            data: JSON.stringify(message),
+          } as MessageEvent);
+        } catch (error) {
+          // Connection closed - stop sending messages
+          this.logger.warn('Client disconnected while sending message', error);
+          performCleanup();
         }
       });
 
       // Set up heartbeat every 5 seconds
-      const heartbeatInterval = setInterval(() => {
+      heartbeatInterval = setInterval(() => {
+        if (!isClientConnected) {
+          if (heartbeatInterval) {
+            clearInterval(heartbeatInterval);
+            heartbeatInterval = null;
+          }
+          return;
+        }
+
         try {
           observer.next({
             data: JSON.stringify({
@@ -77,15 +122,16 @@ export class MqttConsoleController {
             }),
           } as MessageEvent);
         } catch (error) {
-          this.logger.error('Error sending heartbeat:', error);
+          // ⭐ Heartbeat error = connection ปิดแล้ว - cleanup immediately
+          this.logger.warn('Heartbeat failed - client disconnected', error);
+          performCleanup();
+          observer.complete(); // Force cleanup
         }
       }, 5000); // 5 seconds
 
       // Cleanup on disconnect
       return () => {
-        this.logger.log('SSE client disconnected');
-        clearInterval(heartbeatInterval);
-        unsubscribe();
+        performCleanup();
       };
     });
   }

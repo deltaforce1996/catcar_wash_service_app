@@ -442,10 +442,6 @@
                     <span id="pause-icon">⏸️</span>
                     <span id="pause-text">Pause</span>
                 </button>
-                <button class="btn btn-primary" id="start-stop-btn" onclick="toggleConnection()">
-                    <span id="connection-icon">▶️</span>
-                    <span id="connection-text">Start</span>
-                </button>
                 <button class="btn btn-danger" onclick="clearMessages()">
                     🗑️ Clear
                 </button>
@@ -530,7 +526,6 @@
     <script>
         let eventSource = null;
         let isPaused = false;
-        let isConnected = false;
         let reconnectAttempts = 0;
         let reconnectTimer = null;
         const MAX_RECONNECT_ATTEMPTS = 10;
@@ -547,8 +542,7 @@
 
         // Initialize
         document.addEventListener('DOMContentLoaded', () => {
-            // Don't auto connect - user must click Start button
-            updateConnectionButton();
+            connectToSSE();
             setupFilters();
             updateStats();
             loadTopics();
@@ -563,12 +557,8 @@
                 lastSecondTimestamp = currentTime;
             }, 1000);
             
-            // Refresh topics list every 5 seconds (only when connected)
-            setInterval(() => {
-                if (isConnected) {
-                    loadTopics();
-                }
-            }, 5000);
+            // Refresh topics list every 5 seconds
+            setInterval(loadTopics, 5000);
             
             // Close dropdown when clicking outside
             document.addEventListener('click', (e) => {
@@ -580,51 +570,7 @@
             });
         });
 
-        function toggleConnection() {
-            if (isConnected) {
-                disconnectSSE();
-            } else {
-                connectToSSE();
-            }
-        }
-
-        function disconnectSSE() {
-            if (eventSource) {
-                eventSource.close();
-                eventSource = null;
-            }
-            clearReconnectTimer();
-            isConnected = false;
-            reconnectAttempts = 0;
-            updateConnectionButton();
-            document.getElementById('connection-status').textContent = 'Disconnected';
-            console.log('SSE connection manually disconnected');
-        }
-
-        function updateConnectionButton() {
-            const btn = document.getElementById('start-stop-btn');
-            const icon = document.getElementById('connection-icon');
-            const text = document.getElementById('connection-text');
-            
-            if (isConnected) {
-                icon.textContent = '⏹️';
-                text.textContent = 'Stop';
-                btn.classList.remove('btn-primary');
-                btn.classList.add('btn-danger');
-            } else {
-                icon.textContent = '▶️';
-                text.textContent = 'Start';
-                btn.classList.remove('btn-danger');
-                btn.classList.add('btn-primary');
-            }
-        }
-
         function connectToSSE() {
-            if (eventSource && eventSource.readyState !== EventSource.CLOSED) {
-                console.log('SSE connection already exists');
-                return;
-            }
-
             if (eventSource) {
                 eventSource.close();
             }
@@ -633,8 +579,6 @@
             
             eventSource.onopen = () => {
                 console.log('SSE connection opened');
-                isConnected = true;
-                updateConnectionButton();
                 document.getElementById('connection-status').textContent = 'Connected';
                 reconnectAttempts = 0;
                 clearReconnectTimer();
@@ -659,29 +603,22 @@
             
             eventSource.onerror = (error) => {
                 console.error('SSE error:', error);
-                isConnected = false;
-                updateConnectionButton();
                 document.getElementById('connection-status').textContent = 'Disconnected';
                 
-                // Exponential backoff reconnection (only if connection was active)
-                if (reconnectAttempts < MAX_RECONNECT_ATTEMPTS && eventSource && eventSource.readyState === EventSource.CLOSED) {
+                // Exponential backoff reconnection
+                if (reconnectAttempts < MAX_RECONNECT_ATTEMPTS) {
                     reconnectAttempts++;
                     const delay = Math.min(5000 * Math.pow(2, reconnectAttempts - 1), 60000);
                     
                     console.log(`Attempting to reconnect (${reconnectAttempts}/${MAX_RECONNECT_ATTEMPTS}) in ${delay/1000}s`);
                     
                     reconnectTimer = setTimeout(() => {
-                        // Only reconnect if user hasn't manually disconnected
-                        if (!isConnected && eventSource && eventSource.readyState === EventSource.CLOSED) {
-                            console.log('Reconnecting...');
-                            connectToSSE();
-                        }
+                        console.log('Reconnecting...');
+                        connectToSSE();
                     }, delay);
                 } else {
-                    if (reconnectAttempts >= MAX_RECONNECT_ATTEMPTS) {
-                        console.error('Max reconnection attempts reached. Please click Start to reconnect.');
-                        document.getElementById('connection-status').textContent = 'Connection Failed - Click Start';
-                    }
+                    console.error('Max reconnection attempts reached. Please refresh the page.');
+                    document.getElementById('connection-status').textContent = 'Connection Failed - Please Refresh';
                 }
             };
         }
@@ -970,6 +907,57 @@
             refilterMessages();
             updateTopicsList();
             closeTopicsMenu();
+        }
+
+        // Cleanup when page is unloading (user navigates away or closes tab)
+        window.addEventListener('beforeunload', () => {
+            if (eventSource && isPaused) { // Assuming isPaused is a global or accessible variable
+                console.log('Page unloading - closing SSE connection');
+                disconnectSSE();
+            }
+        });
+
+        // Cleanup when page is hidden (tab switch, minimize, etc.)
+        document.addEventListener('visibilitychange', () => {
+            if (document.hidden && eventSource && isPaused) { // Assuming isPaused is a global or accessible variable
+                console.log('Page hidden - closing SSE connection');
+                disconnectSSE();
+            }
+        });
+
+        // Additional cleanup for mobile browsers
+        window.addEventListener('pagehide', () => {
+            if (eventSource && isPaused) { // Assuming isPaused is a global or accessible variable
+                console.log('Page hiding - closing SSE connection');
+                disconnectSSE();
+            }
+        });
+
+        // Ensure disconnectSSE is called properly
+        function disconnectSSE() {
+            // Prevent multiple disconnects
+            if (!eventSource && isPaused) { // Assuming isPaused is a global or accessible variable
+                return;
+            }
+
+            if (eventSource) {
+                try {
+                    // Close EventSource properly
+                    if (eventSource.readyState !== EventSource.CLOSED) {
+                        eventSource.close();
+                    }
+                    eventSource = null;
+                } catch (error) {
+                    console.error('Error closing SSE connection:', error);
+                }
+            }
+            
+            clearReconnectTimer();
+            isPaused = false; // Assuming isPaused is a global or accessible variable
+            reconnectAttempts = 0;
+            updateConnectionButton();
+            document.getElementById('connection-status').textContent = 'Disconnected';
+            console.log('SSE connection disconnected');
         }
     </script>
 </body>

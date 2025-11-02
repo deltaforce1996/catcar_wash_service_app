@@ -57,32 +57,80 @@ export class EventManagerService {
     heartbeatInterval?: number,
   ): Observable<{ data: string }> {
     return new Observable((observer) => {
+      let isClientConnected = true;
+      let cleanupCalled = false;
+      let heartbeatTimer: NodeJS.Timeout | null = null;
+      const listeners: Array<{ eventName: string; handler: any }> = [];
+
+      // Helper function to safely cleanup
+      const performCleanup = () => {
+        if (cleanupCalled) return;
+        cleanupCalled = true;
+        isClientConnected = false;
+
+        try {
+          // Remove all event listeners
+          listeners.forEach(({ eventName, handler }) => {
+            this.eventEmitter.off(eventName, handler);
+          });
+
+          // Clear heartbeat timer
+          if (heartbeatTimer) {
+            clearInterval(heartbeatTimer);
+            heartbeatTimer = null;
+          }
+
+          this.logger.debug('SSE Observable cleaned up');
+        } catch (error) {
+          this.logger.error('Error during SSE cleanup:', error);
+        }
+      };
+
       // Send initial data
       if (initialData) {
         const initial = initialData();
         if (initial) {
           if (Array.isArray(initial)) {
             initial.forEach((event) => {
-              observer.next({ data: JSON.stringify(event) });
+              if (!isClientConnected) return;
+              try {
+                observer.next({ data: JSON.stringify(event) });
+              } catch (error) {
+                // Connection closed while sending initial data
+                this.logger.warn('Client disconnected while sending initial data', error);
+                performCleanup();
+                observer.complete();
+                return;
+              }
             });
           } else {
-            observer.next({ data: JSON.stringify(initial) });
+            if (!isClientConnected) return;
+            try {
+              observer.next({ data: JSON.stringify(initial) });
+            } catch (error) {
+              // Connection closed while sending initial data
+              this.logger.warn('Client disconnected while sending initial data', error);
+              performCleanup();
+              observer.complete();
+              return;
+            }
           }
         }
       }
 
       // Set up event handlers
-      const listeners: Array<{ eventName: string; handler: any }> = [];
-
       eventHandlers.forEach(({ eventName, handler }) => {
         const eventHandler = (data: any) => {
+          if (!isClientConnected) return;
           try {
             const sseEvent = handler(data);
             if (sseEvent) {
               observer.next({ data: JSON.stringify(sseEvent) });
             }
           } catch (error) {
-            this.logger.error(`Error handling event ${eventName}:`, error);
+            // Connection closed - stop sending
+            this.logger.warn(`Client disconnected while handling event ${eventName}`, error);
+            performCleanup();
           }
         };
 
@@ -91,31 +139,35 @@ export class EventManagerService {
       });
 
       // Set up heartbeat if specified
-      let heartbeatTimer: NodeJS.Timeout | null = null;
       if (heartbeatInterval && heartbeatInterval > 0) {
         heartbeatTimer = setInterval(() => {
-          observer.next({
-            data: JSON.stringify({
-              type: 'heartbeat',
-              timestamp: new Date(),
-            }),
-          });
+          if (!isClientConnected) {
+            if (heartbeatTimer) {
+              clearInterval(heartbeatTimer);
+              heartbeatTimer = null;
+            }
+            return;
+          }
+
+          try {
+            observer.next({
+              data: JSON.stringify({
+                type: 'heartbeat',
+                timestamp: new Date(),
+              }),
+            });
+          } catch (error) {
+            // ⭐ Heartbeat error = connection ปิดแล้ว - cleanup immediately
+            this.logger.warn('Heartbeat failed - client disconnected', error);
+            performCleanup();
+            observer.complete(); // Force cleanup
+          }
         }, heartbeatInterval);
       }
 
       // Cleanup function
       return () => {
-        // Remove all event listeners
-        listeners.forEach(({ eventName, handler }) => {
-          this.eventEmitter.off(eventName, handler);
-        });
-
-        // Clear heartbeat timer
-        if (heartbeatTimer) {
-          clearInterval(heartbeatTimer);
-        }
-
-        this.logger.debug('SSE Observable cleaned up');
+        performCleanup();
       };
     });
   }
