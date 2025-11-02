@@ -442,6 +442,10 @@
                     <span id="pause-icon">⏸️</span>
                     <span id="pause-text">Pause</span>
                 </button>
+                <button class="btn btn-primary" id="start-stop-btn" onclick="toggleConnection()">
+                    <span id="connection-icon">▶️</span>
+                    <span id="connection-text">Start</span>
+                </button>
                 <button class="btn btn-danger" onclick="clearMessages()">
                     🗑️ Clear
                 </button>
@@ -526,6 +530,7 @@
     <script>
         let eventSource = null;
         let isPaused = false;
+        let isConnected = false;
         let reconnectAttempts = 0;
         let reconnectTimer = null;
         const MAX_RECONNECT_ATTEMPTS = 10;
@@ -542,7 +547,8 @@
 
         // Initialize
         document.addEventListener('DOMContentLoaded', () => {
-            connectToSSE();
+            // Don't auto connect - user must click Start button
+            updateConnectionButton();
             setupFilters();
             updateStats();
             loadTopics();
@@ -557,8 +563,12 @@
                 lastSecondTimestamp = currentTime;
             }, 1000);
             
-            // Refresh topics list every 5 seconds
-            setInterval(loadTopics, 5000);
+            // Refresh topics list every 5 seconds (only when connected)
+            setInterval(() => {
+                if (isConnected) {
+                    loadTopics();
+                }
+            }, 5000);
             
             // Close dropdown when clicking outside
             document.addEventListener('click', (e) => {
@@ -570,7 +580,51 @@
             });
         });
 
+        function toggleConnection() {
+            if (isConnected) {
+                disconnectSSE();
+            } else {
+                connectToSSE();
+            }
+        }
+
+        function disconnectSSE() {
+            if (eventSource) {
+                eventSource.close();
+                eventSource = null;
+            }
+            clearReconnectTimer();
+            isConnected = false;
+            reconnectAttempts = 0;
+            updateConnectionButton();
+            document.getElementById('connection-status').textContent = 'Disconnected';
+            console.log('SSE connection manually disconnected');
+        }
+
+        function updateConnectionButton() {
+            const btn = document.getElementById('start-stop-btn');
+            const icon = document.getElementById('connection-icon');
+            const text = document.getElementById('connection-text');
+            
+            if (isConnected) {
+                icon.textContent = '⏹️';
+                text.textContent = 'Stop';
+                btn.classList.remove('btn-primary');
+                btn.classList.add('btn-danger');
+            } else {
+                icon.textContent = '▶️';
+                text.textContent = 'Start';
+                btn.classList.remove('btn-danger');
+                btn.classList.add('btn-primary');
+            }
+        }
+
         function connectToSSE() {
+            if (eventSource && eventSource.readyState !== EventSource.CLOSED) {
+                console.log('SSE connection already exists');
+                return;
+            }
+
             if (eventSource) {
                 eventSource.close();
             }
@@ -579,6 +633,8 @@
             
             eventSource.onopen = () => {
                 console.log('SSE connection opened');
+                isConnected = true;
+                updateConnectionButton();
                 document.getElementById('connection-status').textContent = 'Connected';
                 reconnectAttempts = 0;
                 clearReconnectTimer();
@@ -603,22 +659,29 @@
             
             eventSource.onerror = (error) => {
                 console.error('SSE error:', error);
+                isConnected = false;
+                updateConnectionButton();
                 document.getElementById('connection-status').textContent = 'Disconnected';
                 
-                // Exponential backoff reconnection
-                if (reconnectAttempts < MAX_RECONNECT_ATTEMPTS) {
+                // Exponential backoff reconnection (only if connection was active)
+                if (reconnectAttempts < MAX_RECONNECT_ATTEMPTS && eventSource && eventSource.readyState === EventSource.CLOSED) {
                     reconnectAttempts++;
                     const delay = Math.min(5000 * Math.pow(2, reconnectAttempts - 1), 60000);
                     
                     console.log(`Attempting to reconnect (${reconnectAttempts}/${MAX_RECONNECT_ATTEMPTS}) in ${delay/1000}s`);
                     
                     reconnectTimer = setTimeout(() => {
-                        console.log('Reconnecting...');
-                        connectToSSE();
+                        // Only reconnect if user hasn't manually disconnected
+                        if (!isConnected && eventSource && eventSource.readyState === EventSource.CLOSED) {
+                            console.log('Reconnecting...');
+                            connectToSSE();
+                        }
                     }, delay);
                 } else {
-                    console.error('Max reconnection attempts reached. Please refresh the page.');
-                    document.getElementById('connection-status').textContent = 'Connection Failed - Please Refresh';
+                    if (reconnectAttempts >= MAX_RECONNECT_ATTEMPTS) {
+                        console.error('Max reconnection attempts reached. Please click Start to reconnect.');
+                        document.getElementById('connection-status').textContent = 'Connection Failed - Click Start';
+                    }
                 }
             };
         }

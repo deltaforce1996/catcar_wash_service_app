@@ -152,8 +152,8 @@ export class MqttCommandEventAdapter implements IMqttCommandEventAdapter {
           },
         };
       },
-      // Heartbeat every 30 seconds
-      30000,
+      // Heartbeat every 5000 seconds
+      5000,
     );
   }
 

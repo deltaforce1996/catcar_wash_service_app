@@ -67,7 +67,7 @@ export class MqttConsoleController {
         }
       });
 
-      // Set up heartbeat every 30 seconds
+      // Set up heartbeat every 5 seconds
       const heartbeatInterval = setInterval(() => {
         try {
           observer.next({
@@ -79,7 +79,7 @@ export class MqttConsoleController {
         } catch (error) {
           this.logger.error('Error sending heartbeat:', error);
         }
-      }, 30000); // 30 seconds
+      }, 5000); // 5 seconds
 
       // Cleanup on disconnect
       return () => {
