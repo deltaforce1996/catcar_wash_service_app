@@ -46,8 +46,8 @@ services:
       PGADMIN_CONFIG_MASTER_PASSWORD_REQUIRED: "True"
     # Only expose on localhost for security
     ports:
-      # - "127.0.0.1:8080:80"
-      - "8080:80"
+      - "127.0.0.1:8080:80"
+      # - "8080:80"
     volumes:
       # - ./backups/prod/pgadmin_data:/var/lib/pgadmin
       - pgadmin_data:/var/lib/pgadmin
@@ -70,7 +70,8 @@ services:
     ports:
       - "1883:1883" # MQTT TCP
       - "8083:8083" # MQTT over WebSocket
-      - "18083:18083" # EMQX Dashboard
+      # - "18083:18083" # EMQX Dashboard
+      - "127.0.0.1:18083:18083"
     environment:
       - EMQX_DASHBOARD__DEFAULT_USERNAME=${EMQX_DASHBOARD_USER:?EMQX_DASHBOARD_USER is required}
       - EMQX_DASHBOARD__DEFAULT_PASSWORD=${EMQX_DASHBOARD_PASSWORD:?EMQX_DASHBOARD_PASSWORD is required}
@@ -82,6 +83,11 @@ services:
       # # ✅ ใช้ user/password เดียวทุกอุปกรณ์
       # - EMQX_AUTH__USER__1__USERNAME=${DEVICE_SECRET_KEY:?DEVICE_SECRET_KEY is required}
       # - EMQX_AUTH__USER__1__PASSWORD=${DEVICE_SECRET_KEY:?DEVICE_SECRET_KEY is required}
+      
+      # Rate Limiting: ป้องกัน DoS และ abuse
+      - EMQX_RATE_LIMIT__CONN_MESSAGES_IN__RATE=100,10s
+      - EMQX_RATE_LIMIT__CONN_MESSAGES_OUT__RATE=100,10s
+      - EMQX_RATE_LIMIT__CONN_BYTES_IN__RATE=100KB,10s
     volumes:
       # - ./backups/prod/emqx_data:/opt/emqx/data
       # - ./backups/prod/emqx_log:/opt/emqx/log
