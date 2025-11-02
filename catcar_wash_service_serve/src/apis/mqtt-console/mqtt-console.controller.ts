@@ -67,9 +67,24 @@ export class MqttConsoleController {
         }
       });
 
+      // Set up heartbeat every 30 seconds
+      const heartbeatInterval = setInterval(() => {
+        try {
+          observer.next({
+            data: JSON.stringify({
+              type: 'heartbeat',
+              timestamp: new Date().toISOString(),
+            }),
+          } as MessageEvent);
+        } catch (error) {
+          this.logger.error('Error sending heartbeat:', error);
+        }
+      }, 30000); // 30 seconds
+
       // Cleanup on disconnect
       return () => {
         this.logger.log('SSE client disconnected');
+        clearInterval(heartbeatInterval);
         unsubscribe();
       };
     });

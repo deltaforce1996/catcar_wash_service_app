@@ -526,6 +526,9 @@
     <script>
         let eventSource = null;
         let isPaused = false;
+        let reconnectAttempts = 0;
+        let reconnectTimer = null;
+        const MAX_RECONNECT_ATTEMPTS = 10;
         let messages = [];
         let uniqueTopics = new Set();
         let messageCount = 0;
@@ -577,6 +580,8 @@
             eventSource.onopen = () => {
                 console.log('SSE connection opened');
                 document.getElementById('connection-status').textContent = 'Connected';
+                reconnectAttempts = 0;
+                clearReconnectTimer();
             };
             
             eventSource.onmessage = (event) => {
@@ -584,6 +589,12 @@
                 
                 try {
                     const message = JSON.parse(event.data);
+                    
+                    // Skip heartbeat messages (don't display in UI)
+                    if (message.type === 'heartbeat') {
+                        return;
+                    }
+                    
                     handleNewMessage(message);
                 } catch (error) {
                     console.error('Error parsing message:', error);
@@ -594,12 +605,29 @@
                 console.error('SSE error:', error);
                 document.getElementById('connection-status').textContent = 'Disconnected';
                 
-                // Reconnect after 5 seconds
-                setTimeout(() => {
-                    console.log('Reconnecting...');
-                    connectToSSE();
-                }, 5000);
+                // Exponential backoff reconnection
+                if (reconnectAttempts < MAX_RECONNECT_ATTEMPTS) {
+                    reconnectAttempts++;
+                    const delay = Math.min(5000 * Math.pow(2, reconnectAttempts - 1), 60000);
+                    
+                    console.log(`Attempting to reconnect (${reconnectAttempts}/${MAX_RECONNECT_ATTEMPTS}) in ${delay/1000}s`);
+                    
+                    reconnectTimer = setTimeout(() => {
+                        console.log('Reconnecting...');
+                        connectToSSE();
+                    }, delay);
+                } else {
+                    console.error('Max reconnection attempts reached. Please refresh the page.');
+                    document.getElementById('connection-status').textContent = 'Connection Failed - Please Refresh';
+                }
             };
+        }
+        
+        function clearReconnectTimer() {
+            if (reconnectTimer) {
+                clearTimeout(reconnectTimer);
+                reconnectTimer = null;
+            }
         }
 
         function handleNewMessage(message) {

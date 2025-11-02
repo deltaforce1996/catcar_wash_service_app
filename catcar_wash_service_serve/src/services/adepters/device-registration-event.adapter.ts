@@ -135,7 +135,7 @@ export class DeviceRegistrationEventAdapter implements IDeviceRegistrationEventA
         };
       },
       // Heartbeat every 30 seconds
-      3000,
+      30000,
     );
   }
 
