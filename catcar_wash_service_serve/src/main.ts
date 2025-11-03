@@ -56,11 +56,11 @@ async function bootstrap() {
     };
 
     const httpsServer = https.createServer(httpsOptions, app.getHttpAdapter().getInstance());
-    
+
     // Configure HTTPS server timeouts (same as HTTP)
     httpsServer.keepAliveTimeout = 65000; // 65 seconds
     httpsServer.headersTimeout = 66000; // 66 seconds
-    
+
     httpsServer.listen(httpsPort ?? 3005);
     logger.log(
       `HTTPS Server is running on port ${httpsPort ?? 3005} in ${configService.get<string>('app.environment')} mode`,

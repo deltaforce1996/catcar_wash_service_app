@@ -182,7 +182,14 @@
             </v-card-actions>
           </v-card>
         </v-menu>
-        <v-btn color="primary" prepend-icon="mdi-download" class="text-none">
+        <v-btn
+          color="primary"
+          prepend-icon="mdi-download"
+          class="text-none"
+          :loading="isExporting"
+          :disabled="isExporting"
+          @click="exportToExcel(selectedDateObject)"
+        >
           ส่งออก
         </v-btn>
       </div>
@@ -712,8 +719,10 @@ const {
   totalPages,
   currentSearchParams,
   isSearching,
+  isExporting,
   searchEventLogs,
   goToPage,
+  exportToExcel,
 } = useDeviceEventLogs();
 
 // User data - using useUser composable

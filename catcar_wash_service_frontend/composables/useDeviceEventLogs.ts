@@ -28,6 +28,7 @@ export const useDeviceEventLogs = () => {
   // Loading State
   const isLoading = ref(false);
   const isSearching = ref(false);
+  const isExporting = ref(false);
 
   // Response Message
   const error = ref<string | null>(null);
@@ -123,6 +124,38 @@ export const useDeviceEventLogs = () => {
     clearMessages();
   };
 
+  const exportToExcel = async (date?: Date) => {
+    try {
+      isExporting.value = true;
+      clearMessages();
+
+      const blob = await eventLogsApi.exportDeviceEventLogsToExcel(date);
+
+      // Create download link
+      const url = window.URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.href = url;
+
+      // Format filename as YYYY-MM
+      const selectedDate = date || new Date();
+      const year = selectedDate.getFullYear();
+      const month = String(selectedDate.getMonth() + 1).padStart(2, '0');
+      link.download = `device-event-logs-${year}-${month}.xlsx`;
+
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      window.URL.revokeObjectURL(url);
+
+      successMessage.value = "ส่งออกข้อมูลสำเร็จ";
+    } catch (err: unknown) {
+      const errorAxios = err as ApiErrorResponse;
+      error.value = errorAxios.message || "ไม่สามารถส่งออกข้อมูลได้";
+    } finally {
+      isExporting.value = false;
+    }
+  };
+
   return {
     eventLogs: readonly(eventLogs),
     currentEventLog: readonly(currentEventLog),
@@ -133,6 +166,7 @@ export const useDeviceEventLogs = () => {
 
     isLoading: readonly(isLoading),
     isSearching: readonly(isSearching),
+    isExporting: readonly(isExporting),
 
     error: readonly(error),
     successMessage: readonly(successMessage),
@@ -144,5 +178,6 @@ export const useDeviceEventLogs = () => {
     refreshSearch,
     clearMessages,
     resetState,
+    exportToExcel,
   };
 };
