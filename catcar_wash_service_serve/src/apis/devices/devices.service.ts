@@ -93,6 +93,38 @@ export class DevicesService {
     }
   }
 
+  private async generateNewDeviceId(): Promise<string> {
+    // Generate auto-incrementing device ID with random suffix to prevent duplicates
+    const allDevices = await this.prisma.tbl_devices.findMany({
+      where: {
+        id: {
+          startsWith: 'DEVICE-',
+        },
+      },
+      select: {
+        id: true,
+      },
+    });
+
+    // Extract numbers from device IDs and find the maximum
+    const deviceNumbers = allDevices
+      .map((device) => {
+        const match = device.id.match(/^DEVICE-(\d+)(?:-[A-Z]{4})?$/);
+        return match ? parseInt(match[1], 10) : 0;
+      })
+      .filter((num) => !isNaN(num));
+
+    const maxNumber = deviceNumbers.length > 0 ? Math.max(...deviceNumbers) : 0;
+    const nextNumber = maxNumber + 1;
+
+    // Generate 4 random uppercase letters to prevent duplicates
+    const randomSuffix = Array.from({ length: 4 }, () => String.fromCharCode(65 + Math.floor(Math.random() * 26))).join(
+      '',
+    );
+
+    return `DEVICE-${nextNumber.toString().padStart(7, '0')}-${randomSuffix}`;
+  }
+
   async searchDevices(
     q: SearchDeviceDto,
     user?: AuthenticatedUser,
@@ -212,54 +244,51 @@ export class DevicesService {
     //TODO: Verify that the device exists and get devic type
     const { type, default_name } = this.getDeviceType(information.firmware_version);
 
-    // Check if device with the same chip_id already exists
+    // Check if device with the same chip_id AND mac_address already exists
     const existingDevice = await this.prisma.tbl_devices.findFirst({
       where: {
-        information: {
-          path: ['chip_id'],
-          equals: information.chip_id,
-        },
+        AND: [
+          {
+            information: {
+              path: ['chip_id'],
+              equals: information.chip_id,
+            },
+          },
+          {
+            information: {
+              path: ['mac_address'],
+              equals: information.mac_address,
+            },
+          },
+        ],
+      },
+      orderBy: {
+        created_at: 'desc',
       },
       select: devicePublicSelect,
     });
 
-    // If device with same chip_id exists, return it
+    // If device with same chip_id and mac_address exists, check if type matches
     if (existingDevice) {
-      this.logger.log(`Device with chip_id ${information.chip_id} already exists, returning existing device`);
-      return existingDevice;
+      if (existingDevice.type === type) {
+        // Type matches, return existing device
+        this.logger.log(
+          `Device with chip_id ${information.chip_id} and mac_address ${information.mac_address} already exists, returning existing device`,
+        );
+        return existingDevice;
+      } else {
+        // Type changed, create new device with new ID
+        this.logger.log(
+          `Device with chip_id ${information.chip_id} and mac_address ${information.mac_address} exists but type changed from ${existingDevice.type} to ${type}, creating new device`,
+        );
+        // Fall through to create new device
+      }
     }
 
-    // Generate auto-incrementing device ID with random suffix to prevent duplicates
-    const allDevices = await this.prisma.tbl_devices.findMany({
-      where: {
-        id: {
-          startsWith: 'DEVICE-',
-        },
-      },
-      select: {
-        id: true,
-      },
-    });
+    // Generate new device ID
+    const tempDeviceId = await this.generateNewDeviceId();
 
-    // Extract numbers from device IDs and find the maximum
-    const deviceNumbers = allDevices
-      .map((device) => {
-        const match = device.id.match(/^DEVICE-(\d+)(?:-[A-Z]{4})?$/);
-        return match ? parseInt(match[1], 10) : 0;
-      })
-      .filter((num) => !isNaN(num));
-
-    const maxNumber = deviceNumbers.length > 0 ? Math.max(...deviceNumbers) : 0;
-    const nextNumber = maxNumber + 1;
-
-    // Generate 4 random uppercase letters to prevent duplicates
-    const randomSuffix = Array.from({ length: 4 }, () => String.fromCharCode(65 + Math.floor(Math.random() * 26))).join(
-      '',
-    );
-
-    const tempDeviceId = `DEVICE-${nextNumber.toString().padStart(7, '0')}-${randomSuffix}`;
-
-    // Create new device if chip_id doesn't exist
+    // Create new device
     const device = await this.prisma.tbl_devices.create({
       data: {
         id: tempDeviceId,
