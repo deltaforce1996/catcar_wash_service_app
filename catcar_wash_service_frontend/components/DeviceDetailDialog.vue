@@ -388,6 +388,23 @@
                           </div>
                         </div>
                       </template>
+
+                      <!-- Reload Button -->
+                      <template #actions>
+                        <v-tooltip text="รีโหลดข้อมูล" location="bottom">
+                          <template #activator="{ props: tooltipProps }">
+                            <v-btn
+                              v-bind="tooltipProps"
+                              icon="mdi-refresh"
+                              variant="text"
+                              size="small"
+                              :loading="isLoadingStates"
+                              :disabled="isLoadingStates"
+                              @click="loadDeviceStates"
+                            />
+                          </template>
+                        </v-tooltip>
+                      </template>
                     </EnhancedDataTable>
 
                     <!-- Error Alert -->
