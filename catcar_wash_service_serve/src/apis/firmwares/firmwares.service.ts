@@ -339,7 +339,6 @@ export class FirmwaresService {
       const existingContent = await fs.readFile(manifestPath, 'utf-8');
       manifest = JSON.parse(existingContent);
       manifest.updated_at = new Date().toISOString();
-      // eslint-disable-next-line @typescript-eslint/no-unused-vars
     } catch (error) {
       // Create new manifest if it doesn't exist
       manifest = {

@@ -209,7 +209,7 @@ class DeviceLifecycleSimulator:
             }
         }
     
-    def register_device(self, device_type: DeviceType, silent: bool = False, chip_id: Optional[str] = None) -> Optional[str]:
+    def register_device(self, device_type: DeviceType, silent: bool = False, chip_id: Optional[str] = None, mac_address: Optional[str] = None) -> Optional[str]:
         """
         Step 1: Register device
         POST /api/v1/devices/need-register
@@ -218,6 +218,7 @@ class DeviceLifecycleSimulator:
             device_type: WASH หรือ DRYING
             silent: ไม่แสดง message (สำหรับ bulk operations)
             chip_id: Chip ID ที่ต้องการระบุเอง (optional, ถ้าไม่ระบุจะ random)
+            mac_address: MAC Address ที่ต้องการระบุเอง (optional, ถ้าไม่ระบุจะ random)
             
         Returns:
             str: device_id หรือ None ถ้าไม่สำเร็จ
@@ -229,6 +230,10 @@ class DeviceLifecycleSimulator:
             # ถ้าระบุ chip_id มา ให้ใช้ตามที่ระบุ
             if chip_id:
                 device_info['chip_id'] = chip_id
+            
+            # ถ้าระบุ mac_address มา ให้ใช้ตามที่ระบุ
+            if mac_address:
+                device_info['mac_address'] = mac_address
             
             url = f"{self.api_base_url}/devices/need-register"
             
@@ -306,17 +311,21 @@ class DeviceLifecycleSimulator:
             
             # คำนวณ signature
             signature = self._calculate_signature(config_payload)
-            
+
+            # Serialize payload with same format as signature calculation
+            config_json = json.dumps(config_payload, separators=(',', ':'), ensure_ascii=False)
+
             url = f"{self.api_base_url}/devices/sync-configs/{device_id}"
             headers = {
-                'x-signature': signature
+                'x-signature': signature,
+                'Content-Type': 'application/json'
             }
-            
+
             if not silent:
                 print(f"\n🔄 กำลัง Sync Configs สำหรับ {device_id}...")
                 print(f"   Device Type: {device_type.value}")
-            
-            response = self.session.post(url, json=config_payload, headers=headers)
+
+            response = self.session.post(url, data=config_json, headers=headers)
             
             if 200 <= response.status_code <= 299:
                 if not silent:
@@ -336,6 +345,161 @@ class DeviceLifecycleSimulator:
         except Exception as e:
             if not silent:
                 print(f"❌ เกิดข้อผิดพลาดในการ sync configs: {e}")
+            return False
+    
+    def _generate_random_log_item(self, device_type: DeviceType) -> Dict:
+        """
+        สร้าง random log item สำหรับ upload
+        
+        Args:
+            device_type: WASH หรือ DRYING
+            
+        Returns:
+            Dict: Log item structure
+        """
+        # Random event type and status
+        event_type = random.choice(["PAYMENT", "INFO"])
+        status = random.choice(["PENDING", "SUCCEEDED", "FAILED", "CANCELLED"])
+        
+        # Random timestamp (within last 7 days)
+        now = int(time.time() * 1000)
+        days_ago = random.randint(0, 7)
+        hours_ago = random.randint(0, 23)
+        timestamp = now - (days_ago * 24 * 60 * 60 * 1000) - (hours_ago * 60 * 60 * 1000)
+        
+        # Random total amount
+        total_amount = random.randint(10, 500)
+        
+        log_item = {
+            "type": event_type,
+            "status": status,
+            "timestamp": timestamp,
+            "total_amount": total_amount
+        }
+        
+        # Random payment method
+        payment_method = random.choice(["qr", "bank", "coin", "mixed", "none"])
+        
+        if payment_method == "qr" or payment_method == "mixed":
+            log_item["qr"] = {
+                "chargeId": f"ch_{''.join(random.choices(string.ascii_letters + string.digits, k=24))}",
+                "net_amount": total_amount if payment_method == "qr" else random.randint(0, total_amount)
+            }
+        
+        if payment_method == "bank" or payment_method == "mixed":
+            bank_notes = {}
+            remaining = total_amount if payment_method == "bank" else random.randint(0, total_amount)
+            
+            # Distribute to bank notes
+            if remaining >= 1000:
+                bank_notes["1000"] = random.randint(0, remaining // 1000)
+                remaining -= bank_notes["1000"] * 1000
+            if remaining >= 500:
+                bank_notes["500"] = random.randint(0, remaining // 500)
+                remaining -= bank_notes["500"] * 500
+            if remaining >= 100:
+                bank_notes["100"] = random.randint(0, remaining // 100)
+                remaining -= bank_notes["100"] * 100
+            if remaining >= 50:
+                bank_notes["50"] = random.randint(0, remaining // 50)
+                remaining -= bank_notes["50"] * 50
+            if remaining >= 20:
+                bank_notes["20"] = random.randint(0, remaining // 20)
+            
+            if bank_notes:
+                log_item["bank"] = bank_notes
+        
+        if payment_method == "coin" or payment_method == "mixed":
+            coin_amounts = {}
+            remaining = total_amount if payment_method == "coin" else random.randint(0, total_amount)
+            
+            # Distribute to coins
+            if remaining >= 10:
+                coin_amounts["10"] = random.randint(0, remaining // 10)
+                remaining -= coin_amounts["10"] * 10
+            if remaining >= 5:
+                coin_amounts["5"] = random.randint(0, remaining // 5)
+                remaining -= coin_amounts["5"] * 5
+            if remaining >= 2:
+                coin_amounts["2"] = random.randint(0, remaining // 2)
+                remaining -= coin_amounts["2"] * 2
+            if remaining >= 1:
+                coin_amounts["1"] = remaining
+            
+            if coin_amounts:
+                log_item["coin"] = coin_amounts
+        
+        return log_item
+    
+    def upload_device_logs(self, device_id: str, log_items: Optional[List[Dict]] = None, silent: bool = False) -> bool:
+        """
+        Upload device event logs
+        POST /api/v1/device-event-logs/upload
+        
+        Args:
+            device_id: Device ID
+            log_items: List of log items (optional, ถ้าไม่ระบุจะสร้าง random logs)
+            silent: ไม่แสดง message
+            
+        Returns:
+            bool: True ถ้าสำเร็จ
+        """
+        if device_id not in self.devices:
+            if not silent:
+                print(f"❌ ไม่พบ Device ID: {device_id}")
+            return False
+        
+        try:
+            device = self.devices[device_id]
+            device_type = device['type']
+            
+            # ถ้าไม่ระบุ log_items ให้สร้าง random logs
+            if log_items is None:
+                num_logs = random.randint(1, 5)
+                log_items = [self._generate_random_log_item(device_type) for _ in range(num_logs)]
+            
+            # สร้าง payload
+            payload = {
+                "device_id": device_id,
+                "items": log_items
+            }
+            
+            # คำนวณ signature
+            signature = self._calculate_signature(payload)
+
+            # Serialize payload with same format as signature calculation
+            payload_json = json.dumps(payload, separators=(',', ':'), ensure_ascii=False)
+
+            url = f"{self.api_base_url}/device-event-logs/upload"
+            headers = {
+                'x-signature': signature,
+                'Content-Type': 'application/json'
+            }
+
+            if not silent:
+                print(f"\n📤 กำลัง Upload Logs สำหรับ {device_id}...")
+                print(f"   จำนวน Logs: {len(log_items)}")
+
+            response = self.session.post(url, data=payload_json, headers=headers)
+            
+            if 200 <= response.status_code <= 299:
+                result = response.json()
+                created_count = result.get('data', {}).get('created_count', len(log_items))
+                
+                if not silent:
+                    print(f"✅ Upload Logs สำเร็จ!")
+                    print(f"   Created: {created_count} logs")
+                
+                return True
+            else:
+                if not silent:
+                    print(f"❌ Upload Logs ไม่สำเร็จ: {response.status_code}")
+                    print(f"   Response: {response.text}")
+                return False
+                
+        except Exception as e:
+            if not silent:
+                print(f"❌ เกิดข้อผิดพลาดในการ upload logs: {e}")
             return False
     
     def _create_device_client(self, device_id: str) -> mqtt.Client:
@@ -703,7 +867,6 @@ class DeviceLifecycleSimulator:
         print(f"📡 สถานะ: {'กำลัง Stream' if stats['running'] else 'หยุดแล้ว'}")
         print(f"📨 จำนวน Messages ทั้งหมด: {stats['total_messages_sent']}")
         print("\n📋 รายละเอียด Device:")
-        
         for device_id, details in stats['device_details'].items():
             connected = "🟢" if (device_id in self.devices and 
                                 'client' in self.devices[device_id] and 
@@ -734,7 +897,8 @@ def show_menu():
     print("9. 🔄 Sync Config โดยระบุ Device ID")
     print("10. 📡 เริ่ม Streaming โดยระบุ Device ID")
     print("11. 🔧 Register Device โดยระบุ Chip ID")
-    print("12. ❌ ออกจากโปรแกรม")
+    print("12. 📤 Upload Logs โดยระบุ Device ID")
+    print("13. ❌ ออกจากโปรแกรม")
     print("=" * 60)
 
 def handle_add_wash_device(simulator: DeviceLifecycleSimulator):
@@ -884,11 +1048,7 @@ def handle_register_device_with_chip_id(simulator: DeviceLifecycleSimulator):
     print("\n🔧 Register Device โดยระบุ Chip ID")
     print("-" * 40)
     
-    chip_id = input("📝 Chip ID: ").strip()
-    if not chip_id:
-        print("❌ กรุณาระบุ Chip ID")
-        return
-    
+    # เลือก Device Type ก่อน
     print("\n📋 เลือก Device Type:")
     print("1. WASH")
     print("2. DRYING")
@@ -902,14 +1062,57 @@ def handle_register_device_with_chip_id(simulator: DeviceLifecycleSimulator):
         print("❌ กรุณาเลือก 1 หรือ 2")
         return
     
-    # Register device with custom chip_id
-    device_id = simulator.register_device(device_type, chip_id=chip_id)
+    chip_id = input("\n📝 Chip ID: ").strip()
+    if not chip_id:
+        print("❌ กรุณาระบุ Chip ID")
+        return
     
-    if device_id:
-        # Ask if want to sync configs
-        sync_choice = input("\n🔄 ต้องการ Sync Configs เลยไหม? (y/n, default: y): ").strip().lower()
-        if sync_choice != 'n':
-            simulator.sync_device_configs(device_id)
+    mac_address = input("📝 MAC Address (optional, กด Enter เพื่อใช้ random): ").strip()
+    
+    # ถาม sync config ก่อน register
+    sync_choice = input("🔄 ต้องการ Sync Configs หลัง Register ไหม? (y/n, default: y): ").strip().lower()
+    should_sync = sync_choice != 'n'
+    
+    # Register device with custom chip_id and mac_address
+    device_id = simulator.register_device(device_type, chip_id=chip_id, mac_address=mac_address if mac_address else None)
+    
+    if device_id and should_sync:
+        # Sync configs ถ้าตอบว่า y
+        simulator.sync_device_configs(device_id)
+
+def handle_upload_logs_by_id(simulator: DeviceLifecycleSimulator):
+    """Handle upload logs for specific device_id"""
+    print("\n📤 Upload Logs โดยระบุ Device ID")
+    print("-" * 40)
+    
+    device_id = input("📝 Device ID: ").strip()
+    if not device_id:
+        print("❌ กรุณาระบุ Device ID")
+        return
+    
+    # ถามจำนวน logs หรือใช้ random
+    num_logs_input = input("📊 จำนวน Logs (กด Enter เพื่อใช้ random 1-5): ").strip()
+    if num_logs_input:
+        try:
+            num_logs = int(num_logs_input)
+            if num_logs < 1:
+                print("⚠️  จำนวน logs ต้องมากกว่า 0 ใช้ค่า default แทน")
+                num_logs = None
+        except ValueError:
+            print("⚠️  จำนวน logs ไม่ถูกต้อง ใช้ค่า random แทน")
+            num_logs = None
+    else:
+        num_logs = None
+    
+    # ถ้าระบุจำนวน logs ให้สร้าง log items
+    log_items = None
+    if num_logs:
+        device = simulator.devices.get(device_id)
+        if device:
+            device_type = device['type']
+            log_items = [simulator._generate_random_log_item(device_type) for _ in range(num_logs)]
+    
+    simulator.upload_device_logs(device_id, log_items=log_items)
 
 def main():
     """Main function"""
@@ -938,7 +1141,7 @@ def main():
     try:
         while True:
             show_menu()
-            choice = input("👉 เลือกคำสั่ง (1-12): ").strip()
+            choice = input("👉 เลือกคำสั่ง (1-13): ").strip()
             
             if choice == "1":
                 handle_add_wash_device(simulator)
@@ -963,10 +1166,12 @@ def main():
             elif choice == "11":
                 handle_register_device_with_chip_id(simulator)
             elif choice == "12":
+                handle_upload_logs_by_id(simulator)
+            elif choice == "13":
                 print("👋 ออกจากโปรแกรม")
                 break
             else:
-                print("❌ กรุณาเลือกหมายเลข 1-12")
+                print("❌ กรุณาเลือกหมายเลข 1-13")
             
             # Pause before showing menu again
             if choice not in ["4", "5", "10"] and not simulator.running:

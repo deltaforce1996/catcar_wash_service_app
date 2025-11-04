@@ -8,8 +8,8 @@ services:
     restart: unless-stopped
     environment:
       POSTGRES_DB: catcar_wash_db
-      POSTGRES_USER: catcar_wash_user
-      POSTGRES_PASSWORD: catcar_wash_password
+      POSTGRES_USER: catcar
+      POSTGRES_PASSWORD: password
       POSTGRES_INITDB_ARGS: "--encoding=UTF-8 --lc-collate=C --lc-ctype=C"
     ports:
       - "5432:5432"
@@ -19,7 +19,7 @@ services:
     networks:
       - catcar_wash_network
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U catcar_wash_user -d catcar_wash_db"]
+      test: ["CMD-SHELL", "pg_isready -U catcar -d catcar_wash_db"]
       interval: 30s
       timeout: 10s
       retries: 3
@@ -80,7 +80,7 @@ services:
       - VERSION=1.0.0
       - LOG_LEVEL=debug
 
-      - DATABASE_URL=postgresql://catcar_wash_user:catcar_wash_password@postgres:5432/catcar_wash_db
+      - DATABASE_URL=postgresql://catcar:password@postgres:5432/catcar_wash_db
 
       - JWT_SECRET=your-super-secret-jwt-key-change-this-in-production
       - JWT_EXPIRES_IN=24h

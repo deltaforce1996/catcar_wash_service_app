@@ -4,9 +4,13 @@
     <v-card-title class="pa-6">
       <div class="d-flex justify-space-between align-center">
         <h2 class="text-h5 font-weight-bold">{{ title }}</h2>
-        <v-chip variant="tonal" color="primary">
-          {{ displayItemCount }} รายการทั้งหมด
-        </v-chip>
+        <div class="d-flex align-center ga-2">
+          <v-chip variant="tonal" color="primary">
+            {{ displayItemCount }} รายการทั้งหมด
+          </v-chip>
+          <!-- Custom actions slot -->
+          <slot name="actions" />
+        </div>
       </div>
     </v-card-title>
 

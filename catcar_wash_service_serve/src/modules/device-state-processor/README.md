@@ -21,7 +21,7 @@ Module สำหรับประมวลผล MQTT messages จากอุ�
 - **Transaction Support**: ใช้ database transaction เพื่อความสอดคล้องของข้อมูล
 - **Offline Detection**: ตรวจจับอุปกรณ์ที่หยุดส่งข้อมูลเกิน 10 วินาทีและอัปเดตสถานะเป็น OFFLINE
 - **Device Tracking**: ติดตามเวลาที่อุปกรณ์ส่งข้อมูลล่าสุด
-- **Rate Limiting**: จำกัดการประมวลผล 8 ครั้ง/นาทีต่ออุปกรณ์ (Sliding Window)
+- **Rate Limiting**: จำกัดการประมวลผล 1 ครั้ง/4 นาทีต่ออุปกรณ์ (Sliding Window)
 - **Batch Processing**: ประมวลผลข้อความทีละ 50 รายการ ทุก 5 วินาที
 - **Statistics & Monitoring**: เก็บสถิติและแสดงผลทุก 5 นาที
 - **Auto Cleanup**: ทำความสะอาดข้อมูลเก่าทุก 10 นาที
@@ -96,16 +96,16 @@ DATABASE_URL=postgresql://username:password@localhost:5432/database_name
 - **Indexing**: มี index บน `device_id` และ `created_at`
 - **State Hashing**: ใช้ hash เพื่อตรวจสอบการเปลี่ยนแปลงและลดการเขียนข้อมูลซ้ำ
 - **Transaction Support**: ใช้ database transaction เพื่อความสอดคล้องของข้อมูล
-- **Rate Limiting**: จำกัด 8 ครั้ง/นาทีต่ออุปกรณ์ เพื่อป้องกันระบบล่ม
+- **Rate Limiting**: จำกัด 1 ครั้ง/4 นาทีต่ออุปกรณ์ เพื่อป้องกันระบบล่ม
 - **Batch Processing**: ประมวลผลทีละ 50 ข้อความ เพื่อลดภาระฐานข้อมูล
 - **Sliding Window**: ใช้ sliding window rate limiting สำหรับความแม่นยำ
 - **Auto Cleanup**: ลบข้อมูลเก่าเพื่อประหยัดหน่วยความจำ
 
 #### Offline Detection Logic
-- **Timeout**: 10 วินาที (10,000ms)
+- **Timeout**: 30 นาที (30 * 60 * 1000 ms)
 - **Check Interval**: ทุก 5 วินาที
 - **Tracking**: เก็บ timestamp ของการส่งข้อมูลล่าสุดของแต่ละอุปกรณ์
-- **Auto Mark**: อุปกรณ์ที่หยุดส่งข้อมูลเกิน 10 วินาทีจะถูกอัปเดตสถานะเป็น OFFLINE อัตโนมัติ
+- **Auto Mark**: อุปกรณ์ที่หยุดส่งข้อมูลเกิน 30 นาทีจะถูกอัปเดตสถานะเป็น OFFLINE อัตโนมัติ
 - **⚠️ Important**: อุปกรณ์ที่ถูก **rate limited** จะ**ไม่ถือว่า offline** เพราะ `lastSeen` จะถูกอัพเดทก่อนการตรวจสอบ rate limit
 - **Payload**: สถานะ OFFLINE จะมี payload ดังนี้:
   ```json
@@ -177,9 +177,9 @@ Service นี้มี logging ที่ครอบคลุมสำหรั
 
 | สถานการณ์ | Rate Limited | Offline | อธิบาย |
 |-----------|-------------|---------|---------|
-| ส่งข้อความบ่อยเกินไป (> 8/min) | ✅ Yes | ❌ No | ข้อความจะถูก skip แต่ device ยังไม่ offline |
-| หยุดส่งข้อมูล > 10 วินาที | ❌ No | ✅ Yes | Device จะถูกมองว่า offline |
-| ส่งข้อมูลปกติ (≤ 8/min) | ❌ No | ❌ No | ทำงานปกติ |
+| ส่งข้อความบ่อยเกินไป (> 1/4min) | ✅ Yes | ❌ No | ข้อความจะถูก skip แต่ device ยังไม่ offline |
+| หยุดส่งข้อมูล > 30 นาที | ❌ No | ✅ Yes | Device จะถูกมองว่า offline |
+| ส่งข้อมูลปกติ (≤ 1/4min) | ❌ No | ❌ No | ทำงานปกติ |
 
 **Flow การทำงาน:**
 ```typescript
@@ -200,7 +200,7 @@ messageBatch.push(message);
 
 **ผลลัพธ์:**
 - ✅ Device ที่ส่งข้อความบ่อยมาก (rate limited) จะ**ไม่ถูกมองว่า offline**
-- ✅ เฉพาะ device ที่**หยุดส่งข้อมูลจริงๆ > 10 วินาที** เท่านั้นที่จะเป็น offline
+- ✅ เฉพาะ device ที่**หยุดส่งข้อมูลจริงๆ > 30 นาที** เท่านั้นที่จะเป็น offline
 - ✅ ป้องกัน false positive offline detection
 
 #### Manual Operations
@@ -287,13 +287,13 @@ Modules ใน directory นี้สามารถใช้:
 Service นี้ได้รับการออกแบบเพื่อรองรับการใช้งานในระดับสูง:
 
 ### **Capacity Planning**
-- **1,000 Devices**: รองรับอุปกรณ์ 1,000 เครื่องที่ส่งข้อมูลทุก 8 นาที
-- **Rate Limiting**: จำกัด 8 ครั้ง/นาทีต่ออุปกรณ์ เพื่อป้องกันระบบล่ม
+- **1,000 Devices**: รองรับอุปกรณ์ 1,000 เครื่องที่ส่งข้อมูลทุก 4 นาที
+- **Rate Limiting**: จำกัด 1 ครั้ง/4 นาทีต่ออุปกรณ์ เพื่อป้องกันระบบล่ม
 - **Batch Processing**: ประมวลผลทีละ 50 ข้อความ ทุก 5 วินาที
 - **Memory Management**: ทำความสะอาดข้อมูลเก่าทุก 10 นาที
 
 ### **Performance Metrics**
-- **Throughput**: ~7,500 ข้อความ/ชั่วโมง (1,000 เครื่อง × 7.5 ครั้ง/ชั่วโมง)
+- **Throughput**: ~15,000 ข้อความ/ชั่วโมง (1,000 เครื่อง × 15 ครั้ง/ชั่วโมง)
 - **Processing Time**: เฉลี่ย < 100ms ต่อข้อความ
 - **Queue Size**: สูงสุด 50 ข้อความต่อ batch
 - **Memory Usage**: ติดตามอุปกรณ์ได้ 1,000+ เครื่องพร้อมกัน
@@ -314,7 +314,8 @@ Modules จะถูกโหลดอัตโนมัติเมื่อ ap
 ### **Environment Variables**
 ```env
 # Rate Limiting Configuration
-MAX_REQUESTS_PER_MINUTE=8
+MAX_REQUESTS_PER_MINUTE=1
+WINDOW_SIZE_MS=240000
 BATCH_SIZE=50
 BATCH_INTERVAL_MS=5000
 OFFLINE_TIMEOUT_MS=10000

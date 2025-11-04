@@ -1,0 +1,19 @@
+/**
+ * Global styles for Cat Car Wash application
+ *
+ * This file contains global style overrides and customizations
+ * that apply across the entire application.
+ */
+
+/**
+ * Dark Theme Overlay Opacity Override
+ *
+ * Increases the overlay opacity for dark theme to 0.5 (50%)
+ * to provide better contrast and focus on modal/dialog content.
+ *
+ * Default Vuetify overlay opacity is 0.32 (32%).
+ * This override only affects dark theme, light theme remains at default.
+ */
+.v-theme--dark .v-overlay__scrim {
+  opacity: 0.7 !important;
+}
