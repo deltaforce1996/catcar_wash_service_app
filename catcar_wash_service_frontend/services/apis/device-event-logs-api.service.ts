@@ -94,4 +94,13 @@ export class DeviceEventLogsApiService extends BaseApiClient {
     });
     return response;
   }
+
+  async exportDeviceEventLogsToExcel(date?: Date): Promise<Blob> {
+    const params = date ? { date: date.getTime().toString() } : {};
+    const response = await this.get<Blob>("api/v1/device-event-logs/export", {
+      params,
+      responseType: "blob",
+    });
+    return response;
+  }
 }

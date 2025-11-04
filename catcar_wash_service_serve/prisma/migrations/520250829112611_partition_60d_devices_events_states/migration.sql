@@ -3,6 +3,32 @@
 -- Remove column "type"
 -- =========================================================
 
+-- ---------------------------------------------------------
+-- Cleanup any orphaned partitions from previous failed runs
+-- ---------------------------------------------------------
+DO $$
+DECLARE
+  partition_name text;
+BEGIN
+  -- Drop orphaned partition tables (not parent/old/_p tables)
+  FOR partition_name IN
+    SELECT tablename FROM pg_tables
+    WHERE schemaname = 'public'
+    AND tablename LIKE 'tbl_devices_events_%'
+    AND tablename NOT IN ('tbl_devices_events', 'tbl_devices_events_old', 'tbl_devices_events_p')
+  LOOP
+    EXECUTE format('DROP TABLE IF EXISTS public.%I CASCADE', partition_name);
+    RAISE NOTICE 'Dropped orphaned partition: %', partition_name;
+  END LOOP;
+
+  IF NOT FOUND THEN
+    RAISE NOTICE 'No orphaned partitions found';
+  END IF;
+END$$;
+
+-- ---------------------------------------------------------
+-- Main migration idempotency check
+-- ---------------------------------------------------------
 DO $$
 DECLARE
   _is_partitioned boolean;
@@ -300,21 +326,82 @@ END$$;
 
 -- AlterTable - Add PRIMARY KEY with idempotency check
 DO $$
+DECLARE
+  _is_partitioned boolean;
+  _has_pk boolean;
+  _table_exists boolean;
 BEGIN
-  IF NOT EXISTS (
+  -- Check if tbl_devices_events exists
+  SELECT EXISTS (
+    SELECT 1 FROM pg_class c
+    JOIN pg_namespace n ON n.oid = c.relnamespace
+    WHERE n.nspname = 'public' AND c.relname = 'tbl_devices_events'
+  ) INTO _table_exists;
+
+  IF NOT coalesce(_table_exists, false) THEN
+    RAISE NOTICE 'Table tbl_devices_events does not exist yet, skipping PRIMARY KEY';
+    RETURN;
+  END IF;
+
+  -- Check if table is partitioned
+  SELECT (c.relkind = 'p') INTO _is_partitioned
+  FROM pg_class c
+  JOIN pg_namespace n ON n.oid = c.relnamespace
+  WHERE n.nspname = 'public' AND c.relname = 'tbl_devices_events';
+
+  -- Check if PRIMARY KEY already exists (search by constraint name globally)
+  SELECT EXISTS (
     SELECT 1 FROM pg_constraint
-    WHERE conrelid = 'public.tbl_devices_events'::regclass
-      AND conname = 'tbl_devices_events_pkey'
-  ) THEN
+    WHERE conname = 'tbl_devices_events_pkey'
+  ) INTO _has_pk;
+
+  IF coalesce(_has_pk, false) THEN
+    RAISE NOTICE 'PRIMARY KEY already exists, skipping';
+    RETURN;
+  END IF;
+
+  -- Try to add PRIMARY KEY
+  BEGIN
     ALTER TABLE "public"."tbl_devices_events"
       ADD CONSTRAINT "tbl_devices_events_pkey"
       PRIMARY KEY ("id", "created_at");
-    RAISE NOTICE 'PRIMARY KEY created';
-  ELSE
-    RAISE NOTICE 'PRIMARY KEY already exists, skipping';
-  END IF;
+    RAISE NOTICE 'PRIMARY KEY created successfully';
+  EXCEPTION
+    WHEN duplicate_object THEN
+      RAISE NOTICE 'PRIMARY KEY already exists (caught duplicate_object), skipping';
+    WHEN others THEN
+      RAISE NOTICE 'Error creating PRIMARY KEY: % %', SQLERRM, SQLSTATE;
+      RAISE;
+  END;
 END$$;
 
 -- CreateIndex - Use IF NOT EXISTS for idempotency
-CREATE INDEX IF NOT EXISTS "tbl_devices_events_device_id_created_at_idx"
-  ON "public"."tbl_devices_events"("device_id", "created_at");
+DO $$
+DECLARE
+  _table_exists boolean;
+BEGIN
+  -- Check if tbl_devices_events exists
+  SELECT EXISTS (
+    SELECT 1 FROM pg_class c
+    JOIN pg_namespace n ON n.oid = c.relnamespace
+    WHERE n.nspname = 'public' AND c.relname = 'tbl_devices_events'
+  ) INTO _table_exists;
+
+  IF NOT coalesce(_table_exists, false) THEN
+    RAISE NOTICE 'Table tbl_devices_events does not exist yet, skipping INDEX creation';
+    RETURN;
+  END IF;
+
+  -- Try to create index
+  BEGIN
+    CREATE INDEX IF NOT EXISTS "tbl_devices_events_device_id_created_at_idx"
+      ON "public"."tbl_devices_events"("device_id", "created_at");
+    RAISE NOTICE 'INDEX created or already exists';
+  EXCEPTION
+    WHEN duplicate_table THEN
+      RAISE NOTICE 'INDEX already exists (caught duplicate_table), skipping';
+    WHEN others THEN
+      RAISE NOTICE 'Error creating INDEX: % %', SQLERRM, SQLSTATE;
+      RAISE;
+  END;
+END$$;

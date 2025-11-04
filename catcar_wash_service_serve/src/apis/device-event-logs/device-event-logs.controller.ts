@@ -1,4 +1,5 @@
-import { Controller, Get, Post, Query, Body, UseFilters, UseGuards } from '@nestjs/common';
+import { Controller, Get, Post, Query, Body, UseFilters, UseGuards, Res } from '@nestjs/common';
+import type { Response } from 'express';
 import { PaginatedResult } from 'src/types/internal.type';
 import { DeviceEventLogsService, DeviceEventLogRow } from 'src/services/adepters/device-event-logs.service';
 import { SearchDeviceEventLogsDto } from './dtos/search-devcie-event.dto';
@@ -29,6 +30,28 @@ export class DeviceEventLogsController {
       message: 'Device event logs fetched successfully',
       data: result,
     };
+  }
+
+  @UseGuards(JwtAuthGuard)
+  @Get('export')
+  async exportDeviceEventLogs(
+    @UserAuth() user: AuthenticatedUser,
+    @Res() res: Response,
+    @Query('date') dateTimestamp?: string,
+  ): Promise<void> {
+    // Convert timestamp to Date object, default to current date
+    const selectedDate = dateTimestamp ? new Date(Number(dateTimestamp)) : new Date();
+
+    const excelBuffer = await this.deviceEventLogsService.exportMonthToExcel(selectedDate, user);
+
+    // Format filename as YYYY-MM
+    const year = selectedDate.getFullYear();
+    const month = String(selectedDate.getMonth() + 1).padStart(2, '0');
+    const filename = `device-event-logs-${year}-${month}.xlsx`;
+
+    res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+    res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
+    res.send(excelBuffer);
   }
 
   @UseGuards(DeviceSignatureGuard)

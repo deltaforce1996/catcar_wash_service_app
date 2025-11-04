@@ -461,6 +461,10 @@
                 <span class="stat-value" id="messages-per-sec">0</span>
                 <span class="stat-label">Msg/sec</span>
             </div>
+            <div class="stat-item">
+                <span class="stat-value" id="heartbeat-count" style="color: #10b981;">0</span>
+                <span class="stat-label">❤️ Heartbeats</span>
+            </div>
         </div>
         
         <div class="filters">
@@ -526,9 +530,6 @@
     <script>
         let eventSource = null;
         let isPaused = false;
-        let reconnectAttempts = 0;
-        let reconnectTimer = null;
-        const MAX_RECONNECT_ATTEMPTS = 10;
         let messages = [];
         let uniqueTopics = new Set();
         let messageCount = 0;
@@ -539,6 +540,7 @@
         let displayLimit = 100;
         let availableTopics = [];
         let topicCounts = {};
+        let heartbeatCount = 0;
 
         // Initialize
         document.addEventListener('DOMContentLoaded', () => {
@@ -580,22 +582,20 @@
             eventSource.onopen = () => {
                 console.log('SSE connection opened');
                 document.getElementById('connection-status').textContent = 'Connected';
-                reconnectAttempts = 0;
-                clearReconnectTimer();
             };
             
             eventSource.onmessage = (event) => {
                 if (isPaused) return;
-                
+
                 try {
                     const message = JSON.parse(event.data);
-                    
-                    // Skip heartbeat messages (don't display in UI)
-                    if (message.type === 'heartbeat') {
-                        return;
+
+                    // Check if this is a heartbeat message
+                    if (isHeartbeatMessage(message)) {
+                        displayHeartbeatIndicator(message);
+                    } else {
+                        handleNewMessage(message);
                     }
-                    
-                    handleNewMessage(message);
                 } catch (error) {
                     console.error('Error parsing message:', error);
                 }
@@ -605,28 +605,60 @@
                 console.error('SSE error:', error);
                 document.getElementById('connection-status').textContent = 'Disconnected';
                 
-                // Exponential backoff reconnection
-                if (reconnectAttempts < MAX_RECONNECT_ATTEMPTS) {
-                    reconnectAttempts++;
-                    const delay = Math.min(5000 * Math.pow(2, reconnectAttempts - 1), 60000);
-                    
-                    console.log(`Attempting to reconnect (${reconnectAttempts}/${MAX_RECONNECT_ATTEMPTS}) in ${delay/1000}s`);
-                    
-                    reconnectTimer = setTimeout(() => {
-                        console.log('Reconnecting...');
-                        connectToSSE();
-                    }, delay);
-                } else {
-                    console.error('Max reconnection attempts reached. Please refresh the page.');
-                    document.getElementById('connection-status').textContent = 'Connection Failed - Please Refresh';
-                }
+                // Reconnect after 5 seconds
+                setTimeout(() => {
+                    console.log('Reconnecting...');
+                    connectToSSE();
+                }, 5000);
             };
         }
-        
-        function clearReconnectTimer() {
-            if (reconnectTimer) {
-                clearTimeout(reconnectTimer);
-                reconnectTimer = null;
+
+        function isHeartbeatMessage(message) {
+            // Check if message.type is 'heartbeat' (message structure has type at root level)
+            if (message.type === 'heartbeat') {
+                return true;
+            }
+
+            // If no type field, check payload
+            if (!message.payload) {
+                return false;
+            }
+
+            try {
+                const jsonPayload = JSON.parse(message.payload);
+
+                // Check if payload has type or message field as heartbeat
+                if (jsonPayload.type === 'heartbeat' || jsonPayload.message === 'heartbeat') {
+                    return true;
+                }
+
+                return false;
+            } catch (e) {
+                // Not JSON, check if it's plain text "heartbeat" or empty
+                const trimmed = message.payload.toLowerCase().trim();
+                if (trimmed === 'heartbeat' || trimmed === '') {
+                    return true;
+                }
+
+                return false;
+            }
+        }
+
+        function displayHeartbeatIndicator(message) {
+            // Increment heartbeat counter
+            heartbeatCount++;
+
+            // Update the heartbeat stat display
+            const heartbeatElement = document.getElementById('heartbeat-count');
+            if (heartbeatElement) {
+                heartbeatElement.textContent = heartbeatCount.toLocaleString();
+
+                // Add a brief animation effect
+                heartbeatElement.style.transform = 'scale(1.2)';
+                heartbeatElement.style.transition = 'transform 0.2s';
+                setTimeout(() => {
+                    heartbeatElement.style.transform = 'scale(1)';
+                }, 200);
             }
         }
 
@@ -635,7 +667,7 @@
             messagesInLastSecond++;
             messages.push(message);
             uniqueTopics.add(message.topic);
-            
+
             // Update topic counts
             topicCounts[message.topic] = (topicCounts[message.topic] || 0) + 1;
             
@@ -667,17 +699,17 @@
 
         function displayMessage(message) {
             const container = document.getElementById('messages');
-            
+
             // Remove empty state
             const emptyState = container.querySelector('.empty-state');
             if (emptyState) {
                 emptyState.remove();
             }
-            
+
             // Create message element
             const messageEl = document.createElement('div');
             messageEl.className = 'message';
-            
+
             const timestamp = new Date(message.timestamp).toLocaleString('th-TH', {
                 timeZone: 'Asia/Bangkok',
                 hour12: false,
@@ -689,7 +721,7 @@
                 second: '2-digit',
                 fractionalSecondDigits: 3
             });
-            
+
             // Try to pretty print JSON payload
             let payloadDisplay = message.payload;
             try {
@@ -698,12 +730,12 @@
             } catch (e) {
                 // Not JSON, use as is
             }
-            
+
             // Determine direction icon and badge
             const directionIcon = message.direction === 'outgoing' ? '📤' : '📥';
             const directionLabel = message.direction === 'outgoing' ? 'OUTGOING' : 'INCOMING';
             const directionColor = message.direction === 'outgoing' ? '#10b981' : '#3b82f6';
-            
+
             messageEl.innerHTML = `
                 <div class="message-header">
                     <span class="message-topic">
@@ -718,9 +750,9 @@
                     ${message.retain ? '<span class="meta-badge">RETAINED</span>' : ''}
                 </div>
             `;
-            
+
             container.appendChild(messageEl);
-            
+
             // Keep only limited messages in DOM
             const limit = displayLimit > 0 ? displayLimit : 1000;
             while (container.children.length > limit) {
@@ -764,7 +796,14 @@
             messageCount = 0;
             uniqueTopics.clear();
             messagesInLastSecond = 0;
+            heartbeatCount = 0;
             updateStats();
+
+            // Reset heartbeat counter display
+            const heartbeatElement = document.getElementById('heartbeat-count');
+            if (heartbeatElement) {
+                heartbeatElement.textContent = '0';
+            }
         }
 
         function setupFilters() {
@@ -907,57 +946,6 @@
             refilterMessages();
             updateTopicsList();
             closeTopicsMenu();
-        }
-
-        // Cleanup when page is unloading (user navigates away or closes tab)
-        window.addEventListener('beforeunload', () => {
-            if (eventSource && isPaused) { // Assuming isPaused is a global or accessible variable
-                console.log('Page unloading - closing SSE connection');
-                disconnectSSE();
-            }
-        });
-
-        // Cleanup when page is hidden (tab switch, minimize, etc.)
-        document.addEventListener('visibilitychange', () => {
-            if (document.hidden && eventSource && isPaused) { // Assuming isPaused is a global or accessible variable
-                console.log('Page hidden - closing SSE connection');
-                disconnectSSE();
-            }
-        });
-
-        // Additional cleanup for mobile browsers
-        window.addEventListener('pagehide', () => {
-            if (eventSource && isPaused) { // Assuming isPaused is a global or accessible variable
-                console.log('Page hiding - closing SSE connection');
-                disconnectSSE();
-            }
-        });
-
-        // Ensure disconnectSSE is called properly
-        function disconnectSSE() {
-            // Prevent multiple disconnects
-            if (!eventSource && isPaused) { // Assuming isPaused is a global or accessible variable
-                return;
-            }
-
-            if (eventSource) {
-                try {
-                    // Close EventSource properly
-                    if (eventSource.readyState !== EventSource.CLOSED) {
-                        eventSource.close();
-                    }
-                    eventSource = null;
-                } catch (error) {
-                    console.error('Error closing SSE connection:', error);
-                }
-            }
-            
-            clearReconnectTimer();
-            isPaused = false; // Assuming isPaused is a global or accessible variable
-            reconnectAttempts = 0;
-            updateConnectionButton();
-            document.getElementById('connection-status').textContent = 'Disconnected';
-            console.log('SSE connection disconnected');
         }
     </script>
 </body>

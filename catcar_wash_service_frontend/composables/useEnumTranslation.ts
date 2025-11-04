@@ -18,7 +18,7 @@ export const useEnumTranslation = () => {
       case "WASH":
         return "เครื่องล้าง";
       case "DRYING":
-        return "เครื่องอบแห้ง";
+        return "เครื่องอบหมวก";
       default:
         return type;
     }

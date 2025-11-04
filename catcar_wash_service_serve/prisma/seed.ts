@@ -649,13 +649,13 @@ const generateDeviceEvents = (deviceIds: string[], type: EventType, count: numbe
           10: 0.0,
         },
         bank: {
-          20: 0.0,
+          20: 1,
           50: 0.0,
           100: 0.0,
           500: 0.0,
           1000: 0.0,
         },
-        qr: { net_amount: 0.0, chargeId: 'ACB-1152-1152' },
+        qr: { net_amount: 10, chargeId: 'ACB-1152-1152' },
       };
 
       const totalAmount =

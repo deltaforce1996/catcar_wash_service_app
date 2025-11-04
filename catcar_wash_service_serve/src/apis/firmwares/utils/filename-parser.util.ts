@@ -58,16 +58,12 @@ export function parseFilename(filename: string): ParsedFilename {
 
   // Validate type
   if (type.toLowerCase() !== 'carwash' && type.toLowerCase() !== 'helmet') {
-    throw new BadRequestException(
-      `Invalid type. Must be 'carwash' or 'helmet'. Got: ${type}`,
-    );
+    throw new BadRequestException(`Invalid type. Must be 'carwash' or 'helmet'. Got: ${type}`);
   }
 
   // Validate variant
   if (variant.toUpperCase() !== 'HW' && variant.toUpperCase() !== 'QR') {
-    throw new BadRequestException(
-      `Invalid variant. Must be 'HW' or 'QR'. Got: ${variant}`,
-    );
+    throw new BadRequestException(`Invalid variant. Must be 'HW' or 'QR'. Got: ${variant}`);
   }
 
   return {
@@ -82,10 +78,7 @@ export function parseFilename(filename: string): ParsedFilename {
 /**
  * Validate that two files have matching software versions
  */
-export function validateVersionMatch(
-  file1: ParsedFilename,
-  file2: ParsedFilename,
-): void {
+export function validateVersionMatch(file1: ParsedFilename, file2: ParsedFilename): void {
   if (file1.swVersion !== file2.swVersion) {
     throw new BadRequestException(
       `Software version mismatch. File 1: ${file1.swVersion}, File 2: ${file2.swVersion}. Both files must have the same software version.`,
@@ -96,10 +89,7 @@ export function validateVersionMatch(
 /**
  * Validate that two files have matching types
  */
-export function validateTypeMatch(
-  file1: ParsedFilename,
-  file2: ParsedFilename,
-): void {
+export function validateTypeMatch(file1: ParsedFilename, file2: ParsedFilename): void {
   if (file1.type !== file2.type) {
     throw new BadRequestException(
       `Type mismatch. File 1: ${file1.type}, File 2: ${file2.type}. Both files must be of the same type.`,
@@ -110,10 +100,7 @@ export function validateTypeMatch(
 /**
  * Validate that the files contain both HW and QR variants
  */
-export function validateVariants(
-  file1: ParsedFilename,
-  file2: ParsedFilename,
-): void {
+export function validateVariants(file1: ParsedFilename, file2: ParsedFilename): void {
   const variants = [file1.variant, file2.variant].sort();
   if (variants[0] !== 'HW' || variants[1] !== 'QR') {
     throw new BadRequestException(
