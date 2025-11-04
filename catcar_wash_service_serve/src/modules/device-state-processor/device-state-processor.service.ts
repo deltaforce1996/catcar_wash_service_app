@@ -21,8 +21,8 @@ export class DeviceStateProcessorService implements OnModuleInit {
   private readonly logger = new Logger(DeviceStateProcessorService.name);
 
   // Rate Limiting Configuration
-  private readonly MAX_REQUESTS_PER_MINUTE = 8;
-  private readonly WINDOW_SIZE_MS = 60000; // 1 นาที
+  private readonly MAX_REQUESTS_PER_MINUTE = 1; // 1 log per window
+  private readonly WINDOW_SIZE_MS = 240000; // 4 นาที (4 * 60 * 1000 ms)
   private deviceTimestamps = new Map<string, number[]>();
 
   // Batch Processing Configuration
@@ -155,12 +155,12 @@ export class DeviceStateProcessorService implements OnModuleInit {
    */
   private isWithinSlidingWindowLimit(deviceId: string): boolean {
     const now = Date.now();
-    const windowStart = now - this.WINDOW_SIZE_MS; // 1 นาทีที่แล้ว
+    const windowStart = now - this.WINDOW_SIZE_MS; // 4 นาทีที่แล้ว
 
     // ดึง timestamps ของ device นี้
     let timestamps = this.deviceTimestamps.get(deviceId) || [];
 
-    // ลบ timestamps ที่เก่ากว่า 1 นาที
+    // ลบ timestamps ที่เก่ากว่า 4 นาที
     timestamps = timestamps.filter((timestamp) => timestamp > windowStart);
 
     // ตรวจสอบว่ายังไม่เกินขีดจำกัด
