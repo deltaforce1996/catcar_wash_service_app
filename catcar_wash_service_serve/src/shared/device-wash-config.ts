@@ -164,7 +164,7 @@ export class DeviceWashConfig extends DeviceConfigBase<WashSetup> {
       parking_fee: {
         value: this.payload.configs.function.sec_per_baht.PARKING_FEE,
         unit: 'วินาที',
-        description: 'ค่าปรับที่จอดรถ',
+        description: 'Money timeout',
       },
     };
   }

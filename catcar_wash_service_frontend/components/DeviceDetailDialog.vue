@@ -928,7 +928,7 @@
                             <v-list-item-title
                               class="text-subtitle-1 font-weight-medium mb-1"
                             >
-                              บันทึกสถานะ
+                              ล้างฟรี
                               <v-chip
                                 size="x-small"
                                 color="on-surface-variant"
@@ -2274,6 +2274,8 @@ const getConfigDescription = (configKey: string) => {
       return "ความเร็วในการหมุนของแปรงหรือเครื่องจักร";
     case "power":
       return "กำลังไฟฟ้าที่ใช้ในการทำงาน";
+    case "parking_fee":
+      return "ระยะเวลาชำระเงิน";
     default:
       return "การตั้งค่าสำหรับการทำงานของอุปกรณ์";
   }
