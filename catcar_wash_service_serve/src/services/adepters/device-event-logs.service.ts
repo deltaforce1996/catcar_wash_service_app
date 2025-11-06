@@ -343,6 +343,9 @@ export class DeviceEventLogsService {
       { width: 16 }, // สถานะ
       { width: 18 }, // จำนวนเงิน
       { width: 30 }, // รหัสธุรกรรม
+      { width: 16 }, // QR (฿)
+      { width: 16 }, // Bank (฿)
+      { width: 16 }, // Coin (฿)
     ];
 
     // Add summary section (rows 1-10)
@@ -354,7 +357,18 @@ export class DeviceEventLogsService {
 
     // Add data section headers (row 12)
     const headerRow = worksheet.getRow(12);
-    const headers = ['วันที่-เวลา', 'ชื่ออุปกรณ์', 'ประเภท', 'เจ้าของ', 'สถานะ', 'จำนวนเงิน (฿)', 'รหัสธุรกรรม'];
+    const headers = [
+      'วันที่-เวลา',
+      'ชื่ออุปกรณ์',
+      'ประเภท',
+      'เจ้าของ',
+      'สถานะ',
+      'จำนวนเงิน (฿)',
+      'รหัสธุรกรรม',
+      'QR (฿)',
+      'Bank (฿)',
+      'Coin (฿)',
+    ];
     const thinBorder: Partial<ExcelJS.Border> = { style: 'thin', color: { argb: 'FF000000' } };
     const mediumBorder: Partial<ExcelJS.Border> = { style: 'medium', color: { argb: 'FF000000' } };
 
@@ -404,7 +418,27 @@ export class DeviceEventLogsService {
       const totalAmount = payload?.total_amount ? Number(payload.total_amount) : 0;
       const transactionId = payload?.qr?.transaction_id || '-';
 
-      row.values = [formattedDate, deviceName, deviceType, ownerName, status, totalAmount, transactionId];
+      // Extract payment method amounts
+      const qrAmount = payload?.qr?.net_amount ? Number(payload.qr.net_amount) : 0;
+      const bankAmount = payload?.bank
+        ? Object.entries(payload.bank).reduce((sum, [denom, count]) => sum + Number(denom) * Number(count), 0)
+        : 0;
+      const coinAmount = payload?.coin
+        ? Object.entries(payload.coin).reduce((sum, [denom, count]) => sum + Number(denom) * Number(count), 0)
+        : 0;
+
+      row.values = [
+        formattedDate,
+        deviceName,
+        deviceType,
+        ownerName,
+        status,
+        totalAmount,
+        transactionId,
+        qrAmount,
+        bankAmount,
+        coinAmount,
+      ];
 
       // Determine status color
       let statusColor = { argb: 'FF000000' }; // Default black
@@ -432,15 +466,15 @@ export class DeviceEventLogsService {
           top: thinBorderData,
           left: colNumber === 1 ? mediumBorderData : thinBorderData,
           bottom: index === data.length - 1 ? mediumBorderData : thinBorderData,
-          right: colNumber === 7 ? mediumBorderData : thinBorderData,
+          right: colNumber === 10 ? mediumBorderData : thinBorderData,
         };
 
         // Alignment based on column
         if (colNumber === 1) {
           // วันที่-เวลา - center
           cell.alignment = { vertical: 'middle', horizontal: 'center' };
-        } else if (colNumber === 6) {
-          // จำนวนเงิน - right
+        } else if (colNumber === 6 || colNumber === 8 || colNumber === 9 || colNumber === 10) {
+          // จำนวนเงิน, QR, Bank, Coin - right
           cell.alignment = { vertical: 'middle', horizontal: 'right', indent: 1 };
         } else if (colNumber === 3 || colNumber === 5) {
           // ประเภท, สถานะ - center
@@ -470,9 +504,15 @@ export class DeviceEventLogsService {
         }
       });
 
-      // Format currency column
+      // Format currency columns
       row.getCell(6).numFmt = '฿#,##0.00';
       row.getCell(6).font = { bold: true };
+      row.getCell(8).numFmt = '฿#,##0.00';
+      row.getCell(8).font = { bold: true };
+      row.getCell(9).numFmt = '฿#,##0.00';
+      row.getCell(9).font = { bold: true };
+      row.getCell(10).numFmt = '฿#,##0.00';
+      row.getCell(10).font = { bold: true };
 
       // Set row height
       row.height = 22;
@@ -484,7 +524,7 @@ export class DeviceEventLogsService {
     // Auto-filter
     worksheet.autoFilter = {
       from: { row: 12, column: 1 },
-      to: { row: 12, column: 7 },
+      to: { row: 12, column: 10 },
     };
 
     // Generate buffer

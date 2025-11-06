@@ -570,9 +570,10 @@ const seedDemoData = async () => {
   const deviceIds = devices.map((device) => device.id);
   const deviceTypes = devices.map((device) => device.type);
 
-  // Generate device events
+  // Generate device events (2 months of logs: ~30-60 events per device)
   console.log('[Demo Data] Generating device events (payment logs)...');
-  const logs_events = generateDeviceEvents(deviceIds, EventType.PAYMENT, 5);
+  const eventsPerDevice = randomInt(30, 61); // 30-60 events per device for 2 months
+  const logs_events = generateDeviceEvents(deviceIds, EventType.PAYMENT, eventsPerDevice);
   const newLogsEvents = await prisma.tbl_devices_events.createMany({
     data: logs_events,
   });
@@ -625,46 +626,145 @@ const generateDeviceEvents = (deviceIds: string[], type: EventType, count: numbe
   console.log(`Generating ${count} events for ${deviceIds.length} devices`);
   const payloads: any[] = [];
 
-  // Ensure timestamps fall within partition range (120 days back to 180 days forward)
-  // Use a safer range: 90 days back to 90 days forward from now
+  // Generate timestamps for past 2 months (60 days) only
   const now = Date.now();
-  const maxPastDays = 90;
-  const maxFutureDays = 90;
+  const maxPastDays = 60; // 2 months
   const maxPastMs = maxPastDays * 24 * 60 * 60 * 1000;
-  const maxFutureMs = maxFutureDays * 24 * 60 * 60 * 1000;
 
   deviceIds.forEach((deviceId) => {
     for (let i = 0; i < count; i++) {
-      // Generate random timestamp within safe partition range
-      const randomOffset = randomInt(-maxPastMs, maxFutureMs);
+      // Generate random timestamp within past 60 days
+      const randomOffset = randomInt(-maxPastMs, 0);
       const timestamp = now + randomOffset;
 
-      const payload = {
+      // Initialize empty payment structures
+      const coin: Record<string, number> = {};
+      const bank: Record<string, number> = {};
+      let qr: { net_amount: number; chargeId: string } | null = null;
+
+      let totalAmount = 0;
+
+      // Randomly decide which payment methods to include (can be 1, 2, or all 3)
+      // Each method has a 50% chance to be included
+      let includeCoin = Math.random() < 0.5;
+      let includeBank = Math.random() < 0.5;
+      let includeQr = Math.random() < 0.5;
+
+      // Ensure at least one payment method is included
+      const hasPaymentMethod = includeCoin || includeBank || includeQr;
+      if (!hasPaymentMethod) {
+        // If none selected, force at least one (randomly choose)
+        const forcedMethod = randomInt(1, 4); // 1=coin, 2=bank, 3=qr
+        if (forcedMethod === 1) {
+          includeCoin = true;
+        } else if (forcedMethod === 2) {
+          includeBank = true;
+        } else {
+          includeQr = true;
+        }
+      }
+
+      // Generate coin payment if included
+      if (includeCoin) {
+        // Random coin payment: 10-200 baht
+        const targetAmount = randomInt(10, 200);
+        let remaining = targetAmount;
+
+        // Distribute amount across coin denominations
+        const denominations = [10, 5, 2, 1];
+        for (const denom of denominations) {
+          if (remaining >= denom) {
+            const coinCount = randomInt(0, Math.floor(remaining / denom) + 1);
+            if (coinCount > 0) {
+              coin[denom.toString()] = coinCount;
+              remaining -= coinCount * denom;
+            }
+          }
+        }
+        // Add any remaining amount to 1 baht coins
+        if (remaining > 0) {
+          coin['1'] = (coin['1'] || 0) + remaining;
+        }
+        const coinAmount = Object.entries(coin).reduce((acc, [k, v]) => acc + Number(k) * v, 0);
+        totalAmount += coinAmount;
+      }
+
+      // Generate banknote payment if included
+      if (includeBank) {
+        // Random banknote payment: 20-1000 baht
+        const targetAmount = randomInt(20, 1000);
+        let remaining = targetAmount;
+
+        // Distribute amount across banknote denominations
+        const denominations = [1000, 500, 100, 50, 20];
+        for (const denom of denominations) {
+          if (remaining >= denom) {
+            const bankCount = randomInt(0, Math.floor(remaining / denom) + 1);
+            if (bankCount > 0) {
+              bank[denom.toString()] = bankCount;
+              remaining -= bankCount * denom;
+            }
+          }
+        }
+        // Add any remaining amount to 20 baht notes
+        if (remaining > 0 && remaining < 20) {
+          bank['20'] = (bank['20'] || 0) + 1;
+          remaining = 0;
+        }
+        const bankAmount = Object.entries(bank).reduce((acc, [k, v]) => acc + Number(k) * v, 0);
+        totalAmount += bankAmount;
+      }
+
+      // Generate QR payment if included
+      if (includeQr) {
+        // QR payment: 10-1000 baht
+        const netAmount = randomInt(10, 1000);
+        const chargeId = `ACB-${randomInt(1000, 9999)}-${randomInt(1000, 9999)}`;
+        qr = { net_amount: netAmount, chargeId: chargeId };
+        totalAmount += netAmount;
+      }
+
+      // Build payload - only include payment methods that have values
+      const payload: any = {
         type: type,
         timestamp: timestamp,
-        coin: {
-          1: randomInt(0, 10),
-          2: 0.0,
-          5: 0.0,
-          10: 0.0,
-        },
-        bank: {
-          20: 1,
-          50: 0.0,
-          100: 0.0,
-          500: 0.0,
-          1000: 0.0,
-        },
-        qr: { net_amount: 10, chargeId: 'ACB-1152-1152' },
       };
 
-      const totalAmount =
-        Object.entries(payload.coin as Record<string, number>).reduce((acc, [k, v]) => acc + Number(k) * v, 0) +
-        Object.entries(payload.bank as Record<string, number>).reduce((acc, [k, v]) => acc + Number(k) * v, 0) +
-        (payload.qr as { net_amount: number }).net_amount;
+      // Only include coin if it has non-zero values
+      if (includeCoin && Object.keys(coin).length > 0) {
+        // Filter out zero values
+        const coinFiltered: Record<string, number> = {};
+        Object.entries(coin).forEach(([k, v]) => {
+          if (v > 0) {
+            coinFiltered[k] = v;
+          }
+        });
+        if (Object.keys(coinFiltered).length > 0) {
+          payload.coin = coinFiltered;
+        }
+      }
 
-      payload['total_amount'] = totalAmount;
-      payload['status'] = PaymentApiStatus.SUCCEEDED;
+      // Only include bank if it has non-zero values
+      if (includeBank && Object.keys(bank).length > 0) {
+        // Filter out zero values
+        const bankFiltered: Record<string, number> = {};
+        Object.entries(bank).forEach(([k, v]) => {
+          if (v > 0) {
+            bankFiltered[k] = v;
+          }
+        });
+        if (Object.keys(bankFiltered).length > 0) {
+          payload.bank = bankFiltered;
+        }
+      }
+
+      // Only include QR if it has non-zero amount
+      if (includeQr && qr && qr.net_amount > 0) {
+        payload.qr = qr;
+      }
+
+      payload.total_amount = totalAmount;
+      payload.status = PaymentApiStatus.SUCCEEDED;
 
       payloads.push({
         device_id: deviceId,
