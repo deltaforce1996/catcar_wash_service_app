@@ -2,6 +2,7 @@ import { Body, Controller, Get, Param, Post, Put, Query, UseFilters, UseGuards }
 import { EmpRow, EmpsService } from './emps.service';
 import { AllExceptionFilter } from 'src/common';
 import { CreateEmpDto } from './dtos/create-emp.dto';
+import { ChangePasswordDto } from './dtos/change-password.dto';
 import { SearchEmpDto } from './dtos/search-emp.dto';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { PaginatedResult } from 'src/types/internal.type';
@@ -76,6 +77,18 @@ export class EmpsController {
       success: true,
       data: result,
       message: 'Emp updated successfully',
+    };
+  }
+
+  @UseGuards(RoleAuthGuard)
+  @RoleAdmin()
+  @Put('change-password/:id')
+  async changeEmpPassword(@Param('id') id: string, @Body() data: ChangePasswordDto): Promise<SuccessResponse<null>> {
+    await this.empsService.changePassword(id, data);
+    return {
+      success: true,
+      data: null,
+      message: 'Employee password changed successfully',
     };
   }
 }

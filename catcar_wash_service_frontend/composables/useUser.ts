@@ -5,6 +5,7 @@ import type {
   SearchUsersRequest,
   RegisterUserPayload,
   UpdateUserPayload,
+  ChangePasswordPayload,
 } from "~/services/apis/user-api.service";
 import { UserApiService as UserApi } from "~/services/apis/user-api.service";
 import type { ApiErrorResponse } from "~/types";
@@ -30,6 +31,7 @@ export const useUser = () => {
   const isSearching = ref(false);
   const isCreating = ref(false);
   const isUpdating = ref(false);
+  const isChangingPassword = ref(false);
 
   // Response Message
   const error = ref<string | null>(null);
@@ -175,6 +177,23 @@ export const useUser = () => {
     await searchUsers({});
   };
 
+  const changeUserPassword = async (id: string, passwordData: ChangePasswordPayload) => {
+    try {
+      isChangingPassword.value = true;
+      clearMessages();
+      const response = await userApi.ChangeUserPassword(id, passwordData);
+      if (response.success) {
+        successMessage.value = response.message || "เปลี่ยนรหัสผ่านสำเร็จ";
+      }
+    } catch (err: unknown) {
+      const errorAxios = err as ApiErrorResponse;
+      error.value = errorAxios.message || "ไม่สามารถเปลี่ยนรหัสผ่านได้";
+      throw err;
+    } finally {
+      isChangingPassword.value = false;
+    }
+  };
+
   const resetState = () => {
     users.value = [];
     currentUser.value = null;
@@ -195,6 +214,7 @@ export const useUser = () => {
     isSearching: readonly(isSearching),
     isCreating: readonly(isCreating),
     isUpdating: readonly(isUpdating),
+    isChangingPassword: readonly(isChangingPassword),
 
     error: readonly(error),
     successMessage: readonly(successMessage),
@@ -203,6 +223,7 @@ export const useUser = () => {
     getUserById,
     registerUser,
     updateUserById,
+    changeUserPassword,
     goToPage,
     nextPage,
     previousPage,

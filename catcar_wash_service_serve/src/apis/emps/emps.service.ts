@@ -5,6 +5,7 @@ import { ItemNotFoundException } from 'src/errors';
 import { BcryptService } from 'src/services/bcrypt.service';
 import { CreateEmpDto } from './dtos/create-emp.dto';
 import { UpdateEmpDto } from './dtos/update-emp.dto';
+import { ChangePasswordDto } from './dtos/change-password.dto';
 import { parseKeyValueOnly } from 'src/shared/kv-parser';
 import { PaginatedResult } from 'src/types/internal.type';
 import { SearchEmpDto } from './dtos/search-emp.dto';
@@ -118,9 +119,8 @@ export class EmpsService {
   }
 
   async register(data: CreateEmpDto): Promise<EmpRow> {
-    // Use default password for all technicians
-    const defaultPassword = 'technician123';
-    const hashedPassword = await this.bcryptService.hashPassword(defaultPassword);
+    // Hash the provided password
+    const hashedPassword = await this.bcryptService.hashPassword(data.password);
 
     // Get TECHNICIAN permission only
     const permission = await this.prisma.tbl_permissions.findUnique({
@@ -145,7 +145,7 @@ export class EmpsService {
       select: empPublicSelect,
     });
 
-    this.logger.log(`Technician registered: ${emp.id} (${emp.email}) with default password`);
+    this.logger.log(`Technician registered: ${emp.id} (${emp.email})`);
     return emp;
   }
 
@@ -172,5 +172,28 @@ export class EmpsService {
     }
 
     return emp;
+  }
+
+  async changePassword(id: string, data: ChangePasswordDto): Promise<void> {
+    // Check if employee exists
+    const emp = await this.prisma.tbl_emps.findUnique({
+      where: { id },
+      select: { id: true },
+    });
+
+    if (!emp) {
+      throw new ItemNotFoundException(`Employee with ID ${id} not found`);
+    }
+
+    // Hash the new password
+    const hashedPassword = await this.bcryptService.hashPassword(data.password);
+
+    // Update the password
+    await this.prisma.tbl_emps.update({
+      where: { id },
+      data: { password: hashedPassword },
+    });
+
+    this.logger.log(`Password changed for employee: ${id}`);
   }
 }

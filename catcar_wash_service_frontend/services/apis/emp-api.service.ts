@@ -49,6 +49,7 @@ export interface SearchEmpsRequest {
 export interface CreateEmpPayload {
   name: string;
   email: string;
+  password: string;
   phone?: string;
   line?: string;
   address?: string;
@@ -63,6 +64,9 @@ export interface UpdateEmpPayload {
   status?: EnumEmpStatus; // ACTIVE or INACTIVE
 }
 
+export interface ChangePasswordPayload {
+  password: string;
+}
 
 export interface PaginatedEmpResponse {
   items: EmpResponseApi[];
@@ -138,6 +142,17 @@ export class EmpApiService extends BaseApiClient {
   ): Promise<ApiSuccessResponse<EmpResponseApi>> {
     const response = await this.put<ApiSuccessResponse<EmpResponseApi>>(
       `api/v1/emps/update-by-id/${id}`,
+      payload
+    );
+    return response;
+  }
+
+  async ChangeEmpPassword(
+    id: string,
+    payload: ChangePasswordPayload
+  ): Promise<ApiSuccessResponse<null>> {
+    const response = await this.put<ApiSuccessResponse<null>>(
+      `api/v1/emps/change-password/${id}`,
       payload
     );
     return response;

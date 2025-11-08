@@ -5,6 +5,7 @@ import { ItemNotFoundException, BadRequestException } from 'src/errors';
 import { BcryptService } from 'src/services/bcrypt.service';
 import { UpdateUserProfileDto } from './dtos/update-user.dto';
 import { RegisterUserDto } from './dtos/register-user.dto';
+import { ChangePasswordDto } from './dtos/change-password.dto';
 import { parseKeyValueOnly } from 'src/shared/kv-parser';
 import { PaginatedResult } from 'src/types/internal.type';
 import { SearchUserDto } from './dtos/search-user.dto';
@@ -267,9 +268,8 @@ export class UsersService {
       throw new BadRequestException(`Email ${data.email} is already registered`);
     }
 
-    // Default password for new users
-    const defaultPassword = 'CatCarWash123!';
-    const hashedPassword = await this.bcryptService.hashPassword(defaultPassword);
+    // Hash the provided password
+    const hashedPassword = await this.bcryptService.hashPassword(data.password);
 
     // Get USER permission
     const permission = await this.prisma.tbl_permissions.findUnique({
@@ -312,5 +312,26 @@ export class UsersService {
       ...user,
       device_counts: { total: counts.active + counts.inactive, ...counts },
     };
+  }
+
+  async changePassword(id: string, data: ChangePasswordDto): Promise<void> {
+    // Check if user exists
+    const user = await this.prisma.tbl_users.findUnique({
+      where: { id },
+      select: { id: true },
+    });
+
+    if (!user) {
+      throw new ItemNotFoundException(`User with ID ${id} not found`);
+    }
+
+    // Hash the new password
+    const hashedPassword = await this.bcryptService.hashPassword(data.password);
+
+    // Update the password
+    await this.prisma.tbl_users.update({
+      where: { id },
+      data: { password: hashedPassword },
+    });
   }
 }

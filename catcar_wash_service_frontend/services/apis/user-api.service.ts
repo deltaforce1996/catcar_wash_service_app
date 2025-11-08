@@ -57,6 +57,7 @@ export interface SearchUsersRequest {
 export interface RegisterUserPayload {
   fullname: string;
   email: string;
+  password: string;
   phone?: string;
   address?: string;
   custom_name?: string;
@@ -77,6 +78,10 @@ export interface UpdateUserProfilePayload extends UpdateUserPayload {
     api_key?: string;
     HMAC_key?: string;
   };
+}
+
+export interface ChangePasswordPayload {
+  password: string;
 }
 
 export class UserApiService extends BaseApiClient {
@@ -142,6 +147,17 @@ export class UserApiService extends BaseApiClient {
   ): Promise<ApiSuccessResponse<UserResponseApi>> {
     const response = await this.put<ApiSuccessResponse<UserResponseApi>>(
       `api/v1/users/update-by-id/${id}`,
+      payload
+    );
+    return response;
+  }
+
+  async ChangeUserPassword(
+    id: string,
+    payload: ChangePasswordPayload
+  ): Promise<ApiSuccessResponse<null>> {
+    const response = await this.put<ApiSuccessResponse<null>>(
+      `api/v1/users/change-password/${id}`,
       payload
     );
     return response;

@@ -153,15 +153,28 @@
             รายละเอียดลูกค้า
           </h3>
 
-          <v-btn
-            color="primary"
-            variant="outlined"
-            prepend-icon="mdi-pencil"
-            class="text-none"
-            @click="handleEditCustomer(item.id)"
-          >
-            แก้ไขข้อมูล
-          </v-btn>
+          <div class="d-flex ga-2">
+            <v-btn
+              v-if="isAdmin"
+              color="warning"
+              variant="outlined"
+              prepend-icon="mdi-lock-reset"
+              class="text-none"
+              @click="handleChangePassword(item)"
+            >
+              เปลี่ยนรหัสผ่าน
+            </v-btn>
+
+            <v-btn
+              color="primary"
+              variant="outlined"
+              prepend-icon="mdi-pencil"
+              class="text-none"
+              @click="handleEditCustomer(item.id)"
+            >
+              แก้ไขข้อมูล
+            </v-btn>
+          </div>
         </div>
         <!-- Customer details grid for desktop -->
         <v-row no-gutters class="customer-details-grid">
@@ -295,6 +308,13 @@
       :user-id="selectedUserId"
       @success="handleCustomerUpdated"
     />
+
+    <!-- Change Password Dialog -->
+    <ChangePasswordDialog
+      v-model="showChangePasswordDialog"
+      :user="selectedUserForPassword"
+      @success="handlePasswordChanged"
+    />
   </div>
 </template>
 
@@ -302,9 +322,13 @@
 import type { EnumUserStatus } from "~/types";
 import type { SearchUsersRequest } from "~/services/apis/user-api.service";
 import { useUser } from "~/composables/useUser";
+import { useAuth } from "~/composables/useAuth";
 import EnhancedDataTable from "~/components/common/EnhancedDataTable.vue";
 import AddCustomerDialog from "~/components/customer/AddCustomerDialog.vue";
 import EditCustomerDialog from "~/components/customer/EditCustomerDialog.vue";
+import ChangePasswordDialog from "~/components/customer/ChangePasswordDialog.vue";
+
+const { isAdmin } = useAuth();
 
 // Import enum translation composable
 const {
@@ -433,12 +457,25 @@ onMounted(async () => {
 // Local state
 const showAddCustomerDialog = ref(false);
 const showEditCustomerDialog = ref(false);
+const showChangePasswordDialog = ref(false);
 const selectedUserId = ref<string | null>(null);
+const selectedUserForPassword = ref<any | null>(null);
 
 // Filter options from composable
 const statusOptions = computed(() =>
   userStatusOptions.value.map((opt) => opt.value as EnumUserStatus)
 );
+
+// Handle change password click
+const handleChangePassword = (user: any) => {
+  selectedUserForPassword.value = user;
+  showChangePasswordDialog.value = true;
+};
+
+// Handle password changed successfully
+const handlePasswordChanged = async () => {
+  await searchUsers({});
+};
 
 // Table headers
 const customerHeaders = [

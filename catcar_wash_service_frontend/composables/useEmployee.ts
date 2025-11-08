@@ -5,6 +5,7 @@ import type {
   SearchEmpsRequest,
   CreateEmpPayload,
   UpdateEmpPayload,
+  ChangePasswordPayload,
 } from "~/services/apis/emp-api.service";
 import { EmpApiService as EmpApi } from "~/services/apis/emp-api.service";
 import type { ApiErrorResponse } from "~/types";
@@ -29,6 +30,7 @@ export const useEmployee = () => {
   const isSearching = ref(false);
   const isCreating = ref(false);
   const isUpdating = ref(false);
+  const isChangingPassword = ref(false);
 
   // Response Message
   const error = ref<string | null>(null);
@@ -173,6 +175,23 @@ export const useEmployee = () => {
     await searchEmployees({});
   };
 
+  const changeEmployeePassword = async (id: string, passwordData: ChangePasswordPayload) => {
+    try {
+      isChangingPassword.value = true;
+      clearMessages();
+      const response = await empApi.ChangeEmpPassword(id, passwordData);
+      if (response.success) {
+        successMessage.value = response.message || "เปลี่ยนรหัสผ่านสำเร็จ";
+      }
+    } catch (err: unknown) {
+      const errorAxios = err as ApiErrorResponse;
+      error.value = errorAxios.message || "ไม่สามารถเปลี่ยนรหัสผ่านได้";
+      throw err;
+    } finally {
+      isChangingPassword.value = false;
+    }
+  };
+
   const resetState = () => {
     employees.value = [];
     currentEmployee.value = null;
@@ -193,6 +212,7 @@ export const useEmployee = () => {
     isSearching: readonly(isSearching),
     isCreating: readonly(isCreating),
     isUpdating: readonly(isUpdating),
+    isChangingPassword: readonly(isChangingPassword),
 
     error: readonly(error),
     successMessage: readonly(successMessage),
@@ -201,6 +221,7 @@ export const useEmployee = () => {
     getEmployeeById,
     registerEmployee,
     updateEmployeeById,
+    changeEmployeePassword,
     goToPage,
     nextPage,
     previousPage,

@@ -3,6 +3,7 @@ import { UserWithDeviceCountsRow, UserWithoutDeviceCountsRow, UsersService } fro
 import { AllExceptionFilter } from 'src/common';
 import { SearchUserDto } from './dtos/search-user.dto';
 import { RegisterUserDto } from './dtos/register-user.dto';
+import { ChangePasswordDto } from './dtos/change-password.dto';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import type { AuthenticatedUser } from 'src/types/internal.type';
 import { PaginatedResult } from 'src/types/internal.type';
@@ -82,6 +83,18 @@ export class UsersController {
       success: true,
       data: result,
       message: 'User registered successfully',
+    };
+  }
+
+  @UseGuards(RoleAuthGuard)
+  @RoleAdmin()
+  @Put('change-password/:id')
+  async changeUserPassword(@Param('id') id: string, @Body() data: ChangePasswordDto): Promise<SuccessResponse<null>> {
+    await this.usersService.changePassword(id, data);
+    return {
+      success: true,
+      data: null,
+      message: 'User password changed successfully',
     };
   }
 }

@@ -139,15 +139,29 @@
           <h3 class="text-subtitle-1 font-weight-bold mb-4">
             รายละเอียดพนักงาน
           </h3>
-          <v-btn
-            color="primary"
-            variant="outlined"
-            prepend-icon="mdi-pencil"
-            class="text-none"
-            @click="handleEditEmployee(item.id)"
-          >
-            แก้ไขข้อมูล
-          </v-btn>
+
+          <div class="d-flex ga-2">
+            <v-btn
+              v-if="isAdmin"
+              color="warning"
+              variant="outlined"
+              prepend-icon="mdi-lock-reset"
+              class="text-none"
+              @click="handleChangePassword(item)"
+            >
+              เปลี่ยนรหัสผ่าน
+            </v-btn>
+
+            <v-btn
+              color="primary"
+              variant="outlined"
+              prepend-icon="mdi-pencil"
+              class="text-none"
+              @click="handleEditEmployee(item.id)"
+            >
+              แก้ไขข้อมูล
+            </v-btn>
+          </div>
         </div>
 
         <!-- Employee details grid for desktop -->
@@ -314,6 +328,13 @@
       :employee-id="selectedEmployeeId"
       @success="handleEmployeeUpdated"
     />
+
+    <!-- Change Password Dialog -->
+    <ChangePasswordDialog
+      v-model="showChangePasswordDialog"
+      :employee="selectedEmployeeForPassword"
+      @success="handlePasswordChanged"
+    />
   </div>
 </template>
 
@@ -324,6 +345,7 @@ import { useEmployee } from "~/composables/useEmployee";
 import EnhancedDataTable from "~/components/common/EnhancedDataTable.vue";
 import AddEmployeeDialog from "~/components/employee/AddEmployeeDialog.vue";
 import EditEmployeeDialog from "~/components/employee/EditEmployeeDialog.vue";
+import ChangePasswordDialog from "~/components/employee/ChangePasswordDialog.vue";
 import { useAuth } from "~/composables/useAuth";
 
 const { isAdmin, user: _user } = useAuth();
@@ -455,12 +477,25 @@ onMounted(async () => {
 // Local state
 const showAddEmployeeDialog = ref(false);
 const showEditEmployeeDialog = ref(false);
+const showChangePasswordDialog = ref(false);
 const selectedEmployeeId = ref<string | null>(null);
+const selectedEmployeeForPassword = ref<any | null>(null);
 
 // Filter options from composable
 const statusOptions = computed(() =>
   empStatusOptions.value.map((opt) => opt.value as EnumUserStatus)
 );
+
+// Handle change password click
+const handleChangePassword = (employee: any) => {
+  selectedEmployeeForPassword.value = employee;
+  showChangePasswordDialog.value = true;
+};
+
+// Handle password changed successfully
+const handlePasswordChanged = async () => {
+  await searchEmployees({});
+};
 
 // Table headers
 const employeeHeaders = [

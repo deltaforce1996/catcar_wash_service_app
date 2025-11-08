@@ -85,6 +85,51 @@
               </v-text-field>
             </v-col>
 
+            <!-- Password -->
+            <v-col cols="12" md="6">
+              <v-text-field
+                v-model="form.password"
+                label="รหัสผ่าน"
+                type="password"
+                variant="outlined"
+                density="compact"
+                :rules="passwordRules"
+                required
+                autocomplete="new-password"
+                prepend-inner-icon="mdi-lock"
+              >
+                <template #append-inner>
+                  <v-tooltip location="top">
+                    <template #activator="{ props }">
+                      <v-icon v-bind="props" size="small" color="grey">
+                        mdi-information
+                      </v-icon>
+                    </template>
+                    <span
+                      >ต้องมีอย่างน้อย 8 ตัวอักษร ประกอบด้วยตัวพิมพ์ใหญ่
+                      ตัวพิมพ์เล็ก ตัวเลข และอักขระพิเศษ</span
+                    >
+                  </v-tooltip>
+                </template>
+              </v-text-field>
+            </v-col>
+
+            <!-- Confirm Password -->
+            <v-col cols="12" md="6">
+              <v-text-field
+                v-model="form.confirmPassword"
+                label="ยืนยันรหัสผ่าน"
+                type="password"
+                variant="outlined"
+                density="compact"
+                :rules="confirmPasswordRules"
+                required
+                autocomplete="new-password"
+                prepend-inner-icon="mdi-lock-check"
+              >
+              </v-text-field>
+            </v-col>
+
             <!-- Phone -->
             <v-col cols="12" md="6">
               <v-text-field
@@ -201,6 +246,8 @@ const formErrors = ref<string[]>([]);
 interface CustomerForm {
   fullname: string;
   email: string;
+  password: string;
+  confirmPassword: string;
   phone: string;
   address: string;
   custom_name: string;
@@ -209,6 +256,8 @@ interface CustomerForm {
 const form = ref<CustomerForm>({
   fullname: "",
   email: "",
+  password: "",
+  confirmPassword: "",
   phone: "",
   address: "",
   custom_name: "",
@@ -218,6 +267,23 @@ const form = ref<CustomerForm>({
 const emailRules = [
   (v: string) => !!v || "กรุณากรอกอีเมล",
   (v: string) => /.+@.+\..+/.test(v) || "รูปแบบอีเมลไม่ถูกต้อง",
+];
+
+const passwordRules = [
+  (v: string) => !!v || "กรุณากรอกรหัสผ่าน",
+  (v: string) => v.length >= 8 || "รหัสผ่านต้องมีอย่างน้อย 8 ตัวอักษร",
+  (v: string) =>
+    /[a-z]/.test(v) || "รหัสผ่านต้องมีตัวพิมพ์เล็กอย่างน้อย 1 ตัว",
+  (v: string) =>
+    /[A-Z]/.test(v) || "รหัสผ่านต้องมีตัวพิมพ์ใหญ่อย่างน้อย 1 ตัว",
+  (v: string) => /\d/.test(v) || "รหัสผ่านต้องมีตัวเลขอย่างน้อย 1 ตัว",
+  (v: string) =>
+    /[@$!%*?&]/.test(v) || "รหัสผ่านต้องมีอักขระพิเศษอย่างน้อย 1 ตัว",
+];
+
+const confirmPasswordRules = [
+  (v: string) => !!v || "กรุณายืนยันรหัสผ่าน",
+  (v: string) => v === form.value.password || "รหัสผ่านไม่ตรงกัน",
 ];
 
 const optionalPhoneRules = [
@@ -251,6 +317,7 @@ const handleSubmit = async () => {
     const payload = {
       fullname: form.value.fullname,
       email: form.value.email,
+      password: form.value.password,
       phone: form.value.phone,
       address: form.value.address,
       custom_name: form.value.custom_name,
@@ -276,6 +343,8 @@ const resetForm = () => {
   form.value = {
     fullname: "",
     email: "",
+    password: "",
+    confirmPassword: "",
     phone: "",
     address: "",
     custom_name: "",
@@ -295,10 +364,8 @@ const handleClose = () => {
   isOpen.value = false;
 };
 
-// Watch for dialog close to reset form
-watch(isOpen, (newValue) => {
-  if (!newValue) {
-    resetForm();
-  }
+// Watch for dialog open/close to reset form
+watch(isOpen, () => {
+  resetForm();
 });
 </script>
