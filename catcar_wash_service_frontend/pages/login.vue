@@ -132,7 +132,7 @@
           </div>
 
           <!-- Forgot Password -->
-          <div class="d-flex justify-end mb-4">
+          <!-- <div class="d-flex justify-end mb-4">
             <v-btn
               variant="text"
               color="primary"
@@ -142,7 +142,7 @@
             >
               ลืมรหัสผ่าน?
             </v-btn>
-          </div>
+          </div> -->
 
           <!-- Success Alert -->
           <v-alert
@@ -241,9 +241,9 @@ const handleLogin = async () => {
   }
 };
 
-const forgotPassword = () => {
-  navigateTo("/forgot-password");
-};
+// const forgotPassword = () => {
+//   navigateTo("/forgot-password");
+// };
 </script>
 
 <style scoped>
