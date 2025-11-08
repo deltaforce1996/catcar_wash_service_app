@@ -29,6 +29,7 @@ export const useDeviceEventLogs = () => {
   const isLoading = ref(false);
   const isSearching = ref(false);
   const isExporting = ref(false);
+  const isCancelling = ref(false);
 
   // Response Message
   const error = ref<string | null>(null);
@@ -156,6 +157,29 @@ export const useDeviceEventLogs = () => {
     }
   };
 
+  const cancelEventLog = async (eventLogId: string) => {
+    try {
+      isCancelling.value = true;
+      clearMessages();
+
+      const response = await eventLogsApi.cancelEventLog(eventLogId);
+      if (response.success && response.data) {
+        // Update the event log in the list
+        const index = eventLogs.value.findIndex((log) => log.id === eventLogId);
+        if (index !== -1) {
+          eventLogs.value[index] = response.data;
+        }
+        successMessage.value = "ยกเลิกบันทึกสำเร็จ";
+      }
+    } catch (err: unknown) {
+      const errorAxios = err as ApiErrorResponse;
+      error.value = errorAxios.message || "ไม่สามารถยกเลิกบันทึกได้";
+      throw err;
+    } finally {
+      isCancelling.value = false;
+    }
+  };
+
   return {
     eventLogs: readonly(eventLogs),
     currentEventLog: readonly(currentEventLog),
@@ -167,6 +191,7 @@ export const useDeviceEventLogs = () => {
     isLoading: readonly(isLoading),
     isSearching: readonly(isSearching),
     isExporting: readonly(isExporting),
+    isCancelling: readonly(isCancelling),
 
     error: readonly(error),
     successMessage: readonly(successMessage),
@@ -179,5 +204,6 @@ export const useDeviceEventLogs = () => {
     clearMessages,
     resetState,
     exportToExcel,
+    cancelEventLog,
   };
 };

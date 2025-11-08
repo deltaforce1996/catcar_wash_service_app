@@ -146,16 +146,14 @@ export const useEnumTranslation = () => {
 
   const getPaymentStatusColor = (status: EnumPaymentStatus): string => {
     switch (status) {
-      case "PENDING":
-        return "warning";
       case "SUCCEEDED":
         return "success";
+      case "PENDING":
       case "FAILED":
-        return "error";
       case "CANCELLED":
-        return "grey";
+        return "error";
       default:
-        return "grey";
+        return "error";
     }
   };
 

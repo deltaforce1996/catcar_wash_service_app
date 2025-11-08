@@ -51,8 +51,7 @@
                 :rules="confirmPasswordRules"
                 required
                 prepend-inner-icon="mdi-lock-check"
-              >
-              </v-text-field>
+              />
             </v-col>
           </v-row>
         </v-form>
@@ -63,17 +62,17 @@
         <v-btn
           color="grey"
           variant="outlined"
-          @click="handleCancel"
           :disabled="isSubmitting"
+          @click="handleCancel"
         >
           ยกเลิก
         </v-btn>
         <v-btn
           color="primary"
           variant="flat"
-          @click="handleSubmit"
           :loading="isSubmitting"
           :disabled="!formValid || isSubmitting"
+          @click="handleSubmit"
         >
           เปลี่ยนรหัสผ่าน
         </v-btn>
@@ -111,8 +110,12 @@ const form = ref({
   confirmPassword: "",
 });
 
-const { changeUserPassword, isChangingPassword, error, successMessage } =
-  useUser();
+const {
+  changeUserPassword,
+  isChangingPassword: _isChangingPassword,
+  error: _error,
+  successMessage,
+} = useUser();
 
 // Validation Rules
 const passwordRules = [

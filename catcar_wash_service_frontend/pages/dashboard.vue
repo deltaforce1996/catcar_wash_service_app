@@ -255,6 +255,47 @@
       </v-col>
     </v-row> -->
 
+    <!-- Confirmation Dialog for Cancel -->
+    <v-dialog v-model="showCancelDialog" max-width="500">
+      <v-card>
+        <v-card-title class="d-flex align-center pa-6">
+          <v-icon color="error" class="mr-2">mdi-delete-alert</v-icon>
+          <span class="text-h5 font-weight-bold">ยืนยันการยกเลิก</span>
+        </v-card-title>
+        <v-card-text class="pa-6">
+          <p class="text-body-1 mb-4">
+            คุณต้องการยกเลิกรายการนี้ใช่หรือไม่?
+          </p>
+          <v-alert
+            variant="tonal"
+            color="error"
+            density="compact"
+            icon="mdi-alert"
+          >
+            การดำเนินการนี้ไม่สามารถย้อนกลับได้
+          </v-alert>
+        </v-card-text>
+        <v-card-actions class="pa-6 justify-end">
+          <v-btn
+            variant="text"
+            :disabled="isCancelling"
+            @click="showCancelDialog = false"
+          >
+            ยกเลิก
+          </v-btn>
+          <v-btn
+            color="error"
+            variant="elevated"
+            :loading="isCancelling"
+            :disabled="isCancelling"
+            @click="confirmCancelEventLog"
+          >
+            ยืนยัน
+          </v-btn>
+        </v-card-actions>
+      </v-card>
+    </v-dialog>
+
     <!-- Sales Detail Table -->
     <EnhancedDataTable
       title="รายละเอียดการขาย"
@@ -434,9 +475,28 @@
       </template>
 
       <template #[`item.payload.total_amount`]="{ item }">
-        <div class="text-body-2 font-weight-bold text-success">
+        <div
+          class="text-body-2 font-weight-bold"
+          :class="
+            item.payload?.status === 'SUCCEEDED' ? 'text-success' : 'text-error'
+          "
+        >
           ฿{{ item.payload?.total_amount?.toLocaleString("th-TH") || 0 }}
         </div>
+      </template>
+
+      <template #[`item.actions`]="{ item }">
+        <v-btn
+          v-if="isAdmin && item.payload?.status !== 'CANCELLED'"
+          icon="mdi-delete"
+          variant="text"
+          color="error"
+          size="small"
+          density="compact"
+          :loading="isCancelling"
+          :disabled="isCancelling"
+          @click="handleCancelEventLog(item.id)"
+        />
       </template>
 
       <!-- Expandable Row Content -->
@@ -698,7 +758,7 @@ const {
 } = useEnumTranslation();
 
 // Import auth composable to check user permission
-const { isUser, isAuthReady } = useAuth();
+const { isUser, isAdmin, isAuthReady } = useAuth();
 
 // Dashboard KPI data using new composable
 const {
@@ -720,9 +780,15 @@ const {
   currentSearchParams,
   isSearching,
   isExporting,
+  isCancelling,
+  error: eventLogsError,
+  successMessage: eventLogsSuccess,
   searchEventLogs,
   goToPage,
   exportToExcel,
+  cancelEventLog,
+  refreshSearch,
+  clearMessages: clearEventLogsMessages,
 } = useDeviceEventLogs();
 
 // User data - using useUser composable
@@ -1133,14 +1199,23 @@ const kpiData = computed(() => [
   },
 ]);
 
-const salesHeaders = [
-  { title: "เวลา", key: "payload.datetime", sortable: false },
-  { title: "ชื่ออุปกรณ์", key: "device.name", sortable: false },
-  { title: "สถานะ", key: "payload.status", sortable: false },
-  { title: "ประเภท", key: "device.type", sortable: true },
-  { title: "จำนวนเงิน", key: "payload.total_amount", sortable: false },
-  { title: "", key: "data-table-expand", sortable: false },
-];
+const salesHeaders = computed(() => {
+  const headers = [
+    { title: "เวลา", key: "payload.datetime", sortable: false },
+    { title: "ชื่ออุปกรณ์", key: "device.name", sortable: false },
+    { title: "สถานะ", key: "payload.status", sortable: false },
+    { title: "ประเภท", key: "device.type", sortable: true },
+    { title: "จำนวนเงิน", key: "payload.total_amount", sortable: false },
+    { title: "", key: "data-table-expand", sortable: false },
+  ];
+
+  // Add actions column for admin/technician users only
+  if (!isUser.value) {
+    headers.push({ title: "การดำเนินการ", key: "actions", sortable: false });
+  }
+
+  return headers;
+});
 
 // Time picker object interface
 interface TimeObject {
@@ -1235,6 +1310,52 @@ const hasCoins = (item: any): boolean => {
     Object.values(item.payload.coin).some((count: any) => count > 0)
   );
 };
+
+// Confirmation dialog for cancel
+const showCancelDialog = ref(false);
+const selectedEventLogForCancel = ref<string | null>(null);
+
+// Handle cancel event log - show confirmation dialog
+const handleCancelEventLog = (eventLogId: string) => {
+  selectedEventLogForCancel.value = eventLogId;
+  showCancelDialog.value = true;
+};
+
+// Confirm cancel event log
+const confirmCancelEventLog = async () => {
+  if (!selectedEventLogForCancel.value) return;
+
+  try {
+    await cancelEventLog(selectedEventLogForCancel.value);
+    showCancelDialog.value = false;
+    selectedEventLogForCancel.value = null;
+
+    // Refresh both event logs table and dashboard charts
+    await Promise.all([refreshSearch(), fetchDashboardSummary()]);
+  } catch (err) {
+    // Error is already handled in the composable
+    console.error("Failed to cancel event log:", err);
+  }
+};
+
+// Watch for event logs messages and display them
+watch(eventLogsError, (newError) => {
+  if (newError) {
+    // You can add a snackbar/toast notification here if needed
+    console.error(newError);
+  }
+});
+
+watch(eventLogsSuccess, (newSuccess) => {
+  if (newSuccess) {
+    // You can add a snackbar/toast notification here if needed
+    console.log(newSuccess);
+    // Clear the message after a delay
+    setTimeout(() => {
+      clearEventLogsMessages();
+    }, 3000);
+  }
+});
 </script>
 
 <style scoped>

@@ -1,5 +1,5 @@
 import { Injectable, Logger } from '@nestjs/common';
-import { BadRequestException } from 'src/errors';
+import { BadRequestException, ItemNotFoundException, PermissionDeniedException } from 'src/errors';
 import { DeviceType, EventType, PaymentApiStatus, PermissionType, Prisma } from '@prisma/client';
 import { PrismaService } from 'src/database/prisma/prisma.service';
 import { parseKeyValueOnly } from 'src/shared/kv-parser';
@@ -524,7 +524,21 @@ export class DeviceEventLogsService {
         if (colNumber === 1) {
           // วันที่-เวลา - center
           cell.alignment = { vertical: 'middle', horizontal: 'center' };
-        } else if (colNumber === 6 || colNumber === 8 || colNumber === 9 || colNumber === 10 || colNumber === 11 || colNumber === 12 || colNumber === 13 || colNumber === 14 || colNumber === 15 || colNumber === 16 || colNumber === 17 || colNumber === 18 || colNumber === 19) {
+        } else if (
+          colNumber === 6 ||
+          colNumber === 8 ||
+          colNumber === 9 ||
+          colNumber === 10 ||
+          colNumber === 11 ||
+          colNumber === 12 ||
+          colNumber === 13 ||
+          colNumber === 14 ||
+          colNumber === 15 ||
+          colNumber === 16 ||
+          colNumber === 17 ||
+          colNumber === 18 ||
+          colNumber === 19
+        ) {
           // จำนวนเงิน, QR, denomination counts, Bank, Coin - center for counts, right for amounts
           if (colNumber === 6 || colNumber === 8 || colNumber === 14 || colNumber === 19) {
             // Amount columns - right align
@@ -1100,5 +1114,69 @@ export class DeviceEventLogsService {
       default:
         return '-';
     }
+  }
+
+  async cancelEventLog(eventLogId: string, user?: AuthenticatedUser): Promise<DeviceEventLogRow> {
+    this.logger.log(`Cancelling event log: ${eventLogId}`);
+
+    // Check if user has permission (only ADMIN and TECHNICIAN can cancel)
+    if (user?.permission?.name === PermissionType.USER) {
+      throw new PermissionDeniedException('You do not have permission to cancel event logs');
+    }
+
+    // Find the event log - use findFirst since id is not a unique constraint by itself
+    // The table has a compound primary key (id, created_at)
+    const eventLog = await this.prisma.tbl_devices_events.findFirst({
+      where: { id: eventLogId },
+      select: {
+        ...deviceEventLogsPublicSelect,
+        payload: true,
+        created_at: true,
+      },
+    });
+
+    if (!eventLog) {
+      throw new ItemNotFoundException('Event log not found');
+    }
+
+    // Check if already cancelled
+    const payload = eventLog.payload as any;
+    if (payload?.status === PaymentApiStatus.CANCELLED) {
+      throw new BadRequestException('Event log is already cancelled');
+    }
+
+    // Update the payload status to CANCELLED
+    const updatedPayload = {
+      ...payload,
+      status: PaymentApiStatus.CANCELLED,
+    };
+
+    // Update using compound primary key (id, created_at)
+    const updatedEventLog = await this.prisma.tbl_devices_events.update({
+      where: {
+        id_created_at: {
+          id: eventLog.id,
+          created_at: eventLog.created_at,
+        },
+      },
+      data: {
+        payload: updatedPayload,
+      },
+      select: deviceEventLogsPublicSelect,
+    });
+
+    this.logger.log(`Successfully cancelled event log: ${eventLogId}`);
+
+    // Emit event through adapter for materialized view refresh
+    // This follows the same pattern as uploadDeviceEventLogs
+    const eventPayload = {
+      device_id: updatedEventLog.device_id,
+      count: 1,
+      timestamp: new Date(),
+    };
+
+    this.adapter?.emitEventsUploaded(eventPayload);
+
+    return updatedEventLog;
   }
 }

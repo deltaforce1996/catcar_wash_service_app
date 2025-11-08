@@ -126,8 +126,7 @@
                 required
                 autocomplete="new-password"
                 prepend-inner-icon="mdi-lock-check"
-              >
-              </v-text-field>
+              />
             </v-col>
 
             <!-- Phone -->

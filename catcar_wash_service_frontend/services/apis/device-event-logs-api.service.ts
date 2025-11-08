@@ -103,4 +103,15 @@ export class DeviceEventLogsApiService extends BaseApiClient {
     });
     return response;
   }
+
+  async cancelEventLog(
+    eventLogId: string
+  ): Promise<ApiSuccessResponse<DeviceEventLogResponseApi>> {
+    const response = await this.patch<
+      ApiSuccessResponse<DeviceEventLogResponseApi>
+    >("api/v1/device-event-logs/cancel", {
+      eventLogId,
+    });
+    return response;
+  }
 }

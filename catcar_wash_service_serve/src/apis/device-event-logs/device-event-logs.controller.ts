@@ -1,9 +1,10 @@
-import { Controller, Get, Post, Query, Body, UseFilters, UseGuards, Res } from '@nestjs/common';
+import { Controller, Get, Post, Patch, Query, Body, UseFilters, UseGuards, Res } from '@nestjs/common';
 import type { Response } from 'express';
 import { PaginatedResult } from 'src/types/internal.type';
 import { DeviceEventLogsService, DeviceEventLogRow } from 'src/services/adepters/device-event-logs.service';
 import { SearchDeviceEventLogsDto } from './dtos/search-devcie-event.dto';
 import { UploadLogsDto } from './dtos/upload-logs.dto';
+import { CancelEventLogDto } from './dtos/cancel-event-log.dto';
 import { SuccessResponse } from 'src/types/success-response.type';
 import { AllExceptionFilter } from 'src/common';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
@@ -63,6 +64,20 @@ export class DeviceEventLogsController {
     return {
       success: true,
       message: 'Device event logs uploaded successfully',
+      data: result,
+    };
+  }
+
+  @UseGuards(JwtAuthGuard)
+  @Patch('cancel')
+  async cancelEventLog(
+    @Body() cancelDto: CancelEventLogDto,
+    @UserAuth() user: AuthenticatedUser,
+  ): Promise<SuccessResponse<DeviceEventLogRow>> {
+    const result = await this.deviceEventLogsService.cancelEventLog(cancelDto.eventLogId, user);
+    return {
+      success: true,
+      message: 'Event log cancelled successfully',
       data: result,
     };
   }
