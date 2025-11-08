@@ -422,6 +422,7 @@ const {
   totalPages,
   searchDevices,
   updateDeviceConfigs,
+  clearFiltersAndSearch,
   clearMessages: _clearMessages,
 } = useDevice();
 
@@ -529,13 +530,8 @@ const clearAllFilters = async () => {
   appliedSelectedTypeFilters.value = [];
   appliedSelectedFilters.value = [];
 
-  // Reset to initial search
-  await searchDevices({
-    page: 1,
-    limit: 10,
-    sort_by: "created_at",
-    sort_order: "desc",
-  });
+  // Reset to initial search using composable's clear function
+  await clearFiltersAndSearch();
 };
 
 // Filter options from composable

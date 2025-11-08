@@ -287,6 +287,7 @@ export const useDevice = () => {
     previousPage,
     refreshSearch,
     clearMessages,
+    clearFiltersAndSearch,
     resetState,
   };
 };

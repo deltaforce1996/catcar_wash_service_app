@@ -482,7 +482,7 @@
                         รหัสธุรกรรม
                       </div>
                       <div class="text-body-2 font-family-monospace">
-                        {{ item.payload.qr.transaction_id }}
+                        {{ item.payload.qr.chargeId }}
                       </div>
                     </v-card-text>
                   </v-card>
