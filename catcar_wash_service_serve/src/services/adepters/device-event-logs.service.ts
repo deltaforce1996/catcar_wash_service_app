@@ -364,12 +364,12 @@ export class DeviceEventLogsService {
     // Add summary section (rows 1-14)
     this.addSummarySection(worksheet, summary, startOfMonth);
 
-    // Add spacing row (row 15)
-    const spacingRow = worksheet.getRow(15);
+    // Add spacing row (row 18)
+    const spacingRow = worksheet.getRow(18);
     spacingRow.height = 5;
 
-    // Add data section headers (row 16)
-    const headerRow = worksheet.getRow(16);
+    // Add data section headers (row 19)
+    const headerRow = worksheet.getRow(19);
     const headers = [
       'วันที่-เวลา',
       'ชื่ออุปกรณ์',
@@ -413,12 +413,12 @@ export class DeviceEventLogsService {
     });
     headerRow.height = 25;
 
-    // Add data rows (starting from row 17)
+    // Add data rows (starting from row 20)
     const thinBorderData: Partial<ExcelJS.Border> = { style: 'thin', color: { argb: 'FFD0D0D0' } };
     const mediumBorderData: Partial<ExcelJS.Border> = { style: 'medium', color: { argb: 'FF000000' } };
 
     data.forEach((event, index) => {
-      const rowNumber = 17 + index;
+      const rowNumber = 20 + index;
       const row = worksheet.getRow(rowNumber);
 
       const payload = event.payload as any;
@@ -597,12 +597,12 @@ export class DeviceEventLogsService {
     });
 
     // Freeze header row
-    worksheet.views = [{ state: 'frozen', xSplit: 0, ySplit: 16 }];
+    worksheet.views = [{ state: 'frozen', xSplit: 0, ySplit: 19 }];
 
     // Auto-filter
     worksheet.autoFilter = {
-      from: { row: 16, column: 1 },
-      to: { row: 16, column: 19 },
+      from: { row: 19, column: 1 },
+      to: { row: 19, column: 19 },
     };
 
     // Generate buffer
@@ -612,6 +612,12 @@ export class DeviceEventLogsService {
 
   private calculateSummary(data: DeviceEventLogRow[]) {
     let totalRevenue = 0;
+    const totalRevenueByStatus = {
+      SUCCEEDED: 0,
+      FAILED: 0,
+      PENDING: 0,
+      CANCELLED: 0,
+    };
     const statusCount = {
       SUCCEEDED: 0,
       FAILED: 0,
@@ -656,17 +662,31 @@ export class DeviceEventLogsService {
         statusCount[payload.status as PaymentApiStatus] = (statusCount[payload.status as PaymentApiStatus] || 0) + 1;
       }
 
-      // Payment method amount
-      if (payload?.qr?.net_amount) {
+      // Total revenue by status
+      if (payload?.total_amount) {
+        const amount = Number(payload.total_amount);
+        if (payload.status === PaymentApiStatus.SUCCEEDED) {
+          totalRevenueByStatus.SUCCEEDED += amount;
+        } else if (payload.status === PaymentApiStatus.FAILED) {
+          totalRevenueByStatus.FAILED += amount;
+        } else if (payload.status === PaymentApiStatus.PENDING) {
+          totalRevenueByStatus.PENDING += amount;
+        } else if (payload.status === PaymentApiStatus.CANCELLED) {
+          totalRevenueByStatus.CANCELLED += amount;
+        }
+      }
+
+      // Payment method amount (SUCCEEDED only)
+      if (payload?.status === PaymentApiStatus.SUCCEEDED && payload?.qr?.net_amount) {
         paymentMethodAmount.qr += Number(payload.qr.net_amount);
       }
-      if (payload?.bank) {
+      if (payload?.status === PaymentApiStatus.SUCCEEDED && payload?.bank) {
         const bankTotal = Object.entries(payload.bank).reduce((sum, [denom, count]) => {
           return sum + Number(denom) * Number(count);
         }, 0);
         paymentMethodAmount.bank += bankTotal;
 
-        // Count denominations
+        // Count denominations (SUCCEEDED only)
         Object.entries(payload.bank).forEach(([denom, count]) => {
           const denomNum = Number(denom) as 20 | 50 | 100 | 500 | 1000;
           const countNum = Number(count);
@@ -676,13 +696,13 @@ export class DeviceEventLogsService {
           }
         });
       }
-      if (payload?.coin) {
+      if (payload?.status === PaymentApiStatus.SUCCEEDED && payload?.coin) {
         const coinTotal = Object.entries(payload.coin).reduce((sum, [denom, count]) => {
           return sum + Number(denom) * Number(count);
         }, 0);
         paymentMethodAmount.coin += coinTotal;
 
-        // Count denominations
+        // Count denominations (SUCCEEDED only)
         Object.entries(payload.coin).forEach(([denom, count]) => {
           const denomNum = Number(denom) as 1 | 2 | 5 | 10;
           const countNum = Number(count);
@@ -701,6 +721,7 @@ export class DeviceEventLogsService {
 
     return {
       totalRevenue,
+      totalRevenueByStatus,
       statusCount,
       paymentMethodAmount,
       deviceTypeCount,
@@ -788,14 +809,14 @@ export class DeviceEventLogsService {
     }
     row3.height = 20;
 
-    // Total Revenue - Highlighted
+    // Total Revenue - SUCCEEDED (Highlighted)
     const row4 = worksheet.getRow(4);
-    row4.getCell(1).value = 'รวมยอดเงินทั้งหมด:';
+    row4.getCell(1).value = 'รวมยอดเงินที่สำเร็จ:';
     row4.getCell(1).font = { bold: true, color: { argb: 'FF2E7D32' } };
     row4.getCell(1).alignment = { vertical: 'middle', horizontal: 'left', indent: 1 };
     row4.getCell(1).border = { top: thinBorder, left: mediumBorder, bottom: thinBorder, right: thinBorder };
 
-    row4.getCell(2).value = summary.totalRevenue;
+    row4.getCell(2).value = summary.totalRevenueByStatus.SUCCEEDED;
     row4.getCell(2).font = { bold: true, size: 12, color: { argb: 'FF2E7D32' } };
     row4.getCell(2).fill = {
       type: 'pattern',
@@ -817,47 +838,55 @@ export class DeviceEventLogsService {
     }
     row4.height = 22;
 
-    // Status breakdown header
-    worksheet.mergeCells('A5:G5');
+    // Total Revenue - FAILED
     const row5 = worksheet.getRow(5);
-    const statusHeaderCell = row5.getCell(1);
-    statusHeaderCell.value = 'จำนวน Event แยกตามสถานะ';
-    statusHeaderCell.font = { bold: true, size: 11 };
-    statusHeaderCell.fill = {
+    row5.getCell(1).value = 'รวมยอดเงินที่ล้มเหลว:';
+    row5.getCell(1).font = { bold: true, color: { argb: 'FFC62828' } };
+    row5.getCell(1).alignment = { vertical: 'middle', horizontal: 'left', indent: 1 };
+    row5.getCell(1).border = { top: thinBorder, left: mediumBorder, bottom: thinBorder, right: thinBorder };
+
+    row5.getCell(2).value = summary.totalRevenueByStatus.FAILED;
+    row5.getCell(2).font = { bold: true, size: 11, color: { argb: 'FFC62828' } };
+    row5.getCell(2).fill = {
       type: 'pattern',
       pattern: 'solid',
-      fgColor: { argb: 'FFE3F2FD' }, // Light blue
+      fgColor: { argb: 'FFFFEBEE' }, // Light red
     };
-    statusHeaderCell.alignment = { vertical: 'middle', horizontal: 'left', indent: 1 };
-    statusHeaderCell.border = { top: thinBorder, left: mediumBorder, bottom: thinBorder, right: mediumBorder };
+    row5.getCell(2).alignment = { vertical: 'middle', horizontal: 'right', indent: 1 };
+    row5.getCell(2).border = { top: thinBorder, left: thinBorder, bottom: thinBorder, right: thinBorder };
+    row5.getCell(2).numFmt = '"฿"#,##0.00';
+
+    // Style remaining cells in row 5
+    for (let col = 3; col <= 7; col++) {
+      row5.getCell(col).border = {
+        top: thinBorder,
+        left: thinBorder,
+        bottom: thinBorder,
+        right: col === 7 ? mediumBorder : thinBorder,
+      };
+    }
     row5.height = 20;
 
-    // Status breakdown - Row 1
+    // Total Revenue - PENDING
     const row6 = worksheet.getRow(6);
-    row6.getCell(1).value = 'สำเร็จ:';
-    row6.getCell(1).font = { color: { argb: 'FF2E7D32' } };
-    row6.getCell(1).alignment = { vertical: 'middle', horizontal: 'right', indent: 1 };
+    row6.getCell(1).value = 'รวมยอดเงินที่รอดำเนินการ:';
+    row6.getCell(1).font = { bold: true, color: { argb: 'FFF57C00' } };
+    row6.getCell(1).alignment = { vertical: 'middle', horizontal: 'left', indent: 1 };
     row6.getCell(1).border = { top: thinBorder, left: mediumBorder, bottom: thinBorder, right: thinBorder };
 
-    row6.getCell(2).value = summary.statusCount.SUCCEEDED;
-    row6.getCell(2).font = { bold: true };
-    row6.getCell(2).alignment = { vertical: 'middle', horizontal: 'center' };
+    row6.getCell(2).value = summary.totalRevenueByStatus.PENDING;
+    row6.getCell(2).font = { bold: true, size: 11, color: { argb: 'FFF57C00' } };
+    row6.getCell(2).fill = {
+      type: 'pattern',
+      pattern: 'solid',
+      fgColor: { argb: 'FFFFF3E0' }, // Light orange
+    };
+    row6.getCell(2).alignment = { vertical: 'middle', horizontal: 'right', indent: 1 };
     row6.getCell(2).border = { top: thinBorder, left: thinBorder, bottom: thinBorder, right: thinBorder };
-    row6.getCell(2).numFmt = '#,##0';
-
-    row6.getCell(3).value = 'ล้มเหลว:';
-    row6.getCell(3).font = { color: { argb: 'FFC62828' } };
-    row6.getCell(3).alignment = { vertical: 'middle', horizontal: 'right', indent: 1 };
-    row6.getCell(3).border = { top: thinBorder, left: thinBorder, bottom: thinBorder, right: thinBorder };
-
-    row6.getCell(4).value = summary.statusCount.FAILED;
-    row6.getCell(4).font = { bold: true };
-    row6.getCell(4).alignment = { vertical: 'middle', horizontal: 'center' };
-    row6.getCell(4).border = { top: thinBorder, left: thinBorder, bottom: thinBorder, right: thinBorder };
-    row6.getCell(4).numFmt = '#,##0';
+    row6.getCell(2).numFmt = '"฿"#,##0.00';
 
     // Style remaining cells in row 6
-    for (let col = 5; col <= 7; col++) {
+    for (let col = 3; col <= 7; col++) {
       row6.getCell(col).border = {
         top: thinBorder,
         left: thinBorder,
@@ -867,32 +896,26 @@ export class DeviceEventLogsService {
     }
     row6.height = 20;
 
-    // Status breakdown - Row 2
+    // Total Revenue - CANCELLED
     const row7 = worksheet.getRow(7);
-    row7.getCell(1).value = 'รอดำเนินการ:';
-    row7.getCell(1).font = { color: { argb: 'FFF57C00' } };
-    row7.getCell(1).alignment = { vertical: 'middle', horizontal: 'right', indent: 1 };
+    row7.getCell(1).value = 'รวมยอดเงินที่ยกเลิก:';
+    row7.getCell(1).font = { bold: true, color: { argb: 'FF757575' } };
+    row7.getCell(1).alignment = { vertical: 'middle', horizontal: 'left', indent: 1 };
     row7.getCell(1).border = { top: thinBorder, left: mediumBorder, bottom: thinBorder, right: thinBorder };
 
-    row7.getCell(2).value = summary.statusCount.PENDING;
-    row7.getCell(2).font = { bold: true };
-    row7.getCell(2).alignment = { vertical: 'middle', horizontal: 'center' };
+    row7.getCell(2).value = summary.totalRevenueByStatus.CANCELLED;
+    row7.getCell(2).font = { bold: true, size: 11, color: { argb: 'FF757575' } };
+    row7.getCell(2).fill = {
+      type: 'pattern',
+      pattern: 'solid',
+      fgColor: { argb: 'FFF5F5F5' }, // Light gray
+    };
+    row7.getCell(2).alignment = { vertical: 'middle', horizontal: 'right', indent: 1 };
     row7.getCell(2).border = { top: thinBorder, left: thinBorder, bottom: thinBorder, right: thinBorder };
-    row7.getCell(2).numFmt = '#,##0';
-
-    row7.getCell(3).value = 'ยกเลิก:';
-    row7.getCell(3).font = { color: { argb: 'FF757575' } };
-    row7.getCell(3).alignment = { vertical: 'middle', horizontal: 'right', indent: 1 };
-    row7.getCell(3).border = { top: thinBorder, left: thinBorder, bottom: thinBorder, right: thinBorder };
-
-    row7.getCell(4).value = summary.statusCount.CANCELLED;
-    row7.getCell(4).font = { bold: true };
-    row7.getCell(4).alignment = { vertical: 'middle', horizontal: 'center' };
-    row7.getCell(4).border = { top: thinBorder, left: thinBorder, bottom: thinBorder, right: thinBorder };
-    row7.getCell(4).numFmt = '#,##0';
+    row7.getCell(2).numFmt = '"฿"#,##0.00';
 
     // Style remaining cells in row 7
-    for (let col = 5; col <= 7; col++) {
+    for (let col = 3; col <= 7; col++) {
       row7.getCell(col).border = {
         top: thinBorder,
         left: thinBorder,
@@ -902,11 +925,96 @@ export class DeviceEventLogsService {
     }
     row7.height = 20;
 
-    // Payment method header
+    // Status breakdown header
     worksheet.mergeCells('A8:G8');
     const row8 = worksheet.getRow(8);
-    const paymentHeaderCell = row8.getCell(1);
-    paymentHeaderCell.value = 'ยอดเงินแยกตามช่องทางชำระเงิน';
+    const statusHeaderCell = row8.getCell(1);
+    statusHeaderCell.value = 'จำนวน Event แยกตามสถานะ';
+    statusHeaderCell.font = { bold: true, size: 11 };
+    statusHeaderCell.fill = {
+      type: 'pattern',
+      pattern: 'solid',
+      fgColor: { argb: 'FFE3F2FD' }, // Light blue
+    };
+    statusHeaderCell.alignment = { vertical: 'middle', horizontal: 'left', indent: 1 };
+    statusHeaderCell.border = { top: thinBorder, left: mediumBorder, bottom: thinBorder, right: mediumBorder };
+    row8.height = 20;
+
+    // Status breakdown - Row 1
+    const row9 = worksheet.getRow(9);
+    row9.getCell(1).value = 'สำเร็จ:';
+    row9.getCell(1).font = { color: { argb: 'FF2E7D32' } };
+    row9.getCell(1).alignment = { vertical: 'middle', horizontal: 'right', indent: 1 };
+    row9.getCell(1).border = { top: thinBorder, left: mediumBorder, bottom: thinBorder, right: thinBorder };
+
+    row9.getCell(2).value = summary.statusCount.SUCCEEDED;
+    row9.getCell(2).font = { bold: true };
+    row9.getCell(2).alignment = { vertical: 'middle', horizontal: 'center' };
+    row9.getCell(2).border = { top: thinBorder, left: thinBorder, bottom: thinBorder, right: thinBorder };
+    row9.getCell(2).numFmt = '#,##0';
+
+    row9.getCell(3).value = 'ล้มเหลว:';
+    row9.getCell(3).font = { color: { argb: 'FFC62828' } };
+    row9.getCell(3).alignment = { vertical: 'middle', horizontal: 'right', indent: 1 };
+    row9.getCell(3).border = { top: thinBorder, left: thinBorder, bottom: thinBorder, right: thinBorder };
+
+    row9.getCell(4).value = summary.statusCount.FAILED;
+    row9.getCell(4).font = { bold: true };
+    row9.getCell(4).alignment = { vertical: 'middle', horizontal: 'center' };
+    row9.getCell(4).border = { top: thinBorder, left: thinBorder, bottom: thinBorder, right: thinBorder };
+    row9.getCell(4).numFmt = '#,##0';
+
+    // Style remaining cells in row 9
+    for (let col = 5; col <= 7; col++) {
+      row9.getCell(col).border = {
+        top: thinBorder,
+        left: thinBorder,
+        bottom: thinBorder,
+        right: col === 7 ? mediumBorder : thinBorder,
+      };
+    }
+    row9.height = 20;
+
+    // Status breakdown - Row 2
+    const row10 = worksheet.getRow(10);
+    row10.getCell(1).value = 'รอดำเนินการ:';
+    row10.getCell(1).font = { color: { argb: 'FFF57C00' } };
+    row10.getCell(1).alignment = { vertical: 'middle', horizontal: 'left', indent: 1 };
+    row10.getCell(1).border = { top: thinBorder, left: mediumBorder, bottom: thinBorder, right: thinBorder };
+
+    row10.getCell(2).value = summary.statusCount.PENDING;
+    row10.getCell(2).font = { bold: true };
+    row10.getCell(2).alignment = { vertical: 'middle', horizontal: 'center' };
+    row10.getCell(2).border = { top: thinBorder, left: thinBorder, bottom: thinBorder, right: thinBorder };
+    row10.getCell(2).numFmt = '#,##0';
+
+    row10.getCell(3).value = 'ยกเลิก:';
+    row10.getCell(3).font = { color: { argb: 'FF757575' } };
+    row10.getCell(3).alignment = { vertical: 'middle', horizontal: 'right', indent: 1 };
+    row10.getCell(3).border = { top: thinBorder, left: thinBorder, bottom: thinBorder, right: thinBorder };
+
+    row10.getCell(4).value = summary.statusCount.CANCELLED;
+    row10.getCell(4).font = { bold: true };
+    row10.getCell(4).alignment = { vertical: 'middle', horizontal: 'center' };
+    row10.getCell(4).border = { top: thinBorder, left: thinBorder, bottom: thinBorder, right: thinBorder };
+    row10.getCell(4).numFmt = '#,##0';
+
+    // Style remaining cells in row 10
+    for (let col = 5; col <= 7; col++) {
+      row10.getCell(col).border = {
+        top: thinBorder,
+        left: thinBorder,
+        bottom: thinBorder,
+        right: col === 7 ? mediumBorder : thinBorder,
+      };
+    }
+    row10.height = 20;
+
+    // Payment method header
+    worksheet.mergeCells('A11:G11');
+    const row11 = worksheet.getRow(11);
+    const paymentHeaderCell = row11.getCell(1);
+    paymentHeaderCell.value = 'ยอดเงินแยกตามช่องทางชำระเงิน (สำเร็จเท่านั้น)';
     paymentHeaderCell.font = { bold: true, size: 11 };
     paymentHeaderCell.fill = {
       type: 'pattern',
@@ -915,50 +1023,50 @@ export class DeviceEventLogsService {
     };
     paymentHeaderCell.alignment = { vertical: 'middle', horizontal: 'left', indent: 1 };
     paymentHeaderCell.border = { top: thinBorder, left: mediumBorder, bottom: thinBorder, right: mediumBorder };
-    row8.height = 20;
+    row11.height = 20;
 
     // Payment method breakdown
-    const row9 = worksheet.getRow(9);
-    row9.getCell(1).value = 'QR Payment:';
-    row9.getCell(1).font = { bold: false };
-    row9.getCell(1).alignment = { vertical: 'middle', horizontal: 'right', indent: 1 };
-    row9.getCell(1).border = { top: thinBorder, left: mediumBorder, bottom: thinBorder, right: thinBorder };
+    const row12 = worksheet.getRow(12);
+    row12.getCell(1).value = 'QR Payment:';
+    row12.getCell(1).font = { bold: false };
+    row12.getCell(1).alignment = { vertical: 'middle', horizontal: 'right', indent: 1 };
+    row12.getCell(1).border = { top: thinBorder, left: mediumBorder, bottom: thinBorder, right: thinBorder };
 
-    row9.getCell(2).value = summary.paymentMethodAmount.qr;
-    row9.getCell(2).font = { bold: true };
-    row9.getCell(2).alignment = { vertical: 'middle', horizontal: 'right', indent: 1 };
-    row9.getCell(2).border = { top: thinBorder, left: thinBorder, bottom: thinBorder, right: thinBorder };
-    row9.getCell(2).numFmt = '"฿"#,##0.00';
+    row12.getCell(2).value = summary.paymentMethodAmount.qr;
+    row12.getCell(2).font = { bold: true };
+    row12.getCell(2).alignment = { vertical: 'middle', horizontal: 'right', indent: 1 };
+    row12.getCell(2).border = { top: thinBorder, left: thinBorder, bottom: thinBorder, right: thinBorder };
+    row12.getCell(2).numFmt = '"฿"#,##0.00';
 
-    row9.getCell(3).value = 'ธนบัตร:';
-    row9.getCell(3).font = { bold: false };
-    row9.getCell(3).alignment = { vertical: 'middle', horizontal: 'right', indent: 1 };
-    row9.getCell(3).border = { top: thinBorder, left: thinBorder, bottom: thinBorder, right: thinBorder };
+    row12.getCell(3).value = 'ธนบัตร:';
+    row12.getCell(3).font = { bold: false };
+    row12.getCell(3).alignment = { vertical: 'middle', horizontal: 'right', indent: 1 };
+    row12.getCell(3).border = { top: thinBorder, left: thinBorder, bottom: thinBorder, right: thinBorder };
 
-    row9.getCell(4).value = summary.paymentMethodAmount.bank;
-    row9.getCell(4).font = { bold: true };
-    row9.getCell(4).alignment = { vertical: 'middle', horizontal: 'right', indent: 1 };
-    row9.getCell(4).border = { top: thinBorder, left: thinBorder, bottom: thinBorder, right: thinBorder };
-    row9.getCell(4).numFmt = '"฿"#,##0.00';
+    row12.getCell(4).value = summary.paymentMethodAmount.bank;
+    row12.getCell(4).font = { bold: true };
+    row12.getCell(4).alignment = { vertical: 'middle', horizontal: 'right', indent: 1 };
+    row12.getCell(4).border = { top: thinBorder, left: thinBorder, bottom: thinBorder, right: thinBorder };
+    row12.getCell(4).numFmt = '"฿"#,##0.00';
 
-    row9.getCell(5).value = 'เหรียญ:';
-    row9.getCell(5).font = { bold: false };
-    row9.getCell(5).alignment = { vertical: 'middle', horizontal: 'right', indent: 1 };
-    row9.getCell(5).border = { top: thinBorder, left: thinBorder, bottom: thinBorder, right: thinBorder };
+    row12.getCell(5).value = 'เหรียญ:';
+    row12.getCell(5).font = { bold: false };
+    row12.getCell(5).alignment = { vertical: 'middle', horizontal: 'right', indent: 1 };
+    row12.getCell(5).border = { top: thinBorder, left: thinBorder, bottom: thinBorder, right: thinBorder };
 
-    row9.getCell(6).value = summary.paymentMethodAmount.coin;
-    row9.getCell(6).font = { bold: true };
-    row9.getCell(6).alignment = { vertical: 'middle', horizontal: 'right', indent: 1 };
-    row9.getCell(6).border = { top: thinBorder, left: thinBorder, bottom: thinBorder, right: thinBorder };
-    row9.getCell(6).numFmt = '"฿"#,##0.00';
+    row12.getCell(6).value = summary.paymentMethodAmount.coin;
+    row12.getCell(6).font = { bold: true };
+    row12.getCell(6).alignment = { vertical: 'middle', horizontal: 'right', indent: 1 };
+    row12.getCell(6).border = { top: thinBorder, left: thinBorder, bottom: thinBorder, right: thinBorder };
+    row12.getCell(6).numFmt = '"฿"#,##0.00';
 
-    row9.getCell(7).border = { top: thinBorder, left: thinBorder, bottom: thinBorder, right: mediumBorder };
-    row9.height = 20;
+    row12.getCell(7).border = { top: thinBorder, left: thinBorder, bottom: thinBorder, right: mediumBorder };
+    row12.height = 20;
 
     // Device type header & data
-    worksheet.mergeCells('A10:B10');
-    const row10 = worksheet.getRow(10);
-    const deviceHeaderCell = row10.getCell(1);
+    worksheet.mergeCells('A13:B13');
+    const row13 = worksheet.getRow(13);
+    const deviceHeaderCell = row13.getCell(1);
     deviceHeaderCell.value = 'จำนวนแยกตามประเภทอุปกรณ์';
     deviceHeaderCell.font = { bold: true, size: 11 };
     deviceHeaderCell.fill = {
@@ -969,24 +1077,24 @@ export class DeviceEventLogsService {
     deviceHeaderCell.alignment = { vertical: 'middle', horizontal: 'left', indent: 1 };
     deviceHeaderCell.border = { top: thinBorder, left: mediumBorder, bottom: mediumBorder, right: thinBorder };
 
-    worksheet.mergeCells('C10:D10');
-    row10.getCell(3).value = `เครื่องล้างรถ: ${summary.deviceTypeCount.WASH || 0} เครื่อง`;
-    row10.getCell(3).font = { bold: true };
-    row10.getCell(3).alignment = { vertical: 'middle', horizontal: 'center' };
-    row10.getCell(3).border = { top: thinBorder, left: thinBorder, bottom: mediumBorder, right: thinBorder };
+    worksheet.mergeCells('C13:D13');
+    row13.getCell(3).value = `เครื่องล้างรถ: ${summary.deviceTypeCount.WASH || 0} เครื่อง`;
+    row13.getCell(3).font = { bold: true };
+    row13.getCell(3).alignment = { vertical: 'middle', horizontal: 'center' };
+    row13.getCell(3).border = { top: thinBorder, left: thinBorder, bottom: mediumBorder, right: thinBorder };
 
-    worksheet.mergeCells('E10:G10');
-    row10.getCell(5).value = `เครื่องอบหมวก: ${summary.deviceTypeCount.DRYING || 0} เครื่อง`;
-    row10.getCell(5).font = { bold: true };
-    row10.getCell(5).alignment = { vertical: 'middle', horizontal: 'center' };
-    row10.getCell(5).border = { top: thinBorder, left: thinBorder, bottom: thinBorder, right: mediumBorder };
-    row10.height = 20;
+    worksheet.mergeCells('E13:G13');
+    row13.getCell(5).value = `เครื่องอบหมวก: ${summary.deviceTypeCount.DRYING || 0} เครื่อง`;
+    row13.getCell(5).font = { bold: true };
+    row13.getCell(5).alignment = { vertical: 'middle', horizontal: 'center' };
+    row13.getCell(5).border = { top: thinBorder, left: thinBorder, bottom: thinBorder, right: mediumBorder };
+    row13.height = 20;
 
-    // Denomination breakdown header (row 11)
-    worksheet.mergeCells('A11:G11');
-    const row11 = worksheet.getRow(11);
-    const denomHeaderCell = row11.getCell(1);
-    denomHeaderCell.value = 'รายละเอียดธนบัตรและเหรียญ';
+    // Denomination breakdown header (row 14)
+    worksheet.mergeCells('A14:G14');
+    const row14 = worksheet.getRow(14);
+    const denomHeaderCell = row14.getCell(1);
+    denomHeaderCell.value = 'รายละเอียดธนบัตรและเหรียญ (สำเร็จเท่านั้น)';
     denomHeaderCell.font = { bold: true, size: 11 };
     denomHeaderCell.fill = {
       type: 'pattern',
@@ -995,114 +1103,114 @@ export class DeviceEventLogsService {
     };
     denomHeaderCell.alignment = { vertical: 'middle', horizontal: 'left', indent: 1 };
     denomHeaderCell.border = { top: thinBorder, left: mediumBorder, bottom: thinBorder, right: mediumBorder };
-    row11.height = 20;
+    row14.height = 20;
 
-    // Bank denomination details - Row 1 (row 12)
-    const row12 = worksheet.getRow(12);
+    // Bank denomination details - Row 1 (row 15)
+    const row15 = worksheet.getRow(15);
     const denom = summary.denominationBreakdown;
 
-    row12.getCell(1).value = 'ธ.20:';
-    row12.getCell(1).alignment = { vertical: 'middle', horizontal: 'right', indent: 1 };
-    row12.getCell(1).border = { top: thinBorder, left: mediumBorder, bottom: thinBorder, right: thinBorder };
+    row15.getCell(1).value = 'ธ.20:';
+    row15.getCell(1).alignment = { vertical: 'middle', horizontal: 'right', indent: 1 };
+    row15.getCell(1).border = { top: thinBorder, left: mediumBorder, bottom: thinBorder, right: thinBorder };
 
-    row12.getCell(2).value = denom.bank[20].count > 0 ? `${denom.bank[20].count}(${denom.bank[20].amount})` : '-';
-    row12.getCell(2).font = { bold: true };
-    row12.getCell(2).alignment = { vertical: 'middle', horizontal: 'center' };
-    row12.getCell(2).border = { top: thinBorder, left: thinBorder, bottom: thinBorder, right: thinBorder };
+    row15.getCell(2).value = denom.bank[20].count > 0 ? `${denom.bank[20].count}(${denom.bank[20].amount})` : '-';
+    row15.getCell(2).font = { bold: true };
+    row15.getCell(2).alignment = { vertical: 'middle', horizontal: 'center' };
+    row15.getCell(2).border = { top: thinBorder, left: thinBorder, bottom: thinBorder, right: thinBorder };
 
-    row12.getCell(3).value = 'ธ.50:';
-    row12.getCell(3).alignment = { vertical: 'middle', horizontal: 'right', indent: 1 };
-    row12.getCell(3).border = { top: thinBorder, left: thinBorder, bottom: thinBorder, right: thinBorder };
+    row15.getCell(3).value = 'ธ.50:';
+    row15.getCell(3).alignment = { vertical: 'middle', horizontal: 'right', indent: 1 };
+    row15.getCell(3).border = { top: thinBorder, left: thinBorder, bottom: thinBorder, right: thinBorder };
 
-    row12.getCell(4).value = denom.bank[50].count > 0 ? `${denom.bank[50].count}(${denom.bank[50].amount})` : '-';
-    row12.getCell(4).font = { bold: true };
-    row12.getCell(4).alignment = { vertical: 'middle', horizontal: 'center' };
-    row12.getCell(4).border = { top: thinBorder, left: thinBorder, bottom: thinBorder, right: thinBorder };
+    row15.getCell(4).value = denom.bank[50].count > 0 ? `${denom.bank[50].count}(${denom.bank[50].amount})` : '-';
+    row15.getCell(4).font = { bold: true };
+    row15.getCell(4).alignment = { vertical: 'middle', horizontal: 'center' };
+    row15.getCell(4).border = { top: thinBorder, left: thinBorder, bottom: thinBorder, right: thinBorder };
 
-    row12.getCell(5).value = 'ธ.100:';
-    row12.getCell(5).alignment = { vertical: 'middle', horizontal: 'right', indent: 1 };
-    row12.getCell(5).border = { top: thinBorder, left: thinBorder, bottom: thinBorder, right: thinBorder };
+    row15.getCell(5).value = 'ธ.100:';
+    row15.getCell(5).alignment = { vertical: 'middle', horizontal: 'right', indent: 1 };
+    row15.getCell(5).border = { top: thinBorder, left: thinBorder, bottom: thinBorder, right: thinBorder };
 
-    row12.getCell(6).value = denom.bank[100].count > 0 ? `${denom.bank[100].count}(${denom.bank[100].amount})` : '-';
-    row12.getCell(6).font = { bold: true };
-    row12.getCell(6).alignment = { vertical: 'middle', horizontal: 'center' };
-    row12.getCell(6).border = { top: thinBorder, left: thinBorder, bottom: thinBorder, right: thinBorder };
+    row15.getCell(6).value = denom.bank[100].count > 0 ? `${denom.bank[100].count}(${denom.bank[100].amount})` : '-';
+    row15.getCell(6).font = { bold: true };
+    row15.getCell(6).alignment = { vertical: 'middle', horizontal: 'center' };
+    row15.getCell(6).border = { top: thinBorder, left: thinBorder, bottom: thinBorder, right: thinBorder };
 
-    row12.getCell(7).border = { top: thinBorder, left: thinBorder, bottom: thinBorder, right: mediumBorder };
-    row12.height = 20;
+    row15.getCell(7).border = { top: thinBorder, left: thinBorder, bottom: thinBorder, right: mediumBorder };
+    row15.height = 20;
 
-    // Bank denomination details - Row 2 (row 13)
-    const row13 = worksheet.getRow(13);
+    // Bank denomination details - Row 2 (row 16)
+    const row16 = worksheet.getRow(16);
 
-    row13.getCell(1).value = 'ธ.500:';
-    row13.getCell(1).alignment = { vertical: 'middle', horizontal: 'right', indent: 1 };
-    row13.getCell(1).border = { top: thinBorder, left: mediumBorder, bottom: thinBorder, right: thinBorder };
+    row16.getCell(1).value = 'ธ.500:';
+    row16.getCell(1).alignment = { vertical: 'middle', horizontal: 'right', indent: 1 };
+    row16.getCell(1).border = { top: thinBorder, left: mediumBorder, bottom: thinBorder, right: thinBorder };
 
-    row13.getCell(2).value = denom.bank[500].count > 0 ? `${denom.bank[500].count}(${denom.bank[500].amount})` : '-';
-    row13.getCell(2).font = { bold: true };
-    row13.getCell(2).alignment = { vertical: 'middle', horizontal: 'center' };
-    row13.getCell(2).border = { top: thinBorder, left: thinBorder, bottom: thinBorder, right: thinBorder };
+    row16.getCell(2).value = denom.bank[500].count > 0 ? `${denom.bank[500].count}(${denom.bank[500].amount})` : '-';
+    row16.getCell(2).font = { bold: true };
+    row16.getCell(2).alignment = { vertical: 'middle', horizontal: 'center' };
+    row16.getCell(2).border = { top: thinBorder, left: thinBorder, bottom: thinBorder, right: thinBorder };
 
-    row13.getCell(3).value = 'ธ.1000:';
-    row13.getCell(3).alignment = { vertical: 'middle', horizontal: 'right', indent: 1 };
-    row13.getCell(3).border = { top: thinBorder, left: thinBorder, bottom: thinBorder, right: thinBorder };
+    row16.getCell(3).value = 'ธ.1000:';
+    row16.getCell(3).alignment = { vertical: 'middle', horizontal: 'right', indent: 1 };
+    row16.getCell(3).border = { top: thinBorder, left: thinBorder, bottom: thinBorder, right: thinBorder };
 
-    row13.getCell(4).value = denom.bank[1000].count > 0 ? `${denom.bank[1000].count}(${denom.bank[1000].amount})` : '-';
-    row13.getCell(4).font = { bold: true };
-    row13.getCell(4).alignment = { vertical: 'middle', horizontal: 'center' };
-    row13.getCell(4).border = { top: thinBorder, left: thinBorder, bottom: thinBorder, right: thinBorder };
+    row16.getCell(4).value = denom.bank[1000].count > 0 ? `${denom.bank[1000].count}(${denom.bank[1000].amount})` : '-';
+    row16.getCell(4).font = { bold: true };
+    row16.getCell(4).alignment = { vertical: 'middle', horizontal: 'center' };
+    row16.getCell(4).border = { top: thinBorder, left: thinBorder, bottom: thinBorder, right: thinBorder };
 
     for (let col = 5; col <= 7; col++) {
-      row13.getCell(col).border = {
+      row16.getCell(col).border = {
         top: thinBorder,
         left: thinBorder,
         bottom: thinBorder,
         right: col === 7 ? mediumBorder : thinBorder,
       };
     }
-    row13.height = 20;
+    row16.height = 20;
 
-    // Coin denomination details (row 14)
-    const row14 = worksheet.getRow(14);
+    // Coin denomination details (row 17)
+    const row17 = worksheet.getRow(17);
 
-    row14.getCell(1).value = '฿1:';
-    row14.getCell(1).alignment = { vertical: 'middle', horizontal: 'right', indent: 1 };
-    row14.getCell(1).border = { top: thinBorder, left: mediumBorder, bottom: mediumBorder, right: thinBorder };
+    row17.getCell(1).value = '฿1:';
+    row17.getCell(1).alignment = { vertical: 'middle', horizontal: 'right', indent: 1 };
+    row17.getCell(1).border = { top: thinBorder, left: mediumBorder, bottom: mediumBorder, right: thinBorder };
 
-    row14.getCell(2).value = denom.coin[1].count > 0 ? `${denom.coin[1].count}(${denom.coin[1].amount})` : '-';
-    row14.getCell(2).font = { bold: true };
-    row14.getCell(2).alignment = { vertical: 'middle', horizontal: 'center' };
-    row14.getCell(2).border = { top: thinBorder, left: thinBorder, bottom: mediumBorder, right: thinBorder };
+    row17.getCell(2).value = denom.coin[1].count > 0 ? `${denom.coin[1].count}(${denom.coin[1].amount})` : '-';
+    row17.getCell(2).font = { bold: true };
+    row17.getCell(2).alignment = { vertical: 'middle', horizontal: 'center' };
+    row17.getCell(2).border = { top: thinBorder, left: thinBorder, bottom: mediumBorder, right: thinBorder };
 
-    row14.getCell(3).value = '฿2:';
-    row14.getCell(3).alignment = { vertical: 'middle', horizontal: 'right', indent: 1 };
-    row14.getCell(3).border = { top: thinBorder, left: thinBorder, bottom: mediumBorder, right: thinBorder };
+    row17.getCell(3).value = '฿2:';
+    row17.getCell(3).alignment = { vertical: 'middle', horizontal: 'right', indent: 1 };
+    row17.getCell(3).border = { top: thinBorder, left: thinBorder, bottom: mediumBorder, right: thinBorder };
 
-    row14.getCell(4).value = denom.coin[2].count > 0 ? `${denom.coin[2].count}(${denom.coin[2].amount})` : '-';
-    row14.getCell(4).font = { bold: true };
-    row14.getCell(4).alignment = { vertical: 'middle', horizontal: 'center' };
-    row14.getCell(4).border = { top: thinBorder, left: thinBorder, bottom: mediumBorder, right: thinBorder };
+    row17.getCell(4).value = denom.coin[2].count > 0 ? `${denom.coin[2].count}(${denom.coin[2].amount})` : '-';
+    row17.getCell(4).font = { bold: true };
+    row17.getCell(4).alignment = { vertical: 'middle', horizontal: 'center' };
+    row17.getCell(4).border = { top: thinBorder, left: thinBorder, bottom: mediumBorder, right: thinBorder };
 
-    row14.getCell(5).value = '฿5:';
-    row14.getCell(5).alignment = { vertical: 'middle', horizontal: 'right', indent: 1 };
-    row14.getCell(5).border = { top: thinBorder, left: thinBorder, bottom: mediumBorder, right: thinBorder };
+    row17.getCell(5).value = '฿5:';
+    row17.getCell(5).alignment = { vertical: 'middle', horizontal: 'right', indent: 1 };
+    row17.getCell(5).border = { top: thinBorder, left: thinBorder, bottom: mediumBorder, right: thinBorder };
 
-    row14.getCell(6).value = denom.coin[5].count > 0 ? `${denom.coin[5].count}(${denom.coin[5].amount})` : '-';
-    row14.getCell(6).font = { bold: true };
-    row14.getCell(6).alignment = { vertical: 'middle', horizontal: 'center' };
-    row14.getCell(6).border = { top: thinBorder, left: thinBorder, bottom: mediumBorder, right: thinBorder };
+    row17.getCell(6).value = denom.coin[5].count > 0 ? `${denom.coin[5].count}(${denom.coin[5].amount})` : '-';
+    row17.getCell(6).font = { bold: true };
+    row17.getCell(6).alignment = { vertical: 'middle', horizontal: 'center' };
+    row17.getCell(6).border = { top: thinBorder, left: thinBorder, bottom: mediumBorder, right: thinBorder };
 
-    row14.getCell(7).value = '฿10:';
-    row14.getCell(7).alignment = { vertical: 'middle', horizontal: 'right', indent: 1 };
-    row14.getCell(7).border = { top: thinBorder, left: thinBorder, bottom: mediumBorder, right: thinBorder };
+    row17.getCell(7).value = '฿10:';
+    row17.getCell(7).alignment = { vertical: 'middle', horizontal: 'right', indent: 1 };
+    row17.getCell(7).border = { top: thinBorder, left: thinBorder, bottom: mediumBorder, right: thinBorder };
 
     // Add column 8 for ฿10 value
-    const row14Col8 = worksheet.getRow(14).getCell(8);
-    row14Col8.value = denom.coin[10].count > 0 ? `${denom.coin[10].count}(${denom.coin[10].amount})` : '-';
-    row14Col8.font = { bold: true };
-    row14Col8.alignment = { vertical: 'middle', horizontal: 'center' };
-    row14Col8.border = { top: thinBorder, left: thinBorder, bottom: mediumBorder, right: mediumBorder };
-    row14.height = 20;
+    const row17Col8 = worksheet.getRow(17).getCell(8);
+    row17Col8.value = denom.coin[10].count > 0 ? `${denom.coin[10].count}(${denom.coin[10].amount})` : '-';
+    row17Col8.font = { bold: true };
+    row17Col8.alignment = { vertical: 'middle', horizontal: 'center' };
+    row17Col8.border = { top: thinBorder, left: thinBorder, bottom: mediumBorder, right: mediumBorder };
+    row17.height = 20;
   }
 
   private translatePaymentStatus(status: string | undefined): string {
