@@ -2,6 +2,7 @@
   <div class="chart-container">
     <Line
       :id="chartId"
+      :key="`${chartId}-${dataKey}`"
       ref="chartRef"
       :options="chartOptions"
       :data="chartData"
@@ -52,6 +53,15 @@ interface Props {
 const props = withDefaults(defineProps<Props>(), {
   currency: true,
   color: "#f57f2a",
+});
+
+// Create a unique key that changes when data or labels change
+// Use JSON.stringify to ensure key changes for any data/label changes including empty arrays
+const dataKey = computed(() => {
+  return JSON.stringify({
+    data: props.data,
+    labels: props.labels,
+  });
 });
 
 const chartData = computed(

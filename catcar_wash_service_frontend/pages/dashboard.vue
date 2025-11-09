@@ -216,18 +216,21 @@
     <div class="position-relative mb-8">
       <!-- Loading Overlay -->
       <v-overlay
-        v-model="isLoading"
+        :model-value="isLoading || isCancelling"
         contained
         persistent
         class="align-center justify-center"
       >
         <v-progress-circular color="primary" indeterminate size="64" />
-        <div class="text-body-1 mt-4">กำลังโหลดข้อมูล...</div>
+        <div class="text-body-1 mt-4">
+          {{ isCancelling ? 'กำลังอัพเดทข้อมูล...' : 'กำลังโหลดข้อมูล...' }}
+        </div>
       </v-overlay>
 
       <v-row>
         <v-col v-for="(kpi, index) in kpiData" :key="index" cols="12" md="4">
           <KPICard
+            :key="`${kpi.chartId}-${kpi.value}-${kpi.chartData.length}`"
             :title="kpi.title"
             :value="kpi.value"
             :trend="kpi.trend"
@@ -276,18 +279,12 @@
           </v-alert>
         </v-card-text>
         <v-card-actions class="pa-6 justify-end">
-          <v-btn
-            variant="text"
-            :disabled="isCancelling"
-            @click="showCancelDialog = false"
-          >
+          <v-btn variant="text" @click="showCancelDialog = false">
             ยกเลิก
           </v-btn>
           <v-btn
             color="error"
             variant="elevated"
-            :loading="isCancelling"
-            :disabled="isCancelling"
             @click="confirmCancelEventLog"
           >
             ยืนยัน
@@ -495,7 +492,7 @@
           density="compact"
           :loading="isCancelling"
           :disabled="isCancelling"
-          @click="handleCancelEventLog(item.id)"
+          @click.stop="handleCancelEventLog(item.id)"
         />
       </template>
 
@@ -1325,16 +1322,21 @@ const handleCancelEventLog = (eventLogId: string) => {
 const confirmCancelEventLog = async () => {
   if (!selectedEventLogForCancel.value) return;
 
+  // Close dialog first, then show loading on KPI cards and table
+  showCancelDialog.value = false;
+
+  // Wait for next tick to ensure dialog is closed before starting
+  await nextTick();
+
   try {
     await cancelEventLog(selectedEventLogForCancel.value);
-    showCancelDialog.value = false;
     selectedEventLogForCancel.value = null;
 
     // Refresh both event logs table and dashboard charts
+    // fetchDashboardSummary() uses currentFilter which is already maintained by updateFilter()
     await Promise.all([refreshSearch(), fetchDashboardSummary()]);
-  } catch (err) {
+  } catch {
     // Error is already handled in the composable
-    console.error("Failed to cancel event log:", err);
   }
 };
 

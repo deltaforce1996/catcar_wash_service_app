@@ -2,6 +2,7 @@ import { Injectable, Logger } from '@nestjs/common';
 import { BadRequestException, ItemNotFoundException, PermissionDeniedException } from 'src/errors';
 import { DeviceType, EventType, PaymentApiStatus, PermissionType, Prisma } from '@prisma/client';
 import { PrismaService } from 'src/database/prisma/prisma.service';
+import { SqlScriptService } from 'src/services/sql-script.service';
 import { parseKeyValueOnly } from 'src/shared/kv-parser';
 import { AuthenticatedUser, PaginatedResult } from 'src/types/internal.type';
 import { SearchDeviceEventLogsDto } from 'src/apis/device-event-logs/dtos/search-devcie-event.dto';
@@ -56,7 +57,10 @@ export class DeviceEventLogsService {
     'search',
   ] as const;
 
-  constructor(private readonly prisma: PrismaService) {
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly sqlScriptService: SqlScriptService,
+  ) {
     this.logger.log('DeviceEventLogsService initialized');
   }
 
@@ -1167,15 +1171,10 @@ export class DeviceEventLogsService {
 
     this.logger.log(`Successfully cancelled event log: ${eventLogId}`);
 
-    // Emit event through adapter for materialized view refresh
-    // This follows the same pattern as uploadDeviceEventLogs
-    const eventPayload = {
-      device_id: updatedEventLog.device_id,
-      count: 1,
-      timestamp: new Date(),
-    };
-
-    this.adapter?.emitEventsUploaded(eventPayload);
+    // Refresh materialized views to ensure dashboard data is up-to-date
+    // This blocks the response until views are refreshed, preventing race conditions
+    await this.sqlScriptService.refreshAllViews();
+    this.logger.log(`Materialized views refreshed after cancelling event log: ${eventLogId}`);
 
     return updatedEventLog;
   }

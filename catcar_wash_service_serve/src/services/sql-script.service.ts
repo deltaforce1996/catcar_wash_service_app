@@ -8,15 +8,18 @@ export class SqlScriptService {
   constructor(private readonly prisma: PrismaService) {}
 
   /**
-   * Refresh all materialized views
+   * Refresh all materialized views concurrently
+   * Uses Promise.all() to refresh all views in parallel for better performance
    */
   async refreshAllViews(): Promise<void> {
-    this.logger.log('Refreshing all materialized views...');
+    this.logger.log('Refreshing all materialized views in parallel...');
 
-    await this.prisma.$executeRaw`REFRESH MATERIALIZED VIEW CONCURRENTLY mv_device_payments_day`;
-    await this.prisma.$executeRaw`REFRESH MATERIALIZED VIEW CONCURRENTLY mv_device_payments_month`;
-    await this.prisma.$executeRaw`REFRESH MATERIALIZED VIEW CONCURRENTLY mv_device_payments_year`;
-    await this.prisma.$executeRaw`REFRESH MATERIALIZED VIEW CONCURRENTLY mv_device_payments_hour`;
+    await Promise.all([
+      this.prisma.$executeRaw`REFRESH MATERIALIZED VIEW CONCURRENTLY mv_device_payments_day`,
+      this.prisma.$executeRaw`REFRESH MATERIALIZED VIEW CONCURRENTLY mv_device_payments_month`,
+      this.prisma.$executeRaw`REFRESH MATERIALIZED VIEW CONCURRENTLY mv_device_payments_year`,
+      this.prisma.$executeRaw`REFRESH MATERIALIZED VIEW CONCURRENTLY mv_device_payments_hour`,
+    ]);
 
     this.logger.log('All materialized views refreshed successfully!');
   }
