@@ -11,12 +11,12 @@
       <v-spacer />
       <div class="d-flex align-center ga-3">
         <img
-          src="/Logo/Asset 33@2x.png"
+          src="/Logo/catvending 2.png"
           alt="CAT CARWASH Logo"
           class="mobile-logo-icon"
         >
         <img
-          src="/Logo/Asset gray text.png"
+          src="/Logo/catvending 3.png"
           alt="CAT CARWASH Text"
           class="mobile-logo-text"
         >
@@ -42,7 +42,7 @@
               <div class="brand-content">
                 <div class="brand-header">
                   <img
-                    src="/Logo/CCW LOGO-02-white-text.png"
+                    src="/Logo/catvending 4.png"
                     alt="CAT CARWASH Logo"
                     class="brand-logo"
                   >
@@ -76,7 +76,7 @@
                 <!-- Cat Character -->
                 <div class="cat-character">
                   <img
-                    src="/Character/character cat-02.png"
+                    src="/Character/logo-catvending-09.png"
                     alt="Cat Character"
                     class="cat-image"
                   >
@@ -169,7 +169,7 @@
   left: 0;
   right: 0;
   bottom: 0;
-  background-image: url('/CCW-Operation Manual (2).png');
+  background-image: url('/Logo/operation-logo.png');
   background-size: 100%;
   background-position: bottom left;
   background-repeat: no-repeat;

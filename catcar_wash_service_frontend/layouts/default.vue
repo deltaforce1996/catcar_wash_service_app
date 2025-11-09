@@ -12,19 +12,19 @@
       <!-- Logo Section -->
       <v-sheet class="py-6 px-4 text-center border-b" color="transparent">
         <img
-          src="/Logo/Asset 33@2x.png"
+          src="/Logo/catvending 2.png"
           alt="CAT CARWASH Logo"
           style="height: 60px; width: auto; max-width: 100%"
         >
         <img
           v-if="!theme.global.current.value.dark"
-          src="/Logo/Asset gray text.png"
+          src="/Logo/catvending 3.png"
           alt="CAT CARWASH Logo gray text"
           style="height: 60px; width: auto; max-width: 100%"
         >
         <img
           v-else
-          src="/Logo/Asset 1@3x.png"
+          src="/Logo/catvending 1.png"
           alt="CAT CARWASH Logo white text"
           style="height: 60px; width: auto; max-width: 100%"
         >
@@ -149,19 +149,19 @@
       <!-- Mobile Logo -->
       <div class="d-flex align-center ga-2">
         <img
-          src="/Logo/Asset 33@2x.png"
+          src="/Logo/catvending 2.png"
           alt="CAT CARWASH Logo"
           style="height: 32px; width: auto"
         >
         <img
           v-if="!theme.global.current.value.dark"
-          src="/Logo/Asset gray text.png"
+          src="/Logo/catvending 3.png"
           alt="CAT CARWASH Logo gray text"
           style="height: 24px; width: auto"
         >
         <img
           v-else
-          src="/Logo/Asset 1@3x.png"
+          src="/Logo/catvending 1.png"
           alt="CAT CARWASH Logo white text"
           style="height: 24px; width: auto"
         >
@@ -232,7 +232,7 @@ const profileData = computed(() => {
     return {
       name: "คุณผู้ใช้งาน",
       email: "คุณผู้ใช้งาน@คุณผู้ใช้งาน.com",
-      avatar: "/Character/character cat-02.png",
+      avatar: "/Character/logo-catvending-09.png",
     };
   }
 
@@ -240,13 +240,13 @@ const profileData = computed(() => {
     return {
       name: user.value.fullname,
       email: user.value.email,
-      avatar: "/Character/character cat-02.png",
+      avatar: "/Character/logo-catvending-09.png",
     };
   } else {
     return {
       name: user.value.name,
       email: user.value.email,
-      avatar: "/Character/character cat-02.png",
+      avatar: "/Character/logo-catvending-09.png",
     };
   }
 });
