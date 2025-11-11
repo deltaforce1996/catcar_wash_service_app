@@ -357,6 +357,39 @@ const handleLogout = () => {
   background: linear-gradient(180deg, #ffffff 0%, #f8f9fa 100%);
 }
 
+/* Watermark background for main content */
+.v-main {
+  position: relative;
+}
+
+.v-main::before {
+  content: '';
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-image: url('/Logo/operation-logo.png');
+  background-size: cover;
+  background-position: center center;
+  background-repeat: no-repeat;
+  opacity: 0.4;
+  mix-blend-mode: multiply;
+  z-index: 0;
+  pointer-events: none;
+}
+
+/* Ensure content is above watermark */
+.v-main .v-container {
+  position: relative;
+  z-index: 1;
+}
+
+/* Theme-specific adjustments */
+.v-theme--light .v-main::before {
+  opacity: 0.03;
+}
+
 /* Profile section clickable styling */
 .profile-section {
   cursor: pointer;

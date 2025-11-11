@@ -373,7 +373,7 @@ export class DevicesService {
     // Check if device exists and get current configs
     const existingDevice = await this.prisma.tbl_devices.findUnique({
       where: { id },
-      select: { id: true, type: true, configs: true },
+      select: { id: true, type: true, configs: true, status: true },
     });
     if (!existingDevice) {
       throw new ItemNotFoundException('Device not found');
@@ -496,21 +496,32 @@ export class DevicesService {
       }
     }
 
-    const device: DeviceRowBase = await this.prisma.tbl_devices.update({
-      where: { id },
-      data: {
-        configs: updatedConfigs,
-        status: data.status,
-      },
-      select: devicePublicSelect,
-    });
-
     // Convert structured config back to raw CommandConfig format for MQTT
-    const rawConfig = this.convertToRawConfig(device.configs as any, device.type, device.status);
-    const result = await this.mqttCommandManager.applyConfig(device.id, rawConfig);
-    if (result.status !== 'SUCCESS') throw new BadRequestException(result.error ?? 'Config Filed');
+    const rawConfig = this.convertToRawConfig(
+      updatedConfigs,
+      existingDevice.type,
+      data.status ?? existingDevice.status,
+    );
 
-    return device;
+    // Send config to device and wait for ACK before updating DB
+    const result = await this.mqttCommandManager.applyConfig(id, rawConfig);
+
+    // Only update DB if device ACK is successful
+    if (result.status === 'SUCCESS') {
+      const device: DeviceRowBase = await this.prisma.tbl_devices.update({
+        where: { id },
+        data: {
+          configs: updatedConfigs,
+          status: data.status,
+        },
+        select: devicePublicSelect,
+      });
+      return device;
+    } else if (result.status === 'TIMEOUT') {
+      throw new BadRequestException('Device did not respond within 30 seconds');
+    } else {
+      throw new BadRequestException(result.error ?? 'Config update failed');
+    }
   }
 
   /**
