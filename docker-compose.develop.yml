@@ -121,6 +121,8 @@ services:
     volumes:
       - db_backups:/app/backups
     depends_on:
+      backend:
+        condition: service_healthy
       postgres:
         condition: service_healthy
     networks:
