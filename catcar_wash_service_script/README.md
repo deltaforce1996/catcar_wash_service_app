@@ -6,7 +6,33 @@
 
 ---
 
+## 🐳 Quick Start (Docker - Recommended)
+
+**ใช้ Docker Compose (ง่ายที่สุด)**
+
+```bash
+# Start all services including automated backup & partition management
+docker-compose -f docker-compose.develop.yml up -d
+
+# Check logs
+docker logs catcar_wash_db_scripts
+
+# Manual operations
+docker exec catcar_wash_db_scripts python3 /app/partition_60d_cron.py
+docker exec catcar_wash_db_scripts python3 /app/backup_database_python.py
+```
+
+📖 **[ดูคู่มือ Docker ฉบับสมบูรณ์](./DOCKER_README.md)**
+
+---
+
+## 📦 Manual Installation
+
+สำหรับใช้งานนอก Docker:
+
+```bash
 pip install -r requirments.txt
+```
 
 ## 📂 ไฟล์ที่เกี่ยวข้อง
 
@@ -16,9 +42,16 @@ catcar_wash_service_app/
 │   └── 520250829112611_partition_60d_devices_events_states/
 │       └── migration.sql                    # Migration สำหรับแปลงตาราง
 │
+├── docker-compose.develop.yml               # Docker Compose config
+│
 └── catcar_wash_service_script/
-    ├── partition_60d_cron.py               # Cron script สร้าง partition ใหม่
-    └── README.md                           # เอกสารนี้
+    ├── Dockerfile                           # Docker container definition
+    ├── docker-entrypoint.sh                 # Docker startup script
+    ├── backup_database_python.py            # Backup script
+    ├── partition_60d_cron.py                # Cron script สร้าง partition ใหม่
+    ├── requirments.txt                      # Python dependencies
+    ├── README.md                            # เอกสารนี้
+    └── DOCKER_README.md                     # Docker usage guide
 ```
 
 ---

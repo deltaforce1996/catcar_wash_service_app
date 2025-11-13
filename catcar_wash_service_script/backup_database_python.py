@@ -122,7 +122,7 @@ def backup_table_data(conn, table_name, output_file):
         return rows_written
 
 
-def backup_database(output_dir="catcar_wash_service_script/backups"):
+def backup_database(output_dir="/app/backups"):
     """Create a SQL backup of the entire database."""
     print("=" * 60)
     print("PostgreSQL Database Backup (Pure Python)")
@@ -245,8 +245,8 @@ def main():
     )
     parser.add_argument(
         "--output-dir",
-        default="catcar_wash_service_script/backups",
-        help="Directory to store backups (default: catcar_wash_service_script/backups/)"
+        default="/app/backups",
+        help="Directory to store backups (default: /app/backups)"
     )
     
     args = parser.parse_args()
@@ -258,3 +258,8 @@ def main():
 if __name__ == "__main__":
     main()
 
+
+
+
+# How to run this script as CLI
+# Example: python backup_database_python.py --output-dir D:/Repo/catcar_wash_service_app/catcar_wash_service_script/backups

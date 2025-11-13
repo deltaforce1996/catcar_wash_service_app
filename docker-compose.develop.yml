@@ -104,6 +104,28 @@ services:
       retries: 3
       start_period: 60s
 
+  # Database Scripts (Partition & Backup)
+  db_scripts:
+    build:
+      context: ./catcar_wash_service_script
+      dockerfile: Dockerfile
+    container_name: catcar_wash_db_scripts
+    restart: unless-stopped
+    environment:
+      - PGHOST=postgres
+      - PGPORT=5432
+      - PGUSER=catcar
+      - PGPASSWORD=password
+      - PGDATABASE=catcar_wash_db
+      - DATABASE_URL=postgresql://catcar:password@postgres:5432/catcar_wash_db
+    volumes:
+      - db_backups:/app/backups
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - catcar_wash_network
+
 volumes:
   postgres_data:
     driver: local
@@ -113,9 +135,32 @@ volumes:
     driver: local
   emqx_log:
     driver: local
+  db_backups:
+    driver: local
 
 networks:
   catcar_wash_network:
     driver: bridge
+
+# ============================================================
 # HOW TO RUN
-# docker-compose -f docker-compose.develop.yml up --build
+# ============================================================
+# Start all services:
+#   docker-compose -f docker-compose.develop.yml up -d
+#
+# Start with rebuild:
+#   docker-compose -f docker-compose.develop.yml up -d --build
+#
+# View logs:
+#   docker-compose -f docker-compose.develop.yml logs -f
+#
+# Stop all services:
+#   docker-compose -f docker-compose.develop.yml down
+#
+# Services included:
+#   - postgres:    PostgreSQL Database (port 5432)
+#   - pgadmin:     Database Admin UI (port 8080)
+#   - emqx:        MQTT Broker (ports 1883, 8083, 18083)
+#   - backend:     NestJS API (port 3000)
+#   - db_scripts:  Automated backup & partition management
+# ============================================================
