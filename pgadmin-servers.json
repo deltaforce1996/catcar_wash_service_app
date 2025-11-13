@@ -1,0 +1,16 @@
+{
+  "Servers": {
+    "1": {
+      "Name": "CatCar Wash PostgreSQL",
+      "Group": "Servers",
+      "Host": "postgres",
+      "Port": 5432,
+      "MaintenanceDB": "catcar_wash_db",
+      "Username": "catcar",
+      "Password": "password",
+      "SSLMode": "prefer",
+      "PassFile": "/tmp/pgpassfile"
+    }
+  }
+}
+

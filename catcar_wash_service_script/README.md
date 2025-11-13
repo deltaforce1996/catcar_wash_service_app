@@ -2,9 +2,11 @@
 
 > **สคริปต์สำหรับแปลงและจัดการ Partitioned Tables แบบ 60 วัน**
 
-สคริปต์นี้ใช้สำหรับแปลงตาราง `tbl_devices_events` และ `tbl_devices_state` ให้เป็น **Partitioned Tables** เพื่อเพิ่มประสิทธิภาพในการจัดการข้อมูลขนาดใหญ่และลบข้อมูลเก่าได้ง่าย
+สคริปต์นี้ใช้สำหรับแปลงตาราง `tbl_devices_events` ให้เป็น **Partitioned Tables** เพื่อเพิ่มประสิทธิภาพในการจัดการข้อมูลขนาดใหญ่และลบข้อมูลเก่าได้ง่าย
 
 ---
+
+pip install -r requirments.txt
 
 ## 📂 ไฟล์ที่เกี่ยวข้อง
 
@@ -89,7 +91,6 @@ catcar_wash_service_script/partition_60d_cron.py
 - ใช้ advisory lock ป้องกันรันพร้อมกัน (idempotent)
 
 ### ตารางที่จัดการ:
-- `tbl_devices_state`
 - `tbl_devices_events`
 
 ---
@@ -99,13 +100,38 @@ catcar_wash_service_script/partition_60d_cron.py
 ### ขั้นตอนที่ 1: เตรียมการ
 
 #### 1.1 Backup ฐานข้อมูล (บังคับ)
-```bash
-# PostgreSQL dump
-pg_dump -h <host> -U <user> -d <database> -F c -f backup_before_partition.dump
 
-# หรือ SQL format
-pg_dump -h <host> -U <user> -d <database> > backup_before_partition.sql
+```bash
+# Backup database ด้วย Python (ไม่ต้องติดตั้ง pg_dump)
+python catcar_wash_service_script/backup_database_python.py
+
+# ระบุ directory ที่ต้องการเก็บ backup
+python catcar_wash_service_script/backup_database_python.py --output-dir /path/to/backups
 ```
+
+**ผลลัพธ์:**
+```
+============================================================
+PostgreSQL Database Backup (Pure Python)
+============================================================
+
+Database: catcar_wash_db
+Host: localhost:5432
+User: catcar
+
+[OK] Backup completed successfully!
+Backup file: catcar_wash_service_script/backups/catcar_wash_db_backup_20251113_190915.sql
+File size: 0.29 MB (299,371 bytes)
+Total rows backed up: 732
+============================================================
+```
+
+**คุณสมบัติ:**
+- ✅ ทำงานได้ทุก OS (Windows, Linux, macOS)
+- ✅ ไม่ต้องติดตั้ง PostgreSQL client tools
+- ✅ Backup ทุกตารางอัตโนมัติ
+- ✅ รองรับ NULL, timestamps, JSON, และ data types อื่นๆ
+- ⚠️ Backup เฉพาะ data (ต้อง run migration สร้าง schema ก่อน restore)
 
 #### 1.2 ตรวจสอบข้อมูลปัจจุบัน
 ```sql
@@ -240,7 +266,7 @@ python3 partition_60d_cron.py
 
 **ผลลัพธ์ที่คาดหวัง:**
 ```
-Partitions ensured: tbl_devices_state_20250630_to_20250829, tbl_devices_events_20250630_to_20250829
+Partitions ensured: tbl_devices_events_20250630_to_20250829
 ```
 
 #### 4.4 เพิ่มใน Crontab (รันทุกวันจันทร์ 3:00 น.)
