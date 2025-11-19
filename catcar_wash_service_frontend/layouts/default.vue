@@ -287,6 +287,12 @@ const allManagementMenuItems = [
     roles: ["ADMIN"],
   },
   {
+    title: "จัดการโปรโมชั่น",
+    icon: "mdi-ticket-percent",
+    to: "/promotion-management",
+    roles: ["ADMIN"],
+  },
+  {
     title: "จัดการ Firmware",
     icon: "mdi-update",
     to: "/admin/firmware-management",

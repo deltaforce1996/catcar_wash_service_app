@@ -85,6 +85,7 @@ model tbl_users {
   permission   tbl_permissions?            @relation(fields: [permission_id], references: [id], onDelete: SetNull)
   devices      tbl_devices[]
   reset_tokens tbl_reset_password_token[]  @relation("UserResetTokens")
+  promotions   tbl_promotion_users[]       @relation("PromotionAssignedUsers")
 
   @@map("tbl_users")
 }
@@ -282,6 +283,41 @@ model mv_device_payments_year {
   @@id([device_id, year_start, status])
   @@map("mv_device_payments_year")
   @@ignore // บอก Prisma ว่าไม่ต้องสร้าง/แก้ไขใน migration แต่ยัง query ได้
+}
+
+model tbl_promotions {
+  id               String   @id @default(cuid())
+  name             String
+  description      String?
+  discount_percent Decimal  @db.Decimal(5, 2)
+  start_date       DateTime @db.Timestamptz(3)
+  end_date         DateTime @db.Timestamptz(3)
+  is_active        Boolean  @default(true)
+  created_at       DateTime @default(now()) @db.Timestamptz(3)
+  updated_at       DateTime @updatedAt @db.Timestamptz(3)
+
+  // Relations
+  assigned_users   tbl_promotion_users[]
+
+  @@map("tbl_promotions")
+  @@index([is_active])
+  @@index([start_date, end_date])
+}
+
+model tbl_promotion_users {
+  id           String   @id @default(cuid())
+  promotion_id String
+  user_id      String
+  created_at   DateTime @default(now()) @db.Timestamptz(3)
+
+  // Relations
+  promotion    tbl_promotions @relation(fields: [promotion_id], references: [id], onDelete: Cascade)
+  user         tbl_users      @relation("PromotionAssignedUsers", fields: [user_id], references: [id], onDelete: Cascade)
+
+  @@unique([promotion_id, user_id])
+  @@map("tbl_promotion_users")
+  @@index([promotion_id])
+  @@index([user_id])
 }
 
 
