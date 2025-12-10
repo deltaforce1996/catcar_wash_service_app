@@ -22,7 +22,7 @@ export class DeviceStateProcessorService implements OnModuleInit {
 
   // Rate Limiting Configuration
   private readonly MAX_REQUESTS_PER_MINUTE = 1; // 1 log per window
-  private readonly WINDOW_SIZE_MS = 240000; // 4 นาที (4 * 60 * 1000 ms)
+  private readonly WINDOW_SIZE_MS = 300000; // 5 นาที (5 * 60 * 1000 ms)
   private deviceTimestamps = new Map<string, number[]>();
 
   // Batch Processing Configuration
@@ -437,7 +437,7 @@ export class DeviceStateProcessorService implements OnModuleInit {
   }
 
   /**
-   * Check for devices that haven't sent data for more than 10 seconds
+   * Check for devices that haven't sent data for more than OFFLINE_TIMEOUT
    */
   private async checkForOfflineDevices(): Promise<void> {
     const now = Date.now();
@@ -451,6 +451,14 @@ export class DeviceStateProcessorService implements OnModuleInit {
 
     // Process offline devices
     for (const deviceId of offlineDevices) {
+      // Re-check deviceLastSeen before marking offline (prevent race condition)
+      // A new message might have arrived while processing previous devices
+      const currentLastSeen = this.deviceLastSeen.get(deviceId);
+      if (!currentLastSeen || Date.now() - currentLastSeen <= this.OFFLINE_TIMEOUT) {
+        // Device has sent data recently, skip marking as offline
+        continue;
+      }
+
       await this.markDeviceAsOffline(deviceId);
       // Remove from tracking to avoid duplicate processing
       this.deviceLastSeen.delete(deviceId);
