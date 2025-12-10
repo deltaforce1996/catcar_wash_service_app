@@ -19,7 +19,9 @@
       "Bash(docker exec:*)",
       "Bash(docker stop:*)",
       "Bash(pnpm add:*)",
-      "Bash(curl:*)"
+      "Bash(curl:*)",
+      "Bash(find:*)",
+      "Bash(dir:*)"
     ],
     "deny": [],
     "ask": []

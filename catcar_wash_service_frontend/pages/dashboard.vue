@@ -6,7 +6,94 @@
         <h1 class="text-h4 font-weight-bold mb-1">แดชบอร์ดยอดขาย</h1>
       </div>
       <div class="d-flex align-center ga-3 flex-wrap">
-        <v-menu v-model="datePickerMenu" :close-on-content-click="false">
+        <!-- Date Range Quick Select (Only for Log Tab) -->
+        <template v-if="activeTab === 'logs'">
+          <v-btn-toggle
+            v-model="selectedDateRange"
+            mandatory
+            color="primary"
+            variant="outlined"
+            density="compact"
+            divided
+          >
+            <v-btn value="1_month" size="small">1 เดือน</v-btn>
+            <v-btn value="7_days" size="small">7 วัน</v-btn>
+            <v-btn value="1_day" size="small">1 วัน</v-btn>
+            <v-btn value="custom" size="small">กำหนดเอง</v-btn>
+          </v-btn-toggle>
+
+          <!-- Custom Date Range Picker (Only when custom is selected) -->
+          <template v-if="selectedDateRange === 'custom'">
+            <v-menu v-model="logsTabStartDateMenu" :close-on-content-click="false">
+              <template #activator="{ props }">
+                <v-text-field
+                  v-bind="props"
+                  :model-value="formatLogsTabStartDate"
+                  readonly
+                  prepend-inner-icon="mdi-calendar"
+                  variant="outlined"
+                  density="compact"
+                  hide-details
+                  label="วันเริ่มต้น"
+                  class="date-picker-field"
+                />
+              </template>
+              <v-card class="pa-4" elevation="8" rounded="lg">
+                <v-date-picker v-model="logsTabStartDate" hide-header />
+                <v-card-actions>
+                  <v-btn variant="text" size="small" @click="logsTabStartDateMenu = false">
+                    ปิด
+                  </v-btn>
+                  <v-spacer />
+                  <v-btn
+                    variant="elevated"
+                    color="primary"
+                    size="small"
+                    @click="confirmLogsTabStartDate"
+                  >
+                    ยืนยัน
+                  </v-btn>
+                </v-card-actions>
+              </v-card>
+            </v-menu>
+
+            <v-menu v-model="logsTabEndDateMenu" :close-on-content-click="false">
+              <template #activator="{ props }">
+                <v-text-field
+                  v-bind="props"
+                  :model-value="formatLogsTabEndDate"
+                  readonly
+                  prepend-inner-icon="mdi-calendar"
+                  variant="outlined"
+                  density="compact"
+                  hide-details
+                  label="วันสิ้นสุด"
+                  class="date-picker-field"
+                />
+              </template>
+              <v-card class="pa-4" elevation="8" rounded="lg">
+                <v-date-picker v-model="logsTabEndDate" hide-header />
+                <v-card-actions>
+                  <v-btn variant="text" size="small" @click="logsTabEndDateMenu = false">
+                    ปิด
+                  </v-btn>
+                  <v-spacer />
+                  <v-btn
+                    variant="elevated"
+                    color="primary"
+                    size="small"
+                    @click="confirmLogsTabEndDate"
+                  >
+                    ยืนยัน
+                  </v-btn>
+                </v-card-actions>
+              </v-card>
+            </v-menu>
+          </template>
+        </template>
+
+        <!-- Date Picker (Only for Dashboard Tab) -->
+        <v-menu v-if="activeTab === 'dashboard'" v-model="datePickerMenu" :close-on-content-click="false">
           <template #activator="{ props }">
             <v-text-field
               v-bind="props"
@@ -37,7 +124,8 @@
             </v-card-actions>
           </v-card>
         </v-menu>
-        <v-menu v-model="filterMenu" :close-on-content-click="false">
+        <!-- Filter Button for Dashboard Tab -->
+        <v-menu v-if="activeTab === 'dashboard'" v-model="filterMenu" :close-on-content-click="false">
           <template #activator="{ props }">
             <v-btn
               v-bind="props"
@@ -182,18 +270,198 @@
             </v-card-actions>
           </v-card>
         </v-menu>
+
+        <!-- Filter Button for Logs Tab -->
+        <v-menu v-if="activeTab === 'logs'" v-model="logsTabFilterMenu" :close-on-content-click="false">
+          <template #activator="{ props }">
+            <v-btn
+              v-bind="props"
+              variant="outlined"
+              prepend-icon="mdi-filter-variant"
+              class="text-none"
+            >
+              <template #default>
+                <span>กรองข้อมูล</span>
+                <v-chip
+                  v-if="logsTabActiveFilterCount > 0"
+                  :text="logsTabActiveFilterCount.toString()"
+                  color="primary"
+                  size="small"
+                  class="ml-2"
+                />
+              </template>
+            </v-btn>
+          </template>
+
+          <v-card
+            class="pa-4"
+            elevation="8"
+            rounded="lg"
+            min-width="320"
+            max-width="400"
+          >
+            <v-card-title class="pa-0 mb-4">
+              <h3 class="text-h6 font-weight-bold">ตัวกรองข้อมูล</h3>
+            </v-card-title>
+
+            <v-card-text class="pa-0">
+              <div class="d-flex flex-column ga-4">
+                <!-- User ID Filter - Only show for ADMIN/TECHNICIAN -->
+                <v-combobox
+                  v-if="!isUser"
+                  v-model="logsTabTempSelectedUserIds"
+                  :items="userOptions"
+                  :loading="isUserSearching"
+                  item-title="title"
+                  item-value="value"
+                  label="ชื่อผู้ใช้"
+                  prepend-inner-icon="mdi-account"
+                  variant="outlined"
+                  density="compact"
+                  chips
+                  clearable
+                  closable-chips
+                  multiple
+                  hide-details
+                  @update:search="handleUserSearch"
+                >
+                  <template #chip="{ props: chipProps, item }">
+                    <v-chip
+                      v-bind="chipProps"
+                      color="primary"
+                      size="small"
+                      variant="tonal"
+                    >
+                      {{ item.raw.title }}
+                    </v-chip>
+                  </template>
+                </v-combobox>
+
+                <!-- Payment Status Filter -->
+                <v-combobox
+                  v-model="logsTabTempSelectedPaymentStatuses"
+                  :items="paymentStatusOptions"
+                  label="สถานะการชำระเงิน"
+                  item-title="label"
+                  item-value="value"
+                  prepend-inner-icon="mdi-credit-card"
+                  variant="outlined"
+                  density="compact"
+                  chips
+                  clearable
+                  closable-chips
+                  multiple
+                  hide-details
+                >
+                  <template #chip="{ props: chipProps, item }">
+                    <v-chip
+                      v-bind="chipProps"
+                      :color="getPaymentStatusColor(item.raw.value)"
+                      size="small"
+                      variant="tonal"
+                    >
+                      {{ item.raw.label }}
+                    </v-chip>
+                  </template>
+                </v-combobox>
+
+                <!-- Device Type Filter -->
+                <v-combobox
+                  v-model="logsTabTempSelectedDeviceTypes"
+                  :items="deviceTypeOptions"
+                  label="ประเภทอุปกรณ์"
+                  item-title="label"
+                  item-value="value"
+                  prepend-inner-icon="mdi-cog"
+                  variant="outlined"
+                  density="compact"
+                  chips
+                  clearable
+                  closable-chips
+                  multiple
+                  hide-details
+                >
+                  <template #chip="{ props: chipProps, item }">
+                    <v-chip
+                      v-bind="chipProps"
+                      :color="getDeviceTypeColor(item.raw.value)"
+                      size="small"
+                      variant="tonal"
+                    >
+                      {{ item.raw.label }}
+                    </v-chip>
+                  </template>
+                </v-combobox>
+              </div>
+            </v-card-text>
+
+            <v-card-actions class="pa-0 mt-4">
+              <v-btn
+                variant="outlined"
+                size="small"
+                prepend-icon="mdi-refresh"
+                @click="resetLogsTabPopoverFilters"
+              >
+                ล้างตัวกรอง
+              </v-btn>
+              <v-spacer />
+              <v-btn
+                variant="elevated"
+                color="primary"
+                size="small"
+                prepend-icon="mdi-check"
+                @click="applyLogsTabPopoverFilters"
+              >
+                ยืนยันตัวกรอง
+              </v-btn>
+            </v-card-actions>
+          </v-card>
+        </v-menu>
+
         <v-btn
           color="primary"
           prepend-icon="mdi-download"
           class="text-none"
           :loading="isExporting"
           :disabled="isExporting"
-          @click="exportToExcel(selectedDateObject)"
+          @click="handleExport"
         >
           ส่งออก
         </v-btn>
       </div>
     </div>
+
+    <!-- Tabs Navigation -->
+    <v-tabs
+      v-model="activeTab"
+      color="primary"
+      class="mb-6"
+    >
+      <v-tab value="dashboard">
+        <v-icon start>mdi-view-dashboard</v-icon>
+        แดชบอร์ด
+      </v-tab>
+      <v-tab value="logs">
+        <v-icon start>mdi-clipboard-text-clock</v-icon>
+        บันทึกการขาย
+      </v-tab>
+    </v-tabs>
+
+    <!-- Date Range Info (Only for Log Tab) -->
+    <v-alert
+      v-if="activeTab === 'logs'"
+      type="info"
+      variant="tonal"
+      density="compact"
+      class="mb-6"
+    >
+      <template #prepend>
+        <v-icon>mdi-calendar-range</v-icon>
+      </template>
+      <span class="text-body-2">
+        แสดงข้อมูลตั้งแต่ <strong>{{ formatDateRangeDisplay.start }}</strong> ถึง <strong>{{ formatDateRangeDisplay.end }}</strong>
+      </span>
+    </v-alert>
 
     <!-- Error Alert -->
     <v-alert
@@ -212,8 +480,10 @@
       </div>
     </v-alert>
 
-    <!-- KPI Cards Section -->
-    <div class="position-relative mb-8">
+    <!-- Dashboard Tab Content -->
+    <template v-if="activeTab === 'dashboard'">
+      <!-- KPI Cards Section -->
+      <div class="position-relative mb-8">
       <!-- Loading Overlay -->
       <v-overlay
         :model-value="isLoading || isCancelling"
@@ -735,6 +1005,453 @@
         </div>
       </template>
     </EnhancedDataTable>
+    </template>
+
+    <!-- Logs Tab Content -->
+    <template v-if="activeTab === 'logs'">
+      <!-- Sales Detail Table with Date Range -->
+      <EnhancedDataTable
+        title="รายการบันทึก"
+        :items="logsTabEventLogs"
+        :headers="salesHeaders"
+        :loading="isLogsTabSearching"
+        :has-filter-changes="logsTabHasFilterChanges"
+        :page="logsTabCurrentPage"
+        :total-items="logsTabTotalLogs"
+        :total-pages="logsTabTotalPages"
+        expandable
+        @apply-filters="applyLogsTabFilters"
+        @clear-filters="clearLogsTabFilters"
+        @update:page="handleLogsTabPageChange"
+      >
+        <!-- Filter Section -->
+        <template #filters>
+          <v-row>
+            <!-- Search Bar -->
+            <v-col cols="12" md="6">
+              <v-text-field
+                v-model="logsTabTempSearchQuery"
+                prepend-inner-icon="mdi-magnify"
+                variant="outlined"
+                density="compact"
+                placeholder="ค้นหาด้วยชื่อบริการ หรือรหัสเครื่อง"
+                hide-details
+                clearable
+                aria-label="ค้นหาการขาย"
+                role="searchbox"
+              />
+            </v-col>
+
+            <!-- Time Range Picker -->
+            <v-col cols="12" md="6">
+              <div class="d-flex ga-2">
+                <!-- Start Time Field -->
+                <v-menu v-model="logsTabStartTimeMenu" :close-on-content-click="false">
+                  <template #activator="{ props }">
+                    <v-text-field
+                      v-bind="props"
+                      :model-value="formatTimeToString(logsTabTempStartTimeObj)"
+                      readonly
+                      prepend-inner-icon="mdi-clock-outline"
+                      variant="outlined"
+                      density="compact"
+                      placeholder="เวลาเริ่ม"
+                      hide-details
+                      class="flex-1"
+                    />
+                  </template>
+                  <v-card class="pa-4">
+                    <div class="d-flex flex-column ga-3">
+                      <div class="text-subtitle-2">เวลาเริ่มต้น</div>
+                      <v-time-picker
+                        v-model="logsTabTempStartTimeObj"
+                        scrollable
+                        :max="
+                          logsTabTempEndTimeObj
+                            ? formatTimeToString(logsTabTempEndTimeObj)
+                            : '23:59'
+                        "
+                        class="time-picker-compact"
+                      />
+                      <div class="d-flex justify-end ga-2">
+                        <v-btn
+                          variant="text"
+                          size="small"
+                          @click="logsTabTempStartTimeObj = null"
+                        >
+                          ล้าง
+                        </v-btn>
+                        <v-btn
+                          color="primary"
+                          size="small"
+                          @click="logsTabStartTimeMenu = false"
+                        >
+                          ตกลง
+                        </v-btn>
+                      </div>
+                    </div>
+                  </v-card>
+                </v-menu>
+
+                <!-- End Time Field -->
+                <v-menu v-model="logsTabEndTimeMenu" :close-on-content-click="false">
+                  <template #activator="{ props }">
+                    <v-text-field
+                      v-bind="props"
+                      :model-value="formatTimeToString(logsTabTempEndTimeObj)"
+                      readonly
+                      prepend-inner-icon="mdi-clock-outline"
+                      variant="outlined"
+                      density="compact"
+                      placeholder="เวลาสิ้นสุด"
+                      hide-details
+                      class="flex-1"
+                    />
+                  </template>
+                  <v-card class="pa-4">
+                    <div class="d-flex flex-column ga-3">
+                      <div class="text-subtitle-2">เวลาสิ้นสุด</div>
+                      <v-time-picker
+                        v-model="logsTabTempEndTimeObj"
+                        scrollable
+                        :min="
+                          logsTabTempStartTimeObj
+                            ? formatTimeToString(logsTabTempStartTimeObj)
+                            : '00:00'
+                        "
+                        class="time-picker-compact"
+                      />
+                      <div class="d-flex justify-end ga-2">
+                        <v-btn
+                          variant="text"
+                          size="small"
+                          @click="logsTabTempEndTimeObj = null"
+                        >
+                          ล้าง
+                        </v-btn>
+                        <v-btn
+                          color="primary"
+                          size="small"
+                          @click="logsTabEndTimeMenu = false"
+                        >
+                          ตกลง
+                        </v-btn>
+                      </div>
+                    </div>
+                  </v-card>
+                </v-menu>
+              </div>
+            </v-col>
+          </v-row>
+        </template>
+
+        <!-- Custom Column Templates -->
+        <template #[`item.created_at`]="{ item }">
+          <div class="text-body-2">
+            {{ formatDateTime(item.created_at) }}
+          </div>
+        </template>
+
+        <template #[`item.device.name`]="{ item }">
+          <div class="d-flex align-center">
+            <v-icon
+              :color="getDeviceTypeColor(item.device.type)"
+              size="small"
+              class="me-2"
+            >
+              {{ getDeviceTypeIcon(item.device.type) }}
+            </v-icon>
+            <span class="text-body-2 font-weight-medium">{{
+              item.device.name
+            }}</span>
+          </div>
+        </template>
+
+        <template #[`item.payload.status`]="{ item }">
+          <v-chip
+            :color="getPaymentStatusColor(item.payload?.status)"
+            size="small"
+            variant="tonal"
+          >
+            {{ getPaymentStatusLabel(item.payload?.status) }}
+          </v-chip>
+        </template>
+
+        <template #[`item.device.type`]="{ item }">
+          <v-chip
+            :color="getDeviceTypeColor(item.device.type)"
+            size="small"
+            variant="tonal"
+          >
+            {{ getDeviceTypeLabel(item.device.type) }}
+          </v-chip>
+        </template>
+
+        <template #[`item.payload.total_amount`]="{ item }">
+          <div
+            class="text-body-2 font-weight-bold"
+            :class="
+              item.payload?.status === 'SUCCEEDED' ? 'text-success' : 'text-error'
+            "
+          >
+            ฿{{ item.payload?.total_amount?.toLocaleString("th-TH") || 0 }}
+          </div>
+        </template>
+
+        <template #[`item.actions`]="{ item }">
+          <v-btn
+            v-if="isAdmin && item.payload?.status !== 'CANCELLED'"
+            icon="mdi-delete"
+            variant="text"
+            color="error"
+            size="small"
+            density="compact"
+            :loading="isCancelling"
+            :disabled="isCancelling"
+            @click.stop="handleCancelEventLog(item.id)"
+          />
+        </template>
+
+        <!-- Expandable Row Content -->
+        <template #expanded-content="{ item }">
+          <div class="payment-breakdown">
+            <!-- Header with transaction summary -->
+            <h3 class="text-subtitle-1 font-weight-bold">
+              รายละเอียดการชำระเงิน
+            </h3>
+
+            <!-- Payment methods grid for desktop -->
+            <v-row
+              v-if="$vuetify.display.mdAndUp"
+              no-gutters
+              class="payment-methods-grid"
+            >
+              <!-- QR Payment Section -->
+              <v-col cols="4" class="payment-section">
+                <div class="payment-method-section pa-3">
+                  <div class="d-flex align-center mb-3">
+                    <v-icon color="primary" size="small" class="me-2"
+                      >mdi-qrcode</v-icon
+                    >
+                    <span class="text-subtitle-2 font-weight-medium"
+                      >QR Payment</span
+                    >
+                  </div>
+
+                  <div v-if="hasQrPayment(item)">
+                    <v-card class="mb-2" color="primary" variant="tonal">
+                      <v-card-text class="pa-3">
+                        <div class="text-caption text-medium-emphasis">
+                          จำนวนเงินผ่าน QR Code
+                        </div>
+                        <div class="text-h6 font-weight-bold">
+                          ฿{{ item.payload.qr.net_amount }}
+                        </div>
+                      </v-card-text>
+                    </v-card>
+                    <v-card color="primary-lighten-1" variant="tonal">
+                      <v-card-text class="pa-3">
+                        <div class="text-caption text-medium-emphasis">
+                          รหัสธุรกรรม
+                        </div>
+                        <div class="text-body-2 font-family-monospace">
+                          {{ item.payload.qr.chargeId }}
+                        </div>
+                      </v-card-text>
+                    </v-card>
+                  </div>
+                  <div v-else class="text-caption text-medium-emphasis">
+                    ไม่มีการชำระผ่าน QR Code
+                  </div>
+                </div>
+              </v-col>
+
+              <!-- Bank Notes Section -->
+              <v-col cols="4" class="payment-section">
+                <div class="payment-method-section pa-3">
+                  <div class="d-flex align-center mb-3">
+                    <v-icon color="success" size="small" class="me-2"
+                      >mdi-cash-100</v-icon
+                    >
+                    <span class="text-subtitle-2 font-weight-medium">ธนบัตร</span>
+                  </div>
+
+                  <div v-if="hasBankNotes(item)">
+                    <v-row dense>
+                      <v-col
+                        v-for="(count, denomination) in item.payload.bank"
+                        :key="denomination"
+                        cols="6"
+                      >
+                        <v-card
+                          v-if="count > 0"
+                          class="denomination-card"
+                          color="success-lighten-1"
+                          variant="tonal"
+                        >
+                          <v-card-text class="pa-2 text-center">
+                            <div class="text-body-2 font-weight-bold">
+                              ฿{{ denomination }}
+                            </div>
+                            <div class="text-caption">{{ count }} ใบ</div>
+                          </v-card-text>
+                        </v-card>
+                      </v-col>
+                    </v-row>
+                  </div>
+                  <div v-else class="text-caption text-medium-emphasis">
+                    ไม่มีการชำระด้วยธนบัตร
+                  </div>
+                </div>
+              </v-col>
+
+              <!-- Coins Section -->
+              <v-col cols="4" class="payment-section">
+                <div class="payment-method-section pa-3">
+                  <div class="d-flex align-center mb-3">
+                    <v-icon color="secondary" size="small" class="me-2"
+                      >mdi-circle-multiple</v-icon
+                    >
+                    <span class="text-subtitle-2 font-weight-medium">เหรียญ</span>
+                  </div>
+
+                  <div v-if="hasCoins(item)">
+                    <v-row dense>
+                      <v-col
+                        v-for="(count, denomination) in item.payload.coin"
+                        :key="denomination"
+                        cols="6"
+                      >
+                        <v-card
+                          v-if="count > 0"
+                          class="denomination-card"
+                          color="secondary-lighten-1"
+                          variant="tonal"
+                        >
+                          <v-card-text class="pa-2 text-center">
+                            <div class="text-body-2 font-weight-bold">
+                              ฿{{ denomination }}
+                            </div>
+                            <div class="text-caption">{{ count }} เหรียญ</div>
+                          </v-card-text>
+                        </v-card>
+                      </v-col>
+                    </v-row>
+                  </div>
+                  <div v-else class="text-caption text-medium-emphasis">
+                    ไม่มีการชำระด้วยเหรียญ
+                  </div>
+                </div>
+              </v-col>
+            </v-row>
+
+            <!-- Mobile layout with expansion panels -->
+            <div v-else class="mobile-payment-layout">
+              <v-expansion-panels variant="accordion" multiple>
+                <v-expansion-panel
+                  v-if="hasQrPayment(item)"
+                  title="QR Payment"
+                  expand-icon="mdi-qrcode"
+                >
+                  <v-expansion-panel-text>
+                    <div class="pa-2">
+                      <v-card
+                        class="mb-2"
+                        color="primary-lighten-1"
+                        variant="tonal"
+                      >
+                        <v-card-text class="pa-3">
+                          <div class="text-caption text-medium-emphasis">
+                            Net Amount
+                          </div>
+                          <div class="text-h6 font-weight-bold">
+                            ฿{{ item.payload.qr.net_amount }}
+                          </div>
+                        </v-card-text>
+                      </v-card>
+                      <v-card color="primary-lighten-2" variant="tonal">
+                        <v-card-text class="pa-3">
+                          <div class="text-caption text-medium-emphasis">
+                            Transaction ID
+                          </div>
+                          <div class="text-body-2 font-family-monospace">
+                            {{ item.payload.qr.transaction_id }}
+                          </div>
+                        </v-card-text>
+                      </v-card>
+                    </div>
+                  </v-expansion-panel-text>
+                </v-expansion-panel>
+
+                <v-expansion-panel
+                  v-if="hasBankNotes(item)"
+                  title="ธนบัตร"
+                  expand-icon="mdi-cash-100"
+                >
+                  <v-expansion-panel-text>
+                    <div class="pa-2">
+                      <v-row dense>
+                        <v-col
+                          v-for="(count, denomination) in item.payload.bank"
+                          :key="denomination"
+                          cols="6"
+                        >
+                          <v-card
+                            v-if="count > 0"
+                            class="denomination-card"
+                            color="success-lighten-1"
+                            variant="tonal"
+                          >
+                            <v-card-text class="pa-2 text-center">
+                              <div class="text-body-2 font-weight-bold">
+                                ฿{{ denomination }}
+                              </div>
+                              <div class="text-caption">{{ count }} ใบ</div>
+                            </v-card-text>
+                          </v-card>
+                        </v-col>
+                      </v-row>
+                    </div>
+                  </v-expansion-panel-text>
+                </v-expansion-panel>
+
+                <v-expansion-panel
+                  v-if="hasCoins(item)"
+                  title="เหรียญ"
+                  expand-icon="mdi-circle-multiple"
+                >
+                  <v-expansion-panel-text>
+                    <div class="pa-2">
+                      <v-row dense>
+                        <v-col
+                          v-for="(count, denomination) in item.payload.coin"
+                          :key="denomination"
+                          cols="6"
+                        >
+                          <v-card
+                            v-if="count > 0"
+                            class="denomination-card"
+                            color="secondary-lighten-1"
+                            variant="tonal"
+                          >
+                            <v-card-text class="pa-2 text-center">
+                              <div class="text-body-2 font-weight-bold">
+                                ฿{{ denomination }}
+                              </div>
+                              <div class="text-caption">{{ count }} เหรียญ</div>
+                            </v-card-text>
+                          </v-card>
+                        </v-col>
+                      </v-row>
+                    </div>
+                  </v-expansion-panel-text>
+                </v-expansion-panel>
+              </v-expansion-panels>
+            </div>
+          </div>
+        </template>
+      </EnhancedDataTable>
+    </template>
   </div>
 </template>
 
@@ -756,6 +1473,63 @@ const {
 
 // Import auth composable to check user permission
 const { isUser, isAdmin, isAuthReady } = useAuth();
+
+// Tab state
+type TabValue = "dashboard" | "logs";
+const activeTab = ref<TabValue>("dashboard");
+
+// Date Range State for Logs Tab
+type DateRange = "1_month" | "7_days" | "1_day" | "custom";
+const selectedDateRange = ref<DateRange>("1_month");
+
+// Custom Date Range State for Logs Tab
+const logsTabStartDateMenu = ref(false);
+const logsTabEndDateMenu = ref(false);
+const logsTabStartDate = ref<Date>(new Date());
+const logsTabEndDate = ref<Date>(new Date());
+
+// Format custom date for display
+const formatLogsTabStartDate = computed(() => {
+  return logsTabStartDate.value.toLocaleDateString("th-TH", {
+    day: "numeric",
+    month: "short",
+    year: "numeric",
+  });
+});
+
+const formatLogsTabEndDate = computed(() => {
+  return logsTabEndDate.value.toLocaleDateString("th-TH", {
+    day: "numeric",
+    month: "short",
+    year: "numeric",
+  });
+});
+
+// Confirm custom date selection and refetch data
+const confirmLogsTabStartDate = async () => {
+  logsTabStartDateMenu.value = false;
+  if (selectedDateRange.value === "custom") {
+    await fetchLogsTabData();
+  }
+};
+
+const confirmLogsTabEndDate = async () => {
+  logsTabEndDateMenu.value = false;
+  if (selectedDateRange.value === "custom") {
+    await fetchLogsTabData();
+  }
+};
+
+// Fetch logs tab data helper
+const fetchLogsTabData = async () => {
+  await searchLogsTabEventLogs({
+    query: {
+      payload_timestamp: buildLogsTabTimestampQuery(),
+    },
+    page: 1,
+    limit: 20,
+  });
+};
 
 // Dashboard KPI data using new composable
 const {
@@ -790,6 +1564,56 @@ const {
 
 // User data - using useUser composable
 const { users, isSearching: isUserSearching, searchUsers } = useUser();
+
+// Logs Tab - separate instance of useDeviceEventLogs for independent state
+const {
+  eventLogs: logsTabEventLogs,
+  totalLogs: logsTabTotalLogs,
+  totalPages: logsTabTotalPages,
+  currentSearchParams: logsTabCurrentSearchParams,
+  isSearching: isLogsTabSearching,
+  searchEventLogs: searchLogsTabEventLogs,
+  goToPage: goToLogsTabPage,
+} = useDeviceEventLogs();
+
+// Logs Tab filter state
+const logsTabSearchQuery = ref("");
+const logsTabStartTimeObj = ref<TimeObject | Date | string | null>(null);
+const logsTabEndTimeObj = ref<TimeObject | Date | string | null>(null);
+
+// Logs Tab temp filter state
+const logsTabTempSearchQuery = ref("");
+const logsTabTempStartTimeObj = ref<TimeObject | Date | string | null>(null);
+const logsTabTempEndTimeObj = ref<TimeObject | Date | string | null>(null);
+
+// Logs Tab time picker menus
+const logsTabStartTimeMenu = ref(false);
+const logsTabEndTimeMenu = ref(false);
+
+// Logs Tab current page computed
+const logsTabCurrentPage = computed(() => logsTabCurrentSearchParams.value.page || 1);
+
+// Logs Tab Popover filter menu state
+const logsTabFilterMenu = ref(false);
+
+// Logs Tab Popover filter states (temporary)
+const logsTabTempSelectedUserIds = ref<string[]>([]);
+const logsTabTempSelectedPaymentStatuses = ref<string[]>([]);
+const logsTabTempSelectedDeviceTypes = ref<string[]>([]);
+
+// Logs Tab Applied popover filter states
+const logsTabSelectedUserIds = ref<string[]>([]);
+const logsTabSelectedPaymentStatuses = ref<string[]>([]);
+const logsTabSelectedDeviceTypes = ref<string[]>([]);
+
+// Logs Tab Filter count badge logic
+const logsTabActiveFilterCount = computed(() => {
+  let count = 0;
+  if (logsTabSelectedUserIds.value.length > 0) count++;
+  if (logsTabSelectedPaymentStatuses.value.length > 0) count++;
+  if (logsTabSelectedDeviceTypes.value.length > 0) count++;
+  return count;
+});
 
 const datePickerMenu = ref(false);
 const selectedDateObject = ref(new Date());
@@ -1257,6 +2081,237 @@ const buildTimestampQuery = (): string => {
   return `${startTs}-${endTs}`;
 };
 
+// Build timestamp query for Logs Tab based on date range selection
+const buildLogsTabTimestampQuery = (): string => {
+  let start: Date;
+  let end: Date;
+
+  if (selectedDateRange.value === "custom") {
+    // Use custom date range
+    start = new Date(logsTabStartDate.value);
+    start.setHours(0, 0, 0, 0);
+    end = new Date(logsTabEndDate.value);
+    end.setHours(23, 59, 59, 999);
+  } else {
+    const now = new Date();
+    end = new Date(now);
+    end.setHours(23, 59, 59, 999);
+
+    switch (selectedDateRange.value) {
+      case "1_month":
+        start = new Date(now);
+        start.setMonth(start.getMonth() - 1);
+        break;
+      case "7_days":
+        start = new Date(now);
+        start.setDate(start.getDate() - 6);
+        break;
+      case "1_day":
+      default:
+        start = new Date(now);
+        break;
+    }
+    start.setHours(0, 0, 0, 0);
+  }
+
+  // Apply time filter if set
+  const startTs = logsTabStartTimeObj.value
+    ? getTimestampFromDateTime(start, logsTabStartTimeObj.value)
+    : start.getTime();
+  const endTs = logsTabEndTimeObj.value
+    ? getTimestampFromDateTime(end, logsTabEndTimeObj.value)
+    : end.getTime();
+
+  return `${startTs}-${endTs}`;
+};
+
+// Compute date range for display in Logs Tab
+const formatDateRangeDisplay = computed(() => {
+  let start: Date;
+  let end: Date;
+
+  if (selectedDateRange.value === "custom") {
+    start = new Date(logsTabStartDate.value);
+    end = new Date(logsTabEndDate.value);
+  } else {
+    const now = new Date();
+    end = new Date(now);
+
+    switch (selectedDateRange.value) {
+      case "1_month":
+        start = new Date(now);
+        start.setMonth(start.getMonth() - 1);
+        break;
+      case "7_days":
+        start = new Date(now);
+        start.setDate(start.getDate() - 6);
+        break;
+      case "1_day":
+      default:
+        start = new Date(now);
+        break;
+    }
+  }
+
+  const formatOptions: Intl.DateTimeFormatOptions = {
+    day: "numeric",
+    month: "short",
+    year: "numeric",
+  };
+
+  return {
+    start: start.toLocaleDateString("th-TH", formatOptions),
+    end: end.toLocaleDateString("th-TH", formatOptions),
+  };
+});
+
+// Logs Tab filter actions
+const applyLogsTabFilters = async () => {
+  // Update applied state
+  logsTabSearchQuery.value = logsTabTempSearchQuery.value;
+  logsTabStartTimeObj.value = logsTabTempStartTimeObj.value;
+  logsTabEndTimeObj.value = logsTabTempEndTimeObj.value;
+
+  // Build API query
+  const query: Record<string, string | undefined> = {};
+
+  // Search filter
+  if (logsTabSearchQuery.value.trim()) {
+    query.search = logsTabSearchQuery.value.trim();
+  }
+
+  // Always include timestamp for the selected date range
+  query.payload_timestamp = buildLogsTabTimestampQuery();
+
+  // Call API
+  await searchLogsTabEventLogs({
+    query,
+    page: 1,
+    limit: 20,
+  });
+};
+
+const clearLogsTabFilters = async () => {
+  // Clear both temp and actual values
+  logsTabTempSearchQuery.value = "";
+  logsTabTempStartTimeObj.value = null;
+  logsTabTempEndTimeObj.value = null;
+
+  logsTabSearchQuery.value = "";
+  logsTabStartTimeObj.value = null;
+  logsTabEndTimeObj.value = null;
+
+  // Reset to initial search with full date range timestamp
+  await searchLogsTabEventLogs({
+    query: {
+      payload_timestamp: buildLogsTabTimestampQuery(),
+    },
+    page: 1,
+    limit: 20,
+  });
+};
+
+// Logs Tab page change handler
+const handleLogsTabPageChange = (page: number) => {
+  goToLogsTabPage(page);
+};
+
+// Check if Logs Tab has any filter pending changes
+const logsTabHasFilterChanges = computed(() => {
+  return (
+    logsTabTempSearchQuery.value !== logsTabSearchQuery.value ||
+    JSON.stringify(logsTabTempStartTimeObj.value) !==
+      JSON.stringify(logsTabStartTimeObj.value) ||
+    JSON.stringify(logsTabTempEndTimeObj.value) !==
+      JSON.stringify(logsTabEndTimeObj.value)
+  );
+});
+
+// Logs Tab Popover filter functions
+const applyLogsTabPopoverFilters = async () => {
+  // Update applied state - extract value from objects
+  logsTabSelectedUserIds.value = logsTabTempSelectedUserIds.value.map((item) =>
+    typeof item === "string" ? item : (item as { value: string }).value
+  );
+  logsTabSelectedPaymentStatuses.value = logsTabTempSelectedPaymentStatuses.value.map(
+    (item) => (typeof item === "string" ? item : (item as { value: string }).value)
+  );
+  logsTabSelectedDeviceTypes.value = logsTabTempSelectedDeviceTypes.value.map((item) =>
+    typeof item === "string" ? item : (item as { value: string }).value
+  );
+
+  // Build query for event logs
+  const eventLogsQuery: Record<string, string | undefined> = {};
+
+  // Always include timestamp for the selected date range
+  eventLogsQuery.payload_timestamp = buildLogsTabTimestampQuery();
+
+  // Device type filter
+  if (logsTabSelectedDeviceTypes.value.length > 0) {
+    eventLogsQuery.device_type = logsTabSelectedDeviceTypes.value[0];
+  }
+
+  // Payment status filter
+  if (logsTabSelectedPaymentStatuses.value.length > 0) {
+    eventLogsQuery.payment_status = logsTabSelectedPaymentStatuses.value[0];
+  }
+
+  // User ID filter
+  if (logsTabSelectedUserIds.value.length > 0) {
+    eventLogsQuery.user_id = logsTabSelectedUserIds.value[0];
+  }
+
+  // Fetch event logs
+  await searchLogsTabEventLogs({
+    query: eventLogsQuery,
+    page: 1,
+    limit: 20,
+  });
+
+  logsTabFilterMenu.value = false;
+};
+
+const resetLogsTabPopoverFilters = async () => {
+  // Clear both temp and actual values for popover filters
+  logsTabTempSelectedUserIds.value = [];
+  logsTabTempSelectedPaymentStatuses.value = [];
+  logsTabTempSelectedDeviceTypes.value = [];
+
+  logsTabSelectedUserIds.value = [];
+  logsTabSelectedPaymentStatuses.value = [];
+  logsTabSelectedDeviceTypes.value = [];
+
+  // Re-fetch event logs with cleared filters
+  await searchLogsTabEventLogs({
+    query: { payload_timestamp: buildLogsTabTimestampQuery() },
+    page: 1,
+    limit: 20,
+  });
+
+  logsTabFilterMenu.value = false;
+};
+
+// Export handler that works for both tabs
+const handleExport = () => {
+  if (activeTab.value === "dashboard") {
+    exportToExcel(selectedDateObject.value);
+  } else {
+    // For logs tab, export current month
+    exportToExcel(new Date());
+  }
+};
+
+// Initialize Logs Tab data
+const initializeLogsTabData = async () => {
+  await searchLogsTabEventLogs({
+    query: {
+      payload_timestamp: buildLogsTabTimestampQuery(),
+    },
+    page: 1,
+    limit: 20,
+  });
+};
+
 // Pagination handler
 const handlePageChange = (page: number) => {
   goToPage(page);
@@ -1340,6 +2395,44 @@ const confirmCancelEventLog = async () => {
   }
 };
 
+// Watch date range changes for Logs Tab
+watch(selectedDateRange, async () => {
+  if (activeTab.value === "logs") {
+    await searchLogsTabEventLogs({
+      query: {
+        payload_timestamp: buildLogsTabTimestampQuery(),
+      },
+      page: 1,
+      limit: 20,
+    });
+  }
+});
+
+// Watch tab changes to load Logs Tab data when switching
+watch(activeTab, async (newTab) => {
+  if (newTab === "logs" && logsTabEventLogs.value.length === 0) {
+    await initializeLogsTabData();
+  }
+});
+
+// Watch Logs Tab filter menu to sync temp values when opened
+watch(logsTabFilterMenu, (isOpen) => {
+  if (isOpen) {
+    // Reconstruct full objects from stored IDs/values
+    logsTabTempSelectedUserIds.value = logsTabSelectedUserIds.value
+      .map((id) => userOptions.value.find((opt) => opt.value === id))
+      .filter(Boolean) as { title: string; value: string }[];
+
+    logsTabTempSelectedPaymentStatuses.value = logsTabSelectedPaymentStatuses.value
+      .map((val) => paymentStatusOptions.value.find((opt) => opt.value === val))
+      .filter(Boolean) as { label: string; value: string }[];
+
+    logsTabTempSelectedDeviceTypes.value = logsTabSelectedDeviceTypes.value
+      .map((val) => deviceTypeOptions.value.find((opt) => opt.value === val))
+      .filter(Boolean) as { label: string; value: string }[];
+  }
+});
+
 // Watch for event logs messages and display them
 watch(eventLogsError, (newError) => {
   if (newError) {
@@ -1363,6 +2456,11 @@ watch(eventLogsSuccess, (newSuccess) => {
 <style scoped>
 .date-picker {
   min-width: 200px;
+}
+
+.date-picker-field {
+  min-width: 140px;
+  max-width: 180px;
 }
 
 .chart-card {

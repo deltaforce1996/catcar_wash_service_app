@@ -3,9 +3,15 @@ import "@mdi/font/css/materialdesignicons.css";
 
 import "vuetify/styles";
 import { createVuetify } from "vuetify";
+import { th } from "vuetify/locale";
 
 export default defineNuxtPlugin((app) => {
   const vuetify = createVuetify({
+    locale: {
+      locale: "th",
+      fallback: "en",
+      messages: { th },
+    },
     theme: {
       defaultTheme: "dark",
       themes: {
