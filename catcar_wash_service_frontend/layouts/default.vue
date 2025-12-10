@@ -375,7 +375,7 @@ const handleLogout = () => {
   left: 0;
   right: 0;
   bottom: 0;
-  background-image: url('/Logo/operation-logo.png');
+  /* background-image: url('/Logo/operation-logo.png'); */
   background-size: cover;
   background-position: center center;
   background-repeat: no-repeat;

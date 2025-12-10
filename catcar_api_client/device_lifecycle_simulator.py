@@ -15,6 +15,7 @@ import string
 import threading
 import signal
 import sys
+import os
 from typing import Dict, List, Optional
 from datetime import datetime
 from enum import Enum
@@ -35,7 +36,9 @@ class DeviceLifecycleSimulator:
     def __init__(self, 
                  api_base_url: str = "http://localhost:3000/api/v1",
                  mqtt_broker: str = "localhost",
-                 mqtt_port: int = 1883):
+                 mqtt_port: int = 1883,
+                 mqtt_username: Optional[str] = None,
+                 mqtt_password: Optional[str] = None):
         """
         Initialize Device Lifecycle Simulator
         
@@ -43,10 +46,14 @@ class DeviceLifecycleSimulator:
             api_base_url: Base URL ของ API server
             mqtt_broker: MQTT broker host
             mqtt_port: MQTT broker port
+            mqtt_username: MQTT username (optional)
+            mqtt_password: MQTT password (optional)
         """
         self.api_base_url = api_base_url.rstrip('/')
         self.mqtt_broker = mqtt_broker
         self.mqtt_port = mqtt_port
+        self.mqtt_username = mqtt_username or os.getenv("MQTT_USERNAME") or "mqtt"
+        self.mqtt_password = mqtt_password or os.getenv("MQTT_PASSWORD") or "password"
         
         # Device registry
         self.devices: Dict[str, Dict] = {}
@@ -505,6 +512,9 @@ class DeviceLifecycleSimulator:
     def _create_device_client(self, device_id: str) -> mqtt.Client:
         """Create MQTT client for a specific device"""
         client = mqtt.Client()
+        # Set username/password for EMQX broker (EMQX_ALLOW_ANONYMOUS=false)
+        if self.mqtt_username:
+            client.username_pw_set(self.mqtt_username, self.mqtt_password)
         client.on_connect = lambda c, u, f, rc: self._on_connect(c, device_id, rc)
         client.on_disconnect = lambda c, u, rc: self._on_disconnect(c, device_id, rc)
         client.on_publish = lambda c, u, mid: self._on_publish(c, device_id, mid)
@@ -1131,8 +1141,13 @@ def main():
     mqtt_port_str = input("🔗 MQTT Broker Port (default: 1883): ").strip()
     mqtt_port = int(mqtt_port_str) if mqtt_port_str else 1883
     
+    # Get MQTT username and password
+    print("\n🔐 MQTT Authentication:")
+    mqtt_username = input("👉 Enter MQTT Username (default: mqtt): ").strip() or "mqtt"
+    mqtt_password = input("👉 Enter MQTT Password (default: password): ").strip() or "password"
+    
     # Initialize simulator
-    simulator = DeviceLifecycleSimulator(api_url, mqtt_host, mqtt_port)
+    simulator = DeviceLifecycleSimulator(api_url, mqtt_host, mqtt_port, mqtt_username, mqtt_password)
     
     print(f"\n✅ Simulator initialized")
     print(f"   API: {api_url}")

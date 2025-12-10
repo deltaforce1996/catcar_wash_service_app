@@ -8,6 +8,14 @@ export interface PromotionUser {
   };
 }
 
+export interface DeviceUpdateResult {
+  device_id: string;
+  device_name: string;
+  device_type: 'WASH' | 'DRYING';
+  status: 'success' | 'failed';
+  error?: string;
+}
+
 export interface PromotionResponseApi {
   id: string;
   name: string;
@@ -19,6 +27,7 @@ export interface PromotionResponseApi {
   created_at: string;
   updated_at: string;
   assigned_users: PromotionUser[];
+  device_update_results?: DeviceUpdateResult[];
 }
 
 export interface CreatePromotionPayload {
@@ -38,6 +47,7 @@ export interface UpdatePromotionPayload {
   end_date?: string; // ISO datetime string
   is_active?: boolean;
   user_ids?: string[];
+  update_device_configs?: boolean;
 }
 
 export interface SearchPromotionsRequest {

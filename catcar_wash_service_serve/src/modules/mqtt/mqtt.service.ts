@@ -200,7 +200,7 @@ export class MqttService implements OnModuleInit, OnModuleDestroy {
       dup?: boolean;
     },
   ): Promise<void> {
-    if (!this.client?.connected) {
+    if (!this.isAvailable()) {
       const message = 'MQTT client is not connected - cannot publish message';
       this.logger.warn(message);
       this.mqttLoggerService.logPublishError(message, topic, this.config.clientId);
@@ -237,7 +237,7 @@ export class MqttService implements OnModuleInit, OnModuleDestroy {
    * Subscribe to a topic
    */
   async subscribe(topic: string, qos?: 0 | 1 | 2): Promise<void> {
-    if (!this.client?.connected) {
+    if (!this.isAvailable()) {
       const message = 'MQTT client is not connected - cannot subscribe to topic';
       this.logger.warn(message);
       this.mqttLoggerService.logSubscribeError(message, topic, this.config.clientId);
@@ -274,7 +274,7 @@ export class MqttService implements OnModuleInit, OnModuleDestroy {
    * Unsubscribe from a topic
    */
   async unsubscribe(topic: string): Promise<void> {
-    if (!this.client?.connected) {
+    if (!this.isAvailable()) {
       const message = 'MQTT client is not connected - cannot unsubscribe from topic';
       this.logger.warn(message);
       this.mqttLoggerService.logUnsubscribeError(message, topic, this.config.clientId);
@@ -317,6 +317,14 @@ export class MqttService implements OnModuleInit, OnModuleDestroy {
    */
   getSubscriptions(): MqttSubscription[] {
     return Array.from(this.subscriptions.values());
+  }
+
+  /**
+   * MQTT พร้อมใช้ไหม
+   * ใช้เช็คจาก service อื่น หรือใช้ภายใน class เองก่อนยิง publish/subscribe
+   */
+  isAvailable(): boolean {
+    return this.client?.connected === true;
   }
 
   /**

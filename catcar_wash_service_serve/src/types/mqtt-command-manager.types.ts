@@ -72,6 +72,8 @@ export interface CommandConfig {
     BASE_FEE?: number;
     PROMOTION: number;
     WORK_PERIOD?: number;
+    PROMOTION_START?: number;
+    PROMOTION_END?: number;
   };
   function_start?: {
     DUST_BLOW: number;

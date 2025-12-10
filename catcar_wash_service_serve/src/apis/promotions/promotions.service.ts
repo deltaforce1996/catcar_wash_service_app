@@ -1,5 +1,5 @@
 import { Injectable, Logger, BadRequestException } from '@nestjs/common';
-import { Prisma } from '@prisma/client';
+import { Prisma, DeviceStatus } from '@prisma/client';
 import { PrismaService } from 'src/database/prisma/prisma.service';
 import { ItemNotFoundException } from 'src/errors';
 import { parseKeyValueOnly } from 'src/shared/kv-parser';
@@ -7,6 +7,8 @@ import { PaginatedResult } from 'src/types/internal.type';
 import { CreatePromotionDto } from './dtos/create-promotion.dto';
 import { UpdatePromotionDto } from './dtos/update-promotion.dto';
 import { SearchPromotionDto } from './dtos/search-promotion.dto';
+import { DeviceUpdateResult } from './dtos/device-update-result.dto';
+import { DevicesService } from '../devices/devices.service';
 
 export const promotionPublicSelect = Prisma.validator<Prisma.tbl_promotionsSelect>()({
   id: true,
@@ -34,7 +36,9 @@ export const promotionPublicSelect = Prisma.validator<Prisma.tbl_promotionsSelec
 
 type PromotionRowBase = Prisma.tbl_promotionsGetPayload<{ select: typeof promotionPublicSelect }>;
 
-export type PromotionRow = PromotionRowBase;
+export type PromotionRow = PromotionRowBase & {
+  device_update_results?: DeviceUpdateResult[];
+};
 
 const ALLOWED = ['id', 'name', 'description', 'is_active', 'search'] as const;
 
@@ -42,7 +46,10 @@ const ALLOWED = ['id', 'name', 'description', 'is_active', 'search'] as const;
 export class PromotionsService {
   private readonly logger = new Logger(PromotionsService.name);
 
-  constructor(private readonly prisma: PrismaService) {
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly devicesService: DevicesService,
+  ) {
     this.logger.log('PromotionsService initialized');
   }
 
@@ -177,11 +184,26 @@ export class PromotionsService {
       select: promotionPublicSelect,
     });
 
-    return promotion;
+    // อัพเดท device configs และเก็บ results
+    let deviceUpdateResults: DeviceUpdateResult[] = [];
+    if (user_ids && user_ids.length > 0) {
+      deviceUpdateResults = await this.updateDeviceConfigsForPromotion(
+        user_ids,
+        promotion.start_date,
+        promotion.end_date,
+        promotion.discount_percent,
+      );
+    }
+
+    // Return promotion พร้อม device update results
+    return {
+      ...promotion,
+      device_update_results: deviceUpdateResults,
+    };
   }
 
   async updateById(id: string, data: UpdatePromotionDto): Promise<PromotionRow> {
-    const { user_ids, start_date, end_date, ...updateData } = data;
+    const { user_ids, start_date, end_date, update_device_configs, ...updateData } = data;
 
     // Check if promotion exists
     const existing = await this.prisma.tbl_promotions.findUnique({
@@ -248,6 +270,113 @@ export class PromotionsService {
       select: promotionPublicSelect,
     });
 
-    return promotion;
+    // อัพเดท device configs ถ้า checkbox checked
+    let deviceUpdateResults: DeviceUpdateResult[] = [];
+    if (update_device_configs) {
+      const assignedUsers = await this.prisma.tbl_promotion_users.findMany({
+        where: { promotion_id: id },
+        select: { user_id: true },
+      });
+      const userIds = assignedUsers.map((u) => u.user_id);
+
+      if (userIds.length > 0) {
+        deviceUpdateResults = await this.updateDeviceConfigsForPromotion(
+          userIds,
+          promotion.start_date,
+          promotion.end_date,
+          promotion.discount_percent,
+        );
+      }
+    }
+
+    // Return promotion พร้อม device update results
+    return {
+      ...promotion,
+      device_update_results: deviceUpdateResults.length > 0 ? deviceUpdateResults : undefined,
+    };
+  }
+
+  /**
+   * อัพเดท device configs สำหรับ users ที่ถูก assign promotion
+   * @private
+   */
+  private async updateDeviceConfigsForPromotion(
+    userIds: string[],
+    startDate: Date,
+    endDate: Date,
+    discountPercent: Prisma.Decimal,
+  ): Promise<DeviceUpdateResult[]> {
+    const results: DeviceUpdateResult[] = [];
+
+    // 1. หา devices ที่ DEPLOYED ของ users
+    const devices = await this.prisma.tbl_devices.findMany({
+      where: {
+        owner_id: { in: userIds },
+        status: DeviceStatus.DEPLOYED,
+      },
+      select: {
+        id: true,
+        name: true,
+        type: true,
+      },
+    });
+
+    if (devices.length === 0) {
+      this.logger.warn('No DEPLOYED devices found for the assigned users');
+      return results;
+    }
+
+    // 2. แปลง Date → Unix timestamp (milliseconds)
+    const promotionStart = startDate.getTime();
+    const promotionEnd = endDate.getTime();
+    const promotion = Number(discountPercent);
+
+    // 3. อัพเดทแต่ละ device และเก็บผลลัพธ์
+    for (const device of devices) {
+      try {
+        // Fire-and-forget: ส่ง config ไป device แบบไม่รอ ACK
+        await this.devicesService.updateConfigsByIdNoWait(device.id, {
+          configs: {
+            pricing: {
+              promotion: promotion,
+              promotion_start: promotionStart,
+              promotion_end: promotionEnd,
+            },
+          },
+        });
+
+        // Success (config sent, not confirmed by device)
+        results.push({
+          device_id: device.id,
+          device_name: device.name,
+          device_type: device.type,
+          status: 'success',
+        });
+
+        this.logger.log(
+          `✓ Sent config to device ${device.name} (${device.id}): ${promotion}%, ${startDate.toISOString()} - ${endDate.toISOString()} (fire-and-forget)`,
+        );
+      } catch (error) {
+        // Failed
+        results.push({
+          device_id: device.id,
+          device_name: device.name,
+          device_type: device.type,
+          status: 'failed',
+          error: error.message || 'Unknown error',
+        });
+
+        this.logger.error(`✗ Failed to send config to device ${device.name} (${device.id}): ${error.message}`);
+      }
+    }
+
+    // Log summary
+    const successCount = results.filter((r) => r.status === 'success').length;
+    const failedCount = results.filter((r) => r.status === 'failed').length;
+    this.logger.log(
+      `Device update summary: ${successCount} succeeded, ${failedCount} failed out of ${devices.length} total`,
+    );
+
+    return results;
   }
 }

@@ -220,8 +220,7 @@ const isFormValid = computed(() => {
   return (
     email.value.trim() !== "" &&
     password.value.trim() !== "" &&
-    email.value.includes("@") &&
-    password.value.length >= 6
+    email.value.includes("@")
   );
 });
 

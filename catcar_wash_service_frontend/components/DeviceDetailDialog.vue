@@ -1162,13 +1162,20 @@
                                   <!-- View Mode -->
                                   <div v-if="!isEditMode" class="text-right">
                                     <div
-                                      class="text-h6 font-weight-bold text-success mb-1"
+                                      class="text-h6 font-weight-bold mb-1"
+                                      :class="
+                                        isTimestampField(config)
+                                          ? getTimestampColor()
+                                          : 'text-success'
+                                      "
                                     >
-                                      {{ config.value }}
+                                      {{ getConfigDisplayValue(config) }}
                                       <span
+                                        v-if="getConfigDisplayUnit(config)"
                                         class="text-body-2 text-on-surface-variant"
-                                        >{{ config.unit }}</span
                                       >
+                                        {{ getConfigDisplayUnit(config) }}
+                                      </span>
                                     </div>
                                   </div>
 
@@ -1178,35 +1185,62 @@
                                     class="d-flex align-center ga-2"
                                     style="width: 100%"
                                   >
-                                    <v-btn
-                                      v-if="isPricingConfigChanged(key)"
-                                      icon="mdi-restore"
-                                      size="small"
-                                      color="warning"
-                                      variant="outlined"
-                                      @click="resetPricingConfig(key)"
-                                    />
-                                    <div class="d-flex align-center">
-                                      <v-text-field
-                                        v-model.number="
-                                          editablePricingConfigs[key].value
-                                        "
-                                        type="number"
-                                        variant="outlined"
-                                        density="compact"
-                                        hide-details
-                                        :color="
-                                          isPricingConfigChanged(key)
-                                            ? 'warning'
-                                            : 'success'
-                                        "
-                                        style="width: 70px; flex-shrink: 0"
-                                        :aria-label="`${config.label} ค่า หน่วย ${config.unit}`"
-                                      />
-                                      <span class="mx-2">
-                                        {{ config.unit }}
-                                      </span>
+                                    <!-- Timestamp fields = read-only -->
+                                    <div
+                                      v-if="isTimestampField(config)"
+                                      class="text-right"
+                                    >
+                                      <div
+                                        class="text-h6 font-weight-bold mb-1"
+                                        :class="getTimestampColor()"
+                                      >
+                                        {{ getConfigDisplayValue(config) }}
+                                      </div>
+                                      <v-chip
+                                        size="x-small"
+                                        color="info"
+                                        variant="tonal"
+                                        class="mt-1"
+                                      >
+                                        <v-icon size="14" class="mr-1"
+                                          >mdi-information</v-icon
+                                        >
+                                        จัดการผ่านเมนูโปรโมชั่น
+                                      </v-chip>
                                     </div>
+
+                                    <!-- Numeric fields = editable -->
+                                    <template v-else>
+                                      <v-btn
+                                        v-if="isPricingConfigChanged(key)"
+                                        icon="mdi-restore"
+                                        size="small"
+                                        color="warning"
+                                        variant="outlined"
+                                        @click="resetPricingConfig(key)"
+                                      />
+                                      <div class="d-flex align-center">
+                                        <v-text-field
+                                          v-model.number="
+                                            editablePricingConfigs[key].value
+                                          "
+                                          type="number"
+                                          variant="outlined"
+                                          density="compact"
+                                          hide-details
+                                          :color="
+                                            isPricingConfigChanged(key)
+                                              ? 'warning'
+                                              : 'success'
+                                          "
+                                          style="width: 70px; flex-shrink: 0"
+                                          :aria-label="`${config.label} ค่า หน่วย ${config.unit}`"
+                                        />
+                                        <span class="mx-2">
+                                          {{ config.unit }}
+                                        </span>
+                                      </div>
+                                    </template>
                                   </div>
                                 </div>
                               </template>
@@ -2231,6 +2265,9 @@ const _getDeviceDescription = (type: string) => {
 
 const getConfigIcon = (configKey: string) => {
   switch (configKey.toLowerCase()) {
+    case "promotion_start":
+    case "promotion_end":
+      return "mdi-calendar-clock";
     case "price":
     case "cost":
       return "mdi-cash";
@@ -2256,6 +2293,10 @@ const getConfigIcon = (configKey: string) => {
 
 const getConfigDescription = (configKey: string) => {
   switch (configKey.toLowerCase()) {
+    case "promotion_start":
+      return "วันที่เริ่มต้นโปรโมชั่น";
+    case "promotion_end":
+      return "วันที่สิ้นสุดโปรโมชั่น";
     case "price":
       return "ค่าบริการต่อการใช้งานหนึ่งครั้ง";
     case "cost":
@@ -2278,6 +2319,86 @@ const getConfigDescription = (configKey: string) => {
       return "ระยะเวลาชำระเงิน";
     default:
       return "การตั้งค่าสำหรับการทำงานของอุปกรณ์";
+  }
+};
+
+// Timestamp Helper Functions for Promotion Dates
+/**
+ * Format Unix timestamp (ms) to Thai locale date/time string
+ */
+const formatTimestampTh = (timestampMs: number): string => {
+  return new Date(timestampMs).toLocaleString("th-TH", {
+    year: "numeric",
+    month: "short",
+    day: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
+    second: "2-digit",
+  });
+};
+
+/**
+ * Check if timestamp value is set (not 0, null, or undefined)
+ */
+const isTimestampSet = (value: number | null | undefined): boolean => {
+  return value != null && value !== 0;
+};
+
+/**
+ * Check if config field is a timestamp
+ */
+const isTimestampField = (config: { unit: string }): boolean => {
+  return config.unit === "timestamp";
+};
+
+/**
+ * Get formatted display value for a pricing config
+ */
+const getConfigDisplayValue = (config: {
+  value: number;
+  unit: string;
+}): string => {
+  if (config.unit === "timestamp") {
+    return isTimestampSet(config.value)
+      ? formatTimestampTh(config.value)
+      : "ไม่ได้ตั้งค่า";
+  }
+  return String(config.value);
+};
+
+/**
+ * Get unit string for display (hide for timestamps)
+ */
+const getConfigDisplayUnit = (config: { unit: string }): string => {
+  return config.unit === "timestamp" ? "" : config.unit;
+};
+
+/**
+ * Get color for timestamp field based on promotion status
+ */
+const getTimestampColor = (): string => {
+  if (!props.device?.configs?.pricing) return "on-surface-variant";
+
+  const startConfig = props.device.configs.pricing.promotion_start;
+  const endConfig = props.device.configs.pricing.promotion_end;
+
+  if (
+    !isTimestampSet(startConfig?.value) ||
+    !isTimestampSet(endConfig?.value)
+  ) {
+    return "on-surface-variant"; // ไม่ได้ตั้งค่า
+  }
+
+  const now = Date.now();
+  const start = startConfig.value;
+  const end = endConfig.value;
+
+  if (now >= start && now <= end) {
+    return "success"; // โปรโมชั่นกำลังใช้งาน
+  } else if (now < start) {
+    return "info"; // โปรโมชั่นยังไม่เริ่ม
+  } else {
+    return "on-surface-variant"; // โปรโมชั่นหมดอายุแล้ว
   }
 };
 

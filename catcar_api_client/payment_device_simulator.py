@@ -12,6 +12,7 @@ import hashlib
 import time
 import threading
 import sys
+import os
 import qrcode
 from typing import Dict, Optional
 from enum import Enum
@@ -34,7 +35,9 @@ class PaymentDeviceSimulator:
                  device_id: str,
                  api_base_url: str = "http://localhost:3000/api/v1",
                  mqtt_broker: str = "localhost",
-                 mqtt_port: int = 1883):
+                 mqtt_port: int = 1883,
+                 mqtt_username: Optional[str] = None,
+                 mqtt_password: Optional[str] = None):
         """
         Initialize Payment Device Simulator
         
@@ -43,11 +46,15 @@ class PaymentDeviceSimulator:
             api_base_url: Base URL ของ API server
             mqtt_broker: MQTT broker host
             mqtt_port: MQTT broker port
+            mqtt_username: MQTT username (optional)
+            mqtt_password: MQTT password (optional)
         """
         self.device_id = device_id
         self.api_base_url = api_base_url.rstrip('/')
         self.mqtt_broker = mqtt_broker
         self.mqtt_port = mqtt_port
+        self.mqtt_username = mqtt_username or os.getenv("MQTT_USERNAME") or "mqtt"
+        self.mqtt_password = mqtt_password or os.getenv("MQTT_PASSWORD") or "password"
         
         # HTTP Session
         self.session = requests.Session()
@@ -189,6 +196,9 @@ class PaymentDeviceSimulator:
             print(f"🔗 กำลังเชื่อมต่อ MQTT broker: {self.mqtt_broker}:{self.mqtt_port}")
             
             self.mqtt_client = mqtt.Client()
+            # Set username/password for EMQX broker (EMQX_ALLOW_ANONYMOUS=false)
+            if self.mqtt_username:
+                self.mqtt_client.username_pw_set(self.mqtt_username, self.mqtt_password)
             self.mqtt_client.on_connect = self._on_mqtt_connect
             self.mqtt_client.on_disconnect = self._on_mqtt_disconnect
             self.mqtt_client.on_message = self._on_mqtt_message
@@ -716,12 +726,19 @@ def main():
     mqtt_port_str = input("🔌 MQTT Port (default: 1883): ").strip()
     mqtt_port = int(mqtt_port_str) if mqtt_port_str else 1883
     
+    # Get MQTT username and password
+    print("\n🔐 MQTT Authentication:")
+    mqtt_username = input("👉 Enter MQTT Username (default: mqtt): ").strip() or "mqtt"
+    mqtt_password = input("👉 Enter MQTT Password (default: password): ").strip() or "password"
+    
     # สร้าง simulator
     simulator = PaymentDeviceSimulator(
         device_id=device_id,
         api_base_url=api_base_url,
         mqtt_broker=mqtt_broker,
-        mqtt_port=mqtt_port
+        mqtt_port=mqtt_port,
+        mqtt_username=mqtt_username,
+        mqtt_password=mqtt_password
     )
     
     print("\n✅ เริ่มต้นโปรแกรมสำเร็จ")

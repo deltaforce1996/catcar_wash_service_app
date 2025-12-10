@@ -37,7 +37,17 @@ export class DateTimeTransformInterceptor implements NestInterceptor {
       });
 
       // แปลง datetime fields
-      const dateFields = ['created_at', 'updated_at', 'expire_date', 'deleted_at', 'event_at', 'timestamp', 'expiry', 'start_date', 'end_date'];
+      const dateFields = [
+        'created_at',
+        'updated_at',
+        'expire_date',
+        'deleted_at',
+        'event_at',
+        'timestamp',
+        'expiry',
+        'start_date',
+        'end_date',
+      ];
       dateFields.forEach((field) => {
         if (transformed[field]) {
           // Handle timestamp field specially since it might be a number (Unix timestamp)

@@ -52,6 +52,8 @@ export class SyncDeviceConfigsDto {
       PROMOTION?: number;
       BASE_FEE?: number;
       WORK_PERIOD?: number;
+      PROMOTION_START?: number;
+      PROMOTION_END?: number;
     };
   };
 }

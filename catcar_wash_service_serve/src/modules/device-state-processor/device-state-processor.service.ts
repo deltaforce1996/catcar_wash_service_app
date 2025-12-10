@@ -75,7 +75,7 @@ export class DeviceStateProcessorService implements OnModuleInit {
    */
   async initializeSubscriptions(): Promise<void> {
     try {
-      // รอให้ MQTT connection สำเร็จก่อน
+      // รอให้ MQTT connection สำเร็จก่อน (แต่ถ้าไม่สำเร็จจะ log แล้วทำงานต่อ)
       await this.waitForMqttConnection();
 
       // Subscribe to device streaming topics
@@ -89,8 +89,8 @@ export class DeviceStateProcessorService implements OnModuleInit {
 
       // this.logger.log('Device state processor initialized with MQTT subscriptions');
     } catch (error) {
-      this.logger.error('Failed to initialize device state processor:', error);
-      throw error;
+      this.logger.error('Failed to initialize device state processor (will continue without MQTT):', error);
+      // อย่า throw เพื่อให้ flow หลักยังทำงานต่อได้
     }
   }
 
@@ -102,7 +102,7 @@ export class DeviceStateProcessorService implements OnModuleInit {
     const retryInterval = 1000; // 1 วินาที
 
     for (let i = 0; i < maxRetries; i++) {
-      if (this.mqttService.isConnected()) {
+      if (this.mqttService.isAvailable()) {
         // this.logger.log('MQTT connection established');
         return;
       }
@@ -111,7 +111,7 @@ export class DeviceStateProcessorService implements OnModuleInit {
       await new Promise((resolve) => setTimeout(resolve, retryInterval));
     }
 
-    throw new Error('MQTT connection timeout - failed to establish connection within 30 seconds');
+    this.logger.warn('MQTT connection timeout - continue running without MQTT subscriptions');
   }
 
   /**

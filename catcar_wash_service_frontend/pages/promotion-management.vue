@@ -252,6 +252,11 @@
       @success="handlePromotionUpdated"
     />
 
+    <DeviceSyncResultDialog
+      v-model="showDeviceSyncDialog"
+      :results="deviceSyncResults"
+    />
+
     <!-- Confirm Toggle Status Dialog -->
     <v-dialog v-model="showConfirmDialog" max-width="500">
       <v-card>
@@ -297,12 +302,13 @@
 </template>
 
 <script setup lang="ts">
-import type { PromotionResponseApi } from "~/types";
+import type { PromotionResponseApi, DeviceUpdateResult } from "~/types";
 import { usePromotion } from "~/composables/usePromotion";
 import { useAuth } from "~/composables/useAuth";
 import EnhancedDataTable from "~/components/common/EnhancedDataTable.vue";
 import AddPromotionDialog from "~/components/promotion/AddPromotionDialog.vue";
 import EditPromotionDialog from "~/components/promotion/EditPromotionDialog.vue";
+import DeviceSyncResultDialog from "~/components/promotion/DeviceSyncResultDialog.vue";
 
 // Check authentication and permissions
 const { isAdmin } = useAuth();
@@ -331,6 +337,8 @@ const loading = ref(false);
 const showAddPromotionDialog = ref(false);
 const showEditPromotionDialog = ref(false);
 const selectedPromotion = ref<PromotionResponseApi | null>(null);
+const showDeviceSyncDialog = ref(false);
+const deviceSyncResults = ref<DeviceUpdateResult[] | undefined>(undefined);
 
 // Confirm dialog state
 const showConfirmDialog = ref(false);
@@ -457,12 +465,22 @@ const handleEditPromotion = (promotion: PromotionResponseApi) => {
 };
 
 // Success handlers
-const handlePromotionCreated = async () => {
+const handlePromotionCreated = async (results?: DeviceUpdateResult[]) => {
   await applyFilters();
+
+  if (results && results.length > 0) {
+    deviceSyncResults.value = results;
+    showDeviceSyncDialog.value = true;
+  }
 };
 
-const handlePromotionUpdated = async () => {
+const handlePromotionUpdated = async (results?: DeviceUpdateResult[]) => {
   await applyFilters();
+
+  if (results && results.length > 0) {
+    deviceSyncResults.value = results;
+    showDeviceSyncDialog.value = true;
+  }
 };
 
 // Initial load

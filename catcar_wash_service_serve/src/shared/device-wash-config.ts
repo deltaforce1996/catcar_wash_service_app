@@ -88,6 +88,8 @@ export class DeviceWashConfig extends DeviceConfigBase<WashSetup> {
       };
       pricing: {
         PROMOTION: number;
+        PROMOTION_START?: number;
+        PROMOTION_END?: number;
       };
       function: {
         sec_per_baht: {
@@ -175,6 +177,16 @@ export class DeviceWashConfig extends DeviceConfigBase<WashSetup> {
         value: this.payload.configs.pricing.PROMOTION,
         unit: '(%) เปอร์เซ็นต์',
         description: 'โปรโมชั่น',
+      },
+      promotion_start: {
+        value: this.payload.configs.pricing.PROMOTION_START ?? 0,
+        unit: 'timestamp',
+        description: 'เริ่มโปรโมชั่น',
+      },
+      promotion_end: {
+        value: this.payload.configs.pricing.PROMOTION_END ?? 0,
+        unit: 'timestamp',
+        description: 'สิ้นสุดโปรโมชั่น',
       },
     };
   }

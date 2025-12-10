@@ -7,22 +7,14 @@ export const emailRules = [
   (v: string) => /.+@.+\..+/.test(v) || "รูปแบบอีเมลไม่ถูกต้อง",
 ];
 
-// Password validation rules (basic - 6 characters)
-export const passwordRulesBasic = [
+// Password validation rules (required only)
+export const passwordRules = [
   (v: string) => !!v || "กรุณาใส่รหัสผ่าน",
-  (v: string) => v.length >= 6 || "รหัสผ่านต้องมีอย่างน้อย 6 ตัวอักษร",
 ];
 
-// Password validation rules (strong - 8 characters with complexity)
-export const passwordRulesStrong = [
-  (v: string) => !!v || "กรุณาใส่รหัสผ่าน",
-  (v: string) => v.length >= 8 || "รหัสผ่านต้องมีอย่างน้อย 8 ตัวอักษร",
-  (v: string) =>
-    /(?=.*[a-z])/.test(v) || "รหัสผ่านต้องมีตัวอักษรเล็กอย่างน้อย 1 ตัว",
-  (v: string) =>
-    /(?=.*[A-Z])/.test(v) || "รหัสผ่านต้องมีตัวอักษรใหญ่อย่างน้อย 1 ตัว",
-  (v: string) => /(?=.*[0-9])/.test(v) || "รหัสผ่านต้องมีตัวเลขอย่างน้อย 1 ตัว",
-];
+// Legacy exports for backward compatibility
+export const passwordRulesBasic = passwordRules;
+export const passwordRulesStrong = passwordRules;
 
 // Confirm password validation rules
 export const createConfirmPasswordRules = (password: string) => [

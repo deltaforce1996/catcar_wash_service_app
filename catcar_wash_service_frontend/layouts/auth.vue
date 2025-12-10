@@ -169,7 +169,7 @@
   left: 0;
   right: 0;
   bottom: 0;
-  background-image: url('/Logo/operation-logo.png');
+  /* background-image: url('/Logo/operation-logo.png'); */
   background-size: 100%;
   background-position: bottom left;
   background-repeat: no-repeat;

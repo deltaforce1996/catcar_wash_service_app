@@ -203,6 +203,31 @@
                 </template>
               </v-combobox>
             </v-col>
+
+            <!-- Update Device Configs Checkbox (transient - not saved in form) -->
+            <v-col cols="12">
+              <v-checkbox
+                v-model="shouldUpdateDeviceConfigs"
+                label="อัปเดตค่าโปรโมชั่นไปยังอุปกรณ์อัตโนมัติ"
+                color="primary"
+                density="compact"
+                hide-details
+              >
+                <template #label>
+                  <div class="d-flex align-center">
+                    <span>อัปเดตค่าโปรโมชั่นไปยังอุปกรณ์อัตโนมัติ</span>
+                    <v-tooltip location="top">
+                      <template #activator="{ props: tooltipProps }">
+                        <v-icon v-bind="tooltipProps" size="small" class="ml-1">
+                          mdi-information-outline
+                        </v-icon>
+                      </template>
+                      <span>อัปเดตค่าส่วนลดและวันที่โปรโมชั่นไปยังอุปกรณ์ที่ active ของลูกค้าที่เลือก</span>
+                    </v-tooltip>
+                  </div>
+                </template>
+              </v-checkbox>
+            </v-col>
           </v-row>
         </v-form>
 
@@ -236,7 +261,7 @@
 </template>
 
 <script setup lang="ts">
-import type { PromotionResponseApi } from "~/types";
+import type { PromotionResponseApi, DeviceUpdateResult } from "~/types";
 import { usePromotion } from "~/composables/usePromotion";
 import { useUser } from "~/composables/useUser";
 
@@ -251,7 +276,7 @@ const props = defineProps<Props>();
 // Emits
 const emit = defineEmits<{
   "update:modelValue": [value: boolean];
-  success: [];
+  success: [results?: DeviceUpdateResult[]];
 }>();
 
 // Composables
@@ -298,6 +323,9 @@ const form = ref<PromotionForm>({
   end_date: "",
   is_active: true,
 });
+
+// Transient state - not saved in form, only used during submit
+const shouldUpdateDeviceConfigs = ref(true);
 
 const selectedUsers = ref<{ title: string; value: string }[]>([]);
 
@@ -460,12 +488,13 @@ const handleSubmit = async () => {
       end_date: form.value.end_date,
       is_active: form.value.is_active,
       user_ids: selectedUsers.value.map((u) => u.value),
+      update_device_configs: shouldUpdateDeviceConfigs.value,
     };
 
-    await updatePromotionById(props.promotion.id, payload);
+    const result = await updatePromotionById(props.promotion.id, payload);
 
-    // Success - emit success event and close dialog
-    emit("success");
+    // Success - emit success event with device update results and close dialog
+    emit("success", result?.device_update_results);
     handleClose();
   } catch (err) {
     console.error("เกิดข้อผิดพลาดในการอัปเดตโปรโมชั่น:", err);

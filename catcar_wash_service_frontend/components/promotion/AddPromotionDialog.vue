@@ -273,6 +273,7 @@
 </template>
 
 <script setup lang="ts">
+import type { DeviceUpdateResult } from "~/types/promotion.type";
 import { usePromotion } from "~/composables/usePromotion";
 import { useUser } from "~/composables/useUser";
 
@@ -286,7 +287,7 @@ const props = defineProps<Props>();
 // Emits
 const emit = defineEmits<{
   "update:modelValue": [value: boolean];
-  success: [];
+  success: [results?: DeviceUpdateResult[]];
 }>();
 
 // Composables
@@ -438,10 +439,10 @@ const handleSubmit = async () => {
       user_ids: selectedUsers.value.map((u) => u.value),
     };
 
-    await createPromotion(payload);
+    const result = await createPromotion(payload);
 
-    // Success - emit success event and close dialog
-    emit("success");
+    // Success - emit success event with device update results and close dialog
+    emit("success", result?.device_update_results);
     handleClose();
   } catch (err) {
     console.error("เกิดข้อผิดพลาดในการสร้างโปรโมชั่น:", err);

@@ -27,8 +27,15 @@ class CommandStatus(Enum):
     PROGRESS = "PROGRESS"
 
 class DeviceCommandSimulator:
-    def __init__(self, device_id: str, broker_host: str = "localhost", broker_port: int = 1883, 
-                 failure_mode: str = "random"):
+    def __init__(
+        self,
+        device_id: str,
+        broker_host: str = "localhost",
+        broker_port: int = 1883,
+        failure_mode: str = "random",
+        mqtt_username: Optional[str] = None,
+        mqtt_password: Optional[str] = None,
+    ):
         """
         Initialize Device Command Simulator
         
@@ -46,6 +53,13 @@ class DeviceCommandSimulator:
         self.running = False
         self.commands_received = 0
         self.commands_acked = 0
+        # MQTT auth (use env or defaults if not provided)
+        self.mqtt_username = (
+            mqtt_username or os.getenv("MQTT_USERNAME") or "mqtt"
+        )
+        self.mqtt_password = (
+            mqtt_password or os.getenv("MQTT_PASSWORD") or "password"
+        )
         
         # Error simulation configuration
         self.failure_mode = failure_mode  # "none", "random", "always"
@@ -80,6 +94,9 @@ class DeviceCommandSimulator:
     def _create_client(self) -> mqtt.Client:
         """Create MQTT client"""
         client = mqtt.Client()
+        # Set username/password for EMQX broker (EMQX_ALLOW_ANONYMOUS=false)
+        if self.mqtt_username:
+            client.username_pw_set(self.mqtt_username, self.mqtt_password)
         client.on_connect = self._on_connect
         client.on_disconnect = self._on_disconnect
         client.on_message = self._on_message
@@ -623,8 +640,20 @@ def main():
     broker_host, broker_port = load_docker_compose_config()
     print(f"🔗 MQTT Broker: {broker_host}:{broker_port}")
     
+    # Get MQTT username and password
+    print("\n🔐 MQTT Authentication:")
+    mqtt_username = input("👉 Enter MQTT Username (default: mqtt): ").strip() or "mqtt"
+    mqtt_password = input("👉 Enter MQTT Password (default: password): ").strip() or "password"
+    
     # Initialize and start simulator
-    simulator = DeviceCommandSimulator(device_id, broker_host, broker_port, failure_mode)
+    simulator = DeviceCommandSimulator(
+        device_id, 
+        broker_host, 
+        broker_port, 
+        failure_mode,
+        mqtt_username=mqtt_username,
+        mqtt_password=mqtt_password
+    )
     simulator.start()
 
 if __name__ == "__main__":

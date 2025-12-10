@@ -24,16 +24,21 @@ class DeviceStatus(Enum):
     OFFLINE = "OFFLINE"
 
 class MQTTDeviceSimulator:
-    def __init__(self, broker_host: str = "localhost", broker_port: int = 1883):
+    def __init__(self, broker_host: str = "localhost", broker_port: int = 1883,
+                 mqtt_username: Optional[str] = None, mqtt_password: Optional[str] = None):
         """
         Initialize MQTT Device Simulator
         
         Args:
             broker_host: MQTT broker host
             broker_port: MQTT broker port
+            mqtt_username: MQTT username (optional)
+            mqtt_password: MQTT password (optional)
         """
         self.broker_host = broker_host
         self.broker_port = broker_port
+        self.mqtt_username = mqtt_username or os.getenv("MQTT_USERNAME") or "mqtt"
+        self.mqtt_password = mqtt_password or os.getenv("MQTT_PASSWORD") or "password"
         self.devices: Dict[str, Dict] = {}
         self.running = False
         self.threads: List[threading.Thread] = []
@@ -46,6 +51,9 @@ class MQTTDeviceSimulator:
     def _create_device_client(self, device_id: str) -> mqtt.Client:
         """Create MQTT client for a specific device"""
         client = mqtt.Client()
+        # Set username/password for EMQX broker (EMQX_ALLOW_ANONYMOUS=false)
+        if self.mqtt_username:
+            client.username_pw_set(self.mqtt_username, self.mqtt_password)
         client.on_connect = lambda c, u, f, rc: self._on_connect(c, device_id, rc)
         client.on_disconnect = lambda c, u, rc: self._on_disconnect(c, device_id, rc)
         client.on_publish = lambda c, u, mid: self._on_publish(c, device_id, mid)
@@ -631,8 +639,13 @@ def main():
     broker_host, broker_port = load_docker_compose_config()
     print(f"🔗 MQTT Broker: {broker_host}:{broker_port}")
     
+    # Get MQTT username and password
+    print("\n🔐 MQTT Authentication:")
+    mqtt_username = input("👉 Enter MQTT Username (default: mqtt): ").strip() or "mqtt"
+    mqtt_password = input("👉 Enter MQTT Password (default: password): ").strip() or "password"
+    
     # Initialize simulator
-    simulator = MQTTDeviceSimulator(broker_host, broker_port)
+    simulator = MQTTDeviceSimulator(broker_host, broker_port, mqtt_username, mqtt_password)
     
     # Test MQTT broker connection (no need to connect all devices yet)
     print("🔗 MQTT Broker configuration loaded")

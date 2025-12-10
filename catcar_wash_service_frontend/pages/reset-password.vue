@@ -92,7 +92,7 @@
             rounded="lg"
             class="gradient-btn text-none font-weight-bold mb-4"
             :loading="loading"
-            :disabled="loading || passwordStrength < 60 || !isFormValid"
+            :disabled="loading || !isFormValid"
             elevation="4"
           >
             <template #prepend>
@@ -120,27 +120,6 @@
       </v-card-text>
     </v-card>
 
-    <!-- Password Requirements -->
-    <v-alert
-      type="info"
-      variant="tonal"
-      density="compact"
-      rounded="lg"
-      class="mt-4"
-      max-width="450"
-    >
-      <template #prepend>
-        <v-icon icon="mdi-shield-lock-outline" size="16" />
-      </template>
-      <div class="text-caption">
-        <strong>รหัสผ่านต้องมี:</strong>
-        <ul class="mt-1 ml-3">
-          <li>อย่างน้อย 8 ตัวอักษร</li>
-          <li>ตัวอักษรใหญ่และเล็ก</li>
-          <li>ตัวเลขอย่างน้อย 1 ตัว</li>
-        </ul>
-      </div>
-    </v-alert>
   </div>
 </template>
 
@@ -188,8 +167,7 @@ const isFormValid = computed(() => {
   return (
     password.value.trim() !== "" &&
     confirmPassword.value.trim() !== "" &&
-    password.value === confirmPassword.value &&
-    passwordStrength.value >= 60
+    password.value === confirmPassword.value
   );
 });
 

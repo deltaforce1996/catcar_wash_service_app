@@ -31,4 +31,8 @@ export class UpdatePromotionDto {
   @IsString({ each: true })
   @IsOptional()
   user_ids?: string[];
+
+  @IsBoolean()
+  @IsOptional()
+  update_device_configs?: boolean;
 }

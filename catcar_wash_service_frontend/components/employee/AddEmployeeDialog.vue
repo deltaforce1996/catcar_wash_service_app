@@ -66,28 +66,16 @@
               <v-text-field
                 v-model="form.password"
                 label="รหัสผ่าน"
-                type="password"
+                :type="showPassword ? 'text' : 'password'"
                 variant="outlined"
                 density="compact"
                 :rules="passwordRules"
                 required
                 autocomplete="new-password"
                 prepend-inner-icon="mdi-lock"
-              >
-                <template #append-inner>
-                  <v-tooltip location="top">
-                    <template #activator="{ props }">
-                      <v-icon v-bind="props" size="small" color="grey">
-                        mdi-information
-                      </v-icon>
-                    </template>
-                    <span
-                      >ต้องมีอย่างน้อย 8 ตัวอักษร ประกอบด้วยตัวพิมพ์ใหญ่
-                      ตัวพิมพ์เล็ก ตัวเลข และอักขระพิเศษ</span
-                    >
-                  </v-tooltip>
-                </template>
-              </v-text-field>
+                :append-inner-icon="showPassword ? 'mdi-eye-off' : 'mdi-eye'"
+                @click:append-inner="showPassword = !showPassword"
+              />
             </v-col>
 
             <!-- Confirm Password -->
@@ -95,13 +83,15 @@
               <v-text-field
                 v-model="form.confirmPassword"
                 label="ยืนยันรหัสผ่าน"
-                type="password"
+                :type="showConfirmPassword ? 'text' : 'password'"
                 variant="outlined"
                 density="compact"
                 :rules="confirmPasswordRules"
                 required
                 autocomplete="new-password"
                 prepend-inner-icon="mdi-lock-check"
+                :append-inner-icon="showConfirmPassword ? 'mdi-eye-off' : 'mdi-eye'"
+                @click:append-inner="showConfirmPassword = !showConfirmPassword"
               />
             </v-col>
 
@@ -238,6 +228,8 @@ const isOpen = computed({
 const formRef = ref();
 const formValid = ref(false);
 const formErrors = ref<string[]>([]);
+const showPassword = ref(false);
+const showConfirmPassword = ref(false);
 
 // Form data matching backend RegisterEmpDto
 interface EmployeeForm {
@@ -266,17 +258,7 @@ const emailRules = [
   (v: string) => /.+@.+\..+/.test(v) || "รูปแบบอีเมลไม่ถูกต้อง",
 ];
 
-const passwordRules = [
-  (v: string) => !!v || "กรุณากรอกรหัสผ่าน",
-  (v: string) => v.length >= 8 || "รหัสผ่านต้องมีอย่างน้อย 8 ตัวอักษร",
-  (v: string) =>
-    /[a-z]/.test(v) || "รหัสผ่านต้องมีตัวพิมพ์เล็กอย่างน้อย 1 ตัว",
-  (v: string) =>
-    /[A-Z]/.test(v) || "รหัสผ่านต้องมีตัวพิมพ์ใหญ่อย่างน้อย 1 ตัว",
-  (v: string) => /\d/.test(v) || "รหัสผ่านต้องมีตัวเลขอย่างน้อย 1 ตัว",
-  (v: string) =>
-    /[@$!%*?&]/.test(v) || "รหัสผ่านต้องมีอักขระพิเศษอย่างน้อย 1 ตัว",
-];
+const passwordRules = [(v: string) => !!v || "กรุณากรอกรหัสผ่าน"];
 
 const confirmPasswordRules = [
   (v: string) => !!v || "กรุณายืนยันรหัสผ่าน",

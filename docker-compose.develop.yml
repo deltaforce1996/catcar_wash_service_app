@@ -58,7 +58,7 @@ services:
       - EMQX_DASHBOARD__DEFAULT_USERNAME=admin
       - EMQX_DASHBOARD__DEFAULT_PASSWORD=admin123
       - EMQX_LOG__CONSOLE_HANDLER__LEVEL=warning
-      - EMQX_ALLOW_ANONYMOUS=true
+      - EMQX_ALLOW_ANONYMOUS=false
     volumes:
       - emqx_data:/opt/emqx/data
       - emqx_log:/opt/emqx/log
@@ -90,7 +90,7 @@ services:
       - BEAM_API_URL=https://api.beamcheckout.com
 
       - MQTT_BROKER_URL=mqtt://emqx:1883
-      - MQTT_USERNAME=admin
+      - MQTT_USERNAME=mqtt
       - MQTT_PASSWORD=password
     depends_on:
       postgres:

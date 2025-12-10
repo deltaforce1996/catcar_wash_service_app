@@ -100,6 +100,8 @@ export class DeviceDryingConfig extends DeviceConfigBase<DryingSetup> {
         BASE_FEE: number;
         PROMOTION: number;
         WORK_PERIOD: number;
+        PROMOTION_START?: number;
+        PROMOTION_END?: number;
       };
       function_start: {
         DUST_BLOW: number;
@@ -193,6 +195,16 @@ export class DeviceDryingConfig extends DeviceConfigBase<DryingSetup> {
         value: this.payload.configs.pricing.WORK_PERIOD,
         unit: 'วินาที',
         description: 'ระยะเวลาการทำงาน',
+      },
+      promotion_start: {
+        value: this.payload.configs.pricing.PROMOTION_START ?? 0,
+        unit: 'timestamp',
+        description: 'เริ่มโปรโมชั่น',
+      },
+      promotion_end: {
+        value: this.payload.configs.pricing.PROMOTION_END ?? 0,
+        unit: 'timestamp',
+        description: 'สิ้นสุดโปรโมชั่น',
       },
     };
   }

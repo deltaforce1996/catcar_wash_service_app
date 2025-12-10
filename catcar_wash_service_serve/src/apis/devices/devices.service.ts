@@ -485,6 +485,13 @@ export class DevicesService {
                 ...updatedConfigs.pricing[key],
                 value: data.configs.pricing[key],
               };
+            } else if (key === 'promotion_start' || key === 'promotion_end') {
+              // Auto-initialize missing promotion timing fields
+              updatedConfigs.pricing[key] = {
+                value: data.configs.pricing[key],
+                unit: 'timestamp',
+                description: key === 'promotion_start' ? 'เริ่มโปรโมชั่น' : 'สิ้นสุดโปรโมชั่น',
+              };
             } else {
               // If parameter doesn't exist, throw error
               throw new ItemNotFoundException(
@@ -493,6 +500,28 @@ export class DevicesService {
             }
           }
         });
+      }
+    }
+
+    // Validate promotion timestamps
+    if (updatedConfigs?.pricing) {
+      const promotionStart = updatedConfigs.pricing.promotion_start?.value;
+      const promotionEnd = updatedConfigs.pricing.promotion_end?.value;
+
+      if (promotionStart && promotionEnd && promotionStart !== 0 && promotionEnd !== 0) {
+        // Check if start < end
+        if (promotionStart >= promotionEnd) {
+          throw new BadRequestException('promotion_start must be less than promotion_end');
+        }
+
+        // Check if dates are in the future
+        const now = Date.now();
+        if (promotionStart < now) {
+          throw new BadRequestException('promotion_start must be in the future');
+        }
+        if (promotionEnd < now) {
+          throw new BadRequestException('promotion_end must be in the future');
+        }
       }
     }
 
@@ -559,6 +588,8 @@ export class DevicesService {
       };
       config.pricing = {
         PROMOTION: structuredConfig.pricing?.promotion?.value ?? 0,
+        PROMOTION_START: structuredConfig.pricing?.promotion_start?.value ?? 0,
+        PROMOTION_END: structuredConfig.pricing?.promotion_end?.value ?? 0,
       };
     } else if (deviceType === DeviceType.DRYING) {
       // Convert DRYING config
@@ -583,10 +614,175 @@ export class DevicesService {
         BASE_FEE: structuredConfig.pricing?.base_fee?.value ?? 0,
         PROMOTION: structuredConfig.pricing?.promotion?.value ?? 0,
         WORK_PERIOD: structuredConfig.pricing?.work_period?.value ?? 0,
+        PROMOTION_START: structuredConfig.pricing?.promotion_start?.value ?? 0,
+        PROMOTION_END: structuredConfig.pricing?.promotion_end?.value ?? 0,
       };
     }
 
     return config;
+  }
+
+  /**
+   * Fire-and-forget version: ส่ง config ไป device แบบไม่รอ ACK แล้ว update DB ทันที
+   * ใช้สำหรับ promotion update ที่ไม่ต้องการรอ device ตอบกลับ
+   */
+  async updateConfigsByIdNoWait(id: string, data: UpdateDeviceConfigsDto): Promise<DeviceRow> {
+    // Check if device exists and get current configs
+    const existingDevice = await this.prisma.tbl_devices.findUnique({
+      where: { id },
+      select: { id: true, type: true, configs: true, status: true },
+    });
+    if (!existingDevice) {
+      throw new ItemNotFoundException('Device not found');
+    }
+
+    // Merge new values with existing configs
+    let updatedConfigs = existingDevice.configs as any;
+    if (data.configs) {
+      // Update system configs
+      if (data.configs.system) {
+        updatedConfigs = {
+          ...updatedConfigs,
+          system: {
+            ...updatedConfigs?.system,
+            ...data.configs.system,
+          },
+        };
+      }
+
+      // Update sale configs - type-specific handling
+      if (data.configs.sale) {
+        if (existingDevice.type === DeviceType.WASH) {
+          // WASH device: Handle value-based parameters
+          updatedConfigs = {
+            ...updatedConfigs,
+            sale: {
+              ...updatedConfigs?.sale,
+            },
+          };
+
+          Object.keys(data.configs.sale).forEach((key) => {
+            const saleParam = data.configs?.sale?.[key];
+            if (saleParam !== undefined) {
+              // Check if the parameter exists in the current config
+              if (updatedConfigs.sale[key]) {
+                const currentParam = updatedConfigs.sale[key];
+
+                // Support both shorthand (number) and object format
+                if (typeof saleParam === 'number') {
+                  // Shorthand: "hp_water": 15
+                  updatedConfigs.sale[key] = {
+                    ...currentParam,
+                    value: saleParam,
+                  };
+                } else {
+                  // Object: "hp_water": { "value": 15 }
+                  updatedConfigs.sale[key] = {
+                    ...currentParam,
+                    ...(saleParam.value !== undefined && { value: saleParam.value }),
+                  };
+                }
+              } else {
+                // If parameter doesn't exist, throw error
+                throw new ItemNotFoundException(`Parameter '${key}' not found in WASH device configuration`);
+              }
+            }
+          });
+        } else if (existingDevice.type === DeviceType.DRYING) {
+          // DRYING device: Handle start/end-based parameters
+          updatedConfigs = {
+            ...updatedConfigs,
+            sale: {
+              ...updatedConfigs?.sale,
+            },
+          };
+
+          Object.keys(data.configs.sale).forEach((key) => {
+            const saleParam = data.configs?.sale?.[key];
+            if (saleParam !== undefined) {
+              // Check if the parameter exists in the current config
+              if (updatedConfigs.sale[key]) {
+                // DRYING device requires object format with start/end
+                if (typeof saleParam === 'number') {
+                  throw new ItemNotFoundException(
+                    `Parameter '${key}' in DRYING device requires object format with start/end, not a number`,
+                  );
+                }
+
+                const currentParam = updatedConfigs.sale[key];
+                updatedConfigs.sale[key] = {
+                  ...currentParam,
+                  ...(saleParam.start !== undefined && { start: saleParam.start }),
+                  ...(saleParam.end !== undefined && { end: saleParam.end }),
+                };
+              } else {
+                // If parameter doesn't exist, throw error
+                throw new ItemNotFoundException(`Parameter '${key}' not found in DRYING device configuration`);
+              }
+            }
+          });
+        } else {
+          throw new ItemNotFoundException(`Unsupported device type: ${String(existingDevice.type)}`);
+        }
+      }
+
+      // Update pricing configs
+      if (data.configs.pricing) {
+        updatedConfigs = {
+          ...updatedConfigs,
+          pricing: { ...updatedConfigs?.pricing },
+        };
+
+        // Update only the value for each parameter
+        Object.keys(data.configs.pricing).forEach((key) => {
+          if (data.configs?.pricing?.[key] !== undefined) {
+            // Check if the parameter exists in the current config
+            if (updatedConfigs.pricing[key]) {
+              updatedConfigs.pricing[key] = {
+                ...updatedConfigs.pricing[key],
+                value: data.configs.pricing[key],
+              };
+            } else if (key === 'promotion_start' || key === 'promotion_end') {
+              // Auto-initialize missing promotion timing fields
+              updatedConfigs.pricing[key] = {
+                value: data.configs.pricing[key],
+                unit: 'timestamp',
+                description: key === 'promotion_start' ? 'เริ่มโปรโมชั่น' : 'สิ้นสุดโปรโมชั่น',
+              };
+            } else {
+              // If parameter doesn't exist, throw error
+              throw new ItemNotFoundException(
+                `Parameter '${key}' not found in device type '${existingDevice.type}' pricing configuration`,
+              );
+            }
+          }
+        });
+      }
+    }
+
+    // Convert structured config back to raw CommandConfig format for MQTT
+    const rawConfig = this.convertToRawConfig(
+      updatedConfigs,
+      existingDevice.type,
+      data.status ?? existingDevice.status,
+    );
+
+    // Fire-and-forget: ส่ง config ไป device แบบไม่รอ ACK
+    this.mqttCommandManager.applyConfig(id, rawConfig).catch((error) => {
+      this.logger.warn(`Fire-and-forget config update for device ${id} failed: ${error.message}`);
+    });
+
+    // Update DB immediately without waiting for device ACK
+    const device: DeviceRowBase = await this.prisma.tbl_devices.update({
+      where: { id },
+      data: {
+        configs: updatedConfigs,
+        status: data.status,
+      },
+      select: devicePublicSelect,
+    });
+
+    return device;
   }
 
   async syncConfigsById(device_id: string, data: SyncDeviceConfigsDto): Promise<void> {
