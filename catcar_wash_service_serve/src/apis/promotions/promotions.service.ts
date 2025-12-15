@@ -1,4 +1,4 @@
-import { Injectable, Logger, BadRequestException } from '@nestjs/common';
+import { Injectable, Logger, BadRequestException, Inject, forwardRef } from '@nestjs/common';
 import { Prisma, DeviceStatus } from '@prisma/client';
 import { PrismaService } from 'src/database/prisma/prisma.service';
 import { ItemNotFoundException } from 'src/errors';
@@ -48,6 +48,7 @@ export class PromotionsService {
 
   constructor(
     private readonly prisma: PrismaService,
+    @Inject(forwardRef(() => DevicesService))
     private readonly devicesService: DevicesService,
   ) {
     this.logger.log('PromotionsService initialized');
@@ -378,5 +379,84 @@ export class PromotionsService {
     );
 
     return results;
+  }
+
+  /**
+   * Get active promotion for a specific user
+   * Returns the latest created active promotion that hasn't ended yet (end_date >= now)
+   * Includes future promotions (start_date in the future) for pre-sync to device
+   */
+  async getActivePromotionForUser(
+    userId: string,
+  ): Promise<{ discount_percent: number; start_date: Date; end_date: Date } | null> {
+    const now = new Date();
+
+    this.logger.log(`Looking for active promotion for user: ${userId}, now: ${now.toISOString()}`);
+
+    const promotionUser = await this.prisma.tbl_promotion_users.findFirst({
+      where: {
+        user_id: userId,
+        promotion: {
+          is_active: true,
+          end_date: { gte: now }, // Only check end_date, allow future start_date
+        },
+      },
+      include: {
+        promotion: {
+          select: {
+            id: true,
+            name: true,
+            discount_percent: true,
+            start_date: true,
+            end_date: true,
+            is_active: true,
+          },
+        },
+      },
+      orderBy: {
+        promotion: {
+          created_at: 'desc',
+        },
+      },
+    });
+
+    if (!promotionUser) {
+      this.logger.log(`No active promotion found for user: ${userId}`);
+
+      // Debug: Check if user has any promotions at all
+      const allPromotions = await this.prisma.tbl_promotion_users.findMany({
+        where: { user_id: userId },
+        include: {
+          promotion: {
+            select: {
+              id: true,
+              name: true,
+              discount_percent: true,
+              start_date: true,
+              end_date: true,
+              is_active: true,
+            },
+          },
+        },
+      });
+      this.logger.log(`User ${userId} has ${allPromotions.length} promotion(s) assigned:`);
+      allPromotions.forEach((p) => {
+        this.logger.log(
+          `  - ${p.promotion.name}: ${p.promotion.discount_percent}%, active=${p.promotion.is_active}, start=${p.promotion.start_date.toISOString()}, end=${p.promotion.end_date.toISOString()}`,
+        );
+      });
+
+      return null;
+    }
+
+    this.logger.log(
+      `Found active promotion for user ${userId}: ${promotionUser.promotion.name} (${promotionUser.promotion.discount_percent}%)`,
+    );
+
+    return {
+      discount_percent: Number(promotionUser.promotion.discount_percent),
+      start_date: promotionUser.promotion.start_date,
+      end_date: promotionUser.promotion.end_date,
+    };
   }
 }

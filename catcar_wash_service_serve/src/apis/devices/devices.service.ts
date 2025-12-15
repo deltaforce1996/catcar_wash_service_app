@@ -1,4 +1,4 @@
-import { Injectable, Logger } from '@nestjs/common';
+import { Injectable, Logger, Inject, forwardRef } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { DeviceStatus, DeviceType, PermissionType, Prisma } from '@prisma/client';
 import { PrismaService } from 'src/database/prisma/prisma.service';
@@ -16,6 +16,7 @@ import { DeviceWashConfig } from 'src/shared/device-wash-config';
 import { DeviceDryingConfig } from 'src/shared/device-drying-config';
 import { MqttCommandManagerService } from 'src/services/adepters/mqtt-command-manager.service';
 import { CommandConfig } from 'src/types/mqtt-command-manager.types';
+import { PromotionsService } from '../promotions/promotions.service';
 
 export const devicePublicSelect = Prisma.validator<Prisma.tbl_devicesSelect>()({
   id: true,
@@ -80,6 +81,8 @@ export class DevicesService {
     private readonly prisma: PrismaService,
     private readonly mqttCommandManager: MqttCommandManagerService,
     private readonly configService: ConfigService,
+    @Inject(forwardRef(() => PromotionsService))
+    private readonly promotionsService: PromotionsService,
   ) {
     this.deviceAckTimeoutSeconds = this.configService.get<number>('device.ackTimeoutSeconds', 15);
     this.logger.log('DevicesService initialized');
@@ -789,11 +792,11 @@ export class DevicesService {
     return device;
   }
 
-  async syncConfigsById(device_id: string, data: SyncDeviceConfigsDto): Promise<void> {
-    // Get device and check if exists
+  async syncConfigsById(device_id: string, data: SyncDeviceConfigsDto): Promise<CommandConfig> {
+    // Get device with owner_id
     const device = await this.prisma.tbl_devices.findUnique({
       where: { id: device_id },
-      select: { id: true, type: true },
+      select: { id: true, type: true, owner_id: true, status: true },
     });
 
     if (!device) {
@@ -836,6 +839,58 @@ export class DevicesService {
       throw new ItemNotFoundException(`Unsupported device type: ${String(device.type)}`);
     }
 
+    // Get active promotion from DB and override in config
+    let dbPromotion = 0;
+    let promotionStart = 0;
+    let promotionEnd = 0;
+
+    if (device.owner_id) {
+      const activePromotion = await this.promotionsService.getActivePromotionForUser(device.owner_id);
+      if (activePromotion) {
+        dbPromotion = activePromotion.discount_percent;
+        promotionStart = activePromotion.start_date.getTime();
+        promotionEnd = activePromotion.end_date.getTime();
+      }
+    }
+
+    // Override promotion in structuredConfig with DB values
+    if (structuredConfig.pricing) {
+      if (structuredConfig.pricing.promotion) {
+        structuredConfig.pricing.promotion = {
+          ...structuredConfig.pricing.promotion,
+          value: dbPromotion,
+        };
+      }
+
+      // Update or create promotion_start
+      if (structuredConfig.pricing.promotion_start) {
+        structuredConfig.pricing.promotion_start = {
+          ...structuredConfig.pricing.promotion_start,
+          value: promotionStart,
+        };
+      } else {
+        structuredConfig.pricing.promotion_start = {
+          value: promotionStart,
+          unit: 'timestamp',
+          description: 'เริ่มโปรโมชั่น',
+        };
+      }
+
+      // Update or create promotion_end
+      if (structuredConfig.pricing.promotion_end) {
+        structuredConfig.pricing.promotion_end = {
+          ...structuredConfig.pricing.promotion_end,
+          value: promotionEnd,
+        };
+      } else {
+        structuredConfig.pricing.promotion_end = {
+          value: promotionEnd,
+          unit: 'timestamp',
+          description: 'สิ้นสุดโปรโมชั่น',
+        };
+      }
+    }
+
     // Update configs in database
     await this.prisma.tbl_devices.update({
       where: { id: device_id },
@@ -843,5 +898,9 @@ export class DevicesService {
         configs: structuredConfig,
       },
     });
+
+    // Convert to raw CommandConfig format and return to device
+    const rawConfig = this.convertToRawConfig(structuredConfig, device.type, device.status);
+    return rawConfig;
   }
 }

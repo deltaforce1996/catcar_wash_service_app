@@ -21,7 +21,8 @@
       "Bash(pnpm add:*)",
       "Bash(curl:*)",
       "Bash(find:*)",
-      "Bash(dir:*)"
+      "Bash(dir:*)",
+      "Bash(npx tsc:*)"
     ],
     "deny": [],
     "ask": []

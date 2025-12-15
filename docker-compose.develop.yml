@@ -65,6 +65,13 @@ services:
     networks:
       - catcar_wash_network
 
+    healthcheck:
+      test: [ "CMD", "emqx", "ping" ]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 30s
+
   # Backend Service (NestJS + Prisma)
   backend:
     build:
@@ -94,6 +101,8 @@ services:
       - MQTT_PASSWORD=password
     depends_on:
       postgres:
+        condition: service_healthy
+      emqx:
         condition: service_healthy
     networks:
       - catcar_wash_network

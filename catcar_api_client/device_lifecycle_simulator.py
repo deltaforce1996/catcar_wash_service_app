@@ -337,6 +337,7 @@ class DeviceLifecycleSimulator:
             if 200 <= response.status_code <= 299:
                 if not silent:
                     print(f"✅ Sync Configs สำเร็จ!")
+                    print(f"   Response: {response.json().get('data', {})}")
                 
                 # อัพเดทสถานะ
                 device['synced'] = True

@@ -1,4 +1,4 @@
-import { Module } from '@nestjs/common';
+import { Module, forwardRef } from '@nestjs/common';
 import { DevicesService } from './devices.service';
 import { DevicesController } from './devices.controller';
 import {
@@ -9,9 +9,10 @@ import {
   MqttCommandManagerService,
 } from 'src/services';
 import { EventEmitterModule } from '@nestjs/event-emitter';
+import { PromotionsModule } from '../promotions/promotions.module';
 
 @Module({
-  imports: [EventEmitterModule],
+  imports: [EventEmitterModule, forwardRef(() => PromotionsModule)],
   providers: [
     DevicesService,
     ErrorLoggerService,
