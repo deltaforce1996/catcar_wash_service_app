@@ -9,6 +9,10 @@ export interface AppConfig {
       secretKey: string;
     };
   };
+  device: {
+    ackTimeoutSeconds: number; // Backend MQTT timeout for device ACK
+    ackTimeoutMs: number; // Frontend axios timeout (should be ackTimeoutSeconds * 1000 + buffer)
+  };
   app: {
     name: string;
     version: string;
@@ -35,6 +39,12 @@ export const getConfigUtils = () => {
 
   console.log("runtimeConfig", runtimeConfig.public.apiUrl);
 
+  // Device ACK timeout: backend waits 15s, frontend waits 20s (15s + 5s buffer)
+  const deviceAckTimeoutSeconds = getDefault<number>(
+    runtimeConfig.public.deviceAckTimeoutSeconds as unknown as number,
+    15
+  );
+
   const config: AppConfig = {
     app: {
       name: getDefault(runtimeConfig.public.appName, "X-CatCar Wash Service"),
@@ -49,6 +59,10 @@ export const getConfigUtils = () => {
         enabled: false,
         secretKey: "Cat Car Wash Service",
       },
+    },
+    device: {
+      ackTimeoutSeconds: deviceAckTimeoutSeconds,
+      ackTimeoutMs: deviceAckTimeoutSeconds * 1000 + 5000, // Add 5s buffer for network latency
     },
     debug: {
       enabled: true,

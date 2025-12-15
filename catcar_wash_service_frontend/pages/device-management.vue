@@ -380,10 +380,65 @@
           <v-btn
             v-if="!applyDeviceConfigError"
             color="primary"
-            :loading="isUpdating"
+            :disabled="isUpdating"
             @click="applyDeviceConfig"
           >
-            ยืนยัน
+            <v-progress-circular
+              v-if="isUpdating"
+              :model-value="(countdownSeconds / deviceAckTimeoutSeconds) * 100"
+              :size="20"
+              :width="2"
+              color="white"
+              class="mr-2"
+            />
+            {{ isUpdating && countdownSeconds > 0 ? `รอ ${countdownSeconds} วินาที` : 'ยืนยัน' }}
+          </v-btn>
+        </v-card-actions>
+      </v-card>
+    </v-dialog>
+
+    <!-- Timeout Confirmation Dialog -->
+    <v-dialog v-model="showTimeoutConfirmDialog" max-width="500">
+      <v-card>
+        <v-card-title class="pa-6 d-flex align-center">
+          <v-icon color="warning" class="mr-2">mdi-clock-alert-outline</v-icon>
+          <h3 class="text-h5">อุปกรณ์ไม่ตอบสนอง</h3>
+        </v-card-title>
+        <v-card-text>
+          <v-alert color="warning" variant="tonal" class="mb-4">
+            <v-icon class="mr-1">mdi-alert</v-icon>
+            อุปกรณ์ไม่ตอบกลับภายใน {{ deviceAckTimeoutSeconds }} วินาที อาจเกิดจาก:
+            <ul class="mt-2 ml-4">
+              <li>อุปกรณ์ออฟไลน์หรือไม่มีสัญญาณ</li>
+              <li>อุปกรณ์กำลังประมวลผลอยู่</li>
+              <li>ปัญหาการเชื่อมต่อ MQTT</li>
+            </ul>
+          </v-alert>
+          <p class="text-body-1">
+            คุณต้องการบันทึกการตั้งค่าลงฐานข้อมูลโดยไม่รอการตอบกลับจากอุปกรณ์หรือไม่?
+          </p>
+          <v-alert color="info" variant="tonal" density="compact" class="mt-3">
+            <v-icon class="mr-1">mdi-information</v-icon>
+            การตั้งค่าจะถูกส่งไปยังอุปกรณ์อีกครั้งเมื่ออุปกรณ์ออนไลน์
+          </v-alert>
+        </v-card-text>
+        <v-card-actions class="pa-6 pt-0">
+          <v-spacer />
+          <v-btn
+            variant="outlined"
+            :disabled="isUpdating"
+            @click="showTimeoutConfirmDialog = false"
+          >
+            ยกเลิก
+          </v-btn>
+          <v-btn
+            color="warning"
+            variant="elevated"
+            :loading="isUpdating"
+            @click="applyDeviceConfigSkipAck"
+          >
+            <v-icon class="mr-1">mdi-content-save</v-icon>
+            บันทึกโดยไม่รอ
           </v-btn>
         </v-card-actions>
       </v-card>
@@ -399,6 +454,8 @@ import type {
 import EnhancedDataTable from "~/components/common/EnhancedDataTable.vue";
 import DeviceDetailDialog from "~/components/DeviceDetailDialog.vue";
 import { getLastOnlineStatus } from "~/utils/device-utils";
+import { getConfigUtils } from "~/configs";
+import type { EnumDeviceStatus } from "~/types/state.type";
 
 // Import enum translation composable
 const {
@@ -431,11 +488,39 @@ const selectedDevices = ref<DeviceResponseApi[]>([]);
 const showApplySystemConfigDialog = ref(false);
 const showDeviceDetailDialog = ref(false);
 const showApplyDeviceConfigDialog = ref(false);
+const showTimeoutConfirmDialog = ref(false);
 const applyDeviceConfigError = ref<string>("");
 const selectedDevice = ref<DeviceResponseApi | null>(null);
 const isEditMode = ref(false);
 const editableConfigs = ref<Record<string, DeviceConfig>>({});
 const originalConfigs = ref<Record<string, DeviceConfig>>({});
+
+// Get device ACK timeout from config
+const { config: appConfig } = getConfigUtils();
+const deviceAckTimeoutSeconds = appConfig.device.ackTimeoutSeconds;
+
+// Countdown timer state for apply config button
+const countdownSeconds = ref(0);
+const countdownInterval = ref<ReturnType<typeof setInterval> | null>(null);
+
+const startCountdown = (seconds: number) => {
+  countdownSeconds.value = seconds;
+  countdownInterval.value = setInterval(() => {
+    if (countdownSeconds.value > 0) {
+      countdownSeconds.value--;
+    } else {
+      stopCountdown();
+    }
+  }, 1000);
+};
+
+const stopCountdown = () => {
+  if (countdownInterval.value) {
+    clearInterval(countdownInterval.value);
+    countdownInterval.value = null;
+  }
+  countdownSeconds.value = 0;
+};
 
 // Ref to DeviceDetailDialog component
 const deviceDetailDialogRef = ref<InstanceType<
@@ -601,14 +686,21 @@ const applyDeviceConfig = async () => {
       return;
     }
 
+    // Start countdown timer to match backend MQTT timeout
+    startCountdown(deviceAckTimeoutSeconds);
+
     let updatedDevice = null;
 
-    // Update device with config changes and current status
+    // Update device with config changes and current status (wait for ACK)
     updatedDevice = await updateDeviceConfigs(
       selectedDevice.value.id,
       configPayload,
-      statusPayload.status as EnumDeviceStatus
+      statusPayload.status as EnumDeviceStatus,
+      false // skipAck = false, wait for device ACK
     );
+
+    // Stop countdown on success
+    stopCountdown();
 
     // Refresh selectedDevice with the API response to update dialog
     if (updatedDevice) {
@@ -624,10 +716,65 @@ const applyDeviceConfig = async () => {
     // Refresh the devices list
     await applyFilters();
   } catch {
-    // Use the error from useDevice composable (already formatted in Thai)
+    // Stop countdown on error
+    stopCountdown();
+
+    // Check if it's a timeout error (device didn't respond within 15 seconds)
+    const errorMessage = apiError.value || "";
+    const isTimeoutError = errorMessage.includes("did not respond") ||
+                           errorMessage.includes("timeout") ||
+                           errorMessage.includes("หมดเวลา");
+
+    if (isTimeoutError) {
+      // Close the current dialog and show timeout confirmation dialog
+      showApplyDeviceConfigDialog.value = false;
+      showTimeoutConfirmDialog.value = true;
+    } else {
+      // Use the error from useDevice composable (already formatted in Thai)
+      applyDeviceConfigError.value =
+        apiError.value ||
+        "ไม่สามารถบันทึกการตั้งค่าอุปกรณ์ได้ กรุณาลองใหม่อีกครั้ง";
+    }
+  }
+};
+
+// Retry config update without waiting for device ACK (after timeout)
+const applyDeviceConfigSkipAck = async () => {
+  if (!selectedDevice.value || !deviceDetailDialogRef.value) return;
+
+  try {
+    // Get both status and config payloads from the dialog component
+    const statusPayload = deviceDetailDialogRef.value.getStatusChangePayload();
+    const configPayload = deviceDetailDialogRef.value.getSavePayload();
+
+    // Update device with config changes, skip waiting for ACK
+    const updatedDevice = await updateDeviceConfigs(
+      selectedDevice.value.id,
+      configPayload,
+      statusPayload.status as EnumDeviceStatus,
+      true // skipAck = true, don't wait for device ACK
+    );
+
+    // Refresh selectedDevice with the API response to update dialog
+    if (updatedDevice) {
+      selectedDevice.value = updatedDevice;
+    }
+
+    showTimeoutConfirmDialog.value = false;
+    isEditMode.value = false;
+
+    // Reset dialog to view mode instead of closing it
+    deviceDetailDialogRef.value.resetToViewMode();
+
+    // Refresh the devices list
+    await applyFilters();
+  } catch {
+    // Show error in the timeout dialog or close it
+    showTimeoutConfirmDialog.value = false;
     applyDeviceConfigError.value =
       apiError.value ||
       "ไม่สามารถบันทึกการตั้งค่าอุปกรณ์ได้ กรุณาลองใหม่อีกครั้ง";
+    showApplyDeviceConfigDialog.value = true;
   }
 };
 
@@ -648,6 +795,11 @@ onMounted(async () => {
     sort_by: "created_at",
     sort_order: "desc",
   });
+});
+
+// Cleanup countdown on unmount
+onUnmounted(() => {
+  stopCountdown();
 });
 </script>
 

@@ -134,6 +134,7 @@ export interface UpdateDeviceConfigsPayload {
     };
   };
   status?: EnumDeviceStatus;
+  skipAck?: boolean;
 }
 
 export interface SetDeviceStatePayload {
@@ -216,9 +217,13 @@ export class DeviceApiService extends BaseApiClient {
     id: string,
     payload: UpdateDeviceConfigsPayload
   ): Promise<ApiSuccessResponse<DeviceResponseApi>> {
+    // Use longer timeout because backend waits for device ACK
+    // skipAck = true means no waiting needed, use default timeout
+    const timeout = payload.skipAck ? undefined : this.config.device.ackTimeoutMs;
     const response = await this.put<ApiSuccessResponse<DeviceResponseApi>>(
       `api/v1/devices/update-configs/${id}`,
-      payload
+      payload,
+      timeout ? { timeout } : undefined
     );
     return response;
   }

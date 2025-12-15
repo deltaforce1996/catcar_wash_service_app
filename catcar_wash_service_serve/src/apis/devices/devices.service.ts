@@ -1,4 +1,5 @@
 import { Injectable, Logger } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
 import { DeviceStatus, DeviceType, PermissionType, Prisma } from '@prisma/client';
 import { PrismaService } from 'src/database/prisma/prisma.service';
 import { BadRequestException, ItemNotFoundException } from 'src/errors';
@@ -73,11 +74,14 @@ const ALLOWED = ['id', 'name', 'type', 'status', 'owner', 'register', 'search'] 
 @Injectable()
 export class DevicesService {
   private readonly logger = new Logger(DevicesService.name);
+  private readonly deviceAckTimeoutSeconds: number;
 
   constructor(
     private readonly prisma: PrismaService,
     private readonly mqttCommandManager: MqttCommandManagerService,
+    private readonly configService: ConfigService,
   ) {
+    this.deviceAckTimeoutSeconds = this.configService.get<number>('device.ackTimeoutSeconds', 15);
     this.logger.log('DevicesService initialized');
   }
 
@@ -547,7 +551,7 @@ export class DevicesService {
       });
       return device;
     } else if (result.status === 'TIMEOUT') {
-      throw new BadRequestException('Device did not respond within 30 seconds');
+      throw new BadRequestException(`Device did not respond within ${this.deviceAckTimeoutSeconds} seconds`);
     } else {
       throw new BadRequestException(result.error ?? 'Config update failed');
     }

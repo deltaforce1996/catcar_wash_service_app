@@ -2,5 +2,6 @@ import appConfig from './app.config';
 import jwtConfig from './jwt.config';
 import { beamCheckoutConfig } from './beam-checkout.config';
 import timezoneConfig from './timezone.config';
+import deviceConfig from './device.config';
 
-export { appConfig, jwtConfig, beamCheckoutConfig, timezoneConfig };
+export { appConfig, jwtConfig, beamCheckoutConfig, timezoneConfig, deviceConfig };

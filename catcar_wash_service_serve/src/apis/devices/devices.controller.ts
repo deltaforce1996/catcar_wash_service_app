@@ -88,11 +88,16 @@ export class DevicesController {
     @Param('id') id: string,
     @Body() data: UpdateDeviceConfigsDto,
   ): Promise<SuccessResponse<DeviceRow>> {
-    const result = await this.devicesService.updateConfigsById(id, data);
+    // Use no-wait version if skipAck is true (for timeout retry)
+    const result = data.skipAck
+      ? await this.devicesService.updateConfigsByIdNoWait(id, data)
+      : await this.devicesService.updateConfigsById(id, data);
     return {
       success: true,
       data: result,
-      message: 'Device configurations updated successfully',
+      message: data.skipAck
+        ? 'Device configurations saved (without waiting for device ACK)'
+        : 'Device configurations updated successfully',
     };
   }
 

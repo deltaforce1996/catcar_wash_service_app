@@ -21,15 +21,19 @@ export class MqttCommandManagerService implements OnModuleInit, OnModuleDestroy 
   private eventAdapter: IMqttCommandEventAdapter;
   private readonly secretKey: string;
 
-  private readonly defaultTimeout = 30000; // 30 seconds
-  private readonly defaultRetryAttempts = 3; // 3 attempts
-  private readonly defaultRetryDelay = 1000; // 1 second between retries
+  private readonly defaultTimeout: number;
+  // private readonly defaultRetryAttempts = 3; // 3 attempts
+  // private readonly defaultRetryDelay = 1000; // 1 second between retries
 
   constructor(
     private readonly mqttService: MqttService,
     private readonly configService: ConfigService,
   ) {
     this.secretKey = this.configService.get<string>('app.deviceSecretKey', 'device-secret-key');
+    // Get device ACK timeout from config (in seconds), default 15 seconds
+    const timeoutSeconds = this.configService.get<number>('device.ackTimeoutSeconds', 15);
+    this.defaultTimeout = timeoutSeconds * 1000;
+    this.logger.log(`Device ACK timeout configured to ${timeoutSeconds} seconds`);
   }
 
   async onModuleInit() {

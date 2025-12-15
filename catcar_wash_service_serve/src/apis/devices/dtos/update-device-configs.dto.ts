@@ -1,5 +1,5 @@
 import { DeviceStatus } from '@prisma/client';
-import { IsEnum, IsObject, IsOptional } from 'class-validator';
+import { IsBoolean, IsEnum, IsObject, IsOptional } from 'class-validator';
 
 // System configuration that's common to all device types
 export interface SystemConfig {
@@ -47,4 +47,8 @@ export class UpdateDeviceConfigsDto {
   @IsEnum(DeviceStatus)
   @IsOptional()
   status?: DeviceStatus;
+
+  @IsBoolean()
+  @IsOptional()
+  skipAck?: boolean;
 }

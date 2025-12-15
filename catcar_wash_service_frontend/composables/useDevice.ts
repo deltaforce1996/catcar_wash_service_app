@@ -152,7 +152,8 @@ export const useDevice = () => {
   const updateDeviceConfigs = async (
     id: string,
     configData: UpdateDeviceConfigsPayload,
-    statusData: EnumDeviceStatus
+    statusData: EnumDeviceStatus,
+    skipAck: boolean = false
   ) => {
     try {
       isUpdating.value = true;
@@ -160,6 +161,7 @@ export const useDevice = () => {
       const response = await deviceApi.UpdateDeviceConfigsById(id, {
         ...configData,
         status: statusData,
+        skipAck,
       });
       if (response.success && response.data) {
         if (currentDevice.value?.id === id) {
