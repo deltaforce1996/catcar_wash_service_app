@@ -582,7 +582,7 @@
       <template #filters>
         <v-row>
           <!-- Search Bar -->
-          <v-col cols="12" md="6">
+          <v-col cols="12">
             <v-text-field
               v-model="tempSearchQuery"
               prepend-inner-icon="mdi-magnify"
@@ -594,107 +594,6 @@
               aria-label="ค้นหาการขาย"
               role="searchbox"
             />
-          </v-col>
-
-          <!-- Time Range Picker -->
-          <v-col cols="12" md="6">
-            <div class="d-flex ga-2">
-              <!-- Start Time Field -->
-              <v-menu v-model="startTimeMenu" :close-on-content-click="false">
-                <template #activator="{ props }">
-                  <v-text-field
-                    v-bind="props"
-                    :model-value="formatTimeToString(tempStartTimeObj)"
-                    readonly
-                    prepend-inner-icon="mdi-clock-outline"
-                    variant="outlined"
-                    density="compact"
-                    placeholder="เวลาเริ่ม"
-                    hide-details
-                    class="flex-1"
-                  />
-                </template>
-                <v-card class="pa-4">
-                  <div class="d-flex flex-column ga-3">
-                    <div class="text-subtitle-2">เวลาเริ่มต้น</div>
-                    <v-time-picker
-                      v-model="tempStartTimeObj"
-                      scrollable
-                      :max="
-                        tempEndTimeObj
-                          ? formatTimeToString(tempEndTimeObj)
-                          : '23:59'
-                      "
-                      class="time-picker-compact"
-                    />
-                    <div class="d-flex justify-end ga-2">
-                      <v-btn
-                        variant="text"
-                        size="small"
-                        @click="tempStartTimeObj = null"
-                      >
-                        ล้าง
-                      </v-btn>
-                      <v-btn
-                        color="primary"
-                        size="small"
-                        @click="startTimeMenu = false"
-                      >
-                        ตกลง
-                      </v-btn>
-                    </div>
-                  </div>
-                </v-card>
-              </v-menu>
-
-              <!-- End Time Field -->
-              <v-menu v-model="endTimeMenu" :close-on-content-click="false">
-                <template #activator="{ props }">
-                  <v-text-field
-                    v-bind="props"
-                    :model-value="formatTimeToString(tempEndTimeObj)"
-                    readonly
-                    prepend-inner-icon="mdi-clock-outline"
-                    variant="outlined"
-                    density="compact"
-                    placeholder="เวลาสิ้นสุด"
-                    hide-details
-                    class="flex-1"
-                  />
-                </template>
-                <v-card class="pa-4">
-                  <div class="d-flex flex-column ga-3">
-                    <div class="text-subtitle-2">เวลาสิ้นสุด</div>
-                    <v-time-picker
-                      v-model="tempEndTimeObj"
-                      scrollable
-                      :min="
-                        tempStartTimeObj
-                          ? formatTimeToString(tempStartTimeObj)
-                          : '00:00'
-                      "
-                      class="time-picker-compact"
-                    />
-                    <div class="d-flex justify-end ga-2">
-                      <v-btn
-                        variant="text"
-                        size="small"
-                        @click="tempEndTimeObj = null"
-                      >
-                        ล้าง
-                      </v-btn>
-                      <v-btn
-                        color="primary"
-                        size="small"
-                        @click="endTimeMenu = false"
-                      >
-                        ตกลง
-                      </v-btn>
-                    </div>
-                  </div>
-                </v-card>
-              </v-menu>
-            </div>
           </v-col>
         </v-row>
       </template>
@@ -1028,7 +927,7 @@
         <template #filters>
           <v-row>
             <!-- Search Bar -->
-            <v-col cols="12" md="6">
+            <v-col cols="12">
               <v-text-field
                 v-model="logsTabTempSearchQuery"
                 prepend-inner-icon="mdi-magnify"
@@ -1040,107 +939,6 @@
                 aria-label="ค้นหาการขาย"
                 role="searchbox"
               />
-            </v-col>
-
-            <!-- Time Range Picker -->
-            <v-col cols="12" md="6">
-              <div class="d-flex ga-2">
-                <!-- Start Time Field -->
-                <v-menu v-model="logsTabStartTimeMenu" :close-on-content-click="false">
-                  <template #activator="{ props }">
-                    <v-text-field
-                      v-bind="props"
-                      :model-value="formatTimeToString(logsTabTempStartTimeObj)"
-                      readonly
-                      prepend-inner-icon="mdi-clock-outline"
-                      variant="outlined"
-                      density="compact"
-                      placeholder="เวลาเริ่ม"
-                      hide-details
-                      class="flex-1"
-                    />
-                  </template>
-                  <v-card class="pa-4">
-                    <div class="d-flex flex-column ga-3">
-                      <div class="text-subtitle-2">เวลาเริ่มต้น</div>
-                      <v-time-picker
-                        v-model="logsTabTempStartTimeObj"
-                        scrollable
-                        :max="
-                          logsTabTempEndTimeObj
-                            ? formatTimeToString(logsTabTempEndTimeObj)
-                            : '23:59'
-                        "
-                        class="time-picker-compact"
-                      />
-                      <div class="d-flex justify-end ga-2">
-                        <v-btn
-                          variant="text"
-                          size="small"
-                          @click="logsTabTempStartTimeObj = null"
-                        >
-                          ล้าง
-                        </v-btn>
-                        <v-btn
-                          color="primary"
-                          size="small"
-                          @click="logsTabStartTimeMenu = false"
-                        >
-                          ตกลง
-                        </v-btn>
-                      </div>
-                    </div>
-                  </v-card>
-                </v-menu>
-
-                <!-- End Time Field -->
-                <v-menu v-model="logsTabEndTimeMenu" :close-on-content-click="false">
-                  <template #activator="{ props }">
-                    <v-text-field
-                      v-bind="props"
-                      :model-value="formatTimeToString(logsTabTempEndTimeObj)"
-                      readonly
-                      prepend-inner-icon="mdi-clock-outline"
-                      variant="outlined"
-                      density="compact"
-                      placeholder="เวลาสิ้นสุด"
-                      hide-details
-                      class="flex-1"
-                    />
-                  </template>
-                  <v-card class="pa-4">
-                    <div class="d-flex flex-column ga-3">
-                      <div class="text-subtitle-2">เวลาสิ้นสุด</div>
-                      <v-time-picker
-                        v-model="logsTabTempEndTimeObj"
-                        scrollable
-                        :min="
-                          logsTabTempStartTimeObj
-                            ? formatTimeToString(logsTabTempStartTimeObj)
-                            : '00:00'
-                        "
-                        class="time-picker-compact"
-                      />
-                      <div class="d-flex justify-end ga-2">
-                        <v-btn
-                          variant="text"
-                          size="small"
-                          @click="logsTabTempEndTimeObj = null"
-                        >
-                          ล้าง
-                        </v-btn>
-                        <v-btn
-                          color="primary"
-                          size="small"
-                          @click="logsTabEndTimeMenu = false"
-                        >
-                          ตกลง
-                        </v-btn>
-                      </div>
-                    </div>
-                  </v-card>
-                </v-menu>
-              </div>
             </v-col>
           </v-row>
         </template>
@@ -1578,17 +1376,9 @@ const {
 
 // Logs Tab filter state
 const logsTabSearchQuery = ref("");
-const logsTabStartTimeObj = ref<TimeObject | Date | string | null>(null);
-const logsTabEndTimeObj = ref<TimeObject | Date | string | null>(null);
 
 // Logs Tab temp filter state
 const logsTabTempSearchQuery = ref("");
-const logsTabTempStartTimeObj = ref<TimeObject | Date | string | null>(null);
-const logsTabTempEndTimeObj = ref<TimeObject | Date | string | null>(null);
-
-// Logs Tab time picker menus
-const logsTabStartTimeMenu = ref(false);
-const logsTabEndTimeMenu = ref(false);
 
 // Logs Tab current page computed
 const logsTabCurrentPage = computed(() => logsTabCurrentSearchParams.value.page || 1);
@@ -1628,16 +1418,10 @@ const selectedDate = computed(() => {
 
 // Filter variables
 const searchQuery = ref("");
-const startTimeMenu = ref(false);
-const endTimeMenu = ref(false);
-const startTimeObj = ref<TimeObject | Date | string | null>(null);
-const endTimeObj = ref<TimeObject | Date | string | null>(null);
 const selectedServiceTypes = ref<string[]>([]);
 
 // Temporary filter variables (for pending changes)
 const tempSearchQuery = ref("");
-const tempStartTimeObj = ref<TimeObject | Date | string | null>(null);
-const tempEndTimeObj = ref<TimeObject | Date | string | null>(null);
 const tempSelectedServiceTypes = ref<string[]>([]);
 
 // Popover filter menu state
@@ -1677,7 +1461,7 @@ const activeFilterCount = computed(() => {
 });
 
 // Handle user search with debounce
-const handleUserSearch = (searchQuery: string) => {
+const handleUserSearch = (userSearchQuery: string) => {
   // Clear existing timer
   if (userSearchDebounceTimer.value !== null) {
     clearTimeout(userSearchDebounceTimer.value);
@@ -1694,10 +1478,10 @@ const handleUserSearch = (searchQuery: string) => {
       return;
     }
 
-    if (searchQuery && searchQuery.trim()) {
+    if (userSearchQuery && userSearchQuery.trim()) {
       // Search with query
       await searchUsers({
-        query: { search: searchQuery.trim() },
+        query: { search: userSearchQuery.trim() },
         page: 1,
         limit: 100,
       });
@@ -1712,39 +1496,10 @@ const handleUserSearch = (searchQuery: string) => {
   }, 500);
 };
 
-// Helper function to format time object to HH:mm string
-const formatTimeToString = (
-  timeObj: TimeObject | Date | string | null
-): string => {
-  if (!timeObj) return "";
-
-  // Handle different time object formats from Vuetify time picker
-  if (typeof timeObj === "string") {
-    return timeObj;
-  }
-
-  if (timeObj instanceof Date) {
-    return timeObj.toTimeString().slice(0, 5);
-  }
-
-  // Handle Vuetify time picker object format
-  if (timeObj && typeof timeObj === "object") {
-    const hour = timeObj.hour || timeObj.hours || 0;
-    const minute = timeObj.minute || timeObj.minutes || 0;
-    return `${hour.toString().padStart(2, "0")}:${minute
-      .toString()
-      .padStart(2, "0")}`;
-  }
-
-  return "";
-};
-
 // Main filter actions
 const applyFilters = async () => {
   // Update applied state
   searchQuery.value = tempSearchQuery.value;
-  startTimeObj.value = tempStartTimeObj.value;
-  endTimeObj.value = tempEndTimeObj.value;
   selectedServiceTypes.value = [...tempSelectedServiceTypes.value];
 
   // Build API query
@@ -1758,6 +1513,17 @@ const applyFilters = async () => {
   // Always include timestamp for the selected date
   query.payload_timestamp = buildTimestampQuery();
 
+  // Merge Popover filters
+  if (selectedDeviceTypes.value.length > 0) {
+    query.device_type = selectedDeviceTypes.value[0];
+  }
+  if (selectedPaymentStatuses.value.length > 0) {
+    query.payment_status = selectedPaymentStatuses.value[0];
+  }
+  if (selectedUserIds.value.length > 0) {
+    query.user_id = selectedUserIds.value[0];
+  }
+
   // Call API
   await searchEventLogs({
     query,
@@ -1769,20 +1535,28 @@ const applyFilters = async () => {
 const clearAllFilters = async () => {
   // Clear both temp and actual values
   tempSearchQuery.value = "";
-  tempStartTimeObj.value = null;
-  tempEndTimeObj.value = null;
   tempSelectedServiceTypes.value = [];
 
   searchQuery.value = "";
-  startTimeObj.value = null;
-  endTimeObj.value = null;
   selectedServiceTypes.value = [];
 
-  // Reset to initial search with full day timestamp
+  // Build query keeping Popover filters
+  const query: any = {
+    payload_timestamp: buildTimestampQuery(),
+  };
+
+  if (selectedDeviceTypes.value.length > 0) {
+    query.device_type = selectedDeviceTypes.value[0];
+  }
+  if (selectedPaymentStatuses.value.length > 0) {
+    query.payment_status = selectedPaymentStatuses.value[0];
+  }
+  if (selectedUserIds.value.length > 0) {
+    query.user_id = selectedUserIds.value[0];
+  }
+
   await searchEventLogs({
-    query: {
-      payload_timestamp: buildTimestampQuery(),
-    },
+    query,
     page: 1,
     limit: 10,
   });
@@ -1828,6 +1602,11 @@ const applyPopoverFilters = async () => {
     eventLogsQuery.user_id = selectedUserIds.value[0];
   }
 
+  // Merge Inline filters
+  if (searchQuery.value.trim()) {
+    eventLogsQuery.search = searchQuery.value.trim();
+  }
+
   // Update both dashboard and event logs
   await Promise.all([
     Object.keys(dashboardFilter).length > 0
@@ -1853,11 +1632,20 @@ const resetPopoverFilters = async () => {
   selectedPaymentStatuses.value = [];
   selectedDeviceTypes.value = [];
 
+  // Build query keeping Inline filters
+  const query: any = {
+    payload_timestamp: buildTimestampQuery(),
+  };
+
+  if (searchQuery.value.trim()) {
+    query.search = searchQuery.value.trim();
+  }
+
   // Re-fetch both dashboard and event logs with cleared filters
   await Promise.all([
     updateFilter({}),
     searchEventLogs({
-      query: { payload_timestamp: buildTimestampQuery() },
+      query,
       page: 1,
       limit: 10,
     }),
@@ -1909,8 +1697,6 @@ const initializeDashboardData = async () => {
 
   // Initialize temp filter values
   tempSearchQuery.value = searchQuery.value;
-  tempStartTimeObj.value = startTimeObj.value;
-  tempEndTimeObj.value = endTimeObj.value;
   tempSelectedServiceTypes.value = [...selectedServiceTypes.value];
 
   // Initialize popover filter temp values
@@ -2068,15 +1854,15 @@ const getTimestampFromDateTime = (
 };
 
 // Helper function to build timestamp query for the selected date
-// Uses time filters if set, otherwise uses full day (00:00-23:59)
+// Uses full day (00:00-23:59)
 const buildTimestampQuery = (): string => {
   const startTs = getTimestampFromDateTime(
     selectedDateObject.value,
-    startTimeObj.value || { hour: 0, minute: 0 }
+    { hour: 0, minute: 0 }
   );
   const endTs = getTimestampFromDateTime(
     selectedDateObject.value,
-    endTimeObj.value || { hour: 23, minute: 59 }
+    { hour: 23, minute: 59 }
   );
   return `${startTs}-${endTs}`;
 };
@@ -2114,15 +1900,7 @@ const buildLogsTabTimestampQuery = (): string => {
     start.setHours(0, 0, 0, 0);
   }
 
-  // Apply time filter if set
-  const startTs = logsTabStartTimeObj.value
-    ? getTimestampFromDateTime(start, logsTabStartTimeObj.value)
-    : start.getTime();
-  const endTs = logsTabEndTimeObj.value
-    ? getTimestampFromDateTime(end, logsTabEndTimeObj.value)
-    : end.getTime();
-
-  return `${startTs}-${endTs}`;
+  return `${start.getTime()}-${end.getTime()}`;
 };
 
 // Compute date range for display in Logs Tab
@@ -2169,8 +1947,6 @@ const formatDateRangeDisplay = computed(() => {
 const applyLogsTabFilters = async () => {
   // Update applied state
   logsTabSearchQuery.value = logsTabTempSearchQuery.value;
-  logsTabStartTimeObj.value = logsTabTempStartTimeObj.value;
-  logsTabEndTimeObj.value = logsTabTempEndTimeObj.value;
 
   // Build API query
   const query: Record<string, string | undefined> = {};
@@ -2183,6 +1959,17 @@ const applyLogsTabFilters = async () => {
   // Always include timestamp for the selected date range
   query.payload_timestamp = buildLogsTabTimestampQuery();
 
+  // Merge Popover filters
+  if (logsTabSelectedDeviceTypes.value.length > 0) {
+    query.device_type = logsTabSelectedDeviceTypes.value[0];
+  }
+  if (logsTabSelectedPaymentStatuses.value.length > 0) {
+    query.payment_status = logsTabSelectedPaymentStatuses.value[0];
+  }
+  if (logsTabSelectedUserIds.value.length > 0) {
+    query.user_id = logsTabSelectedUserIds.value[0];
+  }
+
   // Call API
   await searchLogsTabEventLogs({
     query,
@@ -2194,18 +1981,26 @@ const applyLogsTabFilters = async () => {
 const clearLogsTabFilters = async () => {
   // Clear both temp and actual values
   logsTabTempSearchQuery.value = "";
-  logsTabTempStartTimeObj.value = null;
-  logsTabTempEndTimeObj.value = null;
 
   logsTabSearchQuery.value = "";
-  logsTabStartTimeObj.value = null;
-  logsTabEndTimeObj.value = null;
 
-  // Reset to initial search with full date range timestamp
+  // Build query keeping Popover filters
+  const query: Record<string, string | undefined> = {
+    payload_timestamp: buildLogsTabTimestampQuery(),
+  };
+
+  if (logsTabSelectedDeviceTypes.value.length > 0) {
+    query.device_type = logsTabSelectedDeviceTypes.value[0];
+  }
+  if (logsTabSelectedPaymentStatuses.value.length > 0) {
+    query.payment_status = logsTabSelectedPaymentStatuses.value[0];
+  }
+  if (logsTabSelectedUserIds.value.length > 0) {
+    query.user_id = logsTabSelectedUserIds.value[0];
+  }
+
   await searchLogsTabEventLogs({
-    query: {
-      payload_timestamp: buildLogsTabTimestampQuery(),
-    },
+    query,
     page: 1,
     limit: 20,
   });
@@ -2218,13 +2013,7 @@ const handleLogsTabPageChange = (page: number) => {
 
 // Check if Logs Tab has any filter pending changes
 const logsTabHasFilterChanges = computed(() => {
-  return (
-    logsTabTempSearchQuery.value !== logsTabSearchQuery.value ||
-    JSON.stringify(logsTabTempStartTimeObj.value) !==
-      JSON.stringify(logsTabStartTimeObj.value) ||
-    JSON.stringify(logsTabTempEndTimeObj.value) !==
-      JSON.stringify(logsTabEndTimeObj.value)
-  );
+  return logsTabTempSearchQuery.value !== logsTabSearchQuery.value;
 });
 
 // Logs Tab Popover filter functions
@@ -2261,6 +2050,11 @@ const applyLogsTabPopoverFilters = async () => {
     eventLogsQuery.user_id = logsTabSelectedUserIds.value[0];
   }
 
+  // Merge Inline filters
+  if (logsTabSearchQuery.value.trim()) {
+    eventLogsQuery.search = logsTabSearchQuery.value.trim();
+  }
+
   // Fetch event logs
   await searchLogsTabEventLogs({
     query: eventLogsQuery,
@@ -2281,9 +2075,17 @@ const resetLogsTabPopoverFilters = async () => {
   logsTabSelectedPaymentStatuses.value = [];
   logsTabSelectedDeviceTypes.value = [];
 
-  // Re-fetch event logs with cleared filters
+  // Build query keeping Inline filters
+  const query: Record<string, string | undefined> = {
+    payload_timestamp: buildLogsTabTimestampQuery(),
+  };
+
+  if (logsTabSearchQuery.value.trim()) {
+    query.search = logsTabSearchQuery.value.trim();
+  }
+
   await searchLogsTabEventLogs({
-    query: { payload_timestamp: buildLogsTabTimestampQuery() },
+    query,
     page: 1,
     limit: 20,
   });
@@ -2321,9 +2123,6 @@ const handlePageChange = (page: number) => {
 const hasFilterChanges = computed(() => {
   return (
     tempSearchQuery.value !== searchQuery.value ||
-    JSON.stringify(tempStartTimeObj.value) !==
-      JSON.stringify(startTimeObj.value) ||
-    JSON.stringify(tempEndTimeObj.value) !== JSON.stringify(endTimeObj.value) ||
     JSON.stringify([...tempSelectedServiceTypes.value].sort()) !==
       JSON.stringify([...selectedServiceTypes.value].sort())
   );
