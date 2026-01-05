@@ -249,6 +249,7 @@ export class DeviceEventLogsService {
           status: item.status,
           timestamp: item.timestamp,
           total_amount: item.total_amount,
+          discount_percent: item.discount_percent,
           qr: item.qr,
           bank: item.bank,
           coin: item.coin,
@@ -346,6 +347,7 @@ export class DeviceEventLogsService {
       { width: 28 }, // เจ้าของ
       { width: 16 }, // สถานะ
       { width: 18 }, // จำนวนเงิน
+      { width: 12 }, // ส่วนลด (%)
       { width: 30 }, // รหัสธุรกรรม
       { width: 16 }, // QR (฿)
       { width: 10 }, // ธ.20
@@ -377,6 +379,7 @@ export class DeviceEventLogsService {
       'เจ้าของ',
       'สถานะ',
       'จำนวนเงิน (฿)',
+      'ส่วนลด (%)',
       'รหัสธุรกรรม',
       'QR (฿)',
       'ธ.20',
@@ -438,6 +441,7 @@ export class DeviceEventLogsService {
       const ownerName = event.device?.owner?.fullname || '-';
       const status = this.translatePaymentStatus(payload?.status);
       const totalAmount = payload?.total_amount ? Number(payload.total_amount) : 0;
+      const discountPercent = payload?.discount_percent ? Number(payload.discount_percent) : 0;
       const transactionId = payload?.qr?.transaction_id || '-';
 
       // Extract payment method amounts
@@ -480,6 +484,7 @@ export class DeviceEventLogsService {
         ownerName,
         status,
         totalAmount,
+        discountPercent > 0 ? `${discountPercent}%` : '-',
         transactionId,
         qrAmount,
         bank20Display,
@@ -521,7 +526,7 @@ export class DeviceEventLogsService {
           top: thinBorderData,
           left: colNumber === 1 ? mediumBorderData : thinBorderData,
           bottom: index === data.length - 1 ? mediumBorderData : thinBorderData,
-          right: colNumber === 19 ? mediumBorderData : thinBorderData,
+          right: colNumber === 20 ? mediumBorderData : thinBorderData,
         };
 
         // Alignment based on column
@@ -530,7 +535,7 @@ export class DeviceEventLogsService {
           cell.alignment = { vertical: 'middle', horizontal: 'center' };
         } else if (
           colNumber === 6 ||
-          colNumber === 8 ||
+          colNumber === 7 ||
           colNumber === 9 ||
           colNumber === 10 ||
           colNumber === 11 ||
@@ -541,14 +546,15 @@ export class DeviceEventLogsService {
           colNumber === 16 ||
           colNumber === 17 ||
           colNumber === 18 ||
-          colNumber === 19
+          colNumber === 19 ||
+          colNumber === 20
         ) {
-          // จำนวนเงิน, QR, denomination counts, Bank, Coin - center for counts, right for amounts
-          if (colNumber === 6 || colNumber === 8 || colNumber === 14 || colNumber === 19) {
+          // จำนวนเงิน, ส่วนลด, QR, denomination counts, Bank, Coin - center for counts, right for amounts
+          if (colNumber === 6 || colNumber === 9 || colNumber === 15 || colNumber === 20) {
             // Amount columns - right align
             cell.alignment = { vertical: 'middle', horizontal: 'right', indent: 1 };
           } else {
-            // Count columns - center align
+            // Count columns and discount - center align
             cell.alignment = { vertical: 'middle', horizontal: 'center' };
           }
         } else if (colNumber === 3 || colNumber === 5) {
@@ -577,19 +583,32 @@ export class DeviceEventLogsService {
             fgColor: statusBgColor,
           };
         }
+
+        // Apply discount styling (column 7) - orange/warning color when has discount
+        if (colNumber === 7) {
+          const cellValue = cell.value?.toString() || '';
+          if (cellValue !== '-' && cellValue !== '') {
+            cell.font = { bold: true, color: { argb: 'FFF57C00' } }; // Orange text
+            cell.fill = {
+              type: 'pattern',
+              pattern: 'solid',
+              fgColor: { argb: 'FFFFF3E0' }, // Light orange background
+            };
+          }
+        }
       });
 
       // Format currency columns (amount columns only)
       row.getCell(6).numFmt = '฿#,##0.00';
       row.getCell(6).font = { bold: true };
-      row.getCell(8).numFmt = '฿#,##0.00';
-      row.getCell(8).font = { bold: true };
-      row.getCell(14).numFmt = '฿#,##0.00';
-      row.getCell(14).font = { bold: true };
-      row.getCell(19).numFmt = '฿#,##0.00';
-      row.getCell(19).font = { bold: true };
+      row.getCell(9).numFmt = '฿#,##0.00';
+      row.getCell(9).font = { bold: true };
+      row.getCell(15).numFmt = '฿#,##0.00';
+      row.getCell(15).font = { bold: true };
+      row.getCell(20).numFmt = '฿#,##0.00';
+      row.getCell(20).font = { bold: true };
 
-      // Denomination cells (9-13, 15-18) are now text format "count(amount)"
+      // Denomination cells (10-14, 16-19) are now text format "count(amount)"
       // No numFmt needed as they are strings
 
       // Set row height
@@ -602,7 +621,7 @@ export class DeviceEventLogsService {
     // Auto-filter
     worksheet.autoFilter = {
       from: { row: 19, column: 1 },
-      to: { row: 19, column: 19 },
+      to: { row: 19, column: 20 },
     };
 
     // Generate buffer

@@ -21,6 +21,7 @@ export interface DeviceEventLogResponseApi {
     status?: EnumPaymentStatus;
     timestamp?: number;
     total_amount?: number;
+    discount_percent?: number;
     datetime?: string;
     [key: string]: unknown;
   } | null;

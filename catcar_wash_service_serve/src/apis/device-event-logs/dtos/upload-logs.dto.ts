@@ -76,6 +76,10 @@ export class PaymentItemDto {
 
   @IsNumber()
   total_amount: number;
+
+  @IsNumber()
+  @IsOptional()
+  discount_percent?: number;
 }
 
 export class UploadLogsDto {

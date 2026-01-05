@@ -651,6 +651,18 @@
         </div>
       </template>
 
+      <template #[`item.payload.discount_percent`]="{ item }">
+        <v-chip
+          v-if="item.payload?.discount_percent && item.payload.discount_percent > 0"
+          color="warning"
+          size="small"
+          variant="tonal"
+        >
+          {{ item.payload.discount_percent }}%
+        </v-chip>
+        <span v-else class="text-body-2 text-medium-emphasis">-</span>
+      </template>
+
       <template #[`item.actions`]="{ item }">
         <v-btn
           v-if="isAdmin && item.payload?.status !== 'CANCELLED'"
@@ -994,6 +1006,18 @@
           >
             ฿{{ item.payload?.total_amount?.toLocaleString("th-TH") || 0 }}
           </div>
+        </template>
+
+        <template #[`item.payload.discount_percent`]="{ item }">
+          <v-chip
+            v-if="item.payload?.discount_percent && item.payload.discount_percent > 0"
+            color="warning"
+            size="small"
+            variant="tonal"
+          >
+            {{ item.payload.discount_percent }}%
+          </v-chip>
+          <span v-else class="text-body-2 text-medium-emphasis">-</span>
         </template>
 
         <template #[`item.actions`]="{ item }">
@@ -1813,6 +1837,7 @@ const salesHeaders = computed(() => {
     { title: "สถานะ", key: "payload.status", sortable: false },
     { title: "ประเภท", key: "device.type", sortable: true },
     { title: "จำนวนเงิน", key: "payload.total_amount", sortable: false },
+    { title: "ส่วนลด", key: "payload.discount_percent", sortable: false },
     { title: "", key: "data-table-expand", sortable: false },
   ];
 
