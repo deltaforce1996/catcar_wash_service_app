@@ -114,28 +114,28 @@ services:
       start_period: 60s
 
   # Database Scripts (Partition & Backup)
-  db_scripts:
-    build:
-      context: ./catcar_wash_service_script
-      dockerfile: Dockerfile
-    container_name: catcar_wash_db_scripts
-    restart: unless-stopped
-    environment:
-      - PGHOST=postgres
-      - PGPORT=5432
-      - PGUSER=catcar
-      - PGPASSWORD=password
-      - PGDATABASE=catcar_wash_db
-      - DATABASE_URL=postgresql://catcar:password@postgres:5432/catcar_wash_db
-    volumes:
-      - db_backups:/app/backups
-    depends_on:
-      backend:
-        condition: service_healthy
-      postgres:
-        condition: service_healthy
-    networks:
-      - catcar_wash_network
+  # db_scripts:
+  #   build:
+  #     context: ./catcar_wash_service_script
+  #     dockerfile: Dockerfile
+  #   container_name: catcar_wash_db_scripts
+  #   restart: unless-stopped
+  #   environment:
+  #     - PGHOST=postgres
+  #     - PGPORT=5432
+  #     - PGUSER=catcar
+  #     - PGPASSWORD=password
+  #     - PGDATABASE=catcar_wash_db
+  #     - DATABASE_URL=postgresql://catcar:password@postgres:5432/catcar_wash_db
+  #   volumes:
+  #     - db_backups:/app/backups
+  #   depends_on:
+  #     backend:
+  #       condition: service_healthy
+  #     postgres:
+  #       condition: service_healthy
+  #   networks:
+  #     - catcar_wash_network
 
 volumes:
   postgres_data:
@@ -146,8 +146,8 @@ volumes:
     driver: local
   emqx_log:
     driver: local
-  db_backups:
-    driver: local
+  # db_backups:
+  #   driver: local
 
 networks:
   catcar_wash_network:

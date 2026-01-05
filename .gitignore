@@ -17,3 +17,5 @@ emqx_data/
 emqx_log/
 
 public/firmwares
+
+catcar_wash_service_script
