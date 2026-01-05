@@ -1,9 +1,0 @@
-backups/*
-!backups/.gitignore
-README.md
-*.pyc
-__pycache__
-.git
-.gitignore
-*.log
-
