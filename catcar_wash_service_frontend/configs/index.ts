@@ -39,10 +39,10 @@ export const getConfigUtils = () => {
 
   console.log("runtimeConfig", runtimeConfig.public.apiUrl);
 
-  // Device ACK timeout: backend waits 15s, frontend waits 20s (15s + 5s buffer)
+  // Device ACK timeout: backend waits 10s, frontend waits 15s (10s + 5s buffer)
   const deviceAckTimeoutSeconds = getDefault<number>(
     runtimeConfig.public.deviceAckTimeoutSeconds as unknown as number,
-    15
+    10
   );
 
   const config: AppConfig = {

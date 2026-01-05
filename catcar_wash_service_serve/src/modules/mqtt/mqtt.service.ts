@@ -59,6 +59,16 @@ export class MqttService implements OnModuleInit, OnModuleDestroy {
     // Set up global error handling to prevent app crashes
     this.setupGlobalErrorHandling();
 
+    // console.log('MQTT Config:', this.configService.get<string>('app.mqttBrokerUrl'));
+    // console.log('MQTT Client ID:', this.configService.get<string>('app.mqttClientId'));
+    // console.log('MQTT Username:', this.configService.get<string>('app.mqttUsername'));
+    // console.log('MQTT Password:', this.configService.get<string>('app.mqttPassword'));
+    // console.log('MQTT Keepalive:', this.configService.get<number>('app.mqttKeepalive'));
+    // console.log('MQTT Connect Timeout:', this.configService.get<number>('app.mqttConnectTimeout'));
+    // console.log('MQTT Reconnect Period:', this.configService.get<number>('app.mqttReconnectPeriod'));
+    // console.log('MQTT Clean:', this.configService.get<boolean>('app.mqttClean'));
+    // console.log('MQTT QoS:', this.configService.get<number>('app.mqttQos'));
+
     this.config = {
       brokerUrl: this.configService.get<string>('app.mqttBrokerUrl', 'mqtt://localhost:1883'),
       clientId: this.configService.get<string>('app.mqttClientId', `catcar-wash-${Date.now()}`),

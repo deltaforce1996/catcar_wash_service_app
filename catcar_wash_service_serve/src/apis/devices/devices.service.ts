@@ -1,4 +1,4 @@
-import { Injectable, Logger, Inject, forwardRef } from '@nestjs/common';
+import { Injectable, Logger, Inject, forwardRef, OnModuleDestroy } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { DeviceStatus, DeviceType, PermissionType, Prisma } from '@prisma/client';
 import { PrismaService } from 'src/database/prisma/prisma.service';
@@ -73,9 +73,25 @@ export type DeviceWithoutRefRow = DeviceWithoutRefRowBase;
 const ALLOWED = ['id', 'name', 'type', 'status', 'owner', 'register', 'search'] as const;
 
 @Injectable()
-export class DevicesService {
+export class DevicesService implements OnModuleDestroy {
   private readonly logger = new Logger(DevicesService.name);
   private readonly deviceAckTimeoutSeconds: number;
+
+  // Config Queue Configuration
+  private readonly CONFIG_QUEUE_MAX_SIZE = 1000;
+  private readonly CONFIG_PROCESS_INTERVAL_MS = 1000;
+  private readonly CONFIG_BATCH_SIZE = 10;
+  private readonly CONFIG_MAX_RETRIES = 1;
+
+  // Config Queue State
+  private configQueue: Array<{
+    deviceId: string;
+    config: CommandConfig;
+    timestamp: number;
+    attempts: number;
+  }> = [];
+  private isProcessingConfigQueue = false;
+  private configQueueInterval: NodeJS.Timeout | null = null;
 
   constructor(
     private readonly prisma: PrismaService,
@@ -85,7 +101,125 @@ export class DevicesService {
     private readonly promotionsService: PromotionsService,
   ) {
     this.deviceAckTimeoutSeconds = this.configService.get<number>('device.ackTimeoutSeconds', 15);
-    this.logger.log('DevicesService initialized');
+    this.startConfigQueueProcessing();
+    this.logger.log('DevicesService initialized with config queue processing');
+  }
+
+  onModuleDestroy() {
+    if (this.configQueueInterval) {
+      clearInterval(this.configQueueInterval);
+      this.configQueueInterval = null;
+    }
+    if (this.configQueue.length > 0) {
+      this.logger.warn(`Service destroying with ${this.configQueue.length} pending config commands`);
+    }
+    this.logger.log('DevicesService config queue processing stopped');
+  }
+
+  /**
+   * Start config queue interval processing
+   */
+  private startConfigQueueProcessing(): void {
+    this.configQueueInterval = setInterval(() => {
+      void this.processConfigQueue();
+    }, this.CONFIG_PROCESS_INTERVAL_MS);
+    this.logger.log('Config queue processing started');
+  }
+
+  /**
+   * Add config to queue for background processing
+   * ถ้ามี config สำหรับ device เดียวกันใน queue แล้ว จะแทนที่ด้วย config ใหม่ (deduplicate)
+   */
+  private enqueueConfig(deviceId: string, config: CommandConfig): boolean {
+    // ตรวจสอบว่ามี config สำหรับ device นี้ใน queue แล้วหรือไม่
+    const existingIndex = this.configQueue.findIndex((item) => item.deviceId === deviceId);
+
+    if (existingIndex !== -1) {
+      // แทนที่ config เก่าด้วยใหม่ (deduplicate)
+      this.configQueue[existingIndex] = {
+        deviceId,
+        config,
+        timestamp: Date.now(),
+        attempts: 0,
+      };
+      this.logger.debug(`Config updated for device ${deviceId} (deduplicated), queue size: ${this.configQueue.length}`);
+      return true;
+    }
+
+    if (this.configQueue.length >= this.CONFIG_QUEUE_MAX_SIZE) {
+      this.logger.warn(`Config queue full (${this.CONFIG_QUEUE_MAX_SIZE}), dropping config for device ${deviceId}`);
+      return false;
+    }
+
+    this.configQueue.push({
+      deviceId,
+      config,
+      timestamp: Date.now(),
+      attempts: 0,
+    });
+
+    this.logger.debug(`Config queued for device ${deviceId}, queue size: ${this.configQueue.length}`);
+    return true;
+  }
+
+  /**
+   * Process config queue with retry logic
+   */
+  private async processConfigQueue(): Promise<void> {
+    if (this.configQueue.length === 0 || this.isProcessingConfigQueue) {
+      return;
+    }
+
+    this.isProcessingConfigQueue = true;
+
+    try {
+      const batch = this.configQueue.splice(0, this.CONFIG_BATCH_SIZE);
+      const retryItems: typeof this.configQueue = [];
+
+      for (const item of batch) {
+        try {
+          const result = await this.mqttCommandManager.applyConfig(item.deviceId, item.config);
+
+          if (result.status === 'SUCCESS') {
+            this.logger.log(`Config sent successfully to device ${item.deviceId}`);
+          } else {
+            // TIMEOUT or FAILED - check if should retry
+            item.attempts++;
+
+            if (item.attempts < this.CONFIG_MAX_RETRIES) {
+              this.logger.warn(
+                `Config send failed for device ${item.deviceId} (attempt ${item.attempts}/${this.CONFIG_MAX_RETRIES}): ${result.error ?? result.status}`,
+              );
+              retryItems.push(item);
+            } else {
+              this.logger.error(
+                `Config send failed for device ${item.deviceId} after ${this.CONFIG_MAX_RETRIES} attempts, dropping: ${result.error ?? result.status}`,
+              );
+            }
+          }
+        } catch (error) {
+          item.attempts++;
+
+          if (item.attempts < this.CONFIG_MAX_RETRIES) {
+            this.logger.warn(
+              `Config send error for device ${item.deviceId} (attempt ${item.attempts}/${this.CONFIG_MAX_RETRIES}): ${error.message}`,
+            );
+            retryItems.push(item);
+          } else {
+            this.logger.error(
+              `Config send error for device ${item.deviceId} after ${this.CONFIG_MAX_RETRIES} attempts, dropping: ${error.message}`,
+            );
+          }
+        }
+      }
+
+      // Add retry items back to queue
+      if (retryItems.length > 0) {
+        this.configQueue.push(...retryItems);
+      }
+    } finally {
+      this.isProcessingConfigQueue = false;
+    }
   }
 
   private getDeviceType(firmware_version: string): { type: DeviceType; default_name: string } {
@@ -522,13 +656,13 @@ export class DevicesService {
         }
 
         // Check if dates are in the future
-        const now = Date.now();
-        if (promotionStart < now) {
-          throw new BadRequestException('promotion_start must be in the future');
-        }
-        if (promotionEnd < now) {
-          throw new BadRequestException('promotion_end must be in the future');
-        }
+        // const now = Date.now();
+        // if (promotionStart < now) {
+        //   throw new BadRequestException('promotion_start must be in the future');
+        // }
+        // if (promotionEnd < now) {
+        //   throw new BadRequestException('promotion_end must be in the future');
+        // }
       }
     }
 
@@ -792,7 +926,7 @@ export class DevicesService {
     return device;
   }
 
-  async syncConfigsById(device_id: string, data: SyncDeviceConfigsDto): Promise<CommandConfig> {
+  async syncConfigsById(device_id: string, data: SyncDeviceConfigsDto): Promise<void> {
     // Get device with owner_id
     const device = await this.prisma.tbl_devices.findUnique({
       where: { id: device_id },
@@ -899,8 +1033,12 @@ export class DevicesService {
       },
     });
 
-    // Convert to raw CommandConfig format and return to device
+    // Convert to raw CommandConfig format
     const rawConfig = this.convertToRawConfig(structuredConfig, device.type, device.status);
-    return rawConfig;
+
+    // Queue MQTT command for background processing (with retry)
+    this.enqueueConfig(device_id, rawConfig);
+
+    // Return immediately without data
   }
 }

@@ -17,7 +17,6 @@ import { UserAuth } from '../auth/decorators';
 import type { AuthenticatedUser } from 'src/types/internal.type';
 import { DeviceRegistrationService, DeviceRegistrationEventAdapter } from '../../services';
 import { DeviceSignatureGuard } from '../payment-gateway/guards/device-signature.guard';
-import { CommandConfig } from 'src/types/mqtt-command-manager.types';
 
 type DevicePublicResponse = PaginatedResult<DeviceRow | DeviceWithoutRefRow>;
 
@@ -135,13 +134,9 @@ export class DevicesController {
   async syncDeviceConfigs(
     @Param('device_id') deviceId: string,
     @Body() data: SyncDeviceConfigsDto,
-  ): Promise<SuccessResponse<CommandConfig>> {
-    const config = await this.devicesService.syncConfigsById(deviceId, data);
-    return {
-      success: true,
-      data: config,
-      message: 'Device configs synced successfully',
-    };
+  ): Promise<SuccessResponse<void>> {
+    await this.devicesService.syncConfigsById(deviceId, data);
+    return { success: true, message: 'Device configs synced successfully' };
   }
 
   // SSE endpoint for device scanning

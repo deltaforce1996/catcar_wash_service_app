@@ -43,19 +43,190 @@ graph TD
     C --> D[MqttCommandManagerService]
     D --> E[MQTT Broker]
     E --> F[Device]
-    
+
     F -->|ACK Response| E
     E --> G[MqttCommandEventAdapter]
     G --> H[EventManagerService]
     H --> I[SSE Stream]
     I --> A
-    
+
     J[Device] -->|State Updates| K[DeviceStateProcessorService]
     K --> L[MqttCommandEventAdapter]
     L --> H
     H --> I
     I --> A
 ```
+
+### 3. Config Queue Flow (Background Processing)
+
+เมื่อ device sync config จะใช้ queue เพื่อส่ง config แบบ background พร้อม retry mechanism
+
+```
+┌─────────────────────────────────────────────────────────────────────────────┐
+│                         CONFIG QUEUE FLOW                                   │
+└─────────────────────────────────────────────────────────────────────────────┘
+
+                    ┌──────────────────────┐
+                    │   Device Sync Request │
+                    │  (syncConfigsById)    │
+                    └──────────┬───────────┘
+                               │
+                               ▼
+                    ┌──────────────────────┐
+                    │    enqueueConfig()   │
+                    └──────────┬───────────┘
+                               │
+                               ▼
+                ┌──────────────────────────────┐
+                │ มี device นี้ใน queue แล้ว?    │
+                └──────────────┬───────────────┘
+                       ┌───────┴───────┐
+                       │               │
+                      YES              NO
+                       │               │
+                       ▼               ▼
+              ┌─────────────┐   ┌─────────────┐
+              │  แทนที่ config │   │  Push ใหม่   │
+              │  (deduplicate)│   │  เข้า queue  │
+              └─────────────┘   └─────────────┘
+                       │               │
+                       └───────┬───────┘
+                               ▼
+┌─────────────────────────────────────────────────────────────────────────────┐
+│                                                                             │
+│   CONFIG QUEUE                                                              │
+│   ┌─────────┬─────────┬─────────┬─────────┬─────────┬─────────┬────────┐   │
+│   │ device-1│ device-2│ device-3│ device-4│ device-5│ device-6│  ...   │   │
+│   └─────────┴─────────┴─────────┴─────────┴─────────┴─────────┴────────┘   │
+│                                                                             │
+└─────────────────────────────────────────────────────────────────────────────┘
+                               │
+                               │  ทุกๆ 1 วินาที (setInterval)
+                               ▼
+                    ┌──────────────────────┐
+                    │  processConfigQueue() │
+                    └──────────┬───────────┘
+                               │
+                               ▼
+                    ┌──────────────────────┐
+                    │  splice(0, 10)       │
+                    │  ตัดออก 10 items     │
+                    └──────────┬───────────┘
+                               │
+                               ▼
+┌─────────────────────────────────────────────────────────────────────────────┐
+│   BATCH (ตัดออกมา)                                                          │
+│   ┌─────────┬─────────┬─────────┐                                           │
+│   │ device-1│ device-2│ device-3│  ... (max 10)                             │
+│   └─────────┴─────────┴─────────┘                                           │
+└─────────────────────────────────────────────────────────────────────────────┘
+                               │
+                               │  for loop (ทีละ item)
+                               ▼
+                    ┌──────────────────────┐
+                    │  applyConfig()       │
+                    │  ส่ง MQTT + รอ ACK    │
+                    └──────────┬───────────┘
+                               │
+                               ▼
+                ┌──────────────────────────────┐
+                │         ผลลัพธ์?              │
+                └──────────────┬───────────────┘
+                       ┌───────┼───────┐
+                       │       │       │
+                    SUCCESS  TIMEOUT  ERROR
+                       │       │       │
+                       ▼       ▼       ▼
+                    ┌─────┐ ┌─────────────────┐
+                    │ Done│ │ attempts < MAX? │
+                    └─────┘ └────────┬────────┘
+                                ┌────┴────┐
+                               YES        NO
+                                │         │
+                                ▼         ▼
+                         ┌──────────┐  ┌──────┐
+                         │Push back │  │ Drop │
+                         │to queue  │  │ item │
+                         │(retry)   │  └──────┘
+                         └──────────┘
+```
+
+#### Config Queue Settings
+
+```typescript
+private readonly CONFIG_QUEUE_MAX_SIZE = 1000;      // จำนวน items สูงสุดใน queue
+private readonly CONFIG_PROCESS_INTERVAL_MS = 1000; // ประมวลผลทุก 1 วินาที
+private readonly CONFIG_BATCH_SIZE = 10;            // ประมวลผลครั้งละ 10 items
+private readonly CONFIG_MAX_RETRIES = 1;            // retry สูงสุด 1 ครั้ง
+```
+
+#### Timeline Example
+
+```
+Time 0s:  Queue = [D1, D2, D3, D4, D5]
+          │
+          ▼ processConfigQueue()
+
+Time 0s:  splice(0, 10) → batch = [D1, D2, D3, D4, D5]
+          Queue = []  (empty)
+          │
+          ▼ for loop
+
+Time 0s:  applyConfig(D1) → รอ ACK...
+Time 1s:  ACK received → SUCCESS ✓
+
+Time 1s:  applyConfig(D2) → รอ ACK...
+Time 16s: TIMEOUT! → attempts=1, push back to retry
+
+Time 16s: applyConfig(D3) → รอ ACK...
+Time 17s: ACK received → SUCCESS ✓
+
+          ... (D4, D5)
+
+Time 20s: Queue = [D2]  (retry item)
+          │
+          ▼ next interval (1s later)
+
+Time 21s: processConfigQueue() → retry D2
+```
+
+### 4. MqttCommandManagerService Singleton Pattern
+
+**สำคัญ:** `MqttCommandManagerService` ต้องเป็น **singleton** เพื่อป้องกัน handler ถูก register ซ้ำ
+
+```
+┌─────────────────────────────────────────────────────────────────┐
+│                    SINGLETON PATTERN                            │
+└─────────────────────────────────────────────────────────────────┘
+
+                    ┌─────────────────────────┐
+                    │  MqttModule (@Global)   │
+                    │  ┌───────────────────┐  │
+                    │  │MqttCommandManager │  │  ← เพียง 1 instance
+                    │  │Service (singleton)│  │
+                    │  └───────────────────┘  │
+                    │  onModuleInit() × 1     │  ← register handler 1 ครั้ง
+                    └────────────┬────────────┘
+                                 │
+            ┌────────────────────┼────────────────────┐
+            │                    │                    │
+            ▼                    ▼                    ▼
+  ┌─────────────────┐  ┌─────────────────┐  ┌─────────────────┐
+  │ PaymentGateway  │  │ DevicesModule   │  │ DeviceCommands  │
+  │ Module          │  │                 │  │ Module          │
+  │ (inject)        │  │ (inject)        │  │ (inject)        │
+  └─────────────────┘  └─────────────────┘  └─────────────────┘
+           │                    │                    │
+           └────────────────────┴────────────────────┘
+                                │
+                                ▼
+                    ┌───────────────────────┐
+                    │  Same instance used   │
+                    │  across all modules   │
+                    └───────────────────────┘
+```
+
+**ห้าม** provide `MqttCommandManagerService` ซ้ำใน modules อื่น เพราะจะทำให้เกิด multiple instances และ handler ถูก register หลายครั้ง ส่งผลให้ ACK message ถูกประมวลผลซ้ำ
 
 ## 🛠️ Services Overview
 

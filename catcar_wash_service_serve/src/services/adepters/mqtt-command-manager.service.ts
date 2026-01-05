@@ -299,6 +299,7 @@ export class MqttCommandManagerService implements OnModuleInit, OnModuleDestroy 
             this.eventAdapter?.emitCommandError(errorResult);
             activeCommand.resolve(errorResult);
           }
+          return; // หยุดการทำงานเมื่อ signature ไม่ถูกต้อง
         }
         this.logger.debug(`✅ ACK signature verified for command: ${String(command_id)}`);
       } else {
