@@ -4,9 +4,10 @@
  */
 
 /**
- * Threshold for considering a device offline (2 minutes in milliseconds)
+ * Threshold for considering a device offline (30 minutes in milliseconds)
+ * Synced with backend OFFLINE_TIMEOUT in device-state-processor.service.ts
  */
-export const OFFLINE_THRESHOLD_MS = 2 * 60 * 1000;
+export const OFFLINE_THRESHOLD_MS = 30 * 60 * 1000;
 
 /**
  * Extract last timestamp from device item
@@ -47,12 +48,19 @@ export function formatTimeAgoTh(fromMs: number, toMs: number): string {
  * @returns true if device is offline, false otherwise
  */
 export function isOffline(item: any): boolean {
+  const status = item?.last_state?.state_data?.status;
   const now = Date.now();
   const last = getLastTimestampMs(item);
-  const status = item?.last_state?.state_data?.status;
-  if (status && String(status).toLowerCase() !== "normal") return true;
+
+  // If no timestamp, consider offline
   if (last == null) return true;
-  return now - last > OFFLINE_THRESHOLD_MS;
+
+  // Check both status AND timestamp
+  // Device is online only if status is "normal" AND timestamp is within threshold
+  const isStatusNormal = status && String(status).toLowerCase() === "normal";
+  const isTimestampRecent = now - last <= OFFLINE_THRESHOLD_MS;
+
+  return !(isStatusNormal && isTimestampRecent);
 }
 
 /**
